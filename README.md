@@ -42,10 +42,11 @@ Together, let's create something remarkable. Join the Indigenous OS project and 
 
 Reference : [Writing a Simple Operating System from Scratch](writing_simple_os.pdf)
 
-
+----------------------------------------------------------------------------------
 ###### First date of Journey : 9th June, 2024
 ###### Last Update : 9th June, 2024
 ###### Developer : [baponkar](https://github.com/baponkar)
+----------------------------------------------------------------------------------
 
 © 2024 KeblaOS Project. All rights reserved.
 
