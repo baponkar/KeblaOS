@@ -9,7 +9,7 @@
 
 ### Introducing the KeblaOS Operating System
 
-Are you passionate about contributing to an innovative and ground-breaking project? Join us in developing an Indigenous Operating System (Indigenous OS) crafted entirely in C, celebrating the rich technological heritage of India while paving the way for future advancements.
+Are you passionate about contributing to an innovative and ground-breaking project? Join us in developing an Indigenous Operating System (KeblaOS) crafted entirely in C, celebrating the rich technological heritage of India while paving the way for future advancements.
 
 #### Why KeblaOS?
 
