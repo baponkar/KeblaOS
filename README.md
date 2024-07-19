@@ -1,4 +1,6 @@
 ![Static Badge](https://img.shields.io/badge/Kebla-OS-maker)
+[![Static Badge](https://img.shields.io/badge/-maker?logo=github&logoColor=white&labelColor=black&color=black)](https://github.com/baponkar/KeblaOS)
+
 
 
 # Kebla OS
