@@ -40,7 +40,8 @@ Together, let's create something remarkable. Join the Indigenous OS project and 
 
 
 
-Reference : [Writing a Simple Operating System from Scratch](writing_simple_os.pdf)
+Reference : 
+1. [Writing a Simple Operating System from Scratch](writing_simple_os.pdf)
 
 ----------------------------------------------------------------------------------
 ###### First date of Journey : 9th June, 2024
