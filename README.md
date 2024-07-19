@@ -27,7 +27,7 @@ Are you passionate about contributing to an innovative and ground-breaking proje
 
 #### Get Involved
 
-We invite developers, enthusiasts, and visionaries to join us on this exciting journey. Whether you're an experienced programmer or just starting, your contribution can help shape the future of Indigenous OS.
+We invite developers, enthusiasts, and visionaries to join us on this exciting journey. Whether you're an experienced programmer or just starting, your contribution can help shape the future of KeblaOS.
 
 ### How to Join
 
@@ -35,7 +35,7 @@ We invite developers, enthusiasts, and visionaries to join us on this exciting j
 - **Share Ideas and Feedback**: Participate in discussions and brainstorm sessions.
 - **Spread the Word**: Help us reach a broader audience by sharing our mission.
 
-Together, let's create something remarkable. Join the Indigenous OS project and be part of a legacy that blends tradition with innovation.
+Together, let's create something remarkable. Join the KeblaOS project and be part of a legacy that blends tradition with innovation.
 
 
 
