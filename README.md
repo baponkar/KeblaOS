@@ -47,5 +47,6 @@ Reference : [Writing a Simple Operating System from Scratch](writing_simple_os.p
 ###### Last Update : 9th June, 2024
 ###### Developer : [baponkar](https://github.com/baponkar)
 
-###### Copyright Developer : [baponkar](https://github.com/baponkar)
+##################© 2024 KeblaOS Project. All rights reserved.
+
 
