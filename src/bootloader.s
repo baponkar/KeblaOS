@@ -4,7 +4,7 @@
 ; Developer : Mr. Bapon Kar
 ; Website : https://github.com/baponkar/KeblaOS
 ; Description :
-; A simple boot sector that prints a message 'Hello' to the screen using a BIOS routine.
+; A simple boot sector that prints a message 'Hello' to the screen using a BIOS routine and stack.
 ;
 ;
 
@@ -19,22 +19,41 @@ global main
 main:
     mov ah, 0x0e                     ; activate BIOS teletype mode to print message
 
-    mov al, 'H'                     ; put asci code of H in al register
-    int 0x10                        ; interrupt code to print H
+    mov bp, 0x8000                  ; Set Base pointer a high address value to store the data which should  not Boot sector value 
+    mov sp, bp                      ; set stack pointer with the same value of bp
+                                    ; Stack grows downward 
 
-    mov al, 'e'
-    int 0x10
+    push 'o'
+    push 'l'
+    push 'l'
+    push 'e'
+    push 'H'
 
-    mov al, 'l'
-    int 0x10
+    pop bx
+    mov al, bl 
+    int 0x10 
 
-    mov al, 'l'
-    int 0x10
+    pop bx
+    mov al, bl 
+    int 0x10 
 
-    mov al, 'o'
-    int 0x10
+    pop bx
+    mov al, bl 
+    int 0x10 
+
+    pop bx
+    mov al, bl 
+    int 0x10 
+
+    pop bx
+    mov al, bl 
+    int 0x10 
+
 
     hlt
+
+
+
 
 times 510 - ($-$$) db 0             ; Filling with zero
 dw 0xaa55                           ; Magic Number i.e. boot sector signature
