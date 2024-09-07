@@ -9,7 +9,7 @@
 ;
 
 
-;[ORG 0x7C00]                        ; Shift Memory address 
+[ORG 0x7C00]                        ; Shift Memory address 
 
 [bits 16]
 
@@ -17,40 +17,27 @@ section .text
 global main
 
 main:
-    mov ah, 0x0e                     ; activate BIOS teletype mode to print message
+    pusha 
+    mov bx, my_string
+    call my_print_function
+    jmp $
 
-    mov bp, 0x8000                  ; Set Base pointer a high address value to store the data which should  not Boot sector value 
-    mov sp, bp                      ; set stack pointer with the same value of bp
-                                    ; Stack grows downward 
+my_print_function:
+    mov al, [bx]
+    
+    cmp al, 0
+    je done 
+    mov ah, 0x0e        ; tty mode
+    int 0x10            ; print the character by interrupt routine 
+    add bx, 1
+    jmp my_print_function
 
-    push 'o'
-    push 'l'
-    push 'l'
-    push 'e'
-    push 'H'
+done:
+    popa                ; restore all register 
+    ret
 
-    pop bx
-    mov al, bl 
-    int 0x10 
-
-    pop bx
-    mov al, bl 
-    int 0x10 
-
-    pop bx
-    mov al, bl 
-    int 0x10 
-
-    pop bx
-    mov al, bl 
-    int 0x10 
-
-    pop bx
-    mov al, bl 
-    int 0x10 
-
-
-    hlt
+my_string:
+    db "Kebla OS is booting",0
 
 
 
