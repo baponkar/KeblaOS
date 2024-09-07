@@ -1,40 +1,33 @@
 
 ASM=nasm
+ASM_FLAG = -f elf32
+
+GCC=gcc
+GCC_FLAG = -g -m32 -fno-stack-protector -fno-builtin	# -g flag used for debugging info
+
 SRC_DIR=src
 BUILD_DIR=build
+
 OS_NAME=KeblaOS
-VERSION=0.0
+VERSION=0.0.0.1
+
+default: run
+
+# Generating bootloader.o object file in build directory
+$(BUILD_DIR)/bootloader.o: $(SRC_DIR)/bootloader.s
+	$(ASM) $(ASM_FLAG) $(SRC_DIR)/bootloader.s -o $(BUILD_DIR)/bootloader.o
+
+# Generating KeblaOS-0.0.0.1.iso Iso image file
+$(BUILD_DIR)/$(OS_NAME)-$(VERSION).iso: $(BUILD_DIR)/bootloader.o
+	$(GCC) $(GCC_FLAG) -o $(BUILD_DIR)/$(OS_NAME)-$(VERSION).iso $(BUILD_DIR)/bootloader.o
 
 
-
-#
-# Floppy Disk Image
-#
-
-flopy_img: $(BUILD_DIR)/main.img 
-$(BUILD_DIR)/main.img: bootloader kernel 
-	dd if=/dev/zero of=$(BUILD_DIR)/main.img bs=512 count=2880 
-	mkfs.fat -F 12 -n KeblaOS $(BUILD_DIR)/main.img 
-	dd if=$(BUILD_DIR)/bootloader.bin of=$(BUILD_DIR)/main.img conv=notrunc
-	mcopy -i $(BUILD_DIR)/main.img $(BUILD_DIR)/kernel.bin "::kernel.bin"
-	qemu-system-i386 -fda build/main.img
-
-#
-# Bootloader
-#
-
-bootloader: $(BUILD_DIR)/bootloader.bin 
-$(BUILD_DIR)/bootloader.bin:
-	$(ASM) -f bin $(SRC_DIR)/bootloader/bootloader.asm -o $(BUILD_DIR)/bootloader.bin 
+# Running ISO in QEmu
+run: $(BUILD_DIR)/$(OS_NAME)-$(VERSION).iso
+	qemu-system-i386 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(VERSION).iso # -s -S flag for debuging
 
 
-#
-# Kernel
-#
-
-kernel: $(BUILD_DIR)/kernel.bin 
-$(BUILD_DIR)/kernel.bin:
-	$(ASM) -f bin $(SRC_DIR)/kernel/kernel.asm -o $(BUILD_DIR)/kernel.bin 
-
+clean:
+	rm -f $(BUILD_DIR)/*.o
 
 

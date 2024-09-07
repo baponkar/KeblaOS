@@ -5,6 +5,8 @@
 
 # Kebla OS
 
+Version - 0.0.0.1
+
 ![KeblaOS_icon.bmp](./images/KeblaOS_icon.png)
 
 
@@ -22,6 +24,18 @@ Are you passionate about contributing to an innovative and ground-breaking proje
 
 #### Features and Goals
 
+### Introducing the KeblaOS Operating System
+
+Are you passionate about contributing to an innovative and ground-breaking project? Join us in developing an Indigenous Operating System (KeblaOS) crafted entirely in C, celebrating the rich technological heritage of India while paving the way for future advancements.
+
+#### Why KeblaOS?
+
+1. **Made in India**: A project close to home, fostering local talent and innovation.
+2. **C Language**: Leveraging the power and efficiency of C, a language known for its performance and control.
+3. **Community-Driven**: Collaborate with a dedicated community of developers who share a vision for an open, efficient, and robust operating system.
+4. **Open Source**: Contribute to an open-source project where your expertise and creativity can make a real impact.
+
+#### Features and Goals
 - **Simplicity and Efficiency**: Building a streamlined, efficient OS with minimal overhead.
 - **Customization and Flexibility**: Providing users and developers with extensive customization options.
 - **Security and Stability**: Ensuring a secure and stable environment for various applications.
@@ -44,6 +58,8 @@ Together, let's create something remarkable. Join the KeblaOS project and be par
 
 Reference : 
 1. [Writing a Simple Operating System from Scratch](writing_simple_os.pdf)
+
+2. [wiki.osdev.org](https://wiki.osdev.org)
 
 ----------------------------------------------------------------------------------
 ###### First date of Journey : 9th June, 2024
