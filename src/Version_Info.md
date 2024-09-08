@@ -1,8 +1,7 @@
 # Version Info
 
-Version - 0.0.0.6
+Version - 0.0.0.7
 
 Description :
 
-* 16 Bit Real Mode :
-Reading The Disk by using BIOS routine interrupt and print on the screen.
+* 32 Bit Protected Mode : printing without using bios routine GDT table have implemented by asm

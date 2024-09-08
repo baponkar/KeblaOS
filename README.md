@@ -53,8 +53,57 @@ We invite developers, enthusiasts, and visionaries to join us on this exciting j
 
 Together, let's create something remarkable. Join the KeblaOS project and be part of a legacy that blends tradition with innovation.
 
+# Required software for building KeblaOS
 
+* nasm : Compile assembly (asm) code
+* gcc  : Compile C, C++, Fortran code
+* qemu :
+* qemu-kvm :
+* libvirt-daemon-system :
+* libvirt-clients :
+* bridge-utils :
+* xx2 : to look inside of a binary file
+* grub2 : to build iso with grub2 enabled  bootloader 
+* make  : To automate building process
 
+```bash
+#Update package
+sudo apt update -y
+
+#Upgrade package
+sudo apt upgrade -y
+
+#Installing nasm
+sudo apt install nasm
+
+#Installing gcc
+sudo apt install gcc
+
+#Installing Qemu
+sudo apt install qemu qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
+
+#Start Services
+sudo systemctl start libvirtd
+sudo systemctl enable libvirtd
+
+#Verify installation
+qemu-system-x86_64 --version
+
+#Installing xxd
+sudo apt install xxd
+
+#Installing GRUB2
+sudo apt-get install grub2
+
+#Instaling make
+sudo apt install make
+
+```
+
+Generally Build Directory is containing the iso image of KeblaOS but we can generate the iso by  `Makefile` and using `make -B` command.Autometically the above command will generate and run the iso by Qemu.
+
+[⬇️ Download](https://github.com/baponkar/KeblaOS/releases)
+[0.0.0.1]()
 
 Reference : 
 1. [Writing a Simple Operating System from Scratch](writing_simple_os.pdf)
