@@ -9,7 +9,7 @@ SRC_DIR=src
 BUILD_DIR=build
 
 OS_NAME=KeblaOS
-VERSION=0.0.0.1
+VERSION=0.0.0.6
 
 default: run
 
