@@ -103,7 +103,7 @@ sudo apt install make
 Generally Build Directory is containing the iso image of KeblaOS but we can generate the iso by  `Makefile` and using `make -B` command.Autometically the above command will generate and run the iso by Qemu.
 
 [⬇️ Download](https://github.com/baponkar/KeblaOS/releases)
-[0.0.0.1]()
+
 
 Reference : 
 1. [Writing a Simple Operating System from Scratch](writing_simple_os.pdf)
@@ -112,7 +112,7 @@ Reference :
 
 ----------------------------------------------------------------------------------
 ###### First date of Journey : 9th June, 2024
-###### Last Update : 9th June, 2024
+###### Last Update : 8th September, 2024
 ###### Developer : [baponkar](https://github.com/baponkar)
 ----------------------------------------------------------------------------------
 
