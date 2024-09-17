@@ -17,6 +17,8 @@ Version - 0.4
 
 ![KeblaOS Screenshot](./images/Screenshot_of_keblaos_0.4.png)
 
+![KeblaOS Screenshot](./images/keblaos_screenshot.gif)
+
 
 
 ### Introducing the KeblaOS Operating System
