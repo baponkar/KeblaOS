@@ -23,3 +23,10 @@ void initTimer(){
     outPortB(0x40,(uint8_t)(divisor & 0xFF));
     outPortB(0x40,(uint8_t)((divisor >> 8) & 0xFF));
 }
+
+void delay(uint32_t ms) {
+    uint64_t endTicks = ticks + (ms * freq / 1000);  // Convert milliseconds to ticks
+    while (ticks < endTicks) {
+        // Wait until the desired number of ticks has passed
+    }
+}
