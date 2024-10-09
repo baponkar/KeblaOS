@@ -51,6 +51,8 @@ See the [Tutorials and notes](./notes-and-tutorials/note-main.md) .
 
 See the [References](./notes-and-tutorials/Reference.md) .
 
+See the [Releases](https://github.com/baponkar/KeblaOS/releases/)
+
 
 
 ------------------------------------------------------------------------------------------------------------------------
