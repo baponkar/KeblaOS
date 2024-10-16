@@ -83,8 +83,9 @@ The useful references for OS development
 
     - [www.osdever.net](http://www.osdever.net/bkerndev/index.php)
 
-    - [jamesmolly.co.uk](https://web.archive.org/web/20160412174753/http://www.jamesmolloy.co.uk/tutorial_html/index.html)
+    - [jamesmolly.co.uk [Online]](https://web.archive.org/web/20160412174753/http://www.jamesmolloy.co.uk/tutorial_html/index.html)
 
+    - [jamesmolly.co.uk [Offline]](./jamesmolly.co.uk/1.-Environment%20setup.html)
 
 <img src="./images/youtube_icon.png" alt="pdf icon" width="25" height="25">
 
@@ -111,6 +112,11 @@ The useful references for OS development
     - [KolibriOS](https://kolibrios.org/en/)
 
     - [skift OS](https://github.com/skift-org/skift)
+
+    - [micrOS](https://github.com/skni-kod/MicrOS/)
+
+    - [OS](https://github.com/SzAkos04/OS)
+
 
     - [web.archive.org](https://web.archive.org/web/20160412174753/http://www.jamesmolloy.co.uk/tutorial_html/index.html)
 
