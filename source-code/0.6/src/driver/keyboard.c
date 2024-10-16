@@ -171,9 +171,18 @@ void keyboardHandler(registers_t *regs){
     manageKeyState();           // Manage Key Pressed or Released by changing bool variable press
 
     switch(scanCode){
+        // Handel Unnecessary scancode return by keyboard
+         case 0x00000060:
+            break;
+        case 0x00000608:
+            break;
         case UNKNOWN:
         case ESC:     // ESC Key
-        //case ENTER:  // Enter Key Manage
+        case ENTER:  // Enter Key Manage
+            if(press == false){
+                putchar(scanCodeToChar(ENTER));
+            }
+            break;
         case CTRL:    // CTRL
         case ALT:    // ALT
         case F1:    // F1
@@ -217,25 +226,21 @@ void keyboardHandler(registers_t *regs){
         case UP:
             if(press == true){
                 move_cursor_up();
-                cursor_offset(0, -1);
             }
             break;
         case LEFT:
             if(press == true){
                 move_cursor_left();
-                cursor_offset(0, -2);
             }
             break;
         case RIGHT:
             if(press == true){
                 move_cursor_right();
-                cursor_offset(0, -1);
             }
             break;
         case DOWN:
             if(press == true){
                 move_cursor_down();
-                cursor_offset(0, -1);
             }
             break;
         case BACKSPACE:
