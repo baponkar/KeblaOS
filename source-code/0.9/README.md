@@ -48,6 +48,8 @@ Build Date : 12/10/24
 
 * Updating Keyboard.c
 
+* Speaker Driver included
+
 * Include following standard libraries.
     - stddef.h
     - stdint.h
