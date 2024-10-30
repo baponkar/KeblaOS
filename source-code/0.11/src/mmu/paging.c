@@ -4,13 +4,13 @@
 
 // A bitset of frames - used or free.
 uint32_t *frames;
-uint32_t nframes;
+uint32_t nframes;   // this hold all the frames info
 
-// Defined in kheap.c
+// Defined in heap.c
 extern uint32_t placement_address;
 
 // Macros used in the bitset algorithms.
-#define INDEX_FROM_BIT(a) (a/(8*4))
+#define INDEX_FROM_BIT(a) (a/(8*4)) // Each index can hold 32 bit
 #define OFFSET_FROM_BIT(a) (a%(8*4))
 
 // Declare the current directory globally
@@ -20,7 +20,7 @@ page_directory_t *kernel_directory;
 
 
 // Static function to set a bit in the frames bitset
-//  A bitset is typically used to keep track of allocated and free memory frames in a paging system.
+// A bitset is typically used to keep track of allocated and free memory frames in a paging system.
 static void set_frame(uint32_t frame_addr)
 {
    uint32_t frame = frame_addr/0x1000;      // dividing by 4kb
@@ -85,7 +85,7 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable)
    else
    {
        uint32_t idx = first_frame(); // idx is now the index of the first free frame.
-       if (idx == (uint32_t)-1)
+       if (idx == (uint32_t) -1)
        {
            // PANIC is just a macro that prints a message to the screen then hits an infinite loop.
            PANIC("No free frames!");
@@ -119,16 +119,16 @@ void free_frame(page_t *page)
 void init_paging()
 {
    // The size of physical memory. For the moment we
-   // assume it is 16MB big.
-   uint32_t mem_end_page = 0x1000000;   // 16MB of memory
-   // uint32_t mem_end_page = 0x100000000 - 0x1;   // 4GB of memory
+   // assume it is 2MB big.
+   // uint32_t mem_end_page = 0x400000;   // Consider System has 4MB of memory
+    uint32_t mem_end_page = 0x100000000 - 0x1;   // Consider System has 4GB of memory
 
    nframes = mem_end_page / 0x1000;
-   frames = (uint32_t*)kmalloc(INDEX_FROM_BIT(nframes));
+   frames = (uint32_t*) kmalloc(INDEX_FROM_BIT(nframes));
    memset(frames, 0, INDEX_FROM_BIT(nframes));
 
    // Let's make a page directory.
-   kernel_directory = (page_directory_t*) kmalloc_a(sizeof(page_directory_t),1);
+   kernel_directory = (page_directory_t*) kmalloc_a(sizeof(page_directory_t), 1);
    memset(kernel_directory, 0, sizeof(page_directory_t));
    current_directory = kernel_directory;
     
@@ -140,16 +140,14 @@ void init_paging()
    // by calling kmalloc(). A while loop causes this to be
    // computed on-the-fly rather than once at the start.
    int i = 0;
+   // The below steps allocate 2 Mb memory
+   // Identity Mapping for Used Memory
    while (i < placement_address)
    {
        // Kernel code is readable but not writeable from userspace.
        alloc_frame( get_page(i, 1, kernel_directory), 0, 0);
        i += 0x1000; // Move to the next page.
    }
-   
-   print("Total Memory allocated: ");
-   print_hex(i);    // 16.08 mb
-   print("\n");
    
    disable_interrupts();
    // Before we enable paging, we must register our page fault handler.
