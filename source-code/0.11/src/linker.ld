@@ -1,32 +1,33 @@
-/* Link.ld -- Linker script for the kernel - ensure everything goes in the */
-/*            Correct place.  */
-/*            Original file taken from Bran's Kernel Development */
-/*            tutorials: http://www.osdever.net/bkerndev/index.php. */
 
-ENTRY(start)
+ENTRY(start)  /* Kernel entry point */
+
 SECTIONS
 {
-  .text 0x100000 : /* 1 MB */
-  {
-    code = .; _code = .; __code = .;
-    *(.text)
-    . = ALIGN(4096);
-  }
+    _start = .;
+    /* Start the kernel at 1MB, which is typical for protected mode */
+    . = 1M;
 
-  .data :
-  {
-     data = .; _data = .; __data = .;
-     *(.data)
-     *(.rodata)
-     . = ALIGN(4096);
-  }
+    /* This is the code section */
+    .text : {
+        code = .;         /* Define the start of the code section */
+        *(.multiboot)     /* Multiboot header */
+        *(.text*)         /* All .text sections from input files */
+    }
 
-  .bss :
-  {
-    bss = .; _bss = .; __bss = .;
-    *(.bss)
-    . = ALIGN(4096);
-  }
+    /* This is the data section */
+    .data : {
+        *(.data*)
+    }
 
-  end = .; _end = .; __end = .;
+    /* This is the bss section */
+    .bss : {
+        bss = .;          /* Define the start of the bss section */
+        *(COMMON)         /* Uninitialized data (BSS) */
+        *(.bss*)
+        end = .;          /* Define the end of the kernel */
+    }
+
+    /* Provide memory alignment and reserve extra space if necessary */
+    _end = .;
+    . = ALIGN(4K);
 }
