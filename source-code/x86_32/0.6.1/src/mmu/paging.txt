@@ -1,0 +1,14 @@
+00010111110	00100000	00000100	100000
+0xBE		0x20		0x04		0x20
+
+Memory Start : 0x00000000
+Memory End : 0xFFFFFFFF
+
+Page Directory contains 1024 Page Table entries(PDE).
+Page Table contains 1024 Pages or Page Frames.
+Each Page or Page Frames 4KB large.
+
+*  If the virtual address isn’t mapped to a physical address, the CPU will raise a page fault interrupt.
+
+PDE, PTE, PFE are 32 bit sized.
+
