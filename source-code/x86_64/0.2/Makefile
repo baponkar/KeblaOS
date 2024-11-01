@@ -4,7 +4,7 @@ SRC_DIR = src
 BUILD_DIR = build
 ISO_DIR = iso_root
 OS_NAME = KeblaOS
-VERSION = 1.0
+VERSION = 0.2
 HOME = /home/baponkar
 
 GCC = /usr/local/x86_64-elf/bin/x86_64-elf-gcc
@@ -45,6 +45,7 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/vga.c -o $(BUILD_DIR)/vga.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/font.c -o $(BUILD_DIR)/font.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/ports.c -o $(BUILD_DIR)/ports.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/keyboard.c -o $(BUILD_DIR)/keyboard.o
 
 
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/stdlib/stdlib.c -o $(BUILD_DIR)/stdlib.o
@@ -74,6 +75,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/idt.o \
 						$(BUILD_DIR)/idt_s.o \
 						$(BUILD_DIR)/timer.o \
+						$(BUILD_DIR)/keyboard.o
 						
 						
 
@@ -92,6 +94,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/idt.o \
 						$(BUILD_DIR)/idt_s.o \
 						$(BUILD_DIR)/timer.o \
+						$(BUILD_DIR)/keyboard.o
 						
 
 # Creating ISO image

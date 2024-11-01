@@ -20,6 +20,8 @@
     - stdlib.h
     - string.h
 * Automated Building by Makefile
+* Update register_t struct
+* Keyboard Driver implementation
 
 ## Screenshot
 ![Screenshot](../../../image/keblaos_x86_64_v0.1_screenshot.png)
@@ -35,3 +37,4 @@
 * [Interrupt Descriptor Table](https://wiki.osdev.org/Interrupt_Descriptor_Table)
 * [Interrupt Handling on x86_64](https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/05_InterruptHandling.md)
 * [PIC](https://wiki.osdev.org/8259_PIC)
+* [PS2 Keyboard](https://wiki.osdev.org/PS/2_Keyboard)

@@ -42,13 +42,13 @@ char* exception_messages[] = {
 
 void idt_set_gate(uint8_t index, uint64_t offset, uint16_t selector, uint8_t attr){
     
-    idt_entries[index].offset_1 = offset & 0xFFFF; // set lower 16 bit
+    idt_entries[index].offset_1 = (uint16_t) offset & 0xFFFF; // set lower 16 bit
     idt_entries[index].selector = selector;         // set 16 bit of selector
     idt_entries[index].ist = 0; // disabled ist i.e clear 3 bit of ist and 5 bit of reserved field 
     idt_entries[index].type_attributes = attr;    // set 8 bit  of P(1 bit) + DPL(2 bit) + gate type(4 bit) + 0(1 bit)
-    idt_entries[index].offset_2 = (offset >> 16) & 0xFFFF; // set 16 bit
+    idt_entries[index].offset_2 = (uint16_t) (offset >> 16) & 0xFFFF; // set 16 bit
 
-    idt_entries[index].offset_3 = (offset >> 32) & 0xFFFFFFFF; // set upper 32 bit
+    idt_entries[index].offset_3 = (uint32_t) (offset >> 32) & 0xFFFFFFFF; // set upper 32 bit
     idt_entries[index].zero = 0; // set top 32 bit to zero
 }
 
@@ -96,8 +96,6 @@ void isr_install(){
 
    idt_set_gate(128, (uint64_t)isr128, 0x08, 0x8E); //System call Write
    idt_set_gate(177, (uint64_t)isr177, 0x08, 0x8E); //System call Read
-
-   idt_flush((uint64_t) &idt_ptr);
 
 }
 
@@ -148,6 +146,9 @@ void *interrupt_routines[16] =
 void interrupt_install_handler(int int_no, void (*handler)(registers_t *r))
 {
     interrupt_routines[int_no] = handler;
+    print("Inside of interrupt_install_handler:");
+    print_dec(int_no); 
+    print("\n");
 }
 
 
@@ -160,7 +161,9 @@ void interrupt_uninstall_handler(int int_no)
 
 void init_idt(){
     isr_install();
+    irq_remap();
     irq_install();
+    idt_flush((uint64_t) &idt_ptr);
 }
 
 
@@ -174,6 +177,7 @@ void test_interrupt() {
     // asm volatile("int $0x10");   // int no 16
     // asm volatile("int $0x11");   // int no 17
     // asm volatile ("int $0x20");  // Interrupt Request, int no: 32 
+    // asm volatile ("int $0x21");     // Interrupt Request, int no : 33
     // asm volatile ("int $0x22");  // Interrupt Request, int no: 34
 }
 
@@ -203,9 +207,6 @@ void irq_remap(void)
 
 void irq_install()
 {
-
-    irq_remap();
-
     // Setup for Interrupts Request Gate (IRQ Gate)
     idt_set_gate(32, (uint64_t)irq0, 0x08, 0x8E); // Timer Interrupt
     idt_set_gate(33, (uint64_t)irq1, 0x08, 0x8E);
@@ -231,7 +232,6 @@ void irq_handler(registers_t *r)
 {
     /* This is a blank function pointer */
     void (*handler)(registers_t *r);
-        
     
     /* Find out if we have a custom handler to run for this
     *  IRQ, and then finally, run it */
@@ -239,10 +239,6 @@ void irq_handler(registers_t *r)
     if (handler)
     {
         handler(r);
-        print("Inside of IRQ Handler Funcion of idt.c\n");
-        print("Interrupt No: ");
-        print_dec(r->int_no);
-        print("\n");
     }
 
     /* If the IDT entry that was invoked was greater than 40
