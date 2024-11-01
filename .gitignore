@@ -1,5 +1,1 @@
 *.o
-*.bin
-*.iso
-*/build/*
-*.log
