@@ -149,9 +149,6 @@ irq_common_stub:
     push r14
     push r15
 
-    ; Save the CR2 register (holds page fault linear address)
-    mov rax, cr2
-    push rax
 
     mov ax, 0x10  ; Load the Kernel Data Segment descriptor!
     mov ds, ax
@@ -161,9 +158,6 @@ irq_common_stub:
 
     mov rdi, rsp    ; Pass stack pointer to `irq_handler`
     call irq_handler
-
-    add rsp, 16     ; Clean up pushed error code and IRQ number 
-    pop rax
 
     ; Clear all general purpose registers state
     pop r15
@@ -182,7 +176,7 @@ irq_common_stub:
     pop rbx
     pop rax
       
-    ;add rsp, 16     ; Adjust stack to clean up any pushed error code or ISR number (if present)
+    add rsp, 16     ; Adjust stack to clean up any pushed error code or ISR number (if present)
     sti             ; Store Interrupts
     iretq           ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP!
 

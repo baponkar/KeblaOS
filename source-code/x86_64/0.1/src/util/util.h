@@ -7,31 +7,10 @@
 // Saved State in register
 typedef struct registers
 {
-    uint64_t int_no, err_code;   // Interrupt number and error code (if applicable)
-    
-    uint64_t rdi, rsi, rbp, rsp, rbx, rdx, rcx, rax; // General-purpose registers pushed manually
-    
-    uint64_t rip, cs, rflags, user_rsp, ss; // Pushed by the processor automatically
-
-    uint64_t cr2;                // Control Register 2 (page fault address)
-    uint64_t ds;                 // Data segment selector (not generally used in 64-bit)
-
-    // uint64_t r15;
-    // uint64_t r14;
-    // // Other pushed registers
-    // uint64_t rbx;
-    // uint64_t rax;
-
-    // uint64_t int_no;
-    // uint64_t err_code;
-
-    // uint64_t rip;
-    // uint64_t cs;
-    // uint64_t rflags;
-    // uint64_t user_rsp;
-    // uint64_t iret_ss;
-
-
+    uint64_t r15, r14, r13, r12, r11, r10, r9, r8; // General-purpose registers
+    uint64_t rdi, rsi, rbp, rdx, rcx, rbx, rax;
+    uint64_t int_no, err_code; // Interrupt number and error code
+    uint64_t rip, cs, rflags, rsp, ss; // CPU state
 } registers_t;
 
 #define BLOCK_SIZE sizeof(block_t)

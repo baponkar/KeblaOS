@@ -5,8 +5,6 @@
 // Defining some ports with port number for future use
 
 //I/O Ports (Input/Output Ports)
-#define KEYBOARD_COMMAND_PORT 0x64  // Keyboard Command Port
-#define KEYBOARD_DATA_PORT 0x60     // Keyboard Data Port
 
 #define COM1_PORT 0x3F8             //COM1 (Serial Port)
 #define COM2_PORT 0x2F8             //COM2 (Serial Port)

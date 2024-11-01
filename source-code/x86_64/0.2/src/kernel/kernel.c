@@ -4,7 +4,9 @@
 
 #include "../util/util.h"
 #include "../../limine/limine.h"
+
 #include "../driver/vga.h"
+#include "../driver/keyboard.h"
 
 #include "../gdt/gdt.h"
 #include "../idt/idt.h"
@@ -73,9 +75,11 @@ void kmain(void) {
     print("Hello World!\n");
 
     init_gdt();
-    check_gdt();
     init_idt();
+    
     test_interrupt();
+
+    init_keyboard();
         
     hcf();
 }
