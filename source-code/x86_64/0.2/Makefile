@@ -42,10 +42,13 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/util/util.c -o $(BUILD_DIR)/util.o
 	
 	
-	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/vga.c -o $(BUILD_DIR)/vga.o
-	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/font.c -o $(BUILD_DIR)/font.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/vga/vga.c -o $(BUILD_DIR)/vga.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/vga/font.c -o $(BUILD_DIR)/font.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/ports.c -o $(BUILD_DIR)/ports.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/keyboard.c -o $(BUILD_DIR)/keyboard.o
+
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/usr/shell.c -o $(BUILD_DIR)/shell.o
+	$(NASM) $(NASM_FLAG) $(SRC_DIR)/usr/print_reg_values.s -o $(BUILD_DIR)/print_reg_values.o
 
 
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/stdlib/stdlib.c -o $(BUILD_DIR)/stdlib.o
@@ -75,7 +78,9 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/idt.o \
 						$(BUILD_DIR)/idt_s.o \
 						$(BUILD_DIR)/timer.o \
-						$(BUILD_DIR)/keyboard.o
+						$(BUILD_DIR)/keyboard.o \
+						$(BUILD_DIR)/shell.o \
+						$(BUILD_DIR)/print_reg_values.o
 						
 						
 
@@ -94,7 +99,9 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/idt.o \
 						$(BUILD_DIR)/idt_s.o \
 						$(BUILD_DIR)/timer.o \
-						$(BUILD_DIR)/keyboard.o
+						$(BUILD_DIR)/keyboard.o \
+						$(BUILD_DIR)/shell.o \
+						$(BUILD_DIR)/print_reg_values.o
 						
 
 # Creating ISO image

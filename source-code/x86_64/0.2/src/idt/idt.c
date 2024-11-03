@@ -146,9 +146,6 @@ void *interrupt_routines[16] =
 void interrupt_install_handler(int int_no, void (*handler)(registers_t *r))
 {
     interrupt_routines[int_no] = handler;
-    print("Inside of interrupt_install_handler:");
-    print_dec(int_no); 
-    print("\n");
 }
 
 

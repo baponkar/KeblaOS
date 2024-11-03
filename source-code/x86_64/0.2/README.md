@@ -22,9 +22,10 @@
 * Automated Building by Makefile
 * Update register_t struct
 * Keyboard Driver implementation
+* User Shell Implementation
 
 ## Screenshot
-![Screenshot](../../../image/keblaos_x86_64_v0.1_screenshot.png)
+![Screenshot](./image/screenshot_x86_64_v0.2.png)
 
 
 

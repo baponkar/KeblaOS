@@ -77,43 +77,35 @@ void reboot(){
 
 
 
-// This C function will print the register values passed via the stack.
-void print_registers_c(uint32_t edi, uint32_t esi, uint32_t ebp, uint32_t esp, 
-                       uint32_t ebx, uint32_t edx, uint32_t ecx, uint32_t eax) {
+
+// Define a structure to match the order of registers in the assembly function
+struct registers {
+    uint64_t rax, rbx, rcx, rdx;
+    uint64_t rsi, rdi, rbp;
+    uint64_t r8, r9, r10, r11;
+    uint64_t r12, r13, r14, r15;
+};
+
+// Implement the print_registers_c function
+void print_registers_c(struct registers* regs) {
     printf("Register Values:\n");
-    
-    printf("EAX: ");
-    print_hex(eax);
-    printf("\n");
-
-    printf("EBX: ");
-    print_hex(ebx);
-    printf("\n");
-
-    printf("ECX: ");
-    print_hex(ecx);
-    printf("\n");
-
-    printf("EDX: ");
-    print_hex(edx);
-    printf("\n");
-
-    printf("ESI: ");
-    print_hex(esi);
-    printf("\n");
-
-    printf("EDI: ");
-    print_hex(edi);
-    printf("\n");
-
-    printf("EBP: ");
-    print_hex(ebp);
-    printf("\n");
-
-    printf("ESP: ");
-    print_hex(esp);
-    printf("\n");
+    printf("RAX: %x\n", regs->rax);
+    printf("RBX: %x\n", regs->rbx);
+    printf("RCX: %x\n", regs->rcx);
+    printf("RDX: %x\n", regs->rdx);
+    printf("RSI: %x\n", regs->rsi);
+    printf("RDI: %x\n", regs->rdi);
+    printf("RBP: %x\n", regs->rbp);
+    printf("R8 : %x\n", regs->r8);
+    printf("R9 : %x\n", regs->r9);
+    printf("R10: %x\n", regs->r10);
+    printf("R11: %x\n", regs->r11);
+    printf("R12: %x\n", regs->r12);
+    printf("R13: %x\n", regs->r13);
+    printf("R14: %x\n", regs->r14);
+    printf("R15: %x\n", regs->r15);
 }
+
 
 
 void print_features(){

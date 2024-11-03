@@ -2,32 +2,21 @@
 
 
 const uint32_t freq = 1000; // ticks per second
+uint64_t ticks = 0;
+uint64_t seconds = 0;
 
-uint32_t ticks = 0;
 
-uint32_t sec = 0;
 
 void timerHadler(registers_t *regs){
     ticks++;
-    
-    print("Ticks No:");
-    print_dec(ticks);
-    print("\n");
-    // if (ticks % freq == 0) {
-    //     sec++;
 
-    //     // Calculate hours, minutes, and seconds
-    //     uint32_t hours = sec / 3600;
-    //     uint32_t minutes = (sec % 3600) / 60;
-    //     uint32_t seconds = sec % 60;
-
-    //    // Display time in HH:MM:SS format at position (0, 0)
-    //    print_dec(sec);
-    // }
+    if(ticks % 1000){
+        seconds++;
+    }
 }
 
 
-void initTimer(){
+void init_timer(){
     ticks = 0;
     interrupt_install_handler(0, &timerHadler);
 
