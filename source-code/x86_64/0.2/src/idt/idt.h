@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 #include "../util/util.h"
-#include "../driver/vga.h"
+#include "../driver/vga/vga.h"
 #include "../driver/ports.h"
 
 struct idt_entry_struct

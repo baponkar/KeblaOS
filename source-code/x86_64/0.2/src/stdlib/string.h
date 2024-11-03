@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../util/util.h"
-#include "../driver/vga.h"
+#include "../driver/vga/vga.h"
 
 
 

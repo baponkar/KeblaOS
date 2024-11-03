@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "../driver/vga.h"
+#include "../driver/vga/vga.h"
 
 typedef char* va_list;  // va_list is just a pointer to the argument list
 

@@ -2,7 +2,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "../driver/vga.h"
+#include "../driver/vga/vga.h"
 
 struct gdt_entry_struct
 {// 128 Bit

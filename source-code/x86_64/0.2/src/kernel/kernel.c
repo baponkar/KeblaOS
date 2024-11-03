@@ -5,14 +5,19 @@
 #include "../util/util.h"
 #include "../../limine/limine.h"
 
-#include "../driver/vga.h"
+#include "../driver/vga/vga.h"
 #include "../driver/keyboard.h"
+
+#include "../usr/shell.h"
 
 #include "../gdt/gdt.h"
 #include "../idt/idt.h"
 #include "../idt/timer.h"
 
 #include "info.h"
+
+extern uint64_t ticks;
+extern uint64_t seconds;
 
 uint32_t *fb_ptr = NULL;
 
@@ -21,6 +26,9 @@ size_t SCREEN_HEIGHT;
 
 size_t MIN_LINE_NO;
 size_t MAX_LINE_NO;
+
+size_t MIN_COLUMN_NO;
+size_t MAX_COLUMN_NO;
 
 // Set the base revision to 2, this is recommended as this is the latest
 // base revision described by the Limine boot protocol specification.
@@ -72,15 +80,16 @@ void kmain(void) {
     extern uint32_t KeblaOS_icon_320x200x32[];
     display_image( (SCREEN_WIDTH/2 - KEBLAOS_ICON_320X200X32_WIDTH/2), 5, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
 
-    print("Hello World!\n");
 
     init_gdt();
     init_idt();
-    
-    test_interrupt();
+    init_timer();
+    initKeyboard();
 
-    init_keyboard();
-        
+
+
+   
+
     hcf();
 }
 
@@ -94,10 +103,15 @@ void get_framebuffer_info(){
     // Fetch the first framebuffer
     struct limine_framebuffer* framebuffer = framebuffer_request.response->framebuffers[0];
     fb_ptr = (uint32_t* ) framebuffer->address;
+
     SCREEN_WIDTH = framebuffer->width;   // 1024
     SCREEN_HEIGHT = framebuffer->height; // 768
+
     MIN_LINE_NO = 0;
-    MAX_LINE_NO = SCREEN_HEIGHT / (DEFAULT_FONT_HEIGHT + DEFAULT_TEXT_LINE_GAP);
+    MAX_LINE_NO = (SCREEN_HEIGHT / (DEFAULT_FONT_HEIGHT + DEFAULT_TEXT_LINE_GAP)) - 1;
+
+    MIN_COLUMN_NO = 0;
+    MAX_COLUMN_NO = (SCREEN_WIDTH / DEFAULT_FONT_WIDTH) - 1;
 }
 
 
