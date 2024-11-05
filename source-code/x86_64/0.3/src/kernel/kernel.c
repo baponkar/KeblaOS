@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 #include "../util/util.h"
-#include "../../limine/limine.h"
+#include "../../limine/limine.h"    // https://github.com/limine-bootloader/limine/blob/v8.x/PROTOCOL.md#kernel-address-feature
 
 #include "../driver/vga/vga.h"
 #include "../driver/keyboard.h"
@@ -12,6 +12,8 @@
 
 #include "../mmu/cpu.h"
 #include "../mmu/paging.h"
+
+#include "syscall.h"
 
 #include "../gdt/gdt.h"
 #include "../idt/idt.h"
@@ -51,6 +53,22 @@ static volatile struct limine_framebuffer_request framebuffer_request = {
     .revision = 0
 };
 
+// Define the kernel address request
+__attribute__((used, section(".requests")))
+static volatile struct limine_kernel_address_request kernel_address_request = {
+    .id = LIMINE_KERNEL_ADDRESS_REQUEST,
+    .revision = 0
+};
+
+// Define memory map 
+
+__attribute__((used, section(".requests")))
+static volatile struct limine_memmap_request memmap_request = {
+    .id = LIMINE_MEMMAP_REQUEST,
+    .revision = 0
+};
+
+
 // Finally, define the start and end markers for the Limine requests.
 // These can also be moved anywhere, to any .c file, as seen fit.
 
@@ -81,17 +99,50 @@ void kmain(void) {
     cls();
 
     extern uint32_t KeblaOS_icon_320x200x32[];
-    display_image( (SCREEN_WIDTH/2 - KEBLAOS_ICON_320X200X32_WIDTH/2), 5, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
+    //display_image( (SCREEN_WIDTH/2 - KEBLAOS_ICON_320X200X32_WIDTH/2), 5, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
 
 
     init_gdt();
     init_idt();
-    init_paging();
+    // init_paging();
     init_timer();
     initKeyboard();
 
-    print("Hello World!");
-    test_paging();
+    // test_paging();
+
+    if (kernel_address_request.response != NULL) {
+        uint64_t physical_base = kernel_address_request.response->physical_base;
+        uint64_t virtual_base = kernel_address_request.response->virtual_base;
+
+        // Calculate the offset between virtual and physical addresses.
+        uint64_t kernel_offset = virtual_base - physical_base;
+
+        print("Kernel Offset : ");
+        print_hex(kernel_offset);
+        print("\n");
+
+        uint64_t* test_address = (uint64_t*)0xFFFFFFFF80000000;  // Higher-half virtual address
+        *test_address = 0x12345678ABCDEF00;
+
+        print("Virtual Address : ");
+        print_hex((uint64_t)&test_address);
+        print("\n");
+        print("Physical Address :");
+        uint64_t test_phy_addr = 0xFFFFFFFF80000000 - kernel_offset;
+        print_hex(test_phy_addr);
+        print("\n");
+        uint64_t test_data = *test_address;
+        print("test data : ");
+        print_hex(test_data);
+        print("\n");
+
+        print_memory_map();
+
+        // uint64_t* invalid_address = (uint64_t*)0xFFFFFFFF90000000;  // Unmapped address
+        // *invalid_address = 0x0;  // This should trigger a page fault
+    }
+
+    syscall_check();
 
     // test_interrupt();
     // asm volatile ("int $0xF");
@@ -149,4 +200,48 @@ void get_framebuffer_info(){
     MAX_COLUMN_NO = (SCREEN_WIDTH / DEFAULT_FONT_WIDTH) - 1;
 }
 
+
+
+void print_memory_map() {
+    // Check if the memory map response is available
+    if (memmap_request.response == NULL) {
+        print("Memory map request failed.\n");
+        return;
+    }
+
+    uint64_t entry_count = memmap_request.response->entry_count;
+    struct limine_memmap_entry **entries = memmap_request.response->entries;
+
+    print("Memory Map:\n");
+    for (uint64_t i = 0; i < entry_count; i++) {
+        struct limine_memmap_entry *entry = entries[i];
+        print("Region ");
+        print_hex(i);
+        print(": Base = ");
+        print_hex(entry->base);
+        print(", Length = ");
+        print_hex(entry->length);
+
+        // Check the type and print it
+        switch (entry->type) {
+            case 1:
+                print(" (Available)\n");
+                break;
+            case 2:
+                print(" (Reserved)\n");
+                break;
+            case 3:
+                print(" (ACPI Reclaimable)\n");
+                break;
+            case 4:
+                print(" (ACPI NVS)\n");
+                break;
+            case 5:
+                print(" (Bad Memory)\n");
+                break;
+            default:
+                print(" (Unknown Type)\n");
+        }
+    }
+}
 

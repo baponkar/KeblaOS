@@ -62,6 +62,9 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/idt/idt.c -o $(BUILD_DIR)/idt.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/idt/timer.c -o $(BUILD_DIR)/timer.o
 
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/kernel/syscall.c -o $(BUILD_DIR)/syscall.o
+	$(NASM) $(NASM_FLAG) $(SRC_DIR)/kernel/syscall.s -o $(BUILD_DIR)/syscall_s.o
+
 	$(NASM) $(NASM_FLAG) $(SRC_DIR)/mmu/load_paging.s -o $(BUILD_DIR)/load_paging.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/paging.c -o $(BUILD_DIR)/paging.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/cpu.c -o $(BUILD_DIR)/cpu.o
@@ -89,7 +92,9 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/paging.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/cpu_s.o \
-						$(BUILD_DIR)/load_paging.o
+						$(BUILD_DIR)/load_paging.o \
+						$(BUILD_DIR)/syscall.o \
+						$(BUILD_DIR)/syscall_s.o
 						
 						
 
@@ -114,7 +119,10 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/paging.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/cpu_s.o \
-						$(BUILD_DIR)/load_paging.o
+						$(BUILD_DIR)/load_paging.o \
+						$(BUILD_DIR)/syscall.o \
+						$(BUILD_DIR)/syscall_s.o
+
 						
 
 # Creating ISO image

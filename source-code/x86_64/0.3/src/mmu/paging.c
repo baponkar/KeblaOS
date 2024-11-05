@@ -11,10 +11,10 @@ extern void load_cr3(uint64_t pml4_base_address);
 uint64_t kernel_phys_base = 0x100000; // 1MB : Physical start of kernel
 uint64_t kernel_virt_base = 0xFFFFFFFF80000000; // Virtual start of kernel 4096 TB
 
-pml4_t  pml4_table[512];
-pdpt_t  pdpt_table[512];
-pd_t    pd_table[512];
-pt_t    pt_table[512];
+pml4_t  pml4_table[512]__attribute__((aligned(4096)));
+pdpt_t  pdpt_table[512]__attribute__((aligned(4096)));
+pd_t    pd_table[512]__attribute__((aligned(4096)));
+pt_t    pt_table[512]__attribute__((aligned(4096)));
 
 void init_paging(){
     print("Initializing Paging...\n");
@@ -44,6 +44,9 @@ void init_paging(){
     interrupt_install_handler(14, &page_fault_handler);
     enable_interrupts();
 
+    print("pml4_table address: ");
+    print_hex( (uint64_t) &pml4_table);
+    print("\n");
     load_cr3((uint64_t) &pml4_table);
     print("Paging Initialized.\n");
 }
