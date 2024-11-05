@@ -196,19 +196,19 @@ void move_cur_right(){
     cur_pos_x += DEFAULT_FONT_WIDTH;
 }
 
-void print_hex(uint32_t n)
+void print_hex(uint64_t n)
 {
     char hex_chars[] = "0123456789ABCDEF";
     print("0x");
 
-    for (int i = 28; i >= 0; i -= 4) // process each nibble (4 bits)
+    for (int i = 60; i >= 0; i -= 4) // process each nibble (4 bits)
     {
         putchar(hex_chars[(n >> i) & 0xF]);
     }
 }
 
 // Outputs a decimal number to the screen.
-void print_dec(uint32_t n)
+void print_dec(uint64_t n)
 {
     if (n == 0)
     {
@@ -216,7 +216,7 @@ void print_dec(uint32_t n)
         return;
     }
 
-    char buffer[12]; // Enough for a 32-bit integer
+    char buffer[24]; // Enough for a 32-bit integer
     int i = 0;
 
     while (n > 0)
@@ -233,11 +233,11 @@ void print_dec(uint32_t n)
 }
 
 // This will print binary numbers
-void print_bin(uint32_t n) {
+void print_bin(uint64_t n) {
     print("0b");  // Print binary prefix
 
     // Loop through all 32 bits of the number, starting from the most significant bit (31)
-    for (int i = 31; i >= 0; i--) {
+    for (int i = 63; i >= 0; i--) {
         uint32_t bit = (n >> i) & 1;  // Extract the i-th bit (0 or 1)
         putchar(bit ? '1' : '0');     // Print '1' or '0'
     }
