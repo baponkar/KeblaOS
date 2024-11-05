@@ -117,7 +117,7 @@ void isr_handler(registers_t *regs)
     }
     else if(regs->int_no < 32){
 // Comment out until the frambuffer is properly mapped into memory
-#if 0
+#if 1
         print("recieved interrupt: ");
         print_dec(regs->int_no);
         putchar('\n');
