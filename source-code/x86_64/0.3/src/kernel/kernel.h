@@ -1,5 +1,9 @@
 #pragma once
 
+
+
+
+
 extern size_t SCREEN_WIDTH;
 extern size_t SCREEN_HEIGHT;
 
@@ -15,3 +19,4 @@ extern uint64_t kernel_virt_base;
 extern uint64_t kernel_offset;
 
 void get_framebuffer_info();
+void print_memory_map();

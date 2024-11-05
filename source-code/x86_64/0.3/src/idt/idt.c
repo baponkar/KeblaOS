@@ -104,17 +104,17 @@ void isr_install(){
 void isr_handler(registers_t *regs)
 {
     if(regs->int_no == 128){
-        // syscall_handler(regs);
-        //return;
+        syscall_handler(regs);
+        return;
     }
     else if(regs->int_no == 177){
-        // syscall_handler(regs);
-        //return;
+        syscall_handler(regs);
+        return;
     }
-    // else if (regs->int_no == 14) { // Check if it is a page fault
-    //     // page_fault(regs); // Call your page fault handler directly
-    //     //return;
-    // }
+    else if (regs->int_no == 14) { // Check if it is a page fault
+        page_fault_handler(&regs); // Call your page fault handler directly
+        return;
+    }
     else if(regs->int_no < 32){
 // Comment out until the frambuffer is properly mapped into memory
 #if 0

@@ -9,6 +9,9 @@
 #include "../driver/vga/vga.h"
 #include "../driver/ports.h"
 
+#include "../kernel/syscall.h"
+#include "../mmu/paging.h"
+
 struct idt_entry_struct
 {//128 bit
     uint16_t offset_1;        // offset bits 0..15, 16 bit

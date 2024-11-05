@@ -77,9 +77,9 @@ void create_newline();
 void putchar(unsigned char c);
 
 void print(const char* text);
-void print_hex(uint32_t n);
-void print_dec(uint32_t n);
-void print_bin(uint32_t n);
+void print_hex(uint64_t n);
+void print_dec(uint64_t n);
+void print_bin(uint64_t n);
 void backspace_manage();
 void scroll_up();
 
