@@ -99,7 +99,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/syscall.o \
 						$(BUILD_DIR)/syscall_s.o
 						
-  $(LD) $(LD_FLAG) -T $(SRC_DIR)/linker.ld -o $@ $^
+	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker.ld -o $@ $^
 
 
 # Creating ISO image

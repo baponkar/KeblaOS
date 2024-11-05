@@ -26,8 +26,8 @@ extern uint64_t seconds;
 
 uint32_t *fb_ptr = NULL;
 uint64_t kernel_offset;
-uint64_t kernel_virt_base;
-uint64_t kernel_phys_base;
+uint64_t kernel_virtual_base;
+uint64_t kernel_physical_base;
 
 size_t SCREEN_WIDTH;
 size_t SCREEN_HEIGHT;
@@ -102,18 +102,9 @@ void kmain(void) {
     extern uint32_t KeblaOS_icon_320x200x32[];
     //display_image( (SCREEN_WIDTH/2 - KEBLAOS_ICON_320X200X32_WIDTH/2), 5, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
 
-
-    init_gdt();
-    init_idt();
-    // init_paging();
-    init_timer();
-    initKeyboard();
-
-    // test_paging();
-
     if (kernel_address_request.response != NULL) {
-        kernel_phys_base = kernel_address_request.response->physical_base;
-        kernel_virt_base = kernel_address_request.response->virtual_base;
+        kernel_physical_base = kernel_address_request.response->physical_base;
+        kernel_virtual_base = kernel_address_request.response->virtual_base;
 
         // Calculate the offset between virtual and physical addresses.
         kernel_offset = kernel_virtual_base - kernel_physical_base;
@@ -142,6 +133,14 @@ void kmain(void) {
         // uint64_t* invalid_address = (uint64_t*)0xFFFFFFFF90000000;  // Unmapped address
         // *invalid_address = 0x0;  // This should trigger a page fault
     }
+
+    init_gdt();
+    // init_paging();
+    init_idt();
+    init_timer();
+    initKeyboard();
+
+    // test_paging();
 
     syscall_check();
 
