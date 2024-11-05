@@ -34,7 +34,7 @@ typedef struct idt_ptr_struct idt_ptr_t;
 
 void idt_set_gate(uint8_t index, uint64_t offset, uint16_t selector, uint8_t attr);
 void isr_install();
-void isr_handler(registers_t regs);
+void isr_handler(registers_t *regs);
 
 void interrupt_install_handler(int int_no, void (*handler)(registers_t *r));
 void interrupt_uninstall_handler(int int_no);

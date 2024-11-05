@@ -7,9 +7,10 @@ OS_NAME = KeblaOS
 VERSION = 0.2
 HOME = /home/baponkar
 
-GCC = /usr/local/x86_64-elf/bin/x86_64-elf-gcc
-GCC_FLAG = -Wall \
+GCC = x86_64-elf-gcc
+GCC_FLAG = -O0 -g -Wall \
 	-Wextra -std=gnu11 \
+    -mpreferred-stack-boundary=3 \
 	-ffreestanding \
 	-fno-stack-protector \
 	-fno-stack-check \
@@ -25,18 +26,20 @@ GCC_FLAG = -Wall \
 	-msse \
 	-msse2
 
-LD = /usr/local/x86_64-elf/bin/x86_64-elf-ld
+LD = x86_64-elf-ld
 LD_FLAG = -m elf_x86_64 -nostdlib -static -z max-page-size=0x1000
 
 NASM = nasm
 NASM_FLAG = -Wall -f elf64
 
 # Default target
-all: run
+#all: run
+all: $(BUILD_DIR)/image.iso
 
 # Building kernel.o
 $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/kernel/kernel.c -o $(BUILD_DIR)/kernel.o
+	$(NASM) $(NASM_FLAG) $(SRC_DIR)/kernel/init.s -o $(BUILD_DIR)/init.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/kernel/info.c -o $(BUILD_DIR)/info.o
 
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/util/util.c -o $(BUILD_DIR)/util.o
@@ -70,6 +73,7 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 
 # Linking object files into kernel binary
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
+						$(BUILD_DIR)/init.o \
 						$(BUILD_DIR)/info.o \
 						$(BUILD_DIR)/ports.o \
 						$(BUILD_DIR)/util.o \
@@ -93,29 +97,29 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						
 						
 
-	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel.bin \
-						$(BUILD_DIR)/kernel.o \
-						$(BUILD_DIR)/info.o \
-						$(BUILD_DIR)/ports.o \
-						$(BUILD_DIR)/util.o \
-						$(BUILD_DIR)/vga.o \
-						$(BUILD_DIR)/font.o \
-						$(BUILD_DIR)/stdlib.o \
-						$(BUILD_DIR)/string.o \
-						$(BUILD_DIR)/stdio.o \
-						$(BUILD_DIR)/gdt.o \
-						$(BUILD_DIR)/gdt_s.o \
-						$(BUILD_DIR)/idt.o \
-						$(BUILD_DIR)/idt_s.o \
-						$(BUILD_DIR)/timer.o \
-						$(BUILD_DIR)/keyboard.o \
-						$(BUILD_DIR)/shell.o \
-						$(BUILD_DIR)/print_reg_values.o \
-						$(BUILD_DIR)/paging.o \
-						$(BUILD_DIR)/cpu.o \
-						$(BUILD_DIR)/cpu_s.o \
-						$(BUILD_DIR)/load_paging.o
-						
+	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker.ld -o $@ $^
+#						$(BUILD_DIR)/kernel.o \
+#						$(BUILD_DIR)/init.o \
+#						$(BUILD_DIR)/info.o \
+#						$(BUILD_DIR)/ports.o \
+#						$(BUILD_DIR)/util.o \
+#						$(BUILD_DIR)/vga.o \
+#						$(BUILD_DIR)/font.o \
+#						$(BUILD_DIR)/stdlib.o \
+#						$(BUILD_DIR)/string.o \
+#						$(BUILD_DIR)/stdio.o \
+#						$(BUILD_DIR)/gdt.o \
+#						$(BUILD_DIR)/gdt_s.o \
+#						$(BUILD_DIR)/idt.o \
+#						$(BUILD_DIR)/idt_s.o \
+#						$(BUILD_DIR)/timer.o \
+#						$(BUILD_DIR)/keyboard.o \
+#						$(BUILD_DIR)/shell.o \
+#						$(BUILD_DIR)/print_reg_values.o \
+#						$(BUILD_DIR)/paging.o \
+#						$(BUILD_DIR)/cpu.o \
+#						$(BUILD_DIR)/cpu_s.o \
+#						$(BUILD_DIR)/load_paging.o
 
 # Creating ISO image
 $(BUILD_DIR)/image.iso: $(BUILD_DIR)/kernel.bin
@@ -144,6 +148,6 @@ clean:
 
 # Running by qemu
 run: $(BUILD_DIR)/image.iso
-	qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu
+	qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std 
 
 .PHONY: all clean
