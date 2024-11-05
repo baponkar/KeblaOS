@@ -23,6 +23,9 @@ extern uint64_t ticks;
 extern uint64_t seconds;
 
 uint32_t *fb_ptr = NULL;
+uint64_t kernel_offset;
+uint64_t kernel_virt_base;
+uint64_t kernel_phys_base;
 
 size_t SCREEN_WIDTH;
 size_t SCREEN_HEIGHT;
@@ -51,6 +54,13 @@ static volatile struct limine_framebuffer_request framebuffer_request = {
     .revision = 0
 };
 
+__attribute__((used, section(".requests")))
+static volatile struct limine_kernel_address_request kernel_address_request = {
+    .id = LIMINE_KERNEL_ADDRESS_REQUEST,
+    .revision = 0
+};
+
+
 // Finally, define the start and end markers for the Limine requests.
 // These can also be moved anywhere, to any .c file, as seen fit.
 
@@ -76,6 +86,13 @@ static void hcf(void) {
 
 
 void kmain(void) {
+
+    if (kernel_address_request.response == NULL) {
+        hcf();
+    }
+    kernel_offset = kernel_address_request.response->virtual_base - kernel_address_request.response->physical_base;
+    kernel_phys_base = kernel_address_request.response->physical_base;
+    kernel_virt_base = kernel_address_request.response->virtual_base;
 
     get_framebuffer_info();
     cls();

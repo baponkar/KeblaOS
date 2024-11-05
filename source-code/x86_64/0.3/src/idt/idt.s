@@ -58,6 +58,7 @@ isr_common_stub:
     mov gs, ax
 
     mov rdi, rsp             ; Pass the current stack pointer to `isr_handler`
+    cld
     call isr_handler
     
     ;pophaq                   ; Pop all general-purpose registers
@@ -78,18 +79,8 @@ isr_common_stub:
     pop rbx
     pop rax
 
-    ; Adjust stack pointer depending on whether error code was pushed
-    cmp qword [rsp + 8], 0   ; Check if dummy error code was pushed
-    jnz .skip_cleanup        ; If real error code, jump to .skip_cleanup
     add rsp, 16               ; If dummy error code, adjust rsp by 8
-    sti
     iretq
-
-.skip_cleanup:
-    add rsp, 8               ; Clean up interrupt number 8 for dummy error code and another 8 for interrupt no
-    sti
-    iretq                
-
 
 
 ISR_NOERRCODE 0
@@ -137,8 +128,7 @@ ISR_NOERRCODE 177   ; System Call
     irq%1:
         cli           ; Clear Interrupts
         push 0        ; Push a dummy error code
-        mov rax, %2   
-        push rax      ; Push irq code
+        push %2       ; Push irq code
         jmp irq_common_stub
 %endmacro
 
@@ -189,6 +179,7 @@ irq_common_stub:
     mov gs, ax
 
     mov rdi, rsp    ; Pass stack pointer to `irq_handler`
+    cld
     call irq_handler
 
     ; Clear all general purpose registers state
@@ -209,6 +200,5 @@ irq_common_stub:
     pop rax
       
     add rsp, 16     ; Adjust stack to clean up any pushed error code or ISR number (if present)
-    sti             ; Store Interrupts
     iretq           ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP!
 
