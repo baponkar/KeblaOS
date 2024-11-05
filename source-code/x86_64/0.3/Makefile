@@ -7,7 +7,7 @@ OS_NAME = KeblaOS
 VERSION = 0.2
 HOME = /home/baponkar
 
-GCC = x86_64-elf-gcc
+GCC = /usr/local/x86_64-elf/bin/x86_64-elf-gcc
 GCC_FLAG = -O0 -g -Wall \
 	-Wextra -std=gnu11 \
     -mpreferred-stack-boundary=3 \
@@ -26,14 +26,13 @@ GCC_FLAG = -O0 -g -Wall \
 	-msse \
 	-msse2
 
-LD = x86_64-elf-ld
+LD = /usr/local/x86_64-elf/bin/x86_64-elf-ld
 LD_FLAG = -m elf_x86_64 -nostdlib -static -z max-page-size=0x1000
 
 NASM = nasm
 NASM_FLAG = -Wall -f elf64
 
 # Default target
-#all: run
 all: $(BUILD_DIR)/image.iso
 
 # Building kernel.o
@@ -65,6 +64,9 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/idt/idt.c -o $(BUILD_DIR)/idt.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/idt/timer.c -o $(BUILD_DIR)/timer.o
 
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/kernel/syscall.c -o $(BUILD_DIR)/syscall.o
+	$(NASM) $(NASM_FLAG) $(SRC_DIR)/kernel/syscall.s -o $(BUILD_DIR)/syscall_s.o
+
 	$(NASM) $(NASM_FLAG) $(SRC_DIR)/mmu/load_paging.s -o $(BUILD_DIR)/load_paging.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/paging.c -o $(BUILD_DIR)/paging.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/cpu.c -o $(BUILD_DIR)/cpu.o
@@ -93,33 +95,12 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/paging.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/cpu_s.o \
-						$(BUILD_DIR)/load_paging.o
+						$(BUILD_DIR)/load_paging.o \
+						$(BUILD_DIR)/syscall.o \
+						$(BUILD_DIR)/syscall_s.o
 						
-						
+  $(LD) $(LD_FLAG) -T $(SRC_DIR)/linker.ld -o $@ $^
 
-	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker.ld -o $@ $^
-#						$(BUILD_DIR)/kernel.o \
-#						$(BUILD_DIR)/init.o \
-#						$(BUILD_DIR)/info.o \
-#						$(BUILD_DIR)/ports.o \
-#						$(BUILD_DIR)/util.o \
-#						$(BUILD_DIR)/vga.o \
-#						$(BUILD_DIR)/font.o \
-#						$(BUILD_DIR)/stdlib.o \
-#						$(BUILD_DIR)/string.o \
-#						$(BUILD_DIR)/stdio.o \
-#						$(BUILD_DIR)/gdt.o \
-#						$(BUILD_DIR)/gdt_s.o \
-#						$(BUILD_DIR)/idt.o \
-#						$(BUILD_DIR)/idt_s.o \
-#						$(BUILD_DIR)/timer.o \
-#						$(BUILD_DIR)/keyboard.o \
-#						$(BUILD_DIR)/shell.o \
-#						$(BUILD_DIR)/print_reg_values.o \
-#						$(BUILD_DIR)/paging.o \
-#						$(BUILD_DIR)/cpu.o \
-#						$(BUILD_DIR)/cpu_s.o \
-#						$(BUILD_DIR)/load_paging.o
 
 # Creating ISO image
 $(BUILD_DIR)/image.iso: $(BUILD_DIR)/kernel.bin
