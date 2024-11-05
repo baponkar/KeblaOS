@@ -1,3 +1,4 @@
+
 #include "paging.h"
 
 extern void load_cr3(uint64_t pml4_base_address);
@@ -25,23 +26,32 @@ void init_paging(){
     print("Initializing Paging...\n");
 
     // Setting up a single entry as an example for the higher-half kernel mapping.
-    pml4_table[PML4_IDX(kernel_virtual_base)].p = 1;  // Using last PML4 entry to map higher-half
-    pml4_table[PML4_IDX(kernel_virtual_base)].rw = 1;
-    pml4_table[PML4_IDX(kernel_virtual_base)].tab_addr = ((uint64_t)pdpt_table - kernel_offset) >> 12;
+    pml4_table[PML4_IDX(kernel_virtual_base)] = (pml4_t){
+        .p = 1,
+        .rw = 1,
+        .tab_addr = ((uint64_t)pdpt_table - kernel_offset) >> 12
+    };
 
-    pdpt_table[PDPT_IDX(kernel_virtual_base)].p = 1;
-    pdpt_table[PDPT_IDX(kernel_virtual_base)].rw = 1;
-    pdpt_table[PDPT_IDX(kernel_virtual_base)].tab_addr = ((uint64_t)pd_table - kernel_offset) >> 12;
+    pdpt_table[PDPT_IDX(kernel_virtual_base)] = (pdpt_t){
+        .p = 1,
+        .rw = 1,
+        .tab_addr = ((uint64_t)pd_table - kernel_offset) >> 12
+    };
 
-    pd_table[PD_IDX(kernel_virtual_base)].p = 1;
-    pd_table[PD_IDX(kernel_virtual_base)].rw = 1;
-    pd_table[PD_IDX(kernel_virtual_base)].tab_addr = ((uint64_t)pt_table - kernel_offset) >> 12;
+    pd_table[PD_IDX(kernel_virtual_base)] = (pd_t){
+        .p = 1,
+        .rw = 1,
+        .tab_addr = ((uint64_t)pt_table - kernel_offset) >> 12
+    };
 
     // Map 512 4KiB kernel pages = 2MiB
     for (size_t i = 0; i < 512; i++){
-        pt_table[PT_IDX(kernel_virtual_base+i*4096)].p = 1;
-        pt_table[PT_IDX(kernel_virtual_base+i*4096)].rw = 1;
-        pt_table[PT_IDX(kernel_virtual_base+i*4096)].page_addr = (kernel_physical_base + i * 4096) >> 12; // Physical address of kernel
+        pt_table[PT_IDX(kernel_virtual_base+i*4096)] = (pt_t){
+            .p = 1,
+            .rw = 1,
+            .page_addr = (kernel_physical_base + i * 4096) >> 12
+            // Physical address of kernel
+        };
     }
 
     // Before we enable paging, we must register our page fault handler.
