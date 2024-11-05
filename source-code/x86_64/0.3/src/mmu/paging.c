@@ -56,7 +56,7 @@ void init_paging(){
 
     // Until a framebuffer is mapped this will fail since
     // Print will try to access the display
-//    print("Paging Initialized.\n");
+    print("Paging Initialized.\n");
 }
 
 
