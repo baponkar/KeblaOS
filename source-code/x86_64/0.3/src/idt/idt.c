@@ -112,7 +112,7 @@ void isr_handler(registers_t *regs)
         return;
     }
     else if (regs->int_no == 14) { // Check if it is a page fault
-        page_fault_handler(&regs); // Call your page fault handler directly
+        page_fault_handler(regs); // Call your page fault handler directly
         return;
     }
     else if(regs->int_no < 32){

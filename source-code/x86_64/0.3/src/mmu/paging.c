@@ -8,8 +8,8 @@ extern void load_cr3(uint64_t pml4_base_address);
 // PML4 --> PDPR --> PD --> PT --> Pageframe
 // PT has 512 entries of 4kb pages
 
-//uint64_t kernel_phys_base = 0x100000; // 1MB : Physical start of kernel
-//uint64_t kernel_virt_base = 0xFFFFFFFF80000000; // Virtual start of kernel 4096 TB
+//uint64_t kernel_physical_base = 0x100000; // 1MB : Physical start of kernel
+//uint64_t kernel_virtual_base = 0xFFFFFFFF80000000; // Virtual start of kernel 4096 TB
 
 #define PML4_IDX(virt) (((virt) >> 39) & 0x1ff)
 #define PDPT_IDX(virt) (((virt) >> 30) & 0x1ff)
@@ -25,23 +25,23 @@ void init_paging(){
     print("Initializing Paging...\n");
 
     // Setting up a single entry as an example for the higher-half kernel mapping.
-    pml4_table[PML4_IDX(kernel_virt_base)].p = 1;  // Using last PML4 entry to map higher-half
-    pml4_table[PML4_IDX(kernel_virt_base)].rw = 1;
-    pml4_table[PML4_IDX(kernel_virt_base)].tab_addr = ((uint64_t)pdpt_table - kernel_offset) >> 12;
+    pml4_table[PML4_IDX(kernel_virtual_base)].p = 1;  // Using last PML4 entry to map higher-half
+    pml4_table[PML4_IDX(kernel_virtual_base)].rw = 1;
+    pml4_table[PML4_IDX(kernel_virtual_base)].tab_addr = ((uint64_t)pdpt_table - kernel_offset) >> 12;
 
-    pdpt_table[PDPT_IDX(kernel_virt_base)].p = 1;
-    pdpt_table[PDPT_IDX(kernel_virt_base)].rw = 1;
-    pdpt_table[PDPT_IDX(kernel_virt_base)].tab_addr = ((uint64_t)pd_table - kernel_offset) >> 12;
+    pdpt_table[PDPT_IDX(kernel_virtual_base)].p = 1;
+    pdpt_table[PDPT_IDX(kernel_virtual_base)].rw = 1;
+    pdpt_table[PDPT_IDX(kernel_virtual_base)].tab_addr = ((uint64_t)pd_table - kernel_offset) >> 12;
 
-    pd_table[PD_IDX(kernel_virt_base)].p = 1;
-    pd_table[PD_IDX(kernel_virt_base)].rw = 1;
-    pd_table[PD_IDX(kernel_virt_base)].tab_addr = ((uint64_t)pt_table - kernel_offset) >> 12;
+    pd_table[PD_IDX(kernel_virtual_base)].p = 1;
+    pd_table[PD_IDX(kernel_virtual_base)].rw = 1;
+    pd_table[PD_IDX(kernel_virtual_base)].tab_addr = ((uint64_t)pt_table - kernel_offset) >> 12;
 
     // Map 512 4KiB kernel pages = 2MiB
     for (size_t i = 0; i < 512; i++){
-        pt_table[PT_IDX(kernel_virt_base+i*4096)].p = 1;
-        pt_table[PT_IDX(kernel_virt_base+i*4096)].rw = 1;
-        pt_table[PT_IDX(kernel_virt_base+i*4096)].page_addr = (kernel_phys_base + i * 4096) >> 12; // Physical address of kernel
+        pt_table[PT_IDX(kernel_virtual_base+i*4096)].p = 1;
+        pt_table[PT_IDX(kernel_virtual_base+i*4096)].rw = 1;
+        pt_table[PT_IDX(kernel_virtual_base+i*4096)].page_addr = (kernel_physical_base + i * 4096) >> 12; // Physical address of kernel
     }
 
     // Before we enable paging, we must register our page fault handler.
@@ -54,7 +54,9 @@ void init_paging(){
     print("\n");
     load_cr3((uint64_t)pml4_table - kernel_offset);
 
-    print("Paging Initialized.\n");
+    // Until a framebuffer is mapped this will fail since
+    // Print will try to access the display
+//    print("Paging Initialized.\n");
 }
 
 
