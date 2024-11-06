@@ -25,6 +25,9 @@ extern uint64_t ticks;
 extern uint64_t seconds;
 
 uint32_t *fb_ptr = NULL;
+uint64_t kernel_offset;
+uint64_t kernel_virtual_base;
+uint64_t kernel_physical_base;
 
 size_t SCREEN_WIDTH;
 size_t SCREEN_HEIGHT;
@@ -61,13 +64,11 @@ static volatile struct limine_kernel_address_request kernel_address_request = {
 };
 
 // Define memory map 
-
 __attribute__((used, section(".requests")))
 static volatile struct limine_memmap_request memmap_request = {
     .id = LIMINE_MEMMAP_REQUEST,
     .revision = 0
 };
-
 
 // Finally, define the start and end markers for the Limine requests.
 // These can also be moved anywhere, to any .c file, as seen fit.
@@ -101,21 +102,12 @@ void kmain(void) {
     extern uint32_t KeblaOS_icon_320x200x32[];
     //display_image( (SCREEN_WIDTH/2 - KEBLAOS_ICON_320X200X32_WIDTH/2), 5, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
 
-
-    init_gdt();
-    init_idt();
-    // init_paging();
-    init_timer();
-    initKeyboard();
-
-    // test_paging();
-
     if (kernel_address_request.response != NULL) {
-        uint64_t physical_base = kernel_address_request.response->physical_base;
-        uint64_t virtual_base = kernel_address_request.response->virtual_base;
+        kernel_physical_base = kernel_address_request.response->physical_base;
+        kernel_virtual_base = kernel_address_request.response->virtual_base;
 
         // Calculate the offset between virtual and physical addresses.
-        uint64_t kernel_offset = virtual_base - physical_base;
+        kernel_offset = kernel_virtual_base - kernel_physical_base;
 
         print("Kernel Offset : ");
         print_hex(kernel_offset);
@@ -141,6 +133,14 @@ void kmain(void) {
         // uint64_t* invalid_address = (uint64_t*)0xFFFFFFFF90000000;  // Unmapped address
         // *invalid_address = 0x0;  // This should trigger a page fault
     }
+
+    init_gdt();
+    // init_paging();
+    init_idt();
+    init_timer();
+    initKeyboard();
+
+    // test_paging();
 
     syscall_check();
 
