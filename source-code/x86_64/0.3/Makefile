@@ -1,10 +1,26 @@
-
+# Makefile to build KeblaOS.iso
 # Copied from : https://wiki.osdev.org/Limine_Bare_Bones
+# Get different Limine protocol : https://github.com/limine-bootloader/limine/blob/v8.x/PROTOCOL.md#kernel-address-feature
+# qemu defult firmware is BIOS
+# Installing UEFI firmware and then use by Qemu
+# sudo apt install ovmf
+# sudo find /usr/share -name "OVMF_CODE.fd"
+# add -bios "path of OVMF_CODE.fd" with qemu and use it
+
+# Writer : Bapon Kar
+# My machine custoom gcc location : /usr/local/x86_64-elf/bin/x86_64-elf-gcc
+# My machine custom nasm location : nasm
+# My machine custom linker(LD) location : /usr/local/x86_64-elf/bin/x86_64-elf-ld
+# My machine custom ovmf(UEFI Firmware) location : /usr/share/OVMF/OVMF_CODE.fd
+
+# Start : 07/11/2024
+# Last Update : 24/11/2024
+
 SRC_DIR = src
 BUILD_DIR = build
 ISO_DIR = iso_root
 OS_NAME = KeblaOS
-VERSION = 0.2
+VERSION = 0.3
 HOME = /home/baponkar
 
 GCC = /usr/local/x86_64-elf/bin/x86_64-elf-gcc
@@ -32,6 +48,10 @@ LD_FLAG = -m elf_x86_64 -nostdlib -static -z max-page-size=0x1000
 NASM = nasm
 NASM_FLAG = -Wall -f elf64
 
+QEMU = qemu-system-x86_64 
+QEMU_BIOS_FLAG = -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu -cdrom 
+QEMU_UEFI_FLAG = -bios /usr/share/OVMF/OVMF_CODE.fd -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu -cdrom 
+
 # Default target
 all: $(BUILD_DIR)/image.iso
 
@@ -40,6 +60,8 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/kernel/kernel.c -o $(BUILD_DIR)/kernel.o
 	$(NASM) $(NASM_FLAG) $(SRC_DIR)/kernel/init.s -o $(BUILD_DIR)/init.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/kernel/info.c -o $(BUILD_DIR)/info.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/kernel/keblaos_icon.c -o $(BUILD_DIR)/keblaos_icon.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/kernel/locomotive.c -o $(BUILD_DIR)/locomotive.o
 
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/util/util.c -o $(BUILD_DIR)/util.o
 	
@@ -64,19 +86,20 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/idt/idt.c -o $(BUILD_DIR)/idt.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/idt/timer.c -o $(BUILD_DIR)/timer.o
 
-	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/kernel/syscall.c -o $(BUILD_DIR)/syscall.o
-	$(NASM) $(NASM_FLAG) $(SRC_DIR)/kernel/syscall.s -o $(BUILD_DIR)/syscall_s.o
-
-	$(NASM) $(NASM_FLAG) $(SRC_DIR)/mmu/load_paging.s -o $(BUILD_DIR)/load_paging.o
-	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/paging.c -o $(BUILD_DIR)/paging.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/cpu.c -o $(BUILD_DIR)/cpu.o
 	$(NASM) $(NASM_FLAG) $(SRC_DIR)/mmu/cpu.s -o $(BUILD_DIR)/cpu_s.o
+
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/kheap.c -o $(BUILD_DIR)/kheap.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/pmm.c -o $(BUILD_DIR)/pmm.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/paging.c -o $(BUILD_DIR)/paging.o
 	
 
 # Linking object files into kernel binary
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/init.o \
 						$(BUILD_DIR)/info.o \
+						$(BUILD_DIR)/locomotive.o \
+						$(BUILD_DIR)/keblaos_icon.o \
 						$(BUILD_DIR)/ports.o \
 						$(BUILD_DIR)/util.o \
 						$(BUILD_DIR)/vga.o \
@@ -92,9 +115,41 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/shell.o \
 						$(BUILD_DIR)/print_reg_values.o \
-						$(BUILD_DIR)/paging.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/cpu_s.o \
+						$(BUILD_DIR)/kheap.o \
+						$(BUILD_DIR)/pmm.o \
+						$(BUILD_DIR)/paging.o
+						
+								
+
+	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel.bin \
+						$(BUILD_DIR)/kernel.o \
+						$(BUILD_DIR)/info.o \
+						$(BUILD_DIR)/locomotive.o \
+						$(BUILD_DIR)/keblaos_icon.o \
+						$(BUILD_DIR)/ports.o \
+						$(BUILD_DIR)/util.o \
+						$(BUILD_DIR)/vga.o \
+						$(BUILD_DIR)/font.o \
+						$(BUILD_DIR)/stdlib.o \
+						$(BUILD_DIR)/string.o \
+						$(BUILD_DIR)/stdio.o \
+						$(BUILD_DIR)/gdt.o \
+						$(BUILD_DIR)/gdt_s.o \
+						$(BUILD_DIR)/idt.o \
+						$(BUILD_DIR)/idt_s.o \
+						$(BUILD_DIR)/timer.o \
+						$(BUILD_DIR)/keyboard.o \
+						$(BUILD_DIR)/shell.o \
+						$(BUILD_DIR)/print_reg_values.o \
+						$(BUILD_DIR)/cpu.o \
+						$(BUILD_DIR)/cpu_s.o \
+						$(BUILD_DIR)/kheap.o \
+						$(BUILD_DIR)/pmm.o \
+						$(BUILD_DIR)/paging.o					
+
+
 						$(BUILD_DIR)/load_paging.o \
 						$(BUILD_DIR)/syscall.o \
 						$(BUILD_DIR)/syscall_s.o
@@ -102,7 +157,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker.ld -o $@ $^
 
 
-# Creating ISO image
+
+# Creating ISO image by xorriso and limine config and associated limine files, kernel.bin
 $(BUILD_DIR)/image.iso: $(BUILD_DIR)/kernel.bin
 	# git clone https://github.com/limine-bootloader/limine.git --branch=v8.x-binary --depth=1
 	# make -C limine
@@ -129,6 +185,9 @@ clean:
 
 # Running by qemu
 run: $(BUILD_DIR)/image.iso
+	$(QEMU) $(QEMU_BIOS_FLAG) $(BUILD_DIR)/image.iso
+	#$(QEMU) $(QEMU_UEFI_FLAG) $(BUILD_DIR)/image.iso
 	qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std 
+
 
 .PHONY: all clean

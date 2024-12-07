@@ -11,4 +11,4 @@ extern uint64_t seconds;
 
 void init_timer();
 void timerHandler(registers_t *regs);
-void delay(uint32_t ms);
+void delay(uint64_t ms);
