@@ -1,3 +1,4 @@
+
 #include "stdio.h"
 
 void print_int(int n);
@@ -50,17 +51,17 @@ void vprintf(const char* format, va_list args) {
                     break;
                 }
                 case 'x': {  // Integer in hexadecimal
-                    uint32_t num = va_arg(args, uint32_t);
+                    uint64_t num = va_arg(args, uint64_t);
                     print_hex(num);  // Use your custom print_hex function
                     break;
                 }
                 case 'b': {  // Integer in binary
-                    uint32_t num = va_arg(args, uint32_t);
+                    uint64_t num = va_arg(args, uint64_t);
                     print_bin(num);  // Use your custom print_bin function
                     break;
                 }
                 case 'u':{ // for unsignen int i.e. uint32_t variable
-                    uint32_t num = va_arg(args, uint32_t);
+                    uint64_t num = va_arg(args, uint64_t);
                     print_dec(num);  // Use your custom print_hex function 
                     break;
                 }

@@ -9,8 +9,7 @@
 #include "../driver/vga/vga.h"
 #include "../driver/ports.h"
 
-#include "../kernel/syscall.h"
-#include "../mmu/paging.h"
+
 
 struct idt_entry_struct
 {//128 bit

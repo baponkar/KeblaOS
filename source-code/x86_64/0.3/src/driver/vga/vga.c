@@ -27,8 +27,8 @@ int line_height = DEFAULT_FONT_HEIGHT + DEFAULT_TEXT_LINE_GAP;
 size_t font_width = DEFAULT_FONT_WIDTH;
 size_t font_height = DEFAULT_FONT_SIZE;
 
-size_t cur_pos_x = 0;
-size_t cur_pos_y = 0;
+int cur_pos_x = 0;
+int cur_pos_y = 0;
 
 size_t lin_col_to_pix(size_t line_no, size_t col_no){
     return (line_no * line_height + col_no * DEFAULT_FONT_WIDTH);
@@ -152,7 +152,7 @@ void scroll_up() {
 
 
 void update_cur_pos(){
-    if(cur_pos_x > MAX_COLUMN_NO){
+    if(cur_pos_x > (int)MAX_COLUMN_NO){
         cur_pos_y++;
         cur_pos_x = MIN_COLUMN_NO;
     }
