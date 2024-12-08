@@ -8,6 +8,9 @@
 
 #include "../driver/vga.h"
 #include "../x86_64/gdt.h"
+#include "../x86_64/idt.h"
+#include "../x86_64/pit_timer.h"
+#include "../driver/keyboard.h"
 
 
 void kmain(void);
