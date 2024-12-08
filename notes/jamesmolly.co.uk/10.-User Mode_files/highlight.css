@@ -1,0 +1,90 @@
+
+.code {
+     font-family: Monospace;
+	font-size: 10pt;
+}
+
+.code_primitive {
+     font-weight: bold;
+}
+
+.code_integer {
+     color: blue;
+}
+
+.code_hex_integer {
+     color: #8888FF;
+}
+
+.code_float {
+     color: purple;
+}
+
+.code_comment {
+     font-style: italic;
+     color: gray;
+}
+
+.code_string {
+     color: red;
+}
+
+.code_character {
+     color: green;
+}
+
+.code_preprocessor {
+     color: green;
+}
+
+.code_preprocessor_cmd {
+     font-weight: bold;
+}
+
+.code_function {
+     color: purple;
+}
+
+.code_label {
+     color: blue;
+     font-weight: bold;
+}
+
+.code_operator {
+     color: navy;
+}
+
+.code_continuation {
+     color: red;
+}
+
+.code_variable {
+     color: green;
+     font-weight: bold;
+}
+
+.code_typedef {
+     color: darkgreen;
+}
+
+
+/*
+     FILE ARCHIVED ON 12:28:15 Mar 26, 2016 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 04:32:42 Oct 14, 2024.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+*/
+/*
+playback timings (ms):
+  captures_list: 0.689
+  exclusion.robots: 0.023
+  exclusion.robots.policy: 0.01
+  esindex: 0.014
+  cdx.remote: 8.695
+  LoadShardBlock: 96.902 (3)
+  PetaboxLoader3.resolve: 143.976 (4)
+  PetaboxLoader3.datanode: 56.928 (5)
+  load_resource: 109.67 (2)
+*/

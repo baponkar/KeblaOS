@@ -66,6 +66,11 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/usr/shell.c -o $(BUILD_DIR)/shell.o
 	$(NASM) $(NASM_FLAG) $(SRC_DIR)/usr/print_reg_values.asm -o $(BUILD_DIR)/print_reg_values.o
 
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/kheap.c -o $(BUILD_DIR)/kheap.o
+	$(NASM) $(NASM_FLAG) $(SRC_DIR)/mmu/load_paging.asm -o $(BUILD_DIR)/load_paging.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/paging.c -o $(BUILD_DIR)/paging.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/pmm.c -o $(BUILD_DIR)/pmm.o
+
 
 # Linking object files into kernel binary
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
@@ -83,7 +88,14 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/speaker.o \
 						$(BUILD_DIR)/shell.o \
-						$(BUILD_DIR)/print_reg_values.o
+						$(BUILD_DIR)/print_reg_values.o \
+						$(BUILD_DIR)/kheap.o \
+						$(BUILD_DIR)/load_paging.o \
+						$(BUILD_DIR)/paging.o \
+						$(BUILD_DIR)/pmm.o
+
+
+
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel.bin \
 						$(BUILD_DIR)/kernel.o \
@@ -101,7 +113,11 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/speaker.o \
 						$(BUILD_DIR)/shell.o \
-						$(BUILD_DIR)/print_reg_values.o
+						$(BUILD_DIR)/print_reg_values.o \
+						$(BUILD_DIR)/kheap.o \
+						$(BUILD_DIR)/load_paging.o \
+						$(BUILD_DIR)/paging.o \
+						$(BUILD_DIR)/pmm.o
 
 
 # Creating ISO image
