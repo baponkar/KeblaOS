@@ -1,6 +1,6 @@
 ;
 ; https://wiki.osdev.org/GDT_Tutorial
-;
+; 
 
 section .text
 global gdt_flush
