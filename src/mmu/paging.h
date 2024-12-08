@@ -14,7 +14,6 @@
 #include "../kernel/kernel.h"
 
 
-
 #define PAGE_SIZE 4096
 #define PAGE_PRESENT 0x1
 #define PAGE_WRITE   0x2
@@ -28,7 +27,7 @@
 #define PAGE_OFFSET(va)  ((va) & 0xFFF)          // Bits 0-11
 
 
-typedef struct page {
+typedef struct page { // 64 bit
     uint64_t present   : 1;
     uint64_t rw        : 1;
     uint64_t user      : 1;
@@ -45,7 +44,7 @@ typedef struct page {
 } __attribute__((packed)) page_t;
 
 
-typedef struct entry {
+typedef struct entry { // 64 bit
     uint64_t present   : 1;
     uint64_t rw        : 1;
     uint64_t user      : 1;

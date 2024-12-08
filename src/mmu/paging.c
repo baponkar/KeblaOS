@@ -1,19 +1,27 @@
 /*
-https://wiki.osdev.org/Paging
-*/
+Paging in x86_64
 
+https://wiki.osdev.org/Paging
+https://wiki.osdev.org/Identity_Paging
+https://web.archive.org/web/20160326061042/http://jamesmolloy.co.uk/tutorial_html/6.-Paging.html
+https://github.com/dreamportdev/Osdev-Notes/blob/master/04_Memory_Management/03_Paging.md
+https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
+*/
 
 #include "paging.h"
 
-extern uint64_t *frames;
-extern uint64_t nframes;
+extern void enable_paging(uint64_t pml4_address);
+extern void disable_paging();
 
-extern uint64_t placement_address; // The value of it will set in kernel.c 
+extern uint64_t *frames;
+extern uint64_t nframes; // Total number of frames
+
+extern uint64_t placement_address;  // The value of it will set in kernel.c 
 extern uint64_t mem_end_address;    // The value of it will set in kernel.c 
 
-
-pml4_t * current_pml4;
-pml4_t * kernel_pml4;
+pml4_t *current_pml4;
+pml4_t *kernel_pml4;
+pml4_t *user_pml4;
 
 // Function to allocate a frame.
 void alloc_frame(page_t *page, int is_kernel, int is_writeable)
@@ -39,6 +47,7 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable)
    }
 }
 
+
 // Function to deallocate a frame.
 void free_frame(page_t *page)
 {
@@ -54,6 +63,7 @@ void free_frame(page_t *page)
    }
 }
 
+
 void print_cr3() {
     uint64_t cr3;
     // Read the CR3 register
@@ -67,39 +77,17 @@ void print_cr3() {
 
 
 void initialise_paging()
-{   /*
-        placement_address = 0x100000
-        mem_end_address   = 0x105000
-        mem_range = 0x105000 - 0x100000 = 0x5000 = 20 KB
-        total_no_of_pages = mem_range / PAGE_SIZE = 0x5000 / 0x1000 = 0x5
-        required_pages = nframes(8B) + PML4 (4KB) + PDPT (4KB) + PD (4KB) + PT (4KB) + PAGES(4n KB) = 8B + 16 KB + 4n KB
-        * for single page required memory = 20.1 KB
-        * for double page required memory = 24.1 KB
-        * for triple page required memory = 28.1 KB (*****)
-        * for qudra page required memory = 32.1 KB
-    */
+{ 
+    nframes = mem_end_address / 0x1000; // Total numbers of frames
+    frames = (uint64_t *) kmalloc(INDEX_FROM_BIT(nframes)); // container the used and unused frames data
 
-    print("Paging Start\n");
-    print("=>placement_address : ");
-    print_hex(placement_address);
-    print(", ");
-    print("Memory End Address  : ");
-    print_hex(mem_end_address);
-    print("\n");
-
-    nframes = (mem_end_address - placement_address) / 0x1000;
-    frames = (uint64_t *) kmalloc(INDEX_FROM_BIT(nframes)); // less of 4 kb memory aligned
     memset(frames, 0, INDEX_FROM_BIT(nframes));
     // Allocate and zero-initialize the PML4 table
     kernel_pml4 = (pml4_t *) kmalloc_a(sizeof(pml4_t), 1); // 4 kb memory aligned
-    memset(kernel_pml4, 0, sizeof(pml4_t));
-    current_pml4 = kernel_pml4;
+    memset(kernel_pml4, 0, sizeof(pml4_t)); // clear all bit
+    current_pml4 = kernel_pml4; 
 
-    print("Total number of frames : ");
-    print_dec(nframes);
-    print("\n");
-
-    // Identity-map the physical memory up to `placement_address`
+    // Identity-map the physical memory from `placement_address` up to mem_end_address
     uint64_t i = placement_address;
 
     while( i < mem_end_address) // increment 4kb i.e. 0x1000
@@ -109,48 +97,20 @@ void initialise_paging()
         alloc_frame(page, 0, 0);
         i += 0x1000;
     }
-    
-    print("placement_address : ");
-    print_hex(placement_address);
-    print("\n");
 
-    switch_to_page_table(kernel_pml4);  // Enable paging
+    uint64_t physical_address = (uint64_t) kernel_pml4;
+
+    disable_paging();
+    enable_paging(physical_address);
 }
 
 
-void switch_to_page_table(pml4_t *pml4) {
-    // Update the global current PML4 pointer
-    uint64_t physical_address = (uint64_t) pml4;
-
-    // Load the physical address of the new PML4 table into CR3
-    asm volatile("mov %0, %%cr3" :: "r"((uint64_t) physical_address) : "memory");
-
-    // Enable paging by setting the paging (PG) bit in CR0
-    uint64_t cr0;
-    asm volatile("mov %%cr0, %0" : "=r"(cr0));  // Read CR0
-    cr0 |= 0x80000000;                          // Set the PG bit (bit 31)
-    asm volatile("mov %0, %%cr0" :: "r"(cr0));  // Write CR0
-}
 
 page_t *get_page(uint64_t address, int make, pml4_t *pml4) {
     uint64_t pml4_idx = PML4_INDEX(address);
     uint64_t pdpt_idx = PDPT_INDEX(address);
     uint64_t pd_idx = PD_INDEX(address);
     uint64_t pt_idx = PT_INDEX(address);
-
-    print("-----------------------------------------------------------------------------------------------------------------------------\n");
-    print("PML4 index : ");
-    print_dec(pml4_idx);
-    print(", ");
-    print("PDPT index : ");
-    print_dec(pdpt_idx);
-    print(", ");
-    print("PD index : ");
-    print_dec(pd_idx);
-    print(", ");
-    print("PT index : ");
-    print_dec(pt_idx);  
-    print("\n");
 
     // Resolve PML4 entry
     if (!(pml4->entry_t[pml4_idx] & 0x1)) { // Check if entry is present
@@ -162,14 +122,6 @@ page_t *get_page(uint64_t address, int make, pml4_t *pml4) {
             return NULL; // Entry not present and not creating
         }
     }
-
-    print("pml4 addr : ");
-    print_hex((uint64_t) pml4);
-    print(", ");
-
-    print("content of pml4.entries[pml4_idx] : ");
-    print_hex(pml4->entry_t[pml4_idx]);
-    print("\n");
 
     pdpt_t *pdpt = (pdpt_t *)((pml4->entry_t[pml4_idx] >> 12 & ~0xFFF)); // create  pdpt from pml4->entry_t[pml4_idx]
 
@@ -184,14 +136,6 @@ page_t *get_page(uint64_t address, int make, pml4_t *pml4) {
         }
     }
 
-    print("pdpt addr : ");
-    print_hex((uint64_t) pdpt);
-    print(", ");
-
-    print("content of pdpt.entries[pdpt_idx] : ");
-    print_hex(pdpt->entry_t[pdpt_idx]);
-    print("\n");
-
     pd_t *pd = (pd_t *)((pdpt->entry_t[pdpt_idx] >> 12 & ~0xFFF));
 
     // Resolve PD entry
@@ -205,24 +149,8 @@ page_t *get_page(uint64_t address, int make, pml4_t *pml4) {
         }
     }
 
-    print("pd addr : ");
-    print_hex((uint64_t) pd);
-    print(", ");
-
-    print("content of pd.entries[pd_idx] : ");
-    print_hex(pd->entry_t[pd_idx]);
-    print("\n");
-
     // Resolve Page Table
     pt_t *pt = (pt_t *)((pd->entry_t[pd_idx] >> 12 & ~0xFFF)); // Creating Page Table from pd->entry_t[pd_idx]
-
-    print("pt addr : ");
-    print_hex((uint64_t)pt);
-    print(", ");
-
-    print("content of pt->pages[pt_idx] : ");
-    print_hex((uint64_t)&pt->pages[pt_idx]);
-    print("\n");
 
     // Resolve Page
     page_t *page =(page_t *) &pt->pages[pt_idx];
@@ -235,10 +163,6 @@ page_t *get_page(uint64_t address, int make, pml4_t *pml4) {
             return NULL;
         }
     }
-
-    print("page frame address : ");
-    print_hex((uint64_t) page->frame);
-    print("\n");
 
     return page;
 }
@@ -286,6 +210,8 @@ void test_paging(){
 
     uint64_t* invalid_address = (uint64_t*)0xFFFFFFFF90000000;  // Unmapped address
     *invalid_address = 0x0;  // This should trigger a page fault
+
+    print("Finish Paging Test\n");
 }
 
 

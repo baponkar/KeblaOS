@@ -13,9 +13,9 @@ Reference   :
 
 #include "kernel.h"
 
-
-uint64_t placement_address = 0x100000;  // 1 MB 
-uint64_t mem_end_address = 0x105000; // 1MB + 20 KB
+// My plan is set value of the below variable by bootloader data
+uint64_t placement_address = 0x1000000;  // 1 MB 
+uint64_t mem_end_address = 0x1050000; // 1MB + 20 KB
 
 char *OS_NAME = "KeblaOS";
 char *OS_VERSION = "0.7";
@@ -135,7 +135,7 @@ void kmain(void){
     get_paging_mode_info();
     get_smp_info();
     get_vir_to_phy_offset();
-    print_memory_map();
+    // print_memory_map();
     
     
     print(OS_NAME);
@@ -143,43 +143,43 @@ void kmain(void){
     print(OS_VERSION);
     print("\n");
 
-    print("BUILD_DATE : ");
-    print(BUILD_DATE);
-    print("\n");
+    // print("BUILD_DATE : ");
+    // print(BUILD_DATE);
+    // print("\n");
 
-    print("Bootloader : ");
-    print(BOOTLOADER_NAME);
-    print(" ");
-    print(BOOTLOADER_VERSION);
-    print("\n");
+    // print("Bootloader : ");
+    // print(BOOTLOADER_NAME);
+    // print(" ");
+    // print(BOOTLOADER_VERSION);
+    // print("\n");
 
-    print("Framebuffer Resolution : ");
-    print_dec(FRAMEBUFFER_WIDTH);
-    print("x");
-    print_dec(FRAMEBUFFER_HEIGHT);
-    print("\n");
+    // print("Framebuffer Resolution : ");
+    // print_dec(FRAMEBUFFER_WIDTH);
+    // print("x");
+    // print_dec(FRAMEBUFFER_HEIGHT);
+    // print("\n");
 
-    print("LIMINE_PAGING_MODE : ");
-    print(LIMINE_PAGING_MODE);
-    print("\n");
+    // print("LIMINE_PAGING_MODE : ");
+    // print(LIMINE_PAGING_MODE);
+    // print("\n");
 
-    print("CPU_COUNT : ");
-    print_dec(CPU_COUNT);
-    print("\n");
+    // print("CPU_COUNT : ");
+    // print_dec(CPU_COUNT);
+    // print("\n");
 
-    print("STACK_SIZE : ");
-    print_dec(STACK_SIZE);
-    print("\n");
+    // print("STACK_SIZE : ");
+    // print_dec(STACK_SIZE);
+    // print("\n");
 
-    print("VIRTUAL_BASE : ");
-    print_hex(VIRTUAL_BASE);
-    print("\n");
-    print("PHYSICAL_BASE : ");
-    print_hex(PHYSICAL_BASE);
-    print("\n");
-    print("VIRTUAL_TO_PHYSICAL_OFFSET : ");
-    print_hex(VIRTUAL_TO_PHYSICAL_OFFSET);
-    print("\n");
+    // print("VIRTUAL_BASE : ");
+    // print_hex(VIRTUAL_BASE);
+    // print("\n");
+    // print("PHYSICAL_BASE : ");
+    // print_hex(PHYSICAL_BASE);
+    // print("\n");
+    // print("VIRTUAL_TO_PHYSICAL_OFFSET : ");
+    // print_hex(VIRTUAL_TO_PHYSICAL_OFFSET);
+    // print("\n");
 
     init_gdt();
     // check_gdt();
@@ -190,8 +190,9 @@ void kmain(void){
     init_timer();
     initKeyboard();
 
+    disable_interrupts();
     initialise_paging();
-
+    enable_interrupts();
     // Test paging
     test_paging();
 

@@ -3,9 +3,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+
 #include "../limine/limine.h"
 #include "../util/util.h"   
-
 #include "../driver/vga.h"
 #include "../x86_64/gdt.h"
 #include "../x86_64/idt.h"
@@ -28,3 +28,4 @@ void get_paging_mode_info(void);
 void get_smp_info(void);
 void get_vir_to_phy_offset(void);
 void print_memory_map(void);
+
