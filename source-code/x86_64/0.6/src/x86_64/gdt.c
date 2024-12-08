@@ -33,6 +33,8 @@ void gdt_setup_sysseg( uint8_t idx, uint64_t base, uint32_t limit, uint8_t acces
     // First half of a system segment is the same as a regular segment
     gdt_setup(idx, base, limit, access, granularity);
 
+    // Setup the following GDT entry with the upper 32 bits of the base and zero upper 32bits
+    // that are reserved.
     gdt_entries[idx+1].limit_low  = (base >> 32) & 0xFFFF; // lower 16 bits of the upper 32 bits of base
     gdt_entries[idx+1].base_low   = (base >> 48) & 0xFFFF; // upper 16 bits of the upper 32 bits of base
     gdt_entries[idx+1].base_middle  = 0;                   // Set the rest of fields to 0 (reserved)
