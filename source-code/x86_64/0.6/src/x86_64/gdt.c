@@ -30,17 +30,12 @@ void gdt_setup( uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint
 
 // Version to create TSS and LGDT entries which require 2 GDT entries
 void gdt_setup_sysseg( uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity){
-    gdt_entries[idx].limit_low    = limit & 0xFFFF;       // 16 bit
-    gdt_entries[idx].base_low     = base  & 0xFFFF;       // 16 bit
-    gdt_entries[idx].base_middle  = (base >> 16) & 0xFF;  // 8 bit
-    gdt_entries[idx].access       = access;
-    gdt_entries[idx].granularity  = (limit >> 16) & 0x0F; // Set limit : lower 4 bit
-    gdt_entries[idx].granularity |= granularity & 0xF0;   // Set Flags : upper 4 bit
-    gdt_entries[idx].base_high    = (base >> 24) & 0xFF;       // 8 bit
+    // First hald of a system segment is the same as a regular segment
+    gdt_setup(idx, base, limit, access, granularity);
 
-    gdt_entries[idx+1].limit_low  = (base >> 32) & 0xFFFF; // 16 bit
-    gdt_entries[idx+1].base_low   = (base >> 48) & 0xFFFF; // 16 bit
-    gdt_entries[idx+1].base_middle  = 0;
+    gdt_entries[idx+1].limit_low  = (base >> 32) & 0xFFFF; // lower 16 bits of the upper 32 bits of base
+    gdt_entries[idx+1].base_low   = (base >> 48) & 0xFFFF; // upper 16 bits of the upper 32 bits of base
+    gdt_entries[idx+1].base_middle  = 0;                   // Set the rest of fields to 0 (reserved)
     gdt_entries[idx+1].access       = 0;
     gdt_entries[idx+1].granularity  = 0;
     gdt_entries[idx+1].base_high    = 0;

@@ -27,6 +27,7 @@ typedef struct gdtr gdtr_t;
 
 
 void gdt_setup( uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity);
+void gdt_setup_sysseg( uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity);
 void init_gdt();
 void check_gdt();
 
