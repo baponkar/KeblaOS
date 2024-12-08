@@ -12,7 +12,7 @@
 
 ------------------------------------------------------
 # Kebla OS
-![KeblaOS_icon.bmp](./notes-and-tutorials/images/KeblaOS_icon.bmp)
+![KeblaOS_icon.bmp](./src/img/KeblaOS_icon.bmp)
 
 #### Start Date : 9 th June, 2024
 
