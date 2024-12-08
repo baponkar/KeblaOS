@@ -1,8 +1,8 @@
 # KeblaOS
 
-![KeblaOS Icon](./img/KeblaOS_icon.bmp)
+![KeblaOS Icon](https://github.com/baponkar/KeblaOS/blob/main/src/img/KeblaOS_icon.bmp)
 
-## Version - 0.6
+## Version - 0.7
 
 ## Architecture : x86_64
 
@@ -11,10 +11,10 @@
 ## Description : This version just print some bootloader supplied information.
 
 Screenshot 1
-![screenshot](./screenshot/screenshot_01.png)
+![screenshot 1](https://github.com/baponkar/KeblaOS/blob/main/src/screenshot/screenshot_01.png)
 
 Screenshot 2
-![screenshot](./screenshot/keblaOS_0.7.gif)
+![screenshot 2](https://github.com/baponkar/KeblaOS/blob/main/src/screenshot/keblaOS_0.7.gif)
 
 ## Used Tools Version :
 - [x] [Limine Bootloader](https://github.com/limine-bootloader/limine) - 8.6.0
