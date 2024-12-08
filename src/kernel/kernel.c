@@ -13,8 +13,12 @@ Reference   :
 
 #include "kernel.h"
 
+
+uint64_t placement_address = 0x100000;  // 1 MB 
+uint64_t mem_end_address = 0x105000; // 1MB + 20 KB
+
 char *OS_NAME = "KeblaOS";
-char *OS_VERSION = "0.6";
+char *OS_VERSION = "0.7";
 char *BUILD_DATE = "06/12/2024";
 
 char *FIRMWARE_TYPE;
@@ -178,13 +182,18 @@ void kmain(void){
     print("\n");
 
     init_gdt();
-    check_gdt();
+    // check_gdt();
 
     init_idt();
     // check_idt();
 
     init_timer();
     initKeyboard();
+
+    initialise_paging();
+
+    // Test paging
+    test_paging();
 
     hcf();
 }

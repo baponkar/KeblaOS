@@ -2,7 +2,7 @@
 
 ![KeblaOS Icon](https://github.com/baponkar/KeblaOS/blob/main/src/img/KeblaOS_icon.bmp)
 
-## Version - 0.7
+## Version - 0.8
 
 ## Architecture : x86_64
 
@@ -20,6 +20,13 @@ Screenshot 2
 - [x] [Limine Bootloader](https://github.com/limine-bootloader/limine) - 8.6.0
 - [x] [x86_64-elf-gcc](https://wiki.osdev.org/GCC_Cross-Compiler) (GCC) 14.2.0
 - [x] GNU ld (GNU Binutils) 2.43
+- [x] GNU Make 4.3
+- [x] bison (GNU Bison) 3.8.2
+- [x] flex 2.6.4
+- [x] xorriso 1.5.4
+- [x] NASM version 2.15.05
+- [x] GNU gdb (Ubuntu 12.1-0ubuntu1~22.04.2) 12.1
+- [x] 
 - [x] [QEMU emulator](https://www.qemu.org/) version 6.2.0 (Debian 1:6.2+dfsg-2ubuntu6.24)
 - [x] [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) Ubuntu 22.04.4 LTS
 
@@ -35,6 +42,9 @@ Screenshot 2
 - [x] Shell
 - [x] Speaker Driver
 - [x] Keyboard Driver
+- [x] Physical Memory Manager(PMM)
+- [x] Kernel Heap(kheap)
+- [x] Paging
 
 
 

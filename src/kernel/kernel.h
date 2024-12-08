@@ -11,6 +11,10 @@
 #include "../x86_64/idt.h"
 #include "../x86_64/pit_timer.h"
 #include "../driver/keyboard.h"
+#include "../mmu/kheap.h"
+#include "../mmu/paging.h"
+#include "../mmu/pmm.h"
+
 
 
 void kmain(void);
