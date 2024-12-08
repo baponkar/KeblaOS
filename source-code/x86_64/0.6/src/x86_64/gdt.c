@@ -15,7 +15,7 @@
 extern void gdt_flush(gdtr_t *gdtr_instance);
 extern void reloadSegments();
 
-gdt_entry_t gdt_entries[7];
+gdt_entry_t gdt_entries[5];
 gdtr_t gdtr_instance;
 
 void gdt_setup( uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity){
