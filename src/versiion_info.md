@@ -1,5 +1,7 @@
 # KeblaOS
 
+![KeblaOS Icon](./img/KeblaOS_icon.bmp)
+
 ## Version - 0.6
 
 ## Architecture : x86_64
