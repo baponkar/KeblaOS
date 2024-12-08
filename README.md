@@ -47,9 +47,9 @@ We invite developers, enthusiasts, and visionaries to join us on this exciting j
 
 Together, let's create something remarkable. Join the KeblaOS project and be part of a legacy that blends tradition with innovation.
 
-See the [Tutorials and notes](./notes-and-tutorials/note-main.md) .
+See the [Tutorials and notes](./notes/note-main.md) .
 
-See the [References](./notes-and-tutorials/Reference.md) .
+See the [References](./notes/Reference.md) .
 
 See the [Releases](https://github.com/baponkar/KeblaOS/releases/)
 
