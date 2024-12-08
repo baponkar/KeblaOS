@@ -30,7 +30,7 @@ void gdt_setup( uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint
 
 // Version to create TSS and LGDT entries which require 2 GDT entries
 void gdt_setup_sysseg( uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity){
-    // First hald of a system segment is the same as a regular segment
+    // First half of a system segment is the same as a regular segment
     gdt_setup(idx, base, limit, access, granularity);
 
     gdt_entries[idx+1].limit_low  = (base >> 32) & 0xFFFF; // lower 16 bits of the upper 32 bits of base
