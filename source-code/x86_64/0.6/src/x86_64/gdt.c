@@ -15,7 +15,7 @@
 extern void gdt_flush(gdtr_t *gdtr_instance);
 extern void reloadSegments();
 
-gdt_entry_t gdt_entries[5];
+gdt_entry_t gdt_entries[7];
 gdtr_t gdtr_instance;
 
 void gdt_setup( uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity){
@@ -35,12 +35,15 @@ void gdt_setup_sysseg( uint8_t idx, uint64_t base, uint32_t limit, uint8_t acces
 
     // Setup the following GDT entry with the upper 32 bits of the base and zero upper 32bits
     // that are reserved.
-    gdt_entries[idx+1].limit_low  = (base >> 32) & 0xFFFF; // lower 16 bits of the upper 32 bits of base
-    gdt_entries[idx+1].base_low   = (base >> 48) & 0xFFFF; // upper 16 bits of the upper 32 bits of base
-    gdt_entries[idx+1].base_middle  = 0;                   // Set the rest of fields to 0 (reserved)
-    gdt_entries[idx+1].access       = 0;
-    gdt_entries[idx+1].granularity  = 0;
-    gdt_entries[idx+1].base_high    = 0;
+    gdt_setup(idx + 1, (base >> 48) & 0xffff , (base >> 32) & 0xffff, 0, 0);
+
+    // The line above is equivalent to:
+    // gdt_entries[idx+1].limit_low  = (base >> 32) & 0xFFFF; // lower 16 bits of the upper 32 bits of base
+    // gdt_entries[idx+1].base_low   = (base >> 48) & 0xFFFF; // upper 16 bits of the upper 32 bits of base
+    // gdt_entries[idx+1].base_middle  = 0;                   // Set the rest of fields to 0 (reserved)
+    // gdt_entries[idx+1].access       = 0;
+    // gdt_entries[idx+1].granularity  = 0;
+    // gdt_entries[idx+1].base_high    = 0;
 }
 
 
