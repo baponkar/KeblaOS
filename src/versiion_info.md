@@ -14,7 +14,7 @@ Screenshot 1
 ![screenshot](./screenshot/screenshot_01.png)
 
 Screenshot 2
-![screenshot](./screenshot/screenshot_02.png)
+![screenshot](./screenshot/keblaOS_0.7.gif)
 
 ## Used Tools Version :
 - [x] [Limine Bootloader](https://github.com/limine-bootloader/limine) - 8.6.0
@@ -30,6 +30,12 @@ Screenshot 2
 - [x] stdlib.c included in lib directory
 - [x] string.c includeed in lib directory
 - [x] Global Descriptor Table(GDT)
+- [x] Interrupt Descriptor Table(IDT)
+- [x] PIT Timer
+- [x] Shell
+- [x] Speaker Driver
+- [x] Keyboard Driver
+
 
 
 `src` directory is containing source code. `build` directory is containing generated object file, binary file and iso file. `iso_root` is required for building `image.iso` file.
@@ -37,3 +43,5 @@ Screenshot 2
 To build and run by QEmu iso `make -B`.
 
 Downloaded from [here](https://github.com/baponkar/KeblaOS).
+
+

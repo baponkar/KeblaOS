@@ -7,7 +7,7 @@ BUILD_DIR = build
 ISO_DIR = iso_root
 
 OS_NAME = KeblaOS
-OS_VERSION = 0.6
+OS_VERSION = 0.7
 
 HOST_HOME = /home/baponkar
 
@@ -56,6 +56,16 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/gdt.c -o $(BUILD_DIR)/gdt.o
 	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/gdt_load.asm -o $(BUILD_DIR)/gdt_load.o
 
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/idt.c -o $(BUILD_DIR)/idt.o
+	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/idt_load.asm -o $(BUILD_DIR)/idt_load.o
+
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/pit_timer.c -o $(BUILD_DIR)/pit_timer.o
+
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/keyboard.c -o $(BUILD_DIR)/keyboard.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/speaker.c -o $(BUILD_DIR)/speaker.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/usr/shell.c -o $(BUILD_DIR)/shell.o
+	$(NASM) $(NASM_FLAG) $(SRC_DIR)/usr/print_reg_values.asm -o $(BUILD_DIR)/print_reg_values.o
+
 
 # Linking object files into kernel binary
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
@@ -66,7 +76,14 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/stdlib.o \
 						$(BUILD_DIR)/vga.o \
 						$(BUILD_DIR)/gdt.o \
-						$(BUILD_DIR)/gdt_load.o
+						$(BUILD_DIR)/gdt_load.o \
+						$(BUILD_DIR)/idt.o \
+						$(BUILD_DIR)/idt_load.o \
+						$(BUILD_DIR)/pit_timer.o \
+						$(BUILD_DIR)/keyboard.o \
+						$(BUILD_DIR)/speaker.o \
+						$(BUILD_DIR)/shell.o \
+						$(BUILD_DIR)/print_reg_values.o
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel.bin \
 						$(BUILD_DIR)/kernel.o \
@@ -77,7 +94,14 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/stdlib.o \
 						$(BUILD_DIR)/vga.o \
 						$(BUILD_DIR)/gdt.o \
-						$(BUILD_DIR)/gdt_load.o
+						$(BUILD_DIR)/gdt_load.o \
+						$(BUILD_DIR)/idt.o \
+						$(BUILD_DIR)/idt_load.o \
+						$(BUILD_DIR)/pit_timer.o \
+						$(BUILD_DIR)/keyboard.o \
+						$(BUILD_DIR)/speaker.o \
+						$(BUILD_DIR)/shell.o \
+						$(BUILD_DIR)/print_reg_values.o
 
 
 # Creating ISO image

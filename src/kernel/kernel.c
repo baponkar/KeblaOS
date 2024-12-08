@@ -180,6 +180,12 @@ void kmain(void){
     init_gdt();
     check_gdt();
 
+    init_idt();
+    // check_idt();
+
+    init_timer();
+    initKeyboard();
+
     hcf();
 }
 
