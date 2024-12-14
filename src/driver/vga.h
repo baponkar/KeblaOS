@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-
 #include "font.h"
 #include "../lib/stdlib.h"          // For abs function
 #include "../lib/string.h"          // For memmov, memcpy, memset etc function

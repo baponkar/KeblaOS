@@ -6,7 +6,7 @@ extern uint64_t placement_address; // The value of it will set in kernel.c
 // Low level memory allocation by usin base as placement_address
 uint64_t kmalloc(uint64_t sz)       // vanilla (normal).
 {
-    uint64_t tmp = placement_address; // memory allocate in current placement address
+    uint64_t tmp = (uint64_t) placement_address; // memory allocate in current placement address
     placement_address += sz;    // increase the placement address for next memory allocation
     return tmp;
 }
@@ -24,13 +24,14 @@ uint64_t kmalloc_a(uint64_t sz, int align)    // page aligned.
      page directory and page table addresses need to be page-aligned: that is, the bottom 12 
      bits need to be zero (otherwise they would interfere with the read/write/protection/accessed bits).
     */
-    if (align == 1 && (placement_address & 0xFFFFFFFFFFFFF000)) // If the address is not already page-aligned
+    if (align == 1 && (placement_address & 0xFFF)) // If the address is not already page-aligned i.e. multiple of 0x1000
     {
         // Align it.
         placement_address &= 0xFFFFFFFFFFFFF000; // masking of most significant 20 bit which is used for address
         placement_address += 0x1000;    // increase  the placement address by 4 KB, Page Size
     }
-    uint64_t tmp = placement_address;
+    
+    uint64_t tmp = placement_address; // asign tmp with increased placement_address
     placement_address += sz;    //increments placement_address by sz, the size of the requested allocation, 
                                 // to update the placement address for the next allocation.
     return tmp;
@@ -57,7 +58,7 @@ and also ensure page boundary alignment
 */
 uint64_t kmalloc_ap(uint64_t sz, int align, uint64_t *phys)  // page aligned and returns a physical address.
 {
-    if (align == 1 && (placement_address & 0xFFFFFFFFFFFFF000)) // If the address is not already page-aligned
+    if (align == 1 && (placement_address & 0xFFF)) // If the address is not already page-aligned and want to make it page aligned
     {
         // Align it.
         placement_address &= 0xFFFFFFFFFFFFF000;

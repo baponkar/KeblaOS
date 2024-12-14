@@ -17,8 +17,9 @@ Reference   :
 uint64_t placement_address = 0x1000000;  // 1 MB 
 uint64_t mem_end_address = 0x1050000; // 1MB + 20 KB
 
+
 char *OS_NAME = "KeblaOS";
-char *OS_VERSION = "0.7";
+char *OS_VERSION = "0.8";
 char *BUILD_DATE = "06/12/2024";
 
 char *FIRMWARE_TYPE;
@@ -105,6 +106,7 @@ static volatile struct limine_bootloader_info_request bootloader_info_request = 
     .revision = 0
 };
 
+
 __attribute__((used, section(".requests")))
 static volatile struct limine_stack_size_request stack_size_request = {
     .id = LIMINE_STACK_SIZE_REQUEST,
@@ -112,11 +114,13 @@ static volatile struct limine_stack_size_request stack_size_request = {
     .stack_size = 8192
 };
 
+
 __attribute__((used, section(".requests")))
 static volatile struct limine_hhdm_request hhdm_request = {
     .id = LIMINE_HHDM_REQUEST,
     .revision = 0
 };
+
 
 __attribute__((used, section(".requests_start_marker")))
 static volatile LIMINE_REQUESTS_START_MARKER;
@@ -126,6 +130,37 @@ static volatile LIMINE_REQUESTS_END_MARKER;
 
 
 void kmain(void){
+    get_system_info();
+
+    print("KeblaOS - 0.8\n");
+    // print_bootloader_info();
+
+    init_gdt();
+    // check_gdt();
+
+    init_idt();
+    // check_idt();
+
+    // init_timer();
+    initKeyboard();
+
+    initialise_paging();
+
+    // Test paging
+    // test_paging();
+
+    hcf();
+}
+
+
+// Halt and catch fire function.
+void hcf(void) {
+    for (;;) {
+        asm ("hlt");
+    }
+}
+
+void get_system_info(){
     get_framebuffer_info();
     vga_init();
     get_firmware_info();
@@ -135,75 +170,48 @@ void kmain(void){
     get_paging_mode_info();
     get_smp_info();
     get_vir_to_phy_offset();
-    // print_memory_map();
-    
-    
-    print(OS_NAME);
-    print(" ");
-    print(OS_VERSION);
-    print("\n");
-
-    // print("BUILD_DATE : ");
-    // print(BUILD_DATE);
-    // print("\n");
-
-    // print("Bootloader : ");
-    // print(BOOTLOADER_NAME);
-    // print(" ");
-    // print(BOOTLOADER_VERSION);
-    // print("\n");
-
-    // print("Framebuffer Resolution : ");
-    // print_dec(FRAMEBUFFER_WIDTH);
-    // print("x");
-    // print_dec(FRAMEBUFFER_HEIGHT);
-    // print("\n");
-
-    // print("LIMINE_PAGING_MODE : ");
-    // print(LIMINE_PAGING_MODE);
-    // print("\n");
-
-    // print("CPU_COUNT : ");
-    // print_dec(CPU_COUNT);
-    // print("\n");
-
-    // print("STACK_SIZE : ");
-    // print_dec(STACK_SIZE);
-    // print("\n");
-
-    // print("VIRTUAL_BASE : ");
-    // print_hex(VIRTUAL_BASE);
-    // print("\n");
-    // print("PHYSICAL_BASE : ");
-    // print_hex(PHYSICAL_BASE);
-    // print("\n");
-    // print("VIRTUAL_TO_PHYSICAL_OFFSET : ");
-    // print_hex(VIRTUAL_TO_PHYSICAL_OFFSET);
-    // print("\n");
-
-    init_gdt();
-    // check_gdt();
-
-    init_idt();
-    // check_idt();
-
-    init_timer();
-    initKeyboard();
-
-    disable_interrupts();
-    initialise_paging();
-    enable_interrupts();
-    // Test paging
-    test_paging();
-
-    hcf();
 }
 
-// Halt and catch fire function.
-void hcf(void) {
-    for (;;) {
-        asm ("hlt");
-    }
+void print_bootloader_info(){
+    print("BUILD_DATE : ");
+    print(BUILD_DATE);
+    print("\n");
+
+    print("Bootloader : ");
+    print(BOOTLOADER_NAME);
+    print(" ");
+    print(BOOTLOADER_VERSION);
+    print("\n");
+
+    print_memory_map();
+
+    print("Framebuffer Resolution : ");
+    print_dec(FRAMEBUFFER_WIDTH);
+    print("x");
+    print_dec(FRAMEBUFFER_HEIGHT);
+    print("\n");
+
+    print("LIMINE_PAGING_MODE : ");
+    print(LIMINE_PAGING_MODE);
+    print("\n");
+
+    print("CPU_COUNT : ");
+    print_dec(CPU_COUNT);
+    print("\n");
+
+    print("STACK_SIZE : ");
+    print_dec(STACK_SIZE);
+    print("\n");
+
+    print("VIRTUAL_BASE : ");
+    print_hex(VIRTUAL_BASE);
+    print("\n");
+    print("PHYSICAL_BASE : ");
+    print_hex(PHYSICAL_BASE);
+    print("\n");
+    print("VIRTUAL_TO_PHYSICAL_OFFSET : ");
+    print_hex(VIRTUAL_TO_PHYSICAL_OFFSET);
+    print("\n");
 }
 
 

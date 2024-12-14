@@ -9,13 +9,13 @@ void shell_prompt() {
 
 
 void execute_command(char* command) {
+    
     if (strcmp(command, "help") == 0) {
-        print("Available commands: help, clear, reboot, poweroff, time, uptime, regvalue, features, exit.\n");
+        print("Available commands: help, clear, reboot, poweroff, time, uptime, regvalue,check gdt, features, test interrupt, exit.\n");
     } else if (strcmp(command, "clear") == 0) {
         clear_screen();  // Clear the screen using your VGA driver
     } else if (strcmp(command, "reboot") == 0) {
         print("Rebooting...\n");
-        // You will need to implement the reboot function depending on your OS
         reboot();
     } else if (strcmp(command, "poweroff") == 0){
         print("Shutting Down!\n");
@@ -36,7 +36,7 @@ void execute_command(char* command) {
         print_features();
     }else if (strcmp(command, "test interrupt") == 0){
         print("Test Interrupts\n");
-        void test_interrupt();
+        test_interrupt();
     } else if (strcmp(command, "exit") == 0) {
         print("Exiting shell...\n");
         shell_running = false;
@@ -70,7 +70,7 @@ void poweroff() {
 
 
 void reboot(){
-    outb(0x64, 0xFE);  // Send reset command to the keyboard controller
+    outb(0x64, 0xFE);   // Send reset command to the keyboard controller
 }
 
 
@@ -78,7 +78,8 @@ void reboot(){
 // This C function will print the register values passed via the stack.
 void print_registers_c(uint64_t rdi, uint64_t rsi, uint64_t rbp, uint64_t rsp, 
                        uint64_t rbx, uint64_t rdx, uint64_t rcx, uint64_t rax,
-                       uint64_t r8, uint64_t r9, uint64_t r10, uint64_t r11, uint64_t r12, uint64_t r13, uint64_t r14, uint64_t r15 ) {
+                       uint64_t r8,  uint64_t r9,  uint64_t r10, uint64_t r11, 
+                       uint64_t r12, uint64_t r13, uint64_t r14, uint64_t r15 ) {
     print("Register Values:\n");
     
     print("RAX: ");
@@ -145,15 +146,16 @@ void print_registers_c(uint64_t rdi, uint64_t rsi, uint64_t rbp, uint64_t rsp,
 
 void print_features(){
     print("Features:\n");
-    print("1. GRUB2 Bootloading\n");
-    print("2. Keyboard Driver\n");
-    print("3. VGA Text Mode Display Driver\n");
-    print("4. GDT initialization\n");
-    print("5. IDT initialization\n");
-    print("6. PIT initialization\n");
+    print("Architecture : x86_64.\n");
+    print("1. Limine Bootloading.\n");
+    print("2. GDT initialization.\n");
+    print("3. VGA Graphics Driver.\n");
+    print("4. IDT initialization.\n");
+    print("5. Keyboard driver initialization.\n");
+    print("6. PIT Timer initialization.\n");
     print("7. Basic User Shell");
+    print("8. Memory Management Unit(Kheap, PMM, 4 Level Paging)\n");
     print("7. Standard Libraries : match.h, stddef.h, stdint.h, stdio.h, stdlib.h, string.h\n");
-    print("_________________________________________________________________________________\n");
 }
 
 

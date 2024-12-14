@@ -31,6 +31,8 @@ enable_paging:
     or  rax, (1 << 8)
     wrmsr
 
+    and rdi, 0xFFFFFFFFFFFFF000 ; Ensure alignment to 4 KiB
+
     ; Replace 'pml4_table' with the appropriate physical address (and flags, if applicable)
     mov cr3, rdi
 
@@ -42,3 +44,6 @@ enable_paging:
     ; Now reload the segment registers (CS, DS, SS, etc.) with the appropriate segment selectors...
 
     jmp reloadSegments
+
+
+

@@ -10,8 +10,6 @@
 #include  "../driver/vga.h"
 #include "../kernel/kernel.h"
 
-extern uint64_t *frames;
-extern uint64_t nframes;
 
 // Macros used in the bitset algorithms.
 #define INDEX_FROM_BIT(a)(a/64)
