@@ -1,3 +1,5 @@
+#!/bin/sh
+
 qemu-system-x86_64 -cdrom build/image.iso  -m 4096 -serial file:serial_output.log \
     -d guest_errors,int,cpu_reset -vga std -no-shutdown -no-reboot -S -s &
 QEMU_PID=$!
@@ -8,7 +10,6 @@ QEMU_PID=$!
 gdb build/kernel.bin \
         -ex 'target remote localhost:1234' \
         -ex 'break kmain' \
-        -ex 'break initialise_paging' \
         -ex 'continue'
 
 ps --pid $QEMU_PID > /dev/null
