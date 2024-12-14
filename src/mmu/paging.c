@@ -102,7 +102,7 @@ void initialise_paging()
     }
 
     // Update CR3 to flush the TLB
-    asm("mov %0, %%cr3" :: "r"(kernel_pml4));
+    asm("mov %0, %%cr3" :: "r"(kernel_pml4) : "memory");
 #endif
 
     print("Successfully Paging have initialized!\n");
