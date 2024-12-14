@@ -86,7 +86,7 @@ isr_common_stub:
     pop rbx
     pop rax
 
-    add rsp, 16               ; Clean up interrupt number
+    add rsp, 16               ; Clean up pushed error code and IRQ number 
     iretq
 
 
