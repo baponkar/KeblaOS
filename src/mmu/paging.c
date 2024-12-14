@@ -111,7 +111,7 @@ void initialise_paging()
 
 
 page_t *get_page(uint64_t address, int make, pml4_t *pml4) {
-    // Note from <ichael Petch - it may be by design but this
+    // Note from Michael Petch - it may be by design but this
     // code doesn't support processing the PAGESIZE bit which
     // could become a problem??
 
