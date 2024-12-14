@@ -12,6 +12,7 @@ OS_VERSION = 0.7
 HOST_HOME = /home/baponkar
 
 
+OBJDUMP = /usr/local/x86_64-elf/bin/x86_64-elf-objdump
 GCC = /usr/local/x86_64-elf/bin/x86_64-elf-gcc
 GCC_FLAG = -g -Wall \
 	-Wextra -std=gnu11 \
@@ -34,7 +35,7 @@ LD = /usr/local/x86_64-elf/bin/x86_64-elf-ld
 LD_FLAG = -m elf_x86_64 -nostdlib -static -z max-page-size=0x1000
 
 NASM = nasm
-NASM_FLAG = -Wall -f elf64
+NASM_FLAG = -g -Wall -f elf64
 
 # Default target
 all: run
@@ -120,8 +121,11 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/pmm.o
 
 
+objdump.txt: $(BUILD_DIR)/kernel.bin
+	$(OBJDUMP) -DxS $< >$@
+
 # Creating ISO image
-$(BUILD_DIR)/image.iso: $(BUILD_DIR)/kernel.bin
+$(BUILD_DIR)/image.iso: $(BUILD_DIR)/kernel.bin objdump.txt
 	# git clone https://github.com/limine-bootloader/limine.git --branch=v8.x-binary --depth=1
 	# make -C limine
 	

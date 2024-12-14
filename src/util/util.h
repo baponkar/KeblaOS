@@ -8,6 +8,7 @@
 // Saved State in register
 typedef struct registers
 {
+    uint64_t ds, es, fs, gs; // Segment registers
     uint64_t r15, r14, r13, r12, r11, r10, r9, r8; // General-purpose registers
     uint64_t rdi, rsi, rbp, rdx, rcx, rbx, rax;
     uint64_t int_no, err_code; // Interrupt number and error code
