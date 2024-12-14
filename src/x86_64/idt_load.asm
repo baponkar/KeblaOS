@@ -2,7 +2,6 @@ section .text
 [GLOBAL idt_flush]
 idt_flush:
     lidt [rdi]              ; Load the IDT pointer
-    sti                     ; Enable interrupts
     ret
 
 
@@ -11,7 +10,6 @@ idt_flush:
 %macro ISR_NOERRCODE 1
     [GLOBAL isr%1]
     isr%1:
-        cli
         push 0               ; Dummy error code
         push %1              ; Interrupt number
         jmp isr_common_stub
@@ -20,13 +18,14 @@ idt_flush:
 %macro ISR_ERRCODE 1
     [GLOBAL isr%1]
     isr%1:
-        cli
         push %1              ; Interrupt number only
         jmp isr_common_stub
 %endmacro
 
 [EXTERN isr_handler]
 isr_common_stub:
+    ; Todo use swapgs
+
     ; Storing all general purpose registers state
     push rax
     push rbx
@@ -43,17 +42,34 @@ isr_common_stub:
     push r13
     push r14
     push r15
-    
-    mov ax, 0x10             ; Load the kernel data segment descriptor
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
+
+    ; Todo - should use swapgs
+    push gs                  ; Save previous state of segment registers
+    push fs
+    mov eax, es
+    push rax
+    mov eax, ds
+    push rax
+
+    mov eax, 0x10             ; Load the kernel data segment descriptor
+    mov ds, eax
+    mov es, eax
+    mov fs, eax
+    mov gs, eax
 
     mov rdi, rsp             ; Pass the current stack pointer to `isr_handler`
+    cld                      ; Required by AMD64 System V ABI
     call isr_handler
-    
-    ; Clear all general-purpose registers state
+
+    ; Todo - should use swapgs
+    pop rax                  ; Restore previous state of segment registers
+    mov ds, eax
+    pop rax
+    mov es, eax
+    pop fs
+    pop gs
+
+    ; Restore general-purpose register state
     pop r15
     pop r14
     pop r13
@@ -70,14 +86,7 @@ isr_common_stub:
     pop rbx
     pop rax
 
-    ; Adjust stack pointer depending on whether error code was pushed
-    cmp qword [rsp + 8], 0   ; Check if dummy error code was pushed
-    je .skip_cleanup         ; If dummy error code, jump to .skip_cleanup
-    add rsp, 8               ; If real error code, adjust rsp by 8
-
-.skip_cleanup:
-    add rsp, 8               ; Clean up interrupt number
-    sti
+    add rsp, 16               ; Clean up pushed error code and IRQ number 
     iretq
 
 
@@ -124,10 +133,8 @@ ISR_NOERRCODE 177   ; System Call
 %macro IRQ 2
     global irq%1
     irq%1:
-        cli           ; Clear Interrupts
         push 0        ; Push a dummy error code
-        mov rax, %2   
-        push rax      ; Push irq code
+        push %2      ; Push irq code
         jmp irq_common_stub
 %endmacro
 
@@ -153,6 +160,8 @@ IRQ  15,    47
 ; This is a stub that we have created for IRQ based ISRs. This calls
 [extern irq_handler]
 irq_common_stub:
+    ; Todo use swapgs
+
     ; Storing all general purpose registers state
     push rax
     push rbx
@@ -170,23 +179,33 @@ irq_common_stub:
     push r14
     push r15
 
-    ; Save the CR2 register (holds page fault linear address)
-    mov rax, cr2
+    ; Todo - should use swapgs
+    push gs                  ; Save previous state of segment registers
+    push fs
+    mov eax, es
+    push rax
+    mov eax, ds
     push rax
 
-    mov ax, 0x10  ; Load the Kernel Data Segment descriptor!
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
+    mov eax, 0x10  ; Load the Kernel Data Segment descriptor!
+    mov ds, eax
+    mov es, eax
+    mov fs, eax
+    mov gs, eax
 
     mov rdi, rsp    ; Pass stack pointer to `irq_handler`
+    cld                      ; Required by AMD64 System V ABI
     call irq_handler
 
-    add rsp, 16     ; Clean up pushed error code and IRQ number 
+    ; Todo - should use swapgs
+    pop rax                  ; Restore previous state of segment registers
+    mov ds, eax
     pop rax
+    mov es, eax
+    pop fs
+    pop gs
 
-    ; Clear all general-purpose registers state
+    ; Restore general-purpose register state
     pop r15
     pop r14
     pop r13
@@ -202,6 +221,6 @@ irq_common_stub:
     pop rcx
     pop rbx
     pop rax
-      
-    sti             ; Enable Interrupts
+
+    add rsp, 16     ; Clean up pushed error code and IRQ number 
     iretq           ; Return from Interrupt
