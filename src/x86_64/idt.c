@@ -12,44 +12,43 @@ idt_entry_t idt_entries[256];
 idt_ptr_t   idt_ptr;
 
 char* exception_messages[] = {
-    "Division By Zero",
-    "Debug",
-    "Non Maskable Interrupt",
-    "Breakpoint",
-    "Into Detected Overflow",
-    "Out of Bounds",
-    "Invalid Opcode",
-    "No Coprocessor",
-    "Double fault",
-    "Coprocessor Segment Overrun",
-    "Bad TSS",
-    "Segment not present",
-    "Stack fault",
-    "General protection fault",
-    "Page fault",
-    "Unknown Interrupt",
-    "Coprocessor Fault",
-    "Alignment Fault",
-    "Machine Check", 
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved"
+    "Division By Zero", // 0
+    "Debug", // 1
+    "Non Maskable Interrupt", // 2
+    "Breakpoint", // 3
+    "Into Detected Overflow", // 4
+    "Out of Bounds", // 5
+    "Invalid Opcode", // 6
+    "No Coprocessor", // 7
+    "Double fault (pushes an error code)", // 8
+    "Coprocessor Segment Overrun", // 9
+    "Bad TSS (pushes an error code)", // 10
+    "Segment not present (pushes an error code)", // 11
+    "Stack fault (pushes an error code)", // 12
+    "General protection fault (pushes an error code)", // 13
+    "Page fault (pushes an error code)", // 14
+    "Unknown Interrupt", // 15
+    "Coprocessor Fault", // 16
+    "Alignment Fault", // 17
+    "Machine Check",  // 18
+    "Reserved", // 19
+    "Reserved", // 20
+    "Reserved", // 21
+    "Reserved", // 22
+    "Reserved", // 23
+    "Reserved", // 24
+    "Reserved", // 25
+    "Reserved", // 26
+    "Reserved", // 27
+    "Reserved", // 28
+    "Reserved", // 29
+    "Reserved", // 30
+    "Reserved" // 31
 };
 
 
 
 void idt_set_gate(uint8_t index, uint64_t offset, uint16_t selector, uint8_t attr){
-    
     idt_entries[index].offset_1 = (uint16_t) offset & 0xFFFF; // set lower 16 bit
     idt_entries[index].selector = selector;         // set 16 bit of selector
     idt_entries[index].ist = 0; // disabled ist i.e clear 3 bit of ist and 5 bit of reserved field 
@@ -65,11 +64,12 @@ void isr_install(){
     idt_ptr.limit = sizeof(idt_entry_t) * 256 - 1;
     idt_ptr.base  = (uint64_t) &idt_entries;
 
+    // for safety clearing memories
     memset(&idt_entries, 0, sizeof(idt_entry_t) * 256);
 
    // Setting Interrupts Service Routine Gate(ISR Gate)
    // https://stackoverflow.com/questions/9113310/segment-selector-in-ia-32
-   idt_set_gate(  0, (uint64_t)isr0 , 0x08, 0x8E);  // selector = 0x08 = 0b1000, 32-bit Interrupt Gate => attr = 0x8E = 1000 1110, (p=0b1,0b0, dpl=0b00, gate type=0b1110)
+   idt_set_gate(  0, (uint64_t)isr0 , 0x08, 0x8E);  // selector = 0x08 = 0b1000, 64-bit Interrupt Gate => attr = 0x8E = 1000 1110, (p=0b1,0b0, dpl=0b00, gate type=0b1110)
    idt_set_gate(  1, (uint64_t)isr1 , 0x08, 0x8E);  // Keyboard
    idt_set_gate(  2, (uint64_t)isr2 , 0x08, 0x8E);  // selector value is 1000 because GDT code segment index is 1
    idt_set_gate(  3, (uint64_t)isr3 , 0x08, 0x8E);  // selector = index + table_to_use + privilege
@@ -112,16 +112,19 @@ void isr_install(){
 void isr_handler(registers_t regs)
 {
     if(regs.int_no == 128){
+        print("Interrupt 128\n");
         // syscall_handler(&regs);
-        //return;
+        return;
     }
     else if(regs.int_no == 177){
+        print("Interrupt 177\n");
         // syscall_handler(&regs);
-        //return;
+        return;
     }
     else if (regs.int_no == 14) { // Check if it is a page fault
+        print("Interrupt 14\n");
         // page_fault(&regs); // Call your page fault handler directly
-        //return;
+        return;
     }
     else if(regs.int_no < 32){
         print("recieved interrupt: ");
@@ -136,6 +139,11 @@ void isr_handler(registers_t regs)
         for (;;){
              asm ("hlt");
         }
+    }else{
+        print("Interrupt No : ");
+        print_dec(regs.int_no);
+        print("\n");
+        return;
     }
 }
 

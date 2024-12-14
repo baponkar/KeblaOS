@@ -245,16 +245,17 @@ void print_dec(uint64_t n)
     }
 }
 
+
 // This will print binary numbers
 void print_bin(uint64_t n) {
     print("0b");  // Print binary prefix
-
     // Loop through all 32 bits of the number, starting from the most significant bit (31)
     for (int i = 63; i >= 0; i--) {
         uint64_t bit = (n >> i) & 1;  // Extract the i-th bit (0 or 1)
         putchar(bit ? '1' : '0');     // Print '1' or '0'
     }
 }
+
 
 void  backspace_manage(){
     // Current cursor position previous character remove
@@ -311,12 +312,14 @@ void draw_vertical_line( int x, int y, int length, uint64_t color){
     }
 }
 
+
 void draw_horizontal_line( int x, int y, int length, uint64_t color){
     // Drawing horizontal line
     for(int i=x; i<x+length; i++){
         FRAMEBUFFER_PTR[y * FRAMEBUFFER_WIDTH + i] = color;
     }
 }
+
 
 void draw_rectangle( int x, int y, int width, int height, uint64_t color){
     draw_horizontal_line( x, y, width, color);
@@ -325,6 +328,7 @@ void draw_rectangle( int x, int y, int width, int height, uint64_t color){
     draw_vertical_line( x, y, height, color);
     draw_vertical_line( x+width, y, height, color);
 }
+
 
 void draw_circle( int center_x, int center_y, int radius, uint64_t color) {
     int x = radius;
@@ -353,6 +357,7 @@ void draw_circle( int center_x, int center_y, int radius, uint64_t color) {
     }
 }
 
+
 void cls_color( uint64_t color) {
     for (size_t y = 0; y < FRAMEBUFFER_HEIGHT; y++) {
         for (size_t x = 0; x < FRAMEBUFFER_WIDTH; x++) {
@@ -361,6 +366,7 @@ void cls_color( uint64_t color) {
     }
 }
 
+
 void fill_rectangle( int x, int y, int width, int height, uint64_t color) {
     for (int i = y; i < y + height; i++) {
         for (int j = x; j < x + width; j++) {
@@ -368,6 +374,7 @@ void fill_rectangle( int x, int y, int width, int height, uint64_t color) {
         }
     }
 }
+
 
 void fill_circle( int center_x, int center_y, int radius, uint64_t color) {
     for (int y = -radius; y <= radius; y++) {
@@ -379,11 +386,13 @@ void fill_circle( int center_x, int center_y, int radius, uint64_t color) {
     }
 }
 
+
 void draw_triangle( int x1, int y1, int x2, int y2, int x3, int y3, uint64_t color) {
     draw_line( x1, y1, x2, y2, color);
     draw_line( x2, y2, x3, y3, color);
     draw_line( x3, y3, x1, y1, color);
 }
+
 
 void fill_flat_bottom_triangle( int x1, int y1, int x2, int y2, int x3, int y3, uint64_t color) {
     int inv_slope1 = (x2 - x1) / (y2 - y1);
@@ -398,6 +407,7 @@ void fill_flat_bottom_triangle( int x1, int y1, int x2, int y2, int x3, int y3, 
         curx2 += inv_slope2;
     }
 }
+
 
 void fill_triangle( int x1, int y1, int x2, int y2, int x3, int y3, uint64_t color) {
     if (y2 < y1) { int temp_x = x1; x1 = x2; x2 = temp_x; int temp_y = y1; y1 = y2; y2 = temp_y; }
@@ -448,12 +458,12 @@ void draw_colorful_image() {
     fill_circle( 3 * FRAMEBUFFER_WIDTH / 4, 3 * FRAMEBUFFER_HEIGHT / 4, 50, COLOR_BLUE);
 }
 
+
 // Display an image at position (x, y) in the framebuffer
 void display_image( int x, int y, const uint64_t* image_data, int img_width, int img_height) {
     for (int i = 0; i < img_height; i++) {
         for (int j = 0; j < img_width; j++) {
             uint64_t color = image_data[i * img_width + j];
-
             set_pixel(x + j, y + i, color);
         }
     }

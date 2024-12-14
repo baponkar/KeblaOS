@@ -1,10 +1,11 @@
 /*
 https://wiki.osdev.org/PS/2_Keyboard
-
+https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_Keyboard_Support.md
 */
 
 
 #include "keyboard.h"
+
 
 #define BUFFER_SIZE 128 // Max Size of Command Buffer
 char COMMAND_BUFFER[BUFFER_SIZE];   // Command string Container Buffer
@@ -59,7 +60,7 @@ int getScanCode(){
 
 
 bool getKeyState(){
-    char key_state = (char) inb(0x60) & 0x80;    // Press down return 0x0000000, or released return 0xfffff80
+    char key_state = (char) inb(0x60) & 0x80;    // Press down return 0x0000000, or released return 0xffffff80
 
     // Key Released
     if(key_state == 0xFFFFFF80){
@@ -85,6 +86,7 @@ char scanCodeToChar(uint32_t scanCode) {
         return capsLock ? uppercase[scanCode] : lowercase[scanCode];
     }
 }
+
 
 void key_ctrl(uint32_t scanCode, bool keyPress){
     switch(scanCode){
@@ -224,11 +226,10 @@ void initKeyboard(){
     enable_interrupts();
 }
 
+
 void disableKeyboard(){
     interrupt_uninstall_handler(1);
 }
-
-
 
 
 void read_command(char* input) {
@@ -242,3 +243,8 @@ void read_command(char* input) {
         }
     }
 }
+
+
+
+
+

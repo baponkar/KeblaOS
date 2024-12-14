@@ -1,4 +1,3 @@
-
 section .text
 [GLOBAL idt_flush]
 idt_flush:
@@ -28,7 +27,22 @@ idt_flush:
 
 [EXTERN isr_handler]
 isr_common_stub:
-    pushaq                   ; Push all general-purpose registers, this works only inside of macro
+    ; Storing all general purpose registers state
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+    push rbp
+    push r8
+    push r9
+    push r10
+    push r11
+    push r12
+    push r13
+    push r14
+    push r15
     
     mov ax, 0x10             ; Load the kernel data segment descriptor
     mov ds, ax
@@ -39,20 +53,32 @@ isr_common_stub:
     mov rdi, rsp             ; Pass the current stack pointer to `isr_handler`
     call isr_handler
     
-    pophaq                   ; Pop all general-purpose registers
+    ; Clear all general-purpose registers state
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rbp
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
 
     ; Adjust stack pointer depending on whether error code was pushed
     cmp qword [rsp + 8], 0   ; Check if dummy error code was pushed
-    jnz .skip_cleanup        ; If real error code, jump to .skip_cleanup
-    add rsp, 16               ; If dummy error code, adjust rsp by 8
-    sti
-    iretq
+    je .skip_cleanup         ; If dummy error code, jump to .skip_cleanup
+    add rsp, 8               ; If real error code, adjust rsp by 8
 
 .skip_cleanup:
-    add rsp, 8               ; Clean up interrupt number 8 for dummy error code and another 8 for interrupt no
+    add rsp, 8               ; Clean up interrupt number
     sti
-    iretq                
-
+    iretq
 
 
 ISR_NOERRCODE 0
@@ -61,7 +87,7 @@ ISR_NOERRCODE 2
 ISR_NOERRCODE 3
 ISR_NOERRCODE 4
 ISR_NOERRCODE 5
-ISR_NOERRCODE 6     ; Return from interrupt 6
+ISR_NOERRCODE 6     
 ISR_NOERRCODE 7
 
 ISR_ERRCODE 8
@@ -160,7 +186,7 @@ irq_common_stub:
     add rsp, 16     ; Clean up pushed error code and IRQ number 
     pop rax
 
-    ; Clear all general purpose registers state
+    ; Clear all general-purpose registers state
     pop r15
     pop r14
     pop r13
@@ -177,7 +203,5 @@ irq_common_stub:
     pop rbx
     pop rax
       
-    ;add rsp, 16     ; Adjust stack to clean up any pushed error code or ISR number (if present)
-    sti             ; Store Interrupts
-    iretq           ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP!
-
+    sti             ; Enable Interrupts
+    iretq           ; Return from Interrupt

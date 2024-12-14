@@ -29,3 +29,5 @@ void get_smp_info(void);
 void get_vir_to_phy_offset(void);
 void print_memory_map(void);
 
+void print_bootloader_info();
+void get_system_info();

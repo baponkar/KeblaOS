@@ -1,8 +1,6 @@
-[EXTERN print_registers_c]
+extern print_registers_c
 
-[GLOBAL print_registers]
-
-
+global print_registers
 
 print_registers:
     ; Push all general-purpose registers to the stack

@@ -77,13 +77,14 @@ void print_cr3() {
 
 
 void initialise_paging()
-{ 
-    nframes = mem_end_address / 0x1000; // Total numbers of frames
+{  
+    nframes = (uint64_t) mem_end_address / 0x1000; // Total numbers of frames
     frames = (uint64_t *) kmalloc(INDEX_FROM_BIT(nframes)); // container the used and unused frames data
 
     memset(frames, 0, INDEX_FROM_BIT(nframes));
     // Allocate and zero-initialize the PML4 table
     kernel_pml4 = (pml4_t *) kmalloc_a(sizeof(pml4_t), 1); // 4 kb memory aligned
+
     memset(kernel_pml4, 0, sizeof(pml4_t)); // clear all bit
     current_pml4 = kernel_pml4; 
 
@@ -98,59 +99,73 @@ void initialise_paging()
         i += 0x1000;
     }
 
-    uint64_t physical_address = (uint64_t) kernel_pml4;
-
+    disable_interrupts();
     disable_paging();
-    enable_paging(physical_address);
+    enable_paging((uint64_t) kernel_pml4);
+    enable_interrupts();
+    print("Successfully Paging have initialized!\n");
 }
 
 
 
 page_t *get_page(uint64_t address, int make, pml4_t *pml4) {
+    // Creating different index from virtual address
     uint64_t pml4_idx = PML4_INDEX(address);
     uint64_t pdpt_idx = PDPT_INDEX(address);
     uint64_t pd_idx = PD_INDEX(address);
     uint64_t pt_idx = PT_INDEX(address);
 
     // Resolve PML4 entry
-    if (!(pml4->entry_t[pml4_idx] & 0x1)) { // Check if entry is present
+    if (!(pml4->entry_t[pml4_idx].present)) { // Check if entry is present
         if (make) {
             pdpt_t *new_pdpt = (pdpt_t *) kmalloc_a(sizeof(pdpt_t), 1); // create a new pdpt with 4 kb aligned
             memset(new_pdpt, 0, sizeof(pdpt_t)); // Zero out memory for safety
-            pml4->entry_t[pml4_idx] = ((uint64_t)new_pdpt & ~0xFFF) << 12 | 0x3; // pml4 will hold address of new_pdpt and make it present and writable
+            // pml4 will hold address of new_pdpt and make it present and writable
+            pml4->entry_t[pml4_idx].present = 1; // present
+            pml4->entry_t[pml4_idx].rw = 1;      // writable
+            pml4->entry_t[pml4_idx].user = 0;    // superuser or kernel user
+            pml4->entry_t[pml4_idx].base_addr = (uint64_t) new_pdpt;  // pdpt address
         } else {
             return NULL; // Entry not present and not creating
         }
     }
 
-    pdpt_t *pdpt = (pdpt_t *)((pml4->entry_t[pml4_idx] >> 12 & ~0xFFF)); // create  pdpt from pml4->entry_t[pml4_idx]
+    // create  pdpt from pml4->entry_t[pml4_idx]
+    pdpt_t *pdpt = (pdpt_t *) pml4->entry_t[pml4_idx].base_addr; 
 
     // Resolve PDPT entry
-    if (!(pdpt->entry_t[pdpt_idx] & 0x1)) { // Check if entry is present
+    if (!(pdpt->entry_t[pdpt_idx].present)) { // Check if entry is present
         if (make) {
             pd_t *new_pd = (pd_t *)kmalloc_a(sizeof(pd_t), 1); // making new pd with 4 kb aligned
-            memset(new_pd, 0, sizeof(pd_t));
-            pdpt->entry_t[pdpt_idx] = ((uint64_t)new_pd & ~0xFFF) << 12 | 0x3;
+            memset(new_pd, 0, sizeof(pd_t)); // Zero out memory for safety
+            pdpt->entry_t[pdpt_idx].present = 1; // present
+            pdpt->entry_t[pdpt_idx].rw = 1; // writable
+            pdpt->entry_t[pdpt_idx].user = 1; // superuser or kernel user
+            pdpt->entry_t[pdpt_idx].base_addr = (uint64_t) new_pd; // store new_pd address
         } else {
             return NULL;
         }
     }
 
-    pd_t *pd = (pd_t *)((pdpt->entry_t[pdpt_idx] >> 12 & ~0xFFF));
+    // Creating pd from pdpt->entry_t[pdpt_idx]
+    pd_t *pd = (pd_t *) pdpt->entry_t[pdpt_idx].base_addr;
 
     // Resolve PD entry
-    if (!(pd->entry_t[pd_idx] & 0x1)) {// Check if entry is present
+    if (!(pd->entry_t[pd_idx].present)) {// Check if entry is present
         if (make) {
             pt_t *new_pt = (pt_t *)kmalloc_a(sizeof(pt_t), 1); // making new pt with 4 kb aligned
-            memset(new_pt, 0, sizeof(pt_t));
-            pd->entry_t[pd_idx] = ((uint64_t)new_pt & ~0xFFF) << 12 | 0x3;
+            memset(new_pt, 0, sizeof(pt_t)); // Zero out memory for safety
+            pd->entry_t[pd_idx].present = 1; // present
+            pd->entry_t[pd_idx].rw = 1; // writable
+            pd->entry_t[pd_idx].user = 1; // superuser or kernel user
+            pd->entry_t[pd_idx].base_addr = (uint64_t) new_pt; // store new_pt address
         } else {
             return NULL;
         }
     }
 
     // Resolve Page Table
-    pt_t *pt = (pt_t *)((pd->entry_t[pd_idx] >> 12 & ~0xFFF)); // Creating Page Table from pd->entry_t[pd_idx]
+    pt_t *pt = (pt_t *) pd->entry_t[pd_idx].base_addr; // Creating Page Table from pd->entry_t[pd_idx]
 
     // Resolve Page
     page_t *page =(page_t *) &pt->pages[pt_idx];
@@ -205,11 +220,12 @@ void page_fault_handler(registers_t *regs)
 }
 
 void test_paging(){
-    uint64_t* test_address = (uint64_t*)0xFFFFFFFF80000000;  // Higher-half virtual address
+    print("Start Paging Test...\n");
+    uint64_t* test_address = (uint64_t*) 0xFFFFFFFF80000000;  // Higher-half virtual address
     *test_address = 0x12345678ABCDEF00;
 
-    uint64_t* invalid_address = (uint64_t*)0xFFFFFFFF90000000;  // Unmapped address
-    *invalid_address = 0x0;  // This should trigger a page fault
+    // uint64_t* invalid_address = (uint64_t*)0xFFFFFFFF90000000;  // Unmapped address
+    // *invalid_address = 0x0;  // This should trigger a page fault
 
     print("Finish Paging Test\n");
 }
