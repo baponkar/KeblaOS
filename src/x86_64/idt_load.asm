@@ -108,8 +108,8 @@ isr_common_stub:
     cld                      ; Required by AMD64 System V ABI
     call isr_handler
     
-    add rsp, 16
     RESTORE_REGISTERS
+    add rsp, 16
     iretq                     ; Return from Interrupt
 
 
@@ -175,8 +175,8 @@ irq_common_stub:
     cld             ; Required by AMD64 System V ABI
     call irq_handler
 
-    add rsp, 16     ; Clean up pushed error code and IRQ number 
     RESTORE_REGISTERS
+    add rsp, 16     ; Clean up pushed error code and IRQ number 
     iretq           ; Return from Interrupt
 
 IRQ   0,    32
