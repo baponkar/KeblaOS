@@ -1,13 +1,10 @@
-*.o
-*.log
-*.iso
-*.bin
-<<<<<<< HEAD
-<<<<<<< HEAD
+build/*.o
+build/*.log
+build/*.iso
+build/*.bin
 objdump.txt
-=======
-objdump.txt
->>>>>>> 90f9877f1f464214e589661cd94902285944ad34
-=======
-objdump.txt
->>>>>>> 90f9877f1f464214e589661cd94902285944ad34
+serial_output.log
+qemu.log 
+
+
+
