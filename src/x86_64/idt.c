@@ -180,7 +180,7 @@ void init_idt(){
 
 void test_interrupt() {
     print("Testing Interrupts\n");
-    print_dec( 104 / 0 );        // Int no 0
+    // print_dec( 104 / 0 );        // Int no 0
     // asm volatile ("int $0x3");   // Breakpoint int no : 3
     // asm volatile ("int $0x0");   // Division By Zero, int no : 0
     // asm volatile ("int $0xE");   // Page Fault Request, int no: 14

@@ -141,14 +141,14 @@ void kmain(void){
     // test_interrupt();
 
     initialise_paging();
+    // test_paging();
 
     init_timer();
+    
     initKeyboard();
 
-    
 
-    // Test paging
-    test_paging();
+    
 
     hcf();
 }
