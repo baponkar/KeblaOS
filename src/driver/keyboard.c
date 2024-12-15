@@ -173,6 +173,7 @@ void key_ctrl(uint32_t scanCode, bool keyPress){
     }
 }
 
+
 void handel_enter_key(bool keyPressed){
     if(keyPressed == false){
         create_newline();
@@ -213,6 +214,7 @@ void handel_del_key(bool keyPressed){
     }
 }
 
+
 void keyboardHandler(registers_t *regs){
     scanCode =  getScanCode();  // What key is pressed
     press = getKeyState();      // Manage Key Pressed or Released by changing bool variable press
@@ -221,9 +223,10 @@ void keyboardHandler(registers_t *regs){
 
 
 void initKeyboard(){
-    disable_interrupts();
+    //disable_interrupts();
     interrupt_install_handler(1, &keyboardHandler);
-    enable_interrupts();
+    //enable_interrupts();
+    print("Successfully Keyboard initialized!\n");
 }
 
 

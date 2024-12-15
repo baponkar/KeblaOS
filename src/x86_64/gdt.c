@@ -69,6 +69,8 @@ void init_gdt(){
 
     gdt_flush((gdtr_t *) &gdtr_instance);
     reloadSegments();
+
+    print("Successfully GDT Enabled!\n");
 }
 
 

@@ -43,6 +43,7 @@ void init_timer(){
     outb(PIT_COMMAND_PORT, 0x36);
     outb(PIT_CHANNEL_0, (uint8_t)(divisor & 0xFF));  // FF = 1111 1111 => last eight digit
     outb(PIT_CHANNEL_0, (uint8_t)((divisor >> 8) & 0xFF)); 
+    print("Successfully timer initialized!\n");
 }
 
 
