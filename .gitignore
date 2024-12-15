@@ -2,4 +2,8 @@
 *.log
 *.iso
 *.bin
+<<<<<<< HEAD
 objdump.txt
+=======
+objdump.txt
+>>>>>>> 90f9877f1f464214e589661cd94902285944ad34

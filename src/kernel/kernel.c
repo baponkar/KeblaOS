@@ -14,7 +14,13 @@ Reference   :
 #include "kernel.h"
 
 // My plan is set value of the below variable by bootloader data
-uint64_t placement_address = 0x1000000;  // 1 MB 
+
+// Note from Michael Petch   0x1000000 is not 1Mib! Extra 0??
+//                           0x0050000 is not 20KiB! Extra 0??
+// Are you sure about these value. Michael agrees that your PMM
+// needs to be tied to the physical memory that Limine tells you is
+// available to be used by your kernel.
+uint64_t placement_address = 0x1000000;  // 1 MB
 uint64_t mem_end_address = 0x1050000; // 1MB + 20 KB
 
 
@@ -132,7 +138,12 @@ static volatile LIMINE_REQUESTS_END_MARKER;
 void kmain(void){
     get_system_info();
 
+<<<<<<< HEAD
     // print_bootloader_info();
+=======
+    print("KeblaOS - 0.8\n");
+    print_bootloader_info();
+>>>>>>> 90f9877f1f464214e589661cd94902285944ad34
 
     init_gdt();
     // check_gdt();

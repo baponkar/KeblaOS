@@ -30,14 +30,46 @@ idt_flush:
 %macro ISR_ERRCODE 1
     [global isr%1]
     isr%1:
+<<<<<<< HEAD
         ; don't need to push error code as it is autometically push
+=======
+>>>>>>> 90f9877f1f464214e589661cd94902285944ad34
         push %1              ; Interrupt number only
         jmp isr_common_stub
 %endmacro
 
 
 isr_common_stub:
+<<<<<<< HEAD
     call save_registers
+=======
+    ; Todo use swapgs
+
+    ; Storing all general purpose registers state
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+    push rbp
+    push r8
+    push r9
+    push r10
+    push r11
+    push r12
+    push r13
+    push r14
+    push r15
+
+    ; Todo - should use swapgs
+    push gs                  ; Save previous state of segment registers
+    push fs
+    mov eax, es
+    push rax
+    mov eax, ds
+    push rax
+>>>>>>> 90f9877f1f464214e589661cd94902285944ad34
 
     mov eax, 0x10             ; Load the kernel data segment descriptor
     mov ds, eax
@@ -48,11 +80,42 @@ isr_common_stub:
     mov rdi, rsp             ; Pass the current stack pointer to `isr_handler`
     cld                      ; Required by AMD64 System V ABI
     call isr_handler
+<<<<<<< HEAD
     
     add rsp, 16
     call restore_registers
     sti
     iretq                     ; Return from Interrupt
+=======
+
+    ; Todo - should use swapgs
+    pop rax                  ; Restore previous state of segment registers
+    mov ds, eax
+    pop rax
+    mov es, eax
+    pop fs
+    pop gs
+
+    ; Restore general-purpose register state
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rbp
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+
+    add rsp, 16               ; Clean up pushed error code and IRQ number 
+    iretq
+>>>>>>> 90f9877f1f464214e589661cd94902285944ad34
 
 
 ISR_NOERRCODE 0
@@ -98,8 +161,7 @@ ISR_NOERRCODE 177   ; System Call
     [global irq%1]
     irq%1:
         push 0        ; Push a dummy error code
-        mov rax, %2   
-        push rax      ; Push irq code
+        push %2      ; Push irq code
         jmp irq_common_stub
 %endmacro
 
@@ -141,7 +203,77 @@ IRQ  14,    46
 IRQ  15,    47
 
 
+<<<<<<< HEAD
 
 
 
 
+=======
+; This is a stub that we have created for IRQ based ISRs. This calls
+[extern irq_handler]
+irq_common_stub:
+    ; Todo use swapgs
+
+    ; Storing all general purpose registers state
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+    push rbp
+    push r8
+    push r9
+    push r10
+    push r11
+    push r12
+    push r13
+    push r14
+    push r15
+
+    ; Todo - should use swapgs
+    push gs                  ; Save previous state of segment registers
+    push fs
+    mov eax, es
+    push rax
+    mov eax, ds
+    push rax
+
+    mov eax, 0x10  ; Load the Kernel Data Segment descriptor!
+    mov ds, eax
+    mov es, eax
+    mov fs, eax
+    mov gs, eax
+
+    mov rdi, rsp    ; Pass stack pointer to `irq_handler`
+    cld                      ; Required by AMD64 System V ABI
+    call irq_handler
+
+    ; Todo - should use swapgs
+    pop rax                  ; Restore previous state of segment registers
+    mov ds, eax
+    pop rax
+    mov es, eax
+    pop fs
+    pop gs
+
+    ; Restore general-purpose register state
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rbp
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+
+    add rsp, 16     ; Clean up pushed error code and IRQ number 
+    iretq           ; Return from Interrupt
+>>>>>>> 90f9877f1f464214e589661cd94902285944ad34
