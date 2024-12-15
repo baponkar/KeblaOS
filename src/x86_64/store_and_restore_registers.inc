@@ -1,12 +1,10 @@
 ;
-; This programe will store the current registers into stack and restore from stack
+; These macros will store the current registers into stack and restore from stack
 ; The order is follow by registers_t structure defined in util.h 
 ;
 
-
-section .text
-[global save_registers]
-save_registers:
+; Save all segment and general purpose registers
+%macro SAVE_REGISTERS 0
     push rax
     push rbx
     push rcx
@@ -32,13 +30,10 @@ save_registers:
 
     mov ax, ds
     push rax
+%endmacro
 
-    ret
-
-
-section .text
-[global restore_registers]
-restore_registers:
+; Restore all segment and general purpose registers
+%macro RESTORE_REGISTERS 0
     pop rax
     mov ds, ax
 
@@ -64,12 +59,4 @@ restore_registers:
     pop rcx
     pop rbx
     pop rax
-
-    ret
-
-
-
-
-
-
-
+%endmacro

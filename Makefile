@@ -60,7 +60,6 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/idt.c -o $(BUILD_DIR)/idt.o
 	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/idt_load.asm -o $(BUILD_DIR)/idt_load.o
 	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/idt_load.asm -o $(BUILD_DIR)/idt_load.o
-	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/store_and_restore_registers.asm -o $(BUILD_DIR)/store_and_restore_registers.o
 
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/pit_timer.c -o $(BUILD_DIR)/pit_timer.o
 
@@ -90,7 +89,6 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/gdt_load.o \
 						$(BUILD_DIR)/idt.o \
 						$(BUILD_DIR)/idt_load.o \
-						$(BUILD_DIR)/store_and_restore_registers.o \
 						$(BUILD_DIR)/pit_timer.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/speaker.o \
@@ -116,7 +114,6 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/gdt_load.o \
 						$(BUILD_DIR)/idt.o \
 						$(BUILD_DIR)/idt_load.o \
-						$(BUILD_DIR)/store_and_restore_registers.o \
 						$(BUILD_DIR)/pit_timer.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/speaker.o \

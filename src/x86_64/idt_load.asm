@@ -1,13 +1,12 @@
+%include "src/x86_64/store_and_restore_registers.inc"
+
 ;
 ; This prgrame will load idt in idtr
 ; The ISR's which not push any error code we are pushing a dummy error code 0
 ; 0x10 is represent kernel data selector in GDT
 ; 0x8 is represent kernel code selector in GDT
-; 
+;
 
-
-[extern save_registers]     ; defined in store_and_restore_registers.asm
-[extern restore_registers]  ; defined in store_and_restore_registers.asm
 [extern isr_handler]        ; defined in idt.c
 [extern irq_handler]        ; defined in idt.c 
 
@@ -37,7 +36,7 @@ idt_flush:
 
 
 isr_common_stub:
-    call save_registers
+    SAVE_REGISTERS
 
     mov eax, 0x10             ; Load the kernel data segment descriptor
     mov ds, eax
@@ -48,10 +47,9 @@ isr_common_stub:
     mov rdi, rsp             ; Pass the current stack pointer to `isr_handler`
     cld                      ; Required by AMD64 System V ABI
     call isr_handler
-    
+
+    RESTORE_REGISTERS
     add rsp, 16
-    call restore_registers
-    sti
     iretq                     ; Return from Interrupt
 
 
@@ -98,15 +96,14 @@ ISR_NOERRCODE 177   ; System Call
     [global irq%1]
     irq%1:
         push 0        ; Push a dummy error code
-        mov rax, %2   
-        push rax      ; Push irq code
+        push %2       ; Push irq code
         jmp irq_common_stub
 %endmacro
 
 
 ; This is a stub that we have created for IRQ based ISRs. This calls
 irq_common_stub:
-    call save_registers
+    SAVE_REGISTERS
 
     mov ax, 0x10    ; Load the Kernel Data Segment descriptor!
     mov ds, ax
@@ -118,9 +115,8 @@ irq_common_stub:
     cld             ; Required by AMD64 System V ABI
     call irq_handler
 
+    RESTORE_REGISTERS
     add rsp, 16     ; Clean up pushed error code and IRQ number 
-    call restore_registers
-    sti 
     iretq           ; Return from Interrupt
 
 IRQ   0,    32
