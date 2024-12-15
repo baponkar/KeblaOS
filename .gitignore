@@ -3,7 +3,11 @@
 *.iso
 *.bin
 <<<<<<< HEAD
+<<<<<<< HEAD
 objdump.txt
+=======
+objdump.txt
+>>>>>>> 90f9877f1f464214e589661cd94902285944ad34
 =======
 objdump.txt
 >>>>>>> 90f9877f1f464214e589661cd94902285944ad34
