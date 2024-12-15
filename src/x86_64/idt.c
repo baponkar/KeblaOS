@@ -73,7 +73,7 @@ void isr_install(){
 
    // Setting Interrupts Service Routine Gate(ISR Gate)
    // https://stackoverflow.com/questions/9113310/segment-selector-in-ia-32
-idt_set_gate(  0, (uint64_t)isr0 , 0x0008, 0x8E);  // selector = 0x08 = 0b1000, 64-bit Interrupt Gate => attr = 0x8E = 1000 1110, (p=0b1,0b0, dpl=0b00, gate type=0b1110)
+   idt_set_gate(  0, (uint64_t)isr0 , 0x0008, 0x8E);  // selector = 0x08 = 0b1000, 64-bit Interrupt Gate => attr = 0x8E = 1000 1110, (p=0b1,0b0, dpl=0b00, gate type=0b1110)
    idt_set_gate(  1, (uint64_t)isr1 , 0x0008, 0x8E);
    idt_set_gate(  2, (uint64_t)isr2 , 0x0008, 0x8E);  // selector value is 1000 because GDT code segment index is 1
    idt_set_gate(  3, (uint64_t)isr3 , 0x0008, 0x8E);  // selector = index + table_to_use + privilege
