@@ -181,8 +181,7 @@ void init_idt(){
 void test_interrupt() {
     print("Testing Interrupts\n");
     // Division by zero is undefined behaviour in C. Use inline assmebly to generate one
-    //print_dec( 104 / 0 );        // Int no 0
-    //asm volatile ("div %b0" :: "r"(0)); // Int no 0
+    // asm volatile ("div %b0" :: "r"(0)); // Int no 0
     // asm volatile ("int $0x3");   // Breakpoint int no : 3
     // asm volatile ("int $0x0");   // Division By Zero, int no : 0
     // asm volatile ("int $0xE");   // Page Fault Request, int no: 14
