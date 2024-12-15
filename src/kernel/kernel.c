@@ -19,8 +19,8 @@ uint64_t mem_end_address = 0x1050000; // 1MB + 20 KB
 
 
 char *OS_NAME = "KeblaOS";
-char *OS_VERSION = "0.8";
-char *BUILD_DATE = "06/12/2024";
+char *OS_VERSION = "0.9";
+char *BUILD_DATE = "14/12/2024";
 
 char *FIRMWARE_TYPE;
 
@@ -132,19 +132,20 @@ static volatile LIMINE_REQUESTS_END_MARKER;
 void kmain(void){
     get_system_info();
 
-    print("KeblaOS - 0.8\n");
     // print_bootloader_info();
 
     init_gdt();
     // check_gdt();
 
     init_idt();
-    // check_idt();
+    test_interrupt();
+
+    // initialise_paging();
 
     // init_timer();
-    initKeyboard();
+    // initKeyboard();
 
-    initialise_paging();
+    
 
     // Test paging
     // test_paging();
@@ -153,12 +154,7 @@ void kmain(void){
 }
 
 
-// Halt and catch fire function.
-void hcf(void) {
-    for (;;) {
-        asm ("hlt");
-    }
-}
+
 
 void get_system_info(){
     get_framebuffer_info();
@@ -171,6 +167,7 @@ void get_system_info(){
     get_smp_info();
     get_vir_to_phy_offset();
 }
+
 
 void print_bootloader_info(){
     print("BUILD_DATE : ");
@@ -235,6 +232,7 @@ void get_framebuffer_info(void){
     FRAMEBUFFER_WIDTH = framebuffer->width;
     FRAMEBUFFER_HEIGHT = framebuffer->height;
 }
+
 
 void get_firmware_info(void){
     if(firmware_type_request.response != NULL){
@@ -350,29 +348,29 @@ void print_memory_map(void) {
 
         // Check the type and print it
         switch (entry->type) {
-            case 0x1:
-                print(" (Available)\n");
+            case 0x0:
+                print(" (Usable)\n");
                 break;
-            case 0x2:
+            case 0x1:
                 print(" (Reserved)\n");
                 break;
-            case 0x3:
+            case 0x2:
                 print(" (ACPI Reclaimable)\n");
                 break;
-            case 0x4:
+            case 0x3:
                 print(" (ACPI NVS)\n");
                 break;
-            case 0x5:
+            case 0x4:
                 print(" (Bad Memory)\n");
                 break;
-            case 0x1000:
-                print("Bootloader reclaimable\n");
+            case 0x5:
+                print(" Bootloader reclaimable\n");
                 break;
-            case 0x1001:
-                print("Kernel/Modules\n");
+            case 0x6:
+                print(" Kernel/Modules\n");
                 break;
-            case 0x1002:
-                print("Framebuffer\n");
+            case 0x7:
+                print(" Framebuffer\n");
                 break;
             default:
                 print(" (Unknown Type !!)\n");

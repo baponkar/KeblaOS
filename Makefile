@@ -34,7 +34,8 @@ LD = /usr/local/x86_64-elf/bin/x86_64-elf-ld
 LD_FLAG = -m elf_x86_64 -nostdlib -static -z max-page-size=0x1000
 
 NASM = nasm
-NASM_FLAG = -Wall -f elf64
+NASM_FLAG = -g -Wall -f elf64
+OBJDUMP = /usr/local/x86_64-elf/bin/x86_64-elf-objdump
 
 # Default target
 all: run
@@ -58,6 +59,8 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/idt.c -o $(BUILD_DIR)/idt.o
 	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/idt_load.asm -o $(BUILD_DIR)/idt_load.o
+	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/idt_load.asm -o $(BUILD_DIR)/idt_load.o
+	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/store_and_restore_registers.asm -o $(BUILD_DIR)/store_and_restore_registers.o
 
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/pit_timer.c -o $(BUILD_DIR)/pit_timer.o
 
@@ -70,6 +73,9 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(NASM) $(NASM_FLAG) $(SRC_DIR)/mmu/load_paging.asm -o $(BUILD_DIR)/load_paging.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/paging.c -o $(BUILD_DIR)/paging.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/pmm.c -o $(BUILD_DIR)/pmm.o
+
+objdump.txt: $(BUILD_DIR)/kernel.bin
+	$(OBJDUMP) -DxS $< >$@
 
 
 # Linking object files into kernel binary
@@ -84,6 +90,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/gdt_load.o \
 						$(BUILD_DIR)/idt.o \
 						$(BUILD_DIR)/idt_load.o \
+						$(BUILD_DIR)/store_and_restore_registers.o \
 						$(BUILD_DIR)/pit_timer.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/speaker.o \
@@ -109,6 +116,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/gdt_load.o \
 						$(BUILD_DIR)/idt.o \
 						$(BUILD_DIR)/idt_load.o \
+						$(BUILD_DIR)/store_and_restore_registers.o \
 						$(BUILD_DIR)/pit_timer.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/speaker.o \
@@ -121,7 +129,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 
 
 # Creating ISO image
-$(BUILD_DIR)/image.iso: $(BUILD_DIR)/kernel.bin
+$(BUILD_DIR)/image.iso: $(BUILD_DIR)/kernel.bin objdump.txt
 	# git clone https://github.com/limine-bootloader/limine.git --branch=v8.x-binary --depth=1
 	# make -C limine
 	

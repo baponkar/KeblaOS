@@ -1,84 +1,58 @@
+;
+; This prgrame will load idt in idtr
+; The ISR's which not push any error code we are pushing a dummy error code 0
+; 0x10 is represent kernel data selector in GDT
+; 0x8 is represent kernel code selector in GDT
+; 
+
+
+[extern save_registers]     ; defined in store_and_restore_registers.asm
+[extern restore_registers]  ; defined in store_and_restore_registers.asm
+[extern isr_handler]        ; defined in idt.c
+[extern irq_handler]        ; defined in idt.c 
+
+
 section .text
-[GLOBAL idt_flush]
+[global idt_flush]
 idt_flush:
     lidt [rdi]              ; Load the IDT pointer
-    sti                     ; Enable interrupts
     ret
 
-
 ; Setup Interrupt Service Routine(ISR)
-
 %macro ISR_NOERRCODE 1
-    [GLOBAL isr%1]
+    [global isr%1]
     isr%1:
-        cli
         push 0               ; Dummy error code
         push %1              ; Interrupt number
         jmp isr_common_stub
 %endmacro
 
 %macro ISR_ERRCODE 1
-    [GLOBAL isr%1]
+    [global isr%1]
     isr%1:
-        cli
+        ; don't need to push error code as it is autometically push
         push %1              ; Interrupt number only
         jmp isr_common_stub
 %endmacro
 
-[EXTERN isr_handler]
+
 isr_common_stub:
-    ; Storing all general purpose registers state
-    push rax
-    push rbx
-    push rcx
-    push rdx
-    push rsi
-    push rdi
-    push rbp
-    push r8
-    push r9
-    push r10
-    push r11
-    push r12
-    push r13
-    push r14
-    push r15
-    
-    mov ax, 0x10             ; Load the kernel data segment descriptor
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
+    call save_registers
+
+    mov eax, 0x10             ; Load the kernel data segment descriptor
+    mov ds, eax
+    mov es, eax
+    mov fs, eax
+    mov gs, eax
 
     mov rdi, rsp             ; Pass the current stack pointer to `isr_handler`
+    cld                      ; Required by AMD64 System V ABI
     call isr_handler
     
-    ; Clear all general-purpose registers state
-    pop r15
-    pop r14
-    pop r13
-    pop r12
-    pop r11
-    pop r10
-    pop r9
-    pop r8
-    pop rbp
-    pop rdi
-    pop rsi
-    pop rdx
-    pop rcx
-    pop rbx
-    pop rax
-
-    ; Adjust stack pointer depending on whether error code was pushed
-    cmp qword [rsp + 8], 0   ; Check if dummy error code was pushed
-    je .skip_cleanup         ; If dummy error code, jump to .skip_cleanup
-    add rsp, 8               ; If real error code, adjust rsp by 8
-
-.skip_cleanup:
-    add rsp, 8               ; Clean up interrupt number
+    add rsp, 16
+    call restore_registers
     sti
-    iretq
+    iretq                     ; Return from Interrupt
 
 
 ISR_NOERRCODE 0
@@ -120,17 +94,34 @@ ISR_NOERRCODE 177   ; System Call
 
 
 ; Setup Interrupt Request(IRQ)
-
 %macro IRQ 2
-    global irq%1
+    [global irq%1]
     irq%1:
-        cli           ; Clear Interrupts
         push 0        ; Push a dummy error code
         mov rax, %2   
         push rax      ; Push irq code
         jmp irq_common_stub
 %endmacro
 
+
+; This is a stub that we have created for IRQ based ISRs. This calls
+irq_common_stub:
+    call save_registers
+
+    mov ax, 0x10    ; Load the Kernel Data Segment descriptor!
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    mov rdi, rsp    ; Pass stack pointer to `irq_handler`
+    cld             ; Required by AMD64 System V ABI
+    call irq_handler
+
+    add rsp, 16     ; Clean up pushed error code and IRQ number 
+    call restore_registers
+    sti 
+    iretq           ; Return from Interrupt
 
 IRQ   0,    32
 IRQ   1,    33
@@ -150,58 +141,7 @@ IRQ  14,    46
 IRQ  15,    47
 
 
-; This is a stub that we have created for IRQ based ISRs. This calls
-[extern irq_handler]
-irq_common_stub:
-    ; Storing all general purpose registers state
-    push rax
-    push rbx
-    push rcx
-    push rdx
-    push rsi
-    push rdi
-    push rbp
-    push r8
-    push r9
-    push r10
-    push r11
-    push r12
-    push r13
-    push r14
-    push r15
 
-    ; Save the CR2 register (holds page fault linear address)
-    mov rax, cr2
-    push rax
 
-    mov ax, 0x10  ; Load the Kernel Data Segment descriptor!
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
 
-    mov rdi, rsp    ; Pass stack pointer to `irq_handler`
-    call irq_handler
 
-    add rsp, 16     ; Clean up pushed error code and IRQ number 
-    pop rax
-
-    ; Clear all general-purpose registers state
-    pop r15
-    pop r14
-    pop r13
-    pop r12
-    pop r11
-    pop r10
-    pop r9
-    pop r8
-    pop rbp
-    pop rdi
-    pop rsi
-    pop rdx
-    pop rcx
-    pop rbx
-    pop rax
-      
-    sti             ; Enable Interrupts
-    iretq           ; Return from Interrupt

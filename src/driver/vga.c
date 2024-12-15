@@ -46,6 +46,8 @@ void vga_init(){
     cur_pos_y = 0;
 
     clear_screen();
+    print("KeblaOS - 0.9\n");
+    print("Successfully VGA initialized!\n");
 
 }
 
@@ -266,9 +268,9 @@ void  backspace_manage(){
     }
 
     // Update Cursor Position
-    if(cur_pos_x > 0 & cur_pos_y >= 0){
+    if((cur_pos_x > 0) && (cur_pos_y >= 0)){
         cur_pos_x -= FONT_WIDTH;
-    }else if(cur_pos_x == 0 & cur_pos_y > 0){
+    }else if((cur_pos_x == 0) && (cur_pos_y > 0)){
         cur_pos_y -= LINE_HEIGHT;
         cur_pos_x = FRAMEBUFFER_WIDTH - 1 - FONT_WIDTH;
     }

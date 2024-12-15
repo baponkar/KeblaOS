@@ -83,10 +83,14 @@ void initialise_paging()
 
     memset(frames, 0, INDEX_FROM_BIT(nframes));
     // Allocate and zero-initialize the PML4 table
-    kernel_pml4 = (pml4_t *) kmalloc_a(sizeof(pml4_t), 1); // 4 kb memory aligned
+    // kernel_pml4 = (pml4_t *) kmalloc_a(sizeof(pml4_t), 1); // 4 kb memory aligned
 
-    memset(kernel_pml4, 0, sizeof(pml4_t)); // clear all bit
-    current_pml4 = kernel_pml4; 
+    // memset(kernel_pml4, 0, sizeof(pml4_t)); // clear all bit
+    // current_pml4 = kernel_pml4; 
+
+    // Paging is enabled by Limine. Get the pml4 table that Limine set up
+    asm("mov %%cr3, %0" : "=r"(kernel_pml4));
+    current_pml4 = kernel_pml4;
 
     // Identity-map the physical memory from `placement_address` up to mem_end_address
     uint64_t i = placement_address;
@@ -99,11 +103,18 @@ void initialise_paging()
         i += 0x1000;
     }
 
-    disable_interrupts();
-    disable_paging();
-    enable_paging((uint64_t) kernel_pml4);
-    enable_interrupts();
-    print("Successfully Paging have initialized!\n");
+   #if 0
+        // Identity-map the physical memory from `placement_address` up to mem_end_address
+        uint64_t i = placement_address;
+
+        @@ -99,16 +101,20 @@ void initialise_paging()
+            i += 0x1000;
+        }
+
+        // Update CR3 to flush the TLB
+        asm("mov %0, %%cr3" :: "r"(kernel_pml4));
+    #endif
+    print("Successfully Paging enabled!\n");
 }
 
 
@@ -218,6 +229,7 @@ void page_fault_handler(registers_t *regs)
     asm volatile("hlt");
 
 }
+
 
 void test_paging(){
     print("Start Paging Test...\n");

@@ -46,14 +46,15 @@ uint64_t first_frame()
            // at least one bit is free here.
            for (j = 0; j < 64; j++)
            {
-               uint64_t toTest = 0x1 << j;
+               uint64_t toTest = 0x1ULL << j; // Ensure the shift is handled as a 64-bit value.
                if ( !(frames[i]&toTest) )
                {
-                   return i*8*8+j;
+                   return i * 64 + j;
                }
            }
        }
    }
+   return (uint64_t)-1; // Return an invalid frame index to indicate failure.
 }
 
 

@@ -18,7 +18,7 @@
 
 
 void kmain(void);
-void hcf(void);
+
 void get_framebuffer_info(void);
 void get_firmware_info(void);
 void get_hhdm_info(void);
