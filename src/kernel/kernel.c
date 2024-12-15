@@ -138,17 +138,17 @@ void kmain(void){
     // check_gdt();
 
     init_idt();
-    test_interrupt();
+    // test_interrupt();
 
-    // initialise_paging();
+    initialise_paging();
 
-    // init_timer();
-    // initKeyboard();
+    init_timer();
+    initKeyboard();
 
     
 
     // Test paging
-    // test_paging();
+    test_paging();
 
     hcf();
 }

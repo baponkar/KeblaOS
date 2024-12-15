@@ -6,10 +6,68 @@
 ; 
 
 
-[extern save_registers]     ; defined in store_and_restore_registers.asm
-[extern restore_registers]  ; defined in store_and_restore_registers.asm
 [extern isr_handler]        ; defined in idt.c
 [extern irq_handler]        ; defined in idt.c 
+
+
+
+;
+; These macros will store the current registers into stack and restore from stack
+; The order is follow by registers_t structure defined in util.h 
+;
+
+; Save all segment and general purpose registers
+%macro SAVE_REGISTERS 0
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    push rbp
+    push rsi
+    push rdi
+    push r8
+    push r9
+    push r10
+    push r11
+    push r12
+    push r13
+    push r14
+    push r15
+    push gs
+    push fs
+    mov ax, es
+    push rax
+
+    mov ax, ds
+    push rax
+%endmacro
+
+
+; Restore all segment and general purpose registers
+%macro RESTORE_REGISTERS 0
+    pop rax
+    mov ds, ax
+
+    pop rax
+    mov es, ax
+    pop fs
+    pop gs
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rdi
+    pop rsi
+    pop rbp
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+%endmacro
 
 
 section .text
@@ -37,7 +95,7 @@ idt_flush:
 
 
 isr_common_stub:
-    call save_registers
+    SAVE_REGISTERS
 
     mov eax, 0x10             ; Load the kernel data segment descriptor
     mov ds, eax
@@ -50,8 +108,7 @@ isr_common_stub:
     call isr_handler
     
     add rsp, 16
-    call restore_registers
-    sti
+    RESTORE_REGISTERS
     iretq                     ; Return from Interrupt
 
 
@@ -97,16 +154,15 @@ ISR_NOERRCODE 177   ; System Call
 %macro IRQ 2
     [global irq%1]
     irq%1:
-        push 0        ; Push a dummy error code
-        mov rax, %2   
-        push rax      ; Push irq code
+        push 0        ; Push a dummy error code  
+        push %2       ; Push irq code
         jmp irq_common_stub
 %endmacro
 
 
 ; This is a stub that we have created for IRQ based ISRs. This calls
 irq_common_stub:
-    call save_registers
+    SAVE_REGISTERS
 
     mov ax, 0x10    ; Load the Kernel Data Segment descriptor!
     mov ds, ax
@@ -119,8 +175,7 @@ irq_common_stub:
     call irq_handler
 
     add rsp, 16     ; Clean up pushed error code and IRQ number 
-    call restore_registers
-    sti 
+    RESTORE_REGISTERS
     iretq           ; Return from Interrupt
 
 IRQ   0,    32
@@ -139,8 +194,6 @@ IRQ  12,    44
 IRQ  13,    45
 IRQ  14,    46
 IRQ  15,    47
-
-
 
 
 
