@@ -1,0 +1,1 @@
+This directory will be use for generated iso binary and object files.

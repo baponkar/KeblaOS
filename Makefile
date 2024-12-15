@@ -125,10 +125,15 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/pmm.o
 
 
+objdump.txt: $(BUILD_DIR)/kernel.bin
+	$(OBJDUMP) -DxS $< >$@
+
 # Creating ISO image
 $(BUILD_DIR)/image.iso: $(BUILD_DIR)/kernel.bin objdump.txt
 	# git clone https://github.com/limine-bootloader/limine.git --branch=v8.x-binary --depth=1
 	# make -C limine
+
+	mkdir -p build
 	
 	mkdir -p $(ISO_DIR)/boot
 	cp $(SRC_DIR)/img/boot_loader_wallpaper.bmp  $(ISO_DIR)/boot/boot_loader_wallpaper.bmp
