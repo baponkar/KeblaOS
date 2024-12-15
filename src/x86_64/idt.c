@@ -104,8 +104,8 @@ idt_set_gate(  0, (uint64_t)isr0 , 0x0008, 0x8E);  // selector = 0x08 = 0b1000, 
    idt_set_gate( 28, (uint64_t)isr28 , 0x0008, 0x8E);
    idt_set_gate( 29, (uint64_t)isr29 , 0x0008, 0x8E);
    idt_set_gate( 30, (uint64_t)isr30 , 0x0008, 0x8E);
-   idt_set_gate( 31, (uint64_t)isr31 , 0x0008, 0x8);
-       
+   idt_set_gate( 31, (uint64_t)isr31 , 0x0008, 0x8E);
+    
    idt_set_gate(128, (uint64_t)isr128, 0x0008, 0x8E); //System call Write
    idt_set_gate(177, (uint64_t)isr177, 0x0008, 0x8E); //System call Read
 }
