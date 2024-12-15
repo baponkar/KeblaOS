@@ -3,6 +3,7 @@
 ; The ISR's which not push any error code we are pushing a dummy error code 0
 ; 0x10 is represent kernel data selector in GDT
 ; 0x8 is represent kernel code selector in GDT
+; https://stackoverflow.com/questions/79282721/why-is-isr-common-stub-not-calling-my-isr-handler-function?noredirect=1#comment139806502_79282721
 ;
 
 [extern isr_handler]        ; defined in idt.c

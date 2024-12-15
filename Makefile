@@ -7,7 +7,7 @@ BUILD_DIR = build
 ISO_DIR = iso_root
 
 OS_NAME = KeblaOS
-OS_VERSION = 0.7
+OS_VERSION = 0.9
 
 HOST_HOME = /home/baponkar
 
