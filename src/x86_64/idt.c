@@ -74,7 +74,7 @@ void isr_install(){
    // Setting Interrupts Service Routine Gate(ISR Gate)
    // https://stackoverflow.com/questions/9113310/segment-selector-in-ia-32
    idt_set_gate(  0, (uint64_t)isr0 , 0x0008, 0x8E);  // selector = 0x08 = 0b1000, 64-bit Interrupt Gate => attr = 0x8E = 1000 1110, (p=0b1,0b0, dpl=0b00, gate type=0b1110)
-   idt_set_gate(  1, (uint64_t)isr1 , 0x0008, 0x8E);  // Keyboard
+   idt_set_gate(  1, (uint64_t)isr1 , 0x0008, 0x8E);
    idt_set_gate(  2, (uint64_t)isr2 , 0x0008, 0x8E);  // selector value is 1000 because GDT code segment index is 1
    idt_set_gate(  3, (uint64_t)isr3 , 0x0008, 0x8E);  // selector = index + table_to_use + privilege
    idt_set_gate(  4, (uint64_t)isr4 , 0x0008, 0x8E);  // selector  = 1<<3(index 1) + 0<<2(TI for GDT 0) + 0<<1(for ring 0) => 1000 + 000 + 00 = 1000 = 0x08
@@ -105,7 +105,7 @@ void isr_install(){
    idt_set_gate( 29, (uint64_t)isr29 , 0x0008, 0x8E);
    idt_set_gate( 30, (uint64_t)isr30 , 0x0008, 0x8E);
    idt_set_gate( 31, (uint64_t)isr31 , 0x0008, 0x8E);
-
+    
    idt_set_gate(128, (uint64_t)isr128, 0x0008, 0x8E); //System call Write
    idt_set_gate(177, (uint64_t)isr177, 0x0008, 0x8E); //System call Read
 }
@@ -173,14 +173,14 @@ void init_idt(){
     idt_flush((uint64_t) &idt_ptr);
     irq_remap();
     irq_install();
-    
+    enable_interrupts();
     print("Successfully IDT Enabled!\n");
 }
 
 
 void test_interrupt() {
     print("Testing Interrupts\n");
-    // print_dec( 104 / 0 );        // Int no 0
+    // asm volatile ("div %b0" :: "a"(0)); // Int no 0
     // asm volatile ("int $0x3");   // Breakpoint int no : 3
     // asm volatile ("int $0x0");   // Division By Zero, int no : 0
     // asm volatile ("int $0xE");   // Page Fault Request, int no: 14

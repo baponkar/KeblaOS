@@ -73,10 +73,6 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/paging.c -o $(BUILD_DIR)/paging.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/pmm.c -o $(BUILD_DIR)/pmm.o
 
-objdump.txt: $(BUILD_DIR)/kernel.bin
-	$(OBJDUMP) -DxS $< >$@
-
-
 # Linking object files into kernel binary
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/util.o \
