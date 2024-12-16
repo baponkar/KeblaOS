@@ -223,9 +223,7 @@ void keyboardHandler(registers_t *regs){
 
 
 void initKeyboard(){
-    // disable_interrupts();
     interrupt_install_handler(1, &keyboardHandler);
-    // enable_interrupts();
     print("Successfully Keyboard initialized!\n");
 }
 
