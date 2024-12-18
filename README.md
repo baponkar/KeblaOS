@@ -27,15 +27,15 @@
 - [ ] RTC
 - [x] A basic Shell
 - [x] Driver :
-      - VGA
-      - Keyboard
-      - Ports
-      - Speaker
+    * VGA
+    * Keyboard
+    * Ports
+    * Speaker
 - [x] MMU
-      - PMM
-      - 4 Level 4KB Paging 
-      - VMM
-      - Dynamic Memory Management
+    * PMM
+    * 4 Level 4KB Paging 
+    * VMM
+    * Dynamic Memory Management
 - [x] Standard Library initialization [stdio, math, string]
 
 ------------------------------------------------------
