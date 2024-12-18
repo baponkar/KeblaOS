@@ -1,3 +1,4 @@
+
 #include "kheap.h"
 
 
@@ -72,4 +73,170 @@ uint64_t kmalloc_ap(uint64_t sz, int align, uint64_t *phys)  // page aligned and
     placement_address += sz;
     return tmp;
 }
+
+
+
+
+
+
+/*
+* Dynamic Memory Allocation
+* https://chatgpt.com/share/675fa60d-c044-8001-aef6-d23b3d62ab62
+*/
+
+#define KHEAP_START 0xFFFF800000000000 // Example kernel heap start address
+#define KHEAP_SIZE  0x100000           // 1 MB heap size for example
+
+void *heap_start = (void *) KHEAP_START;
+void *heap_end = (void *) (KHEAP_START + KHEAP_SIZE);
+heap_block_t *heap_head;
+
+void init_kheap() {
+    heap_head = (heap_block_t *)heap_start;
+    heap_head->size = KHEAP_SIZE - HEAP_BLOCK_SIZE;
+    heap_head->is_free = 1;
+    heap_head->next = NULL;
+}
+
+void *kmalloc1(uint64_t size) {
+    heap_block_t *current = heap_head;
+    print("current: ");
+    print_hex((uint64_t) current);
+    print("\n");
+
+    while (current) {
+        if (current->is_free && current->size >= size) {
+            // Split the block if there's enough space for a new block
+            if (current->size > size + HEAP_BLOCK_SIZE) {
+                heap_block_t *new_block = (heap_block_t *)((uint8_t *)current + HEAP_BLOCK_SIZE + size);
+                new_block->size = current->size - size - HEAP_BLOCK_SIZE;
+                new_block->is_free = 1;
+                new_block->next = current->next;
+
+                current->next = new_block;
+                current->size = size;
+            }
+
+            current->is_free = 0;
+            return (void *)((uint8_t *)current + HEAP_BLOCK_SIZE); // Return pointer to usable memory
+        }
+        current = current->next;
+    }
+
+    // No suitable block found
+    return NULL;
+}
+
+
+void kfree1(void *ptr) {
+    if (!ptr) return;
+
+    // Retrieve the block metadata
+    heap_block_t *block = (heap_block_t *)((uint8_t *)ptr - HEAP_BLOCK_SIZE);
+    block->is_free = 1;
+
+    // Merge adjacent free blocks
+    heap_block_t *current = heap_head;
+    while (current) {
+        if (current->is_free && current->next && current->next->is_free) {
+            current->size += current->next->size + HEAP_BLOCK_SIZE;
+            current->next = current->next->next;
+        } else {
+            current = current->next;
+        }
+    }
+}
+
+
+
+void *kmalloc1_a(uint64_t size, int align) {
+    uint64_t raw_address = (uint64_t)kmalloc(size);
+    if (!raw_address) return NULL;
+
+    if (align == 1 && (raw_address & 0xFFF)) // If the address is not already page-aligned and want to make it page aligned
+    {
+        // align it
+        raw_address &= 0xFFFFFFFFFFFFF000; // masking of most significant 20 bit which is used for address
+        raw_address += 0x1000; // increase  the raw address by 4 KB, Page Size
+    }
+    uint64_t aligned_address = raw_address;
+    raw_address += size;
+    
+    return (void *)aligned_address;
+}
+
+
+void *kmalloc1_p(uint64_t size, uint64_t *phys){
+
+}
+
+void *kmalloc1_ap(uint64_t size, int align, uint64_t *phys){
+    
+}
+
+
+size_t get_allocated_size(void *ptr) {
+    if (!ptr) return 0;
+
+    // Retrieve the heap block metadata
+    heap_block_t *block = (heap_block_t *)((uint8_t *)ptr - HEAP_BLOCK_SIZE);
+
+    // Return the size of the allocated block
+    return block->size;
+}
+
+
+
+void test_kheap() {
+    print("Dynamic Memory allocation\n");
+    init_kheap();
+    void *ptr1 = kmalloc1(100);
+
+    print("*ptr1 : ");
+    print_dec((uint64_t)ptr1);
+    print("\n");
+
+    print("allocation sizeof ptr1 : ");
+    print_dec(get_allocated_size(ptr1));
+    print("\n");
+
+    void *ptr2 = kmalloc1(200);
+
+    print("*ptr2 : ");
+    print_dec((uint64_t)ptr2);
+    print("\n");
+
+    kfree1(ptr1);
+
+
+    print("kfree(ptr1)\n");
+
+    void *ptr3 = kmalloc1(50); // Should reuse the space from ptr1
+
+    print("*ptr3 : ");
+    print_dec((uint64_t)ptr3);
+    print("\n");
+
+    kfree1(ptr2);
+
+    print("kfree(ptr2)\n");
+
+    kfree1(ptr3);
+
+    print("kfree(ptr3)\n");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

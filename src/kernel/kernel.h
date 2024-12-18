@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "../lib/stdio.h"
+
 #include "../limine/limine.h"
 #include "../util/util.h"   
 #include "../driver/vga.h"

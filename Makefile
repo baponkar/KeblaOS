@@ -7,7 +7,7 @@ BUILD_DIR = build
 ISO_DIR = iso_root
 
 OS_NAME = KeblaOS
-OS_VERSION = 0.9
+OS_VERSION = 0.11
 
 HOST_HOME = /home/baponkar
 
@@ -50,9 +50,12 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/vga.c -o $(BUILD_DIR)/vga.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/font.c -o $(BUILD_DIR)/font.o
 
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/image_data.c -o $(BUILD_DIR)/image_data.o
+
 
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/lib/string.c -o $(BUILD_DIR)/string.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/lib/stdlib.c -o $(BUILD_DIR)/stdlib.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/lib/stdio.c -o $(BUILD_DIR)/stdio.o
 
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/gdt.c -o $(BUILD_DIR)/gdt.o
 	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/gdt_load.asm -o $(BUILD_DIR)/gdt_load.o
@@ -63,6 +66,8 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/pit_timer.c -o $(BUILD_DIR)/pit_timer.o
 
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/rtc.c -o $(BUILD_DIR)/rtc.o
+
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/keyboard.c -o $(BUILD_DIR)/keyboard.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/speaker.c -o $(BUILD_DIR)/speaker.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/usr/shell.c -o $(BUILD_DIR)/shell.o
@@ -72,20 +77,27 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(NASM) $(NASM_FLAG) $(SRC_DIR)/mmu/load_paging.asm -o $(BUILD_DIR)/load_paging.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/paging.c -o $(BUILD_DIR)/paging.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/pmm.c -o $(BUILD_DIR)/pmm.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/vmm.c -o $(BUILD_DIR)/vmm.o
+
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/acpi/acpi.c -o $(BUILD_DIR)/acpi.o
+
 
 # Linking object files into kernel binary
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/util.o \
 						$(BUILD_DIR)/ports.o \
 						$(BUILD_DIR)/font.o \
+						$(BUILD_DIR)/image_data.o \
 						$(BUILD_DIR)/string.o \
 						$(BUILD_DIR)/stdlib.o \
+						$(BUILD_DIR)/stdio.o \
 						$(BUILD_DIR)/vga.o \
 						$(BUILD_DIR)/gdt.o \
 						$(BUILD_DIR)/gdt_load.o \
 						$(BUILD_DIR)/idt.o \
 						$(BUILD_DIR)/idt_load.o \
 						$(BUILD_DIR)/pit_timer.o \
+						$(BUILD_DIR)/rtc.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/speaker.o \
 						$(BUILD_DIR)/shell.o \
@@ -93,7 +105,9 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/load_paging.o \
 						$(BUILD_DIR)/paging.o \
-						$(BUILD_DIR)/pmm.o
+						$(BUILD_DIR)/pmm.o \
+						$(BUILD_DIR)/vmm.o \
+						$(BUILD_DIR)/acpi.o
 
 
 
@@ -103,14 +117,17 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/util.o \
 						$(BUILD_DIR)/ports.o \
 						$(BUILD_DIR)/font.o \
+						$(BUILD_DIR)/image_data.o \
 						$(BUILD_DIR)/string.o \
 						$(BUILD_DIR)/stdlib.o \
+						$(BUILD_DIR)/stdio.o \
 						$(BUILD_DIR)/vga.o \
 						$(BUILD_DIR)/gdt.o \
 						$(BUILD_DIR)/gdt_load.o \
 						$(BUILD_DIR)/idt.o \
 						$(BUILD_DIR)/idt_load.o \
 						$(BUILD_DIR)/pit_timer.o \
+						$(BUILD_DIR)/rtc.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/speaker.o \
 						$(BUILD_DIR)/shell.o \
@@ -118,7 +135,9 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/load_paging.o \
 						$(BUILD_DIR)/paging.o \
-						$(BUILD_DIR)/pmm.o
+						$(BUILD_DIR)/pmm.o \
+						$(BUILD_DIR)/vmm.o \
+						$(BUILD_DIR)/acpi.o
 
 
 objdump.txt: $(BUILD_DIR)/kernel.bin
@@ -160,7 +179,7 @@ run: $(BUILD_DIR)/image.iso
 	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu -bios /usr/share/OVMF/OVMF_CODE.fd
 
 	# BIOS Boot
-	qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu
+	qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 64 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu
 	
 
 .PHONY: all clean

@@ -32,12 +32,12 @@ void vga_init(){
     FONT_HEIGHT = 16;
 
     MIN_LINE = 0;
-    MAX_LINE = (FRAMEBUFFER_HEIGHT / (FONT_HEIGHT + LINE_GAP)) - 1;
+    MAX_LINE = (FRAMEBUFFER_HEIGHT / (FONT_HEIGHT + LINE_GAP)) - 1; // 47
 
     LINE_HEIGHT = FONT_HEIGHT + LINE_GAP;
 
     MIN_COLUMN = 0;
-    MAX_COLUMN = (FRAMEBUFFER_WIDTH / FONT_WIDTH) - 1;
+    MAX_COLUMN = (FRAMEBUFFER_WIDTH / FONT_WIDTH) - 1; // 127
 
     TEXT_COLOR = COLOR_WHITE;
     BACKGROUND_COLOR = COLOR_BLUE;
@@ -46,7 +46,12 @@ void vga_init(){
     cur_pos_y = 0;
 
     clear_screen();
-    print("KeblaOS - 0.9\n");
+    print("KeblaOS - 0.11\n");
+    print("Framebuffer dimension (Width x Height) : ");
+    print_dec(FRAMEBUFFER_WIDTH);
+    print("x");
+    print_dec(FRAMEBUFFER_HEIGHT);
+    print("\n");
     print("Successfully VGA initialized!\n");
 
 }
@@ -62,10 +67,11 @@ void clear_screen(){
 }
 
 void set_pixel(size_t x, size_t y, uint64_t color) {
-    if (x <= FRAMEBUFFER_WIDTH -1 ) {
+    if ((x <= FRAMEBUFFER_WIDTH -1) & (y < FRAMEBUFFER_HEIGHT)) {
         FRAMEBUFFER_PTR[y * FRAMEBUFFER_WIDTH + x] = color;
     }
 }
+
 
 // Printing a character at (x, y)
 void print_char_at(size_t y, size_t x, unsigned char c){
@@ -107,10 +113,12 @@ void print_char_at(size_t y, size_t x, unsigned char c){
             }
             break;
     }
+
+    update_cur_pos();
 }
 
 void update_cur_pos(){
-    if(cur_pos_x > (int)MAX_COLUMN){
+    if(cur_pos_x > (int) MAX_COLUMN){
         cur_pos_y++;
         cur_pos_x = MIN_COLUMN;
     }
@@ -121,6 +129,8 @@ void update_cur_pos(){
         cur_pos_x = MIN_COLUMN;
     }
 }
+
+
 
 void create_newline(){
     cur_pos_x = 0;
@@ -135,12 +145,15 @@ void putchar(unsigned char c){
         // Handle a tab by increasing the cursor's X, but only to a point
         // where it is divisible by 4*DEFAULT_FONT_WIDTH.
         cur_pos_x = (cur_pos_x + 4) & ~( 4  - 1);
+        update_cur_pos();
     }else if( c == '\r'){
         // Handel carriage return
         cur_pos_x = 0;
+        update_cur_pos();
     }else if(c == '\n'){
         // Handel newline
         create_newline();
+        update_cur_pos();
     }else if(c == '\b'){
         backspace_manage();
     }else if(c == '\0'){
@@ -148,10 +161,8 @@ void putchar(unsigned char c){
     }else{ 
         print_char_at(cur_pos_y, cur_pos_x, c);
         cur_pos_x += 1;
+        update_cur_pos();
     }
-    
-    // Move the hardware cursor.
-    update_cur_pos();
 }
 
 void print(const char* text) {
@@ -193,19 +204,19 @@ void set_cursor_pos_y(size_t _pos_y){
 }
 
 void move_cur_up(){
-    cur_pos_y -= LINE_HEIGHT;
+    cur_pos_y--;
 }
 
 void move_cur_down(){
-    cur_pos_y += LINE_HEIGHT;
+    cur_pos_y++;
 }
 
 void move_cur_left(){
-    cur_pos_x -= FONT_WIDTH;
+    cur_pos_x--;
 }
 
 void move_cur_right(){
-    cur_pos_x += FONT_WIDTH;
+    cur_pos_x++;
 }
 
 
@@ -231,7 +242,13 @@ void print_dec(uint64_t n)
         return;
     }
 
-    char buffer[24]; // Enough for a 32-bit integer
+    if(n < 0){
+        putchar('-');
+        n *= -1;
+        return;
+    }
+
+    char buffer[48]; // Enough for a 64-bit integer
     int i = 0;
 
     while (n > 0)
@@ -259,20 +276,22 @@ void print_bin(uint64_t n) {
 }
 
 
+
 void  backspace_manage(){
     // Current cursor position previous character remove
-    for(int row = cur_pos_y; row < cur_pos_y + LINE_HEIGHT; row++){
-        for(int col = cur_pos_x - FONT_WIDTH; col < cur_pos_x ; col++){
+    for(int row = cur_pos_y*LINE_HEIGHT; row < (cur_pos_y+1)*LINE_HEIGHT; row++){
+        for(int col = (cur_pos_x-1)*FONT_WIDTH; col < cur_pos_x * FONT_WIDTH ; col++){
             set_pixel(col, row, BACKGROUND_COLOR);
         }
     }
-
+    
     // Update Cursor Position
-    if((cur_pos_x > 0) && (cur_pos_y >= 0)){
-        cur_pos_x -= FONT_WIDTH;
-    }else if((cur_pos_x == 0) && (cur_pos_y > 0)){
-        cur_pos_y -= LINE_HEIGHT;
-        cur_pos_x = FRAMEBUFFER_WIDTH - 1 - FONT_WIDTH;
+    if(cur_pos_x > 0){
+        cur_pos_x--;
+    }
+    if((cur_pos_x == 0) && (cur_pos_y+1 > 0)){
+        cur_pos_y--;
+        cur_pos_x = MAX_COLUMN;
     }
 }
 
