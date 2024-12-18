@@ -16,6 +16,28 @@
 
 #### Start Date : 9 th June, 2024
 
+#### Last Update : 19th December, 2024
+
+* Current Progress :
+- [x] Limine Bootloader
+- [x] VGA Framebuffer initialization
+- [x] GDT initialization
+- [x] IDT initialization
+- [x] PIT Timer initialization
+- [ ] RTC
+- [x] A basic Shell
+- [x] Driver :
+      - VGA
+      - Keyboard
+      - Ports
+      - Speaker
+- [x] MMU
+      - PMM
+      - 4 Level 4KB Paging 
+      - VMM
+      - Dynamic Memory Management
+- [x] Standard Library initialization [stdio, math, string]
+
 ------------------------------------------------------
 ### Introducing the KeblaOS Operating System
 
