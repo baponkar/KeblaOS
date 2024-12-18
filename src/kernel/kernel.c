@@ -1,7 +1,7 @@
 
 /*
 Kernel.c
-Build Date  : 05/12/2024
+Build Date  : 16/12/2024
 Description :
 Reference   : 
               https://github.com/limine-bootloader/limine/blob/v8.x/PROTOCOL.md#kernel-address-feature
@@ -19,8 +19,8 @@ uint64_t mem_end_address = 0x1050000; // 1MB + 20 KB
 
 
 char *OS_NAME = "KeblaOS";
-char *OS_VERSION = "0.9";
-char *BUILD_DATE = "14/12/2024";
+char *OS_VERSION = "0.11";
+char *BUILD_DATE = "16/12/2024";
 
 char *FIRMWARE_TYPE;
 
@@ -147,8 +147,39 @@ void kmain(void){
     
     initKeyboard();
 
+    // test_kheap();
 
-    
+    uint64_t var_hex = 0x1234;
+    uint64_t var_bin = 0b100101;
+    int var_dec = 420;
+    int64_t neg_no = -345;
+
+    print("var_hex = ");
+    print_hex(var_hex);
+    print("\n");
+
+    print("var_bin = ");
+    print_bin(var_bin);
+    print("\n");
+
+    print("var_dec = ");
+    print_dec(var_dec);
+    print("\n");
+
+    print("neg_no = ");
+    print_dec(neg_no);
+    print("\n");
+
+    print("\n");
+
+
+    printf("var_hex = %x\n", var_hex);  // 0x0000000000000010
+    printf("var_bin = %b\n", var_bin);  // 0b0000000000000000000000000000000000000000000000000000000000010000
+    printf("var_dec = %d\n", var_dec);  // -1
+    printf("neg_no = %d\n", neg_no);
+
+
+
 
     hcf();
 }

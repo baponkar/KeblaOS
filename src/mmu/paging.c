@@ -230,6 +230,10 @@ void test_paging(){
     uint64_t* test_address = (uint64_t*) 0xFFFFFFFF80000000;  // Higher-half virtual address
     *test_address = 0x12345678ABCDEF00;
 
+    print("The value at pointer *0xFFFFFFFF80000000 : "); 
+    print_hex(*test_address);
+    print("\n");
+
     // uint64_t* invalid_address = (uint64_t*)0xFFFFFFFF90000000;  // Unmapped address
     // *invalid_address = 0x0;  // This should trigger a page fault
 

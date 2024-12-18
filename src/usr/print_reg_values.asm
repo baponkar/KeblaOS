@@ -40,4 +40,4 @@ print_registers:
     pop rbx
     pop rax
     
-    iretq
+

@@ -88,3 +88,5 @@ void fill_triangle( int x1, int y1, int x2, int y2, int x3, int y3, uint64_t col
 void draw_gradient( uint64_t start_color, uint64_t end_color) ;
 void draw_colorful_image();
 
+void set_pixel(size_t x, size_t y, uint64_t color);
+void display_image( int x, int y, const uint64_t* image_data, int img_width, int img_height);
