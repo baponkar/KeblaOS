@@ -22,6 +22,8 @@ The useful references for OS development
 
     - [Intel® 64 and IA-32 Architectures Software Developer Manuals](./pdf-docs/325462-sdm-vol-1-2abcd-3abcd-4.pdf)
 
+    - [ Operating Systems: Three Easy Pieces ](./pdf-docs/operating_system_three_easy_pieces.pdf)
+
 * Programming Language :
 
 
@@ -99,24 +101,27 @@ The useful references for OS development
 
  * Example OS:
 
-    - [Jazz2-OS](https://gitlab.com/olivestem/Jazz2-0)
+    - [Jazz2-OS](https://gitlab.com/olivestem/Jazz2-0) from GitLab
 
     - [pkOS](https://docs.pkos.pagekey.io/blog/) tutorial
 
     - [FlingOS](https://github.com/FlingOS/FlingOS/tree/develop) from GitHub.
 
-    - intermezzoS [GitHub](https://github.com/intermezzOS)
+    - intermezzoS [GitHub](https://github.com/intermezzOS) from GitHub
 
-    - [CavOS](https://github.com/malwarepad/cavOS)
+    - [CavOS](https://github.com/malwarepad/cavOS) from GitHub
 
     - [KolibriOS](https://kolibrios.org/en/)
 
-    - [skift OS](https://github.com/skift-org/skift)
+    - [skift OS](https://github.com/skift-org/skift) from GitHub
 
-    - [micrOS](https://github.com/skni-kod/MicrOS/)
+    - [micrOS](https://github.com/skni-kod/MicrOS/) from GitHub
 
-    - [OS](https://github.com/SzAkos04/OS)
+    - [OS](https://github.com/SzAkos04/OS) from GitHub
 
+    - [HelenOS](https://github.com/HelenOS/helenos) from GitHub
+
+    - [MakenOS](https://github.com/RickleAndMortimer/MakenOS) from GitHub
 
     - [web.archive.org](https://web.archive.org/web/20160412174753/http://www.jamesmolloy.co.uk/tutorial_html/index.html)
 

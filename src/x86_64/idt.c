@@ -125,8 +125,8 @@ void isr_handler(registers_t regs)
         return;
     }
     else if (regs.int_no == 14) { // Check if it is a page fault
-        print("Interrupt 14\n");
-        // page_fault(&regs); // Call your page fault handler directly
+        // print("Interrupt 14\n");
+        page_fault_handler(&regs);
         return;
     }
     else if(regs.int_no < 32){

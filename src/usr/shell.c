@@ -47,6 +47,8 @@ void execute_command(char* command) {
     }else if(strcmp(command, "image") == 0){
         clear_screen();
         display_image(0, 0, (const uint64_t*) girl_6352783_640, GIRL_6352783_640_WIDTH, GIRL_6352783_640_HEIGHT);
+    }else if(strcmp(command, "") == 0){
+        print("type 'help'\n");
     }else {
         print("!Unknown command: ");
         print(command);
