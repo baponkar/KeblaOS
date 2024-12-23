@@ -159,12 +159,18 @@ This file have documentation about creating i686-elf cross compiler in Ubuntu/De
 
 The above process will install the required packages and cross-compiler i686-elf-gcc, i686-elf-ld .
 
+If you want to use [limine](https://github.com/limine-bootloader/limine) bootloader into your OS then you can download and make ready by following codes:
 
+```bash
+    sudo apt install git
+    git clone https://github.com/limine-bootloader/limine.git --branch=v8.x-binary --depth=1
+	make -C limine
+```
 
 * Reference:
     - [GCC Cross Compiler](https://wiki.osdev.org/GCC_Cross-Compiler)
     
-
+    - [Doc. for Limine Config](https://github.com/limine-bootloader/limine/blob/v8.x/PROTOCOL.md#kernel-address-feature)
 
 
 -------------------------------------------------------

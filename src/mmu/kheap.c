@@ -12,7 +12,6 @@ uint64_t kmalloc(uint64_t sz)       // vanilla (normal).
     return tmp;
 }
 
-
 /*
 Page Alignment: Page alignment ensures that memory addresses fall on boundaries that are 
 multiples of the page size (typically 4 KB for 64-bit systems).
@@ -38,6 +37,7 @@ uint64_t kmalloc_a(uint64_t sz, int align)    // page aligned.
     return tmp;
 }
 
+
 /*
 The kmalloc_p function is used to allocate memory while also optionally returning the physical address 
 of the allocated memory.
@@ -52,6 +52,7 @@ uint64_t kmalloc_p(uint64_t sz, uint64_t *phys){
     placement_address += sz;
     return tmp;
 }
+
 
 /*
 The kmalloc_ap function is used to allocate memory , returning the physical address,  
@@ -75,10 +76,6 @@ uint64_t kmalloc_ap(uint64_t sz, int align, uint64_t *phys)  // page aligned and
 }
 
 
-
-
-
-
 /*
 * Dynamic Memory Allocation
 * https://chatgpt.com/share/675fa60d-c044-8001-aef6-d23b3d62ab62
@@ -98,17 +95,14 @@ void init_kheap() {
     heap_head->next = NULL;
 }
 
+
 void *kmalloc1(uint64_t size) {
     heap_block_t *current = heap_head;
-    print("current: ");
-    print_hex((uint64_t) current);
-    print("\n");
-
     while (current) {
         if (current->is_free && current->size >= size) {
             // Split the block if there's enough space for a new block
             if (current->size > size + HEAP_BLOCK_SIZE) {
-                heap_block_t *new_block = (heap_block_t *)((uint8_t *)current + HEAP_BLOCK_SIZE + size);
+                heap_block_t *new_block = (heap_block_t *)((uint8_t *) current + HEAP_BLOCK_SIZE + size);
                 new_block->size = current->size - size - HEAP_BLOCK_SIZE;
                 new_block->is_free = 1;
                 new_block->next = current->next;
@@ -126,6 +120,7 @@ void *kmalloc1(uint64_t size) {
     // No suitable block found
     return NULL;
 }
+
 
 
 void kfree1(void *ptr) {
@@ -150,28 +145,96 @@ void kfree1(void *ptr) {
 
 
 void *kmalloc1_a(uint64_t size, int align) {
-    uint64_t raw_address = (uint64_t)kmalloc(size);
-    if (!raw_address) return NULL;
+    heap_block_t *current = heap_head;
+    while (current) {
+        if (current->is_free && current->size >= size) {
+            // Calculate the aligned address
+            uint64_t raw_address = (uint64_t)((uint8_t *)current + HEAP_BLOCK_SIZE);
+            uint64_t aligned_address = raw_address;
+            if (align == 1 && (raw_address & 0xFFF)) // If the address is not already page-aligned and want to make it page aligned
+            {
+                // align it
+                aligned_address &= 0xFFFFFFFFFFFFF000; // masking of most significant 20 bit which is used for address
+                aligned_address += 0x1000; // increase  the raw address by 4 KB, Page Size
+            }
 
-    if (align == 1 && (raw_address & 0xFFF)) // If the address is not already page-aligned and want to make it page aligned
-    {
-        // align it
-        raw_address &= 0xFFFFFFFFFFFFF000; // masking of most significant 20 bit which is used for address
-        raw_address += 0x1000; // increase  the raw address by 4 KB, Page Size
+            // Split the block if there's enough space for a new block
+            if (current->size > size + (aligned_address - raw_address) + HEAP_BLOCK_SIZE) {
+                heap_block_t *new_block = (heap_block_t *)((uint8_t *) current + HEAP_BLOCK_SIZE + size);
+                new_block->size = current->size - size - (aligned_address - raw_address) - HEAP_BLOCK_SIZE;
+                new_block->is_free = 1;
+                new_block->next = current->next;
+
+                current->next = new_block;
+                current->size = size + (aligned_address - raw_address);
+            }
+
+            current->is_free = 0;
+            return (void *) aligned_address;
+        }
+        current = current->next;
     }
-    uint64_t aligned_address = raw_address;
-    raw_address += size;
-    
-    return (void *)aligned_address;
+
+    // No suitable block found
+    return NULL;
 }
 
 
 void *kmalloc1_p(uint64_t size, uint64_t *phys){
+    heap_block_t *current = heap_head;
+    while (current) {
+        if (current->is_free && current->size >= size) {
+            // Split the block if there's enough space for a new block
+            if (current->size > size + HEAP_BLOCK_SIZE) {
+                heap_block_t *new_block = (heap_block_t *)((uint8_t *) current + HEAP_BLOCK_SIZE + size);
+                new_block->size = current->size - size - HEAP_BLOCK_SIZE;
+                new_block->is_free = 1;
+                new_block->next = current->next;
+
+                current->next = new_block;
+                current->size = size;
+            }
+
+            current->is_free = 0;
+            *phys = (uint64_t)((uint8_t *)current + HEAP_BLOCK_SIZE);
+
+        }
+        current = current->next;
+    }
 
 }
 
+
 void *kmalloc1_ap(uint64_t size, int align, uint64_t *phys){
-    
+    heap_block_t *current = heap_head;
+    while (current) {
+        if (current->is_free && current->size >= size) {
+            // Calculate the aligned address
+            uint64_t raw_address = (uint64_t)((uint8_t *)current + HEAP_BLOCK_SIZE);
+            uint64_t aligned_address = raw_address;
+            if (align == 1 && (raw_address & 0xFFF)) // If the address is not already page-aligned and want to make it page aligned
+            {
+                // align it
+                aligned_address &= 0xFFFFFFFFFFFFF000; // masking of most significant 20 bit which is used for address
+                aligned_address += 0x1000; // increase  the raw address by 4 KB, Page Size
+            }
+
+            // Split the block if there's enough space for a new block
+            if (current->size > size + (aligned_address - raw_address) + HEAP_BLOCK_SIZE) {
+                heap_block_t *new_block = (heap_block_t *)((uint8_t *) current + HEAP_BLOCK_SIZE + size);
+                new_block->size = current->size - size - (aligned_address - raw_address) - HEAP_BLOCK_SIZE;
+                new_block->is_free = 1;
+                new_block->next = current->next;
+
+                current->next = new_block;
+                current->size = size + (aligned_address - raw_address);
+            }
+
+            current->is_free = 0;
+            *phys = (uint64_t) aligned_address;
+        }
+        current = current->next;
+    }
 }
 
 
@@ -207,9 +270,7 @@ void test_kheap() {
     print("\n");
 
     kfree1(ptr1);
-
-
-    print("kfree(ptr1)\n");
+    print("kfree(ptr1) applied!\n");
 
     void *ptr3 = kmalloc1(50); // Should reuse the space from ptr1
 
@@ -223,7 +284,45 @@ void test_kheap() {
 
     kfree1(ptr3);
 
-    print("kfree(ptr3)\n");
+    print("kfree(ptr3) applied!\n");
+
+    void *ptr4 = kmalloc1_a(100, 1); // Page-aligned allocation
+
+    print("*ptr4 : ");
+
+    print_dec((uint64_t)ptr4);
+
+    print("\n");
+    
+    print("allocation sizeof ptr4 : ");
+
+    print_dec(get_allocated_size(ptr4));
+
+    print("\n");
+
+    void *ptr5 = kmalloc1_p(100, (uint64_t *)0x1000); // Physical address allocation
+
+    print("*ptr5 : ");
+
+    print_dec((uint64_t)ptr5);
+
+    print("\n");
+
+    void *ptr6 = kmalloc1_ap(100, 1, (uint64_t *)0x2000); // Page-aligned and physical address allocation
+
+    print("*ptr6 : ");
+
+    print_dec((uint64_t)ptr6);
+
+    print("\n");
+
+    print("allocation sizeof ptr6 : ");
+
+    print_dec(get_allocated_size(ptr6));
+
+    print("\n");
+
+    print("Dynamic Memory allocation test completed!\n");
 }
 
 

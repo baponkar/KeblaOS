@@ -6,10 +6,10 @@ https://wiki.osdev.org/Programmable_Interval_Timer
 
 uint64_t max_value = 18446744073709551615ULL; // Unsigned long long literal
 
-const uint32_t freq = 1000; // ticks per second
+const uint32_t freq = 1193180; // ticks per second
 // PIT Frequency = 119318.16666 Mhz
 // uint64_t divisor = 1193182 / freq; // 1.1931816666 ~ MHz 1.193182 MHz
-uint64_t divisor = 1193;
+uint64_t divisor = 1000;
 
 uint64_t ticks = 0;
 
@@ -43,7 +43,7 @@ void init_timer(){
     outb(PIT_COMMAND_PORT, 0x36);
     outb(PIT_CHANNEL_0, (uint8_t)(divisor & 0xFF));  // FF = 1111 1111 => last eight digit
     outb(PIT_CHANNEL_0, (uint8_t)((divisor >> 8) & 0xFF)); 
-    print("Successfully timer initialized!\n");
+    print("Successfully PIT timer initialized.\n");
 }
 
 

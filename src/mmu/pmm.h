@@ -12,7 +12,7 @@
 
 
 // Macros used in the bitset algorithms.
-#define INDEX_FROM_BIT(a)(a/64)
+#define INDEX_FROM_BIT(a)(a/64) 
 #define OFFSET_FROM_BIT(a)(a%(64))
 
 

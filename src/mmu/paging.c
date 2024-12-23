@@ -64,15 +64,12 @@ void free_frame(page_t *page)
 }
 
 
-void print_cr3() {
+uint64_t get_cr3_addr() {
     uint64_t cr3;
     // Read the CR3 register
     asm volatile("mov %%cr3, %0" : "=r"(cr3));
-    
-    // Print the value of CR3
-    print("CR3 register value: ");
-    print_hex(cr3);
-    print("\n");
+
+    return cr3;
 }
 
 
@@ -83,9 +80,8 @@ void initialise_paging()
 
     memset(frames, 0, INDEX_FROM_BIT(nframes));
 
-    // Paging is enabled by Limine. Get the pml4 table that Limine set up
-    asm("mov %%cr3, %0" : "=r"(kernel_pml4));
-    current_pml4 = kernel_pml4;
+    // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
+    current_pml4 = (pml4_t *) get_cr3_addr();
 
 // Michael Petch is unsure what you were attempting to do here
 // so he can't help.

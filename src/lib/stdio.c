@@ -1,10 +1,14 @@
 /*
+
+Standard Input Output library
+
+Last Updated : 19/12/2024
+
 */
+
 
 #include "stdio.h"
 
-void print_int(int n);
-void vprintf(const char* format, va_list args);
 
 void print_int(int n) {
     if (n == 0) {
@@ -12,7 +16,7 @@ void print_int(int n) {
         return;
     }
 
-    char buffer[11];
+    char buffer[24];
     int i = 0;
 
     if (n < 0) {
@@ -30,6 +34,7 @@ void print_int(int n) {
         putchar(buffer[--i]);
     }
 }
+
 
 
 void vprintf(const char* format, va_list args) {
@@ -64,8 +69,8 @@ void vprintf(const char* format, va_list args) {
                     break;
                 }
                 case 'u':{ // for unsignen int i.e. uint32_t variable
-                    uint64_t num = va_arg(args, uint64_t);
-                    print_dec(num);  // Use your custom print_hex function 
+                    uint32_t num = va_arg(args, uint32_t);
+                    print_int(num);  // Use your custom print_hex function 
                     break;
                 }
                 case 'f': {  // Handle floating-point numbers
@@ -104,6 +109,8 @@ void printf(const char* format, ...) {
     vprintf(format, args);
     va_end(args);
 }
+
+
 
 
 

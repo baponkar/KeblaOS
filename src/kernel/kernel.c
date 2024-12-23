@@ -28,7 +28,7 @@ uint32_t *FRAMEBUFFER_PTR;   // Note: we assume the framebuffer model is RGB wit
 size_t FRAMEBUFFER_WIDTH;
 size_t FRAMEBUFFER_HEIGHT;
 
-struct limine_memmap_response* MEMMAP_INFO_PTR;
+extern struct limine_memmap_response* MEMMAP_INFO_PTR;
 
 uint64_t VIRTUAL_BASE;
 uint64_t PHYSICAL_BASE;
@@ -130,9 +130,9 @@ static volatile LIMINE_REQUESTS_END_MARKER;
 
 
 void kmain(void){
+    
     get_system_info();
-
-    // print_bootloader_info();
+    print_bootloader_info();
 
     init_gdt();
     // check_gdt();
@@ -141,7 +141,7 @@ void kmain(void){
     // test_interrupt();
 
     initialise_paging();
-    // test_paging();
+    test_paging();
 
     init_timer();
     
@@ -149,36 +149,36 @@ void kmain(void){
 
     // test_kheap();
 
-    uint64_t var_hex = 0x1234;
-    uint64_t var_bin = 0b100101;
-    int var_dec = 420;
-    int64_t neg_no = -345;
+    // uint64_t var_hex = 0x1234;
+    // uint64_t var_bin = 0b100101;
+    // int var_dec = 420;
+    // print_dec(var_dec);
 
-    print("var_hex = ");
-    print_hex(var_hex);
-    print("\n");
+    // int64_t neg_no = -345;
 
-    print("var_bin = ");
-    print_bin(var_bin);
-    print("\n");
+    // print("var_hex = ");
+    // print_hex(var_hex);
+    // print("\n");
 
-    print("var_dec = ");
-    print_dec(var_dec);
-    print("\n");
+    // print("var_bin = ");
+    // print_bin(var_bin);
+    // print("\n");
 
-    print("neg_no = ");
-    print_dec(neg_no);
-    print("\n");
+    // print("var_dec = ");
+    // print_dec(var_dec);
+    // print("\n");
 
-    print("\n");
+    // print("neg_no = ");
+    // print_dec(neg_no);
+    // print("\n");
 
-
-    printf("var_hex = %x\n", var_hex);  // 0x0000000000000010
-    printf("var_bin = %b\n", var_bin);  // 0b0000000000000000000000000000000000000000000000000000000000010000
-    printf("var_dec = %d\n", var_dec);  // -1
-    printf("neg_no = %d\n", neg_no);
+    // print("\n");
 
 
+    // printf("var_hex = %x\n", var_hex);  // 0x0000000000000010
+    // printf("var_bin = %b\n", var_bin);  // 0b0000000000000000000000000000000000000000000000000000000000010000
+    // printf("var_dec = %d\n", var_dec);  // -1
+    // printf("neg_no = %d\n", neg_no);
 
 
     hcf();
@@ -357,6 +357,23 @@ void get_vir_to_phy_offset(void){
     }
 }
 
+void print_size_with_units(uint64_t size) {
+    const char *units[] = {"Bytes", "KB", "MB", "GB", "TB"};
+    int unit_index = 0;
+
+
+    // Determine the appropriate unit
+    while (size >= 1024 && unit_index < 4) {
+        size /= 1024;
+        unit_index++;
+    }
+
+    // Print the size with the unit
+    print_dec((uint64_t)size); // Print the integer part
+    print(" ");
+    print(units[unit_index]);
+}
+
 void print_memory_map(void) {
     // Check if the memory map response is available
     if (memmap_request.response == NULL) {
@@ -371,40 +388,49 @@ void print_memory_map(void) {
     for (uint64_t i = 0; i < entry_count; i++) {
         struct limine_memmap_entry *entry = entries[i];
         print("\tRegion ");
-        print_hex(i);
+        print_dec(i);
+
         print(": Base = ");
         print_hex(entry->base);
+        print(" [");
+        print_size_with_units(entry->base);
+        print("] ");
+
         print(", Length = ");
         print_hex(entry->length);
+        print(" [");
+        print_size_with_units(entry->length);
+        print("] ");
+
 
         // Check the type and print it
         switch (entry->type) {
-            case 0x0:
-                print(" (Usable)\n");
+            case LIMINE_MEMMAP_USABLE: // 0, This memory is available for the operating system to use freely. It is not reserved for any specific purpose by hardware or firmware.
+                print(" Usable.\n");
                 break;
-            case 0x1:
-                print(" (Reserved)\n");
+            case LIMINE_MEMMAP_RESERVED: // 1, This memory is reserved and should not be modified. It might be used by firmware, hardware, or other components that the OS cannot interfere with.
+                print(" Reserved, not be modified!\n");
                 break;
-            case 0x2:
-                print(" (ACPI Reclaimable)\n");
+            case LIMINE_MEMMAP_ACPI_RECLAIMABLE: // 2, Memory used by the ACPI (Advanced Configuration and Power Interface) tables. After the ACPI tables have been parsed and used, this memory can be reclaimed and repurposed by the operating system.
+                print(" ACPI Reclaimable, can be usable.\n");
                 break;
-            case 0x3:
-                print(" (ACPI NVS)\n");
+            case LIMINE_MEMMAP_ACPI_NVS :   // 3, Non-Volatile Storage (NVS) memory used by the ACPI for storing runtime configuration and state. This memory must not be modified or reclaimed as it is needed by the system during runtime.
+                print(" ACPI NVS, not be modified!\n");
                 break;
-            case 0x4:
-                print(" (Bad Memory)\n");
+            case LIMINE_MEMMAP_BAD_MEMORY: // 4, This memory region is marked as bad and unreliable due to detected hardware errors or inconsistencies.
+                print(" Bad Memory, not usable!\n");
                 break;
-            case 0x5:
-                print(" Bootloader reclaimable\n");
+            case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE: // 5, Memory used temporarily by the bootloader. Once the operating system is fully loaded, this memory can be reclaimed and repurposed.
+                print(" Bootloader reclaimable, can be usable.\n");
                 break;
-            case 0x6:
-                print(" Kernel/Modules\n");
+            case 6: // LIMINE_MEMMAP_EXECUTABLE_AND_MODULES tag not working so i used custom value 6, Memory occupied by the kernel image and modules loaded by the bootloader. This type is typically not directly supported in some Limine versions and might need custom handling.
+                print(" Kernel/Modules, not usable!\n");
                 break;
-            case 0x7:
-                print(" Framebuffer\n");
+            case LIMINE_MEMMAP_FRAMEBUFFER: // 7, Memory used for the framebuffer, which holds pixel data for the display. The operating system must not overwrite this memory unless it takes control of the display.
+                print(" Framebuffer, not be usable!\n");
                 break;
             default:
-                print(" (Unknown Type !!)\n");
+                print(" Unknown Type !!\n"); // An undefined or unrecognized type, often indicative of an implementation issue or an unsupported memory region.
         }
     }
 }

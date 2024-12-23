@@ -8,6 +8,8 @@
 #include "../driver/ports.h"
 #include "../util/util.h"
 
+#include "../mmu/paging.h"
+
 
 struct idt_entry_struct
 {//128 bit
