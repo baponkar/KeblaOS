@@ -6,6 +6,7 @@ section .text
 global gdt_flush
 gdt_flush:
    LGDT  [RDI]
+   jmp reloadSegments
    RET
 
 
@@ -28,3 +29,9 @@ reload_CS:
    MOV   SS, AX
    RET
 
+
+global tss_flush
+tss_flush:
+    MOV ax, 0x28
+    LTR ax
+    RET

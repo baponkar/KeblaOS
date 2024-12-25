@@ -52,7 +52,7 @@
 #define DEFAULT_FONT_WIDTH 8
 #define DEFAULT_FONT_HEIGHT 16
 
-
+void get_framebuffer_info(void);
 void vga_init();
 void clear_screen();
 void set_pixel(size_t x, size_t y, uint64_t color);

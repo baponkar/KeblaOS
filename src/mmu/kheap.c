@@ -88,12 +88,16 @@ void *heap_start = (void *) KHEAP_START;
 void *heap_end = (void *) (KHEAP_START + KHEAP_SIZE);
 heap_block_t *heap_head;
 
+
+
 void init_kheap() {
     heap_head = (heap_block_t *)heap_start;
     heap_head->size = KHEAP_SIZE - HEAP_BLOCK_SIZE;
     heap_head->is_free = 1;
     heap_head->next = NULL;
 }
+
+
 
 
 void *kmalloc1(uint64_t size) {
@@ -256,17 +260,17 @@ void test_kheap() {
     void *ptr1 = kmalloc1(100);
 
     print("*ptr1 : ");
-    print_dec((uint64_t)ptr1);
+    print_hex((uint64_t)ptr1);
     print("\n");
 
     print("allocation sizeof ptr1 : ");
-    print_dec(get_allocated_size(ptr1));
+    print_hex(get_allocated_size(ptr1));
     print("\n");
 
     void *ptr2 = kmalloc1(200);
 
     print("*ptr2 : ");
-    print_dec((uint64_t)ptr2);
+    print_hex((uint64_t)ptr2);
     print("\n");
 
     kfree1(ptr1);
@@ -275,7 +279,7 @@ void test_kheap() {
     void *ptr3 = kmalloc1(50); // Should reuse the space from ptr1
 
     print("*ptr3 : ");
-    print_dec((uint64_t)ptr3);
+    print_hex((uint64_t)ptr3);
     print("\n");
 
     kfree1(ptr2);
@@ -290,37 +294,37 @@ void test_kheap() {
 
     print("*ptr4 : ");
 
-    print_dec((uint64_t)ptr4);
+    print_hex((uint64_t)ptr4);
 
     print("\n");
     
     print("allocation sizeof ptr4 : ");
 
-    print_dec(get_allocated_size(ptr4));
+    print_hex(get_allocated_size(ptr4));
 
     print("\n");
 
-    void *ptr5 = kmalloc1_p(100, (uint64_t *)0x1000); // Physical address allocation
+    // void *ptr5 = kmalloc1_p(100, (uint64_t *)0x1000); // Physical address allocation
 
-    print("*ptr5 : ");
+    // print("*ptr5 : ");
 
-    print_dec((uint64_t)ptr5);
+    // print_dec((uint64_t)ptr5);
 
-    print("\n");
+    // print("\n");
 
-    void *ptr6 = kmalloc1_ap(100, 1, (uint64_t *)0x2000); // Page-aligned and physical address allocation
+    // void *ptr6 = kmalloc1_ap(100, 1, (uint64_t *)0x2000); // Page-aligned and physical address allocation
 
-    print("*ptr6 : ");
+    // print("*ptr6 : ");
 
-    print_dec((uint64_t)ptr6);
+    // print_dec((uint64_t)ptr6);
 
-    print("\n");
+    // print("\n");
 
-    print("allocation sizeof ptr6 : ");
+    // print("allocation sizeof ptr6 : ");
 
-    print_dec(get_allocated_size(ptr6));
+    // print_dec(get_allocated_size(ptr6));
 
-    print("\n");
+    // print("\n");
 
     print("Dynamic Memory allocation test completed!\n");
 }

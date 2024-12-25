@@ -29,4 +29,4 @@ typedef struct block {
 
 void disable_interrupts();
 void enable_interrupts();
-void hcf(void);
+void halt_kernel(void);

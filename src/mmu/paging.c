@@ -217,7 +217,7 @@ void page_fault_handler(registers_t *regs)
 
     // Halt the system to prevent further errors (for now).
     print("Halting the system due to page fault.\n");
-    hcf();
+    halt_kernel();
 
 }
 
