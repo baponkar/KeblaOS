@@ -21,3 +21,7 @@ void clear_frame(uint64_t frame_addr);
 uint64_t test_frame(uint64_t frame_addr);
 uint64_t first_frame();
 
+void print_size_with_units(uint64_t size);
+void print_memory_map(void);
+void get_vir_to_phy_offset(void);
+

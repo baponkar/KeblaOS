@@ -14,7 +14,6 @@
 
 
 extern void gdt_flush(gdtr_t *gdtr_instance);
-extern void reloadSegments();
 
 gdt_entry_t gdt_entries[5];
 gdtr_t gdtr_instance;
@@ -68,7 +67,6 @@ void init_gdt(){
     gdtr_instance.base = (uint64_t) &gdt_entries;
 
     gdt_flush((gdtr_t *) &gdtr_instance);
-    reloadSegments();
 
     print("Successfully GDT Enabled!\n");
 }

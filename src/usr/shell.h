@@ -15,6 +15,8 @@
 
 #include "../driver/image_data.h"
 
+#include "../bootloader/boot.h"
+
 #define BUFFER_SIZE 256
 
 void shell_prompt();

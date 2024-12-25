@@ -44,6 +44,8 @@ all: run
 $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/kernel/kernel.c -o $(BUILD_DIR)/kernel.o
 
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/bootloader/boot.c -o $(BUILD_DIR)/boot.o
+
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/util/util.c -o $(BUILD_DIR)/util.o
 
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/ports.c -o $(BUILD_DIR)/ports.o
@@ -84,6 +86,7 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 
 # Linking object files into kernel binary
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
+						$(BUILD_DIR)/boot.o \
 						$(BUILD_DIR)/util.o \
 						$(BUILD_DIR)/ports.o \
 						$(BUILD_DIR)/font.o \
@@ -113,6 +116,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel.bin \
+						$(BUILD_DIR)/boot.o \
 						$(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/util.o \
 						$(BUILD_DIR)/ports.o \
@@ -179,7 +183,7 @@ run: $(BUILD_DIR)/image.iso
 	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu -bios /usr/share/OVMF/OVMF_CODE.fd
 
 	# BIOS Boot
-	qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 2048 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu # -smp cores=2,threads=4,sockets=1,maxcpus=8
+	qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 64 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu # -smp cores=2,threads=4,sockets=1,maxcpus=8
 	
 
 .PHONY: all clean

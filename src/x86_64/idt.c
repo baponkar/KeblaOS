@@ -139,7 +139,7 @@ void isr_handler(registers_t regs)
         print_dec(regs.err_code);
         print("\n");
         print("System Halted!\n");
-        hcf();
+        halt_kernel();
     }
 }
 

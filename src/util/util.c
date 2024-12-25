@@ -14,7 +14,7 @@ void enable_interrupts() {
 
 
 // Halt and catch fire function.
-void hcf(void) {
+void halt_kernel(void) {
     for (;;) {
         asm ("hlt");
     }

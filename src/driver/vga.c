@@ -1,12 +1,23 @@
 
 #include "vga.h"
 
+__attribute__((used, section(".limine_requests")))
+static volatile LIMINE_BASE_REVISION(0);
+
+__attribute__((used, section(".requests")))
+static volatile struct limine_framebuffer_request framebuffer_request = {
+    .id = LIMINE_FRAMEBUFFER_REQUEST,
+    .revision = 0
+};
+
+
+
 extern unsigned char g_8x8_font[2048];  // 8x8 font data
 extern unsigned char g_8x16_font[4096]; // 8x16 font data
 
-extern uint32_t *FRAMEBUFFER_PTR; 
-extern size_t FRAMEBUFFER_WIDTH;
-extern size_t FRAMEBUFFER_HEIGHT;
+uint32_t *FRAMEBUFFER_PTR; // Note: we assume the framebuffer model is RGB with 32-bit pixels.
+size_t FRAMEBUFFER_WIDTH;
+size_t FRAMEBUFFER_HEIGHT;
 
 size_t FONT_SIZE;
 size_t FONT_WIDTH;
@@ -26,7 +37,29 @@ size_t cur_pos_x;
 size_t cur_pos_y;
 
 
+
+
+
+
 void vga_init(){
+
+     // Ensure the bootloader actually understands our base revision (see spec).
+    if (LIMINE_BASE_REVISION_SUPPORTED == false) {
+        halt_kernel();
+    }
+
+    // Ensure the framebuffer is initialized
+    if (framebuffer_request.response == NULL || framebuffer_request.response->framebuffer_count < 1) {
+        halt_kernel();
+    }
+
+        // Fetch the first framebuffer
+    struct limine_framebuffer* framebuffer = framebuffer_request.response->framebuffers[0];
+    FRAMEBUFFER_PTR = (uint32_t*) framebuffer->address;
+
+    FRAMEBUFFER_WIDTH = framebuffer->width;
+    FRAMEBUFFER_HEIGHT = framebuffer->height;
+
     FONT_SIZE = 16;
     FONT_WIDTH = 8;
     FONT_HEIGHT = 16;
@@ -46,13 +79,39 @@ void vga_init(){
     cur_pos_y = 0;
 
     clear_screen();
-    print("KeblaOS - 0.11\n");
-    print("Framebuffer dimension (Width x Height) : ");
+}
+
+void print_framebuffer_info(){
+    print("Framebuffer Info\n");
+    print("Framebuffer Address : ");
+    print_hex((uint64_t) FRAMEBUFFER_PTR);
+    print("\n");
+
+    print("RGB Mode : ");
+    print_dec(32);
+    print("\n");
+
+    print("Framebuffer Resolution : ");
     print_dec(FRAMEBUFFER_WIDTH);
     print("x");
     print_dec(FRAMEBUFFER_HEIGHT);
     print("\n");
-    print("Successfully VGA initialized!\n");
+
+    print("Font Size : ");
+    print_dec(FONT_SIZE);
+    print("\n");
+
+    print("Font Width : ");
+    print_dec(FONT_WIDTH);
+    print("\n");
+
+    print("Font Height : ");
+    print_dec(FONT_HEIGHT);
+    print("\n");
+
+    print("Line Height : ");
+    print_dec(LINE_HEIGHT);
+    print("\n");
 
 }
 
@@ -220,16 +279,23 @@ void move_cur_right(){
 }
 
 
-void print_hex(uint64_t n)
-{
-    char hex_chars[] = "0123456789ABCDEF";
-    print("0x");
 
-    for (int i = 60; i >= 0; i -= 4) // process each nibble (4 bits)
-    {
-        putchar(hex_chars[(n >> i) & 0xF]);
+void print_hex(uint64_t n) {
+    char hex_chars[] = "0123456789ABCDEF";
+    printf("0x");
+
+    int leading_zero = 1; // Flag to skip leading zeros
+
+    for (int i = 60; i >= 0; i -= 4) { // Process each nibble (4 bits)
+        char digit = hex_chars[(n >> i) & 0xF];
+        if (digit != '0' || !leading_zero || i == 0) {
+            putchar(digit);
+            leading_zero = 0; // Once a non-zero digit is found, reset the flag
+        }
     }
 }
+
+
 
 
 
