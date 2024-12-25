@@ -55,7 +55,7 @@ void kmain(void){
 
     test_kheap();
 
-    print("Hello World!\n");
+
 
     // uint64_t var_hex = 0x1234;
     // uint64_t var_bin = 0b100101;
