@@ -88,7 +88,7 @@ uint64_t kmalloc_ap(uint64_t sz, int align, uint64_t *phys)  // page aligned and
 /* Dynamic Memory allocation by jamesmolloy.co.uk*/
 
 
-#define KHEAP_INITIAL_SIZE  0x4000    // 4 KB
+#define KHEAP_INITIAL_SIZE  0x100000    // 1 MB
 #define HEAP_INDEX_SIZE     0x20000     // 128 KB
 #define HEAP_MAGIC          0x123890AB  // Magic number for error checking and identification.
 #define HEAP_MIN_SIZE       0x4000     // 16 KB
@@ -536,16 +536,16 @@ void heap_test(){
     void *b = alloc(8, 1, kheap);
     void *c = alloc(8, 1, kheap);
 
-    print("a: ");
-    print_hex((uint64_t)a);
-    print(", b: ");
-    print_hex((uint64_t)b);
-    print("\nc: ");
-    print_hex((uint64_t)c);
+    // print("a: ");
+    // print_hex((uint64_t)a);
+    // print(", b: ");
+    // print_hex((uint64_t)b);
+    // print("\nc: ");
+    // print_hex((uint64_t)c);
 
-    free(&c);
-    free(&b);
-    void *d = alloc(12, 1, kheap);
-    print(", d: ");
-    print_hex((uint64_t)d);
+    // free(&c);
+    // free(&b);
+    // void *d = alloc(12, 1, kheap);
+    // print(", d: ");
+    // print_hex((uint64_t)d);
 }

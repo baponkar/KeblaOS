@@ -83,7 +83,7 @@ void initialise_paging()
 
 // Function to allocate a new page table
 static pt_t* alloc_pt() {
-    pt_t* pt = (pt_t*)kmalloc_a(sizeof(pt_t), PAGE_SIZE);
+    pt_t* pt = (pt_t*)kmalloc_a(sizeof(pt_t), 1);
     if (pt) {
         memset(pt, 0, sizeof(pt_t)); // Zero out the page table
     }
@@ -92,7 +92,7 @@ static pt_t* alloc_pt() {
 
 // Function to allocate a new page directory
 static pd_t* alloc_pd() {
-    pd_t* pd = (pd_t*)kmalloc_a(sizeof(pd_t), PAGE_SIZE);
+    pd_t* pd = (pd_t*)kmalloc_a(sizeof(pd_t), 1);
     if (pd) {
         memset(pd, 0, sizeof(pd_t)); // Zero out the page directory
     }
@@ -101,7 +101,7 @@ static pd_t* alloc_pd() {
 
 // Function to allocate a new page directory pointer table
 static pdpt_t* alloc_pdpt() {
-    pdpt_t* pdpt = (pdpt_t*)kmalloc_a(sizeof(pdpt_t), PAGE_SIZE);
+    pdpt_t* pdpt = (pdpt_t*)kmalloc_a(sizeof(pdpt_t), 1);
     if (pdpt) {
         memset(pdpt, 0, sizeof(pdpt_t)); // Zero out the PDPT
     }
