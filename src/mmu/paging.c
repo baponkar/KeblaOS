@@ -6,6 +6,7 @@ https://wiki.osdev.org/Identity_Paging
 https://web.archive.org/web/20160326061042/http://jamesmolloy.co.uk/tutorial_html/6.-Paging.html
 https://github.com/dreamportdev/Osdev-Notes/blob/master/04_Memory_Management/03_Paging.md
 https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
+
 */
 
 #include "paging.h"
@@ -13,53 +14,49 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 extern void enable_paging(uint64_t pml4_address);
 extern void disable_paging();
 
-extern uint64_t *frames;
-extern uint64_t nframes; // Total number of frames
-
-extern uint64_t placement_address;  // The value of it will set in kernel.c 
-extern uint64_t mem_end_address;    // The value of it will set in kernel.c 
 
 pml4_t *current_pml4;
 pml4_t *user_pml4;
 pml4_t *kernel_pml4;
 
-// Function to allocate a frame.
-void alloc_frame(page_t *page, int is_kernel, int is_writeable)
-{
-   if (page->frame != 0)
-   {
-       return; // Frame was already allocated, return straight away.
-   }
-   else
-   {
-       uint64_t idx = first_frame(); // idx is now the index of the first free frame.
-       if (idx == (uint64_t)-1)
-       {
-           // PANIC is just a macro that prints a message to the screen then hits an infinite loop.
-           print("No free frames!");
-       }
-       set_frame(idx*0x1000); // this frame is now ours!
-       page->present = 1; // Mark it as present.
-       page->rw = (is_writeable)?1:0; // Should the page be writeable?
-       page->user = (is_kernel)?0:1; // Should the page be user-mode?
-       page->frame = placement_address + idx*PAGE_SIZE;
-       placement_address += PAGE_SIZE;
-   }
+
+// allocate a page with the physical frame
+void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
+    if (page->frame != 0) {
+        print("Frame was already allocated!\n");
+        return; // Frame was already allocated, return straight away.
+    }
+
+    uint64_t bit_no = free_frame_bit_no(); // idx is now the index of the first free frame.
+
+    if (bit_no == (uint64_t)-1) {
+        print("No free frames!");
+        halt_kernel();
+    }
+
+    set_frame(bit_no); // Mark the frame as used by passing the frame index
+
+    page->present = 1;       // Mark it as present.
+    page->rw = (is_writeable) ? 1 : 0; // Should the page be writeable?
+    page->user = (is_kernel) ? 0 : 1; // Should the page be user-mode?
+    page->frame = (kernel_placement_address + (bit_no * FRAME_SIZE)) >> 12;
+    kernel_placement_address += FRAME_SIZE; // Update the new kernel_placement_address
 }
 
 
 // Function to deallocate a frame.
 void free_frame(page_t *page)
 {
-   uint64_t frame;
-   if (!(frame=page->frame))
+   uint64_t frame_addr;
+   if (!(frame_addr=page->frame))
    {
        return; // The given page didn't actually have an allocated frame!
    }
    else
    {
-       clear_frame(frame); // Frame is now free again.
-       page->frame = 0x0; // Page now doesn't have a frame.
+        uint64_t frame_idx = ADDR_TO_BIT_NO(frame_addr);
+       clear_frame(frame_idx); // Frame is now free again.
+       page->frame = 0; // Page now doesn't have a frame.
    }
 }
 
@@ -75,113 +72,113 @@ uint64_t get_cr3_addr() {
 
 void initialise_paging()
 {  
-    nframes = (uint64_t) mem_end_address / 0x1000; // Total numbers of frames
-    frames = (uint64_t *) kmalloc(INDEX_FROM_BIT(nframes)); // container the used and unused frames data
-
-    memset(frames, 0, INDEX_FROM_BIT(nframes));
-
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
     current_pml4 = (pml4_t *) get_cr3_addr();
-
-// Michael Petch is unsure what you were attempting to do here
-// so he can't help.
-#if 0
-    // Identity-map the physical memory from `placement_address` up to mem_end_address
-    uint64_t i = placement_address;
-
-    while( i < mem_end_address) // increment 4kb i.e. 0x1000
-    {
-        // Kernel code is readable but not writeable from user space
-        page_t *page = get_page(i, 1, kernel_pml4);
-        alloc_frame(page, 0, 0);
-        i += 0x1000;
-    }
-
-    // Update CR3 to flush the TLB
-    asm("mov %0, %%cr3" :: "r"(kernel_pml4) : "memory");
-#endif
 
     print("Successfully Paging have initialized!\n");
 }
 
 
 
-page_t *get_page(uint64_t address, int make, pml4_t *pml4) {
-    // Note from Michael Petch - it may be by design but this
-    // code doesn't support processing the PAGESIZE bit which
-    // could become a problem??
 
-    // Creating different index from virtual address
-    uint64_t pml4_idx = PML4_INDEX(address);
-    uint64_t pdpt_idx = PDPT_INDEX(address);
-    uint64_t pd_idx = PD_INDEX(address);
-    uint64_t pt_idx = PT_INDEX(address);
+// Function to allocate a new page table
+static pt_t* alloc_pt() {
+    pt_t* pt = (pt_t*)kmalloc_a(sizeof(pt_t), PAGE_SIZE);
+    if (pt) {
+        memset(pt, 0, sizeof(pt_t)); // Zero out the page table
+    }
+    return pt;
+}
 
-    // Resolve PML4 entry
-    if (!(pml4->entry_t[pml4_idx].present)) { // Check if entry is present
-        if (make) {
-            pdpt_t *new_pdpt = (pdpt_t *) kmalloc_a(sizeof(pdpt_t), 1); // create a new pdpt with 4 kb aligned
-            memset(new_pdpt, 0, sizeof(pdpt_t)); // Zero out memory for safety
-            // pml4 will hold address of new_pdpt and make it present and writable
-            pml4->entry_t[pml4_idx].present = 1; // present
-            pml4->entry_t[pml4_idx].rw = 1;      // writable
-            pml4->entry_t[pml4_idx].user = 0;    // superuser or kernel user
-            pml4->entry_t[pml4_idx].base_addr = (uint64_t) new_pdpt;  // pdpt address
-        } else {
-            return NULL; // Entry not present and not creating
+// Function to allocate a new page directory
+static pd_t* alloc_pd() {
+    pd_t* pd = (pd_t*)kmalloc_a(sizeof(pd_t), PAGE_SIZE);
+    if (pd) {
+        memset(pd, 0, sizeof(pd_t)); // Zero out the page directory
+    }
+    return pd;
+}
+
+// Function to allocate a new page directory pointer table
+static pdpt_t* alloc_pdpt() {
+    pdpt_t* pdpt = (pdpt_t*)kmalloc_a(sizeof(pdpt_t), PAGE_SIZE);
+    if (pdpt) {
+        memset(pdpt, 0, sizeof(pdpt_t)); // Zero out the PDPT
+    }
+    return pdpt;
+}
+
+page_t* get_page(uint64_t address, int make, pml4_t* pml4) {
+    uint64_t pml4_index = PML4_INDEX(address);
+    uint64_t pdpt_index = PDPT_INDEX(address);
+    uint64_t pd_index = PD_INDEX(address);
+    uint64_t pt_index = PT_INDEX(address);
+
+    // Get the PML4 entry
+    dir_entry_t* pml4_entry = &pml4->entry_t[pml4_index];
+
+    // Check if the PML4 entry is present
+    if (!pml4_entry->present) {
+        if (!make) {
+            return NULL; // Page table does not exist and we are not allowed to create it
         }
+        // Allocate a new PDPT
+        pdpt_t* pdpt = alloc_pdpt();
+        if (!pdpt) {
+            return NULL; // Allocation failed
+        }
+        // Set up the PML4 entry
+        pml4_entry->present = 1;
+        pml4_entry->rw = 1; // Read/write
+        pml4_entry->user = 0; // Kernel mode
+        pml4_entry->base_addr = (uint64_t)pdpt >> 12; // Base address of PDPT
     }
 
-    // create  pdpt from pml4->entry_t[pml4_idx]
-    pdpt_t *pdpt = (pdpt_t *) pml4->entry_t[pml4_idx].base_addr; 
+    // Get the PDPT entry
+    pdpt_t* pdpt = (pdpt_t*)(pml4_entry->base_addr << 12);
+    dir_entry_t* pdpt_entry = &pdpt->entry_t[pdpt_index];
 
-    // Resolve PDPT entry
-    if (!(pdpt->entry_t[pdpt_idx].present)) { // Check if entry is present
-        if (make) {
-            pd_t *new_pd = (pd_t *)kmalloc_a(sizeof(pd_t), 1); // making new pd with 4 kb aligned
-            memset(new_pd, 0, sizeof(pd_t)); // Zero out memory for safety
-            pdpt->entry_t[pdpt_idx].present = 1; // present
-            pdpt->entry_t[pdpt_idx].rw = 1; // writable
-            pdpt->entry_t[pdpt_idx].user = 1; // superuser or kernel user
-            pdpt->entry_t[pdpt_idx].base_addr = (uint64_t) new_pd; // store new_pd address
-        } else {
-            return NULL;
+    // Check if the PDPT entry is present
+    if (!pdpt_entry->present) {
+        if (!make) {
+            return NULL; // Page directory does not exist and we are not allowed to create it
         }
+        // Allocate a new PD
+        pd_t* pd = alloc_pd();
+        if (!pd) {
+            return NULL; // Allocation failed
+        }
+        // Set up the PDPT entry
+        pdpt_entry->present = 1;
+        pdpt_entry->rw = 1; // Read/write
+        pdpt_entry->user = 0; // Kernel mode
+        pdpt_entry->base_addr = (uint64_t)pd >> 12; // Base address of PD
     }
 
-    // Creating pd from pdpt->entry_t[pdpt_idx]
-    pd_t *pd = (pd_t *) pdpt->entry_t[pdpt_idx].base_addr;
+    // Get the PD entry
+    pd_t* pd = (pd_t*)(pdpt_entry->base_addr << 12);
+    dir_entry_t* pd_entry = &pd->entry_t[pd_index];
 
-    // Resolve PD entry
-    if (!(pd->entry_t[pd_idx].present)) {// Check if entry is present
-        if (make) {
-            pt_t *new_pt = (pt_t *)kmalloc_a(sizeof(pt_t), 1); // making new pt with 4 kb aligned
-            memset(new_pt, 0, sizeof(pt_t)); // Zero out memory for safety
-            pd->entry_t[pd_idx].present = 1; // present
-            pd->entry_t[pd_idx].rw = 1; // writable
-            pd->entry_t[pd_idx].user = 1; // superuser or kernel user
-            pd->entry_t[pd_idx].base_addr = (uint64_t) new_pt; // store new_pt address
-        } else {
-            return NULL;
+    // Check if the PD entry is present
+    if (!pd_entry->present) {
+        if (!make) {
+            return NULL; // Page table does not exist and we are not allowed to create it
         }
+        // Allocate a new PT
+        pt_t* pt = alloc_pt();
+        if (!pt) {
+            return NULL; // Allocation failed
+        }
+        // Set up the PD entry
+        pd_entry->present = 1;
+        pd_entry->rw = 1; // Read/write
+        pd_entry->user = 0; // Kernel mode
+        pd_entry->base_addr = (uint64_t)pt >> 12; // Base address of PT
     }
 
-    // Resolve Page Table
-    pt_t *pt = (pt_t *) pd->entry_t[pd_idx].base_addr; // Creating Page Table from pd->entry_t[pd_idx]
-
-    // Resolve Page
-    page_t *page =(page_t *) &pt->pages[pt_idx];
-    if(!(page->present)){ // Check if entry is present
-         if (make) {
-            page = (page_t *) kmalloc_a(sizeof(page_t), 1); // making new page  with 4 kb aligned
-            memset(page, 0, sizeof(page_t));
-            alloc_frame(page, 1, 1); // Allocate frame for the page
-        }else{
-            return NULL;
-        }
-    }
-
-    return page;
+    // Get the PT entry
+    pt_t* pt = (pt_t*)(pd_entry->base_addr << 12);
+    return &pt->pages[pt_index];
 }
 
 
@@ -220,6 +217,8 @@ void page_fault_handler(registers_t *regs)
     halt_kernel();
 
 }
+
+
 
 void test_paging(){
     print("Start Paging Test...\n");

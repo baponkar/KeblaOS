@@ -94,7 +94,7 @@ uint64_t vmm_alloc(uint64_t size, uint64_t flags) {
     virtual_memory_start += size;
 
     for (uint64_t i = 0; i < size; i += PAGE_SIZE) {
-        uint64_t phys_addr = first_frame() * PAGE_SIZE; // Allocate a physical frame
+        uint64_t phys_addr = free_frame_bit_no() * PAGE_SIZE; // Allocate a physical frame
         set_frame(phys_addr);                          // Mark the frame as used
         map_page(virt_addr + i, phys_addr, flags, kernel_pml4);
     }
@@ -118,7 +118,7 @@ void page_fault_handler1(registers_t *regs) {
 
     if (!(error_code & PAGE_PRESENT)) {
         // Page not present - Allocate a new page
-        map_page(faulting_address, first_frame() * PAGE_SIZE, PAGE_PRESENT | PAGE_WRITE, kernel_pml4);
+        map_page(faulting_address, free_frame_bit_no() * PAGE_SIZE, PAGE_PRESENT | PAGE_WRITE, kernel_pml4);
         set_frame(faulting_address);
     } else {
         // Invalid access

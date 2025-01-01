@@ -113,8 +113,6 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/acpi.o
 
 
-
-
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel.bin \
 						$(BUILD_DIR)/boot.o \
 						$(BUILD_DIR)/kernel.o \
@@ -144,8 +142,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/acpi.o
 
 
-objdump.txt: $(BUILD_DIR)/kernel.bin
-	$(OBJDUMP) -DxS $< >$@
+# objdump.txt: $(BUILD_DIR)/kernel.bin
+# 	$(OBJDUMP) -DxS $< >$@
 
 # Creating ISO image
 $(BUILD_DIR)/image.iso: $(BUILD_DIR)/kernel.bin objdump.txt
@@ -183,10 +181,10 @@ run: $(BUILD_DIR)/image.iso
 	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu -bios /usr/share/OVMF/OVMF_CODE.fd
 
 	# BIOS Boot
-	qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 64 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu # -smp cores=2,threads=4,sockets=1,maxcpus=8
+	qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu # -smp cores=2,threads=4,sockets=1,maxcpus=8
 	
 
-.PHONY: all clean
+.PHONY: run clean
 
 
 

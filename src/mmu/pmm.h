@@ -6,22 +6,52 @@
 
 #include "../util/util.h"
 #include "../limine/limine.h"
+#include "../bootloader/boot.h"
 #include "paging.h"
 #include  "../driver/vga.h"
 #include "../kernel/kernel.h"
 
+#define FRAME_SIZE 4096   // 4 KB
+#define BITMAP_SIZE 64 // 64 bits = 8 bytes
 
-// Macros used in the bitset algorithms.
-#define INDEX_FROM_BIT(a)(a/64) 
-#define OFFSET_FROM_BIT(a)(a%(64))
+// Getting the index and offset from the bit number
+#define INDEX_FROM_BIT_NO(x)((x)/BITMAP_SIZE) // ceiling division, ensuring that if x is less than or equal to BITMAP_SIZE, the result is 1.
+#define OFFSET_FROM_BIT_NO(x)(x % BITMAP_SIZE)
+
+// Converting bit no from index and offset
+#define CONVERT_BIT_NO(idx, off) (idx * BITMAP_SIZE + off)
+
+// Converting bit number to address
+#define BIT_NO_TO_ADDR(bit_no) (bit_no * FRAME_SIZE)
+
+// Converting address to bit number
+#define ADDR_TO_BIT_NO(addr) (addr / FRAME_SIZE)
+
+// Finding the maximum frame index from the memory size.
+#define MAX_FRAME_INDEX(memory_size) (memory_size / (BITMAP_SIZE * FRAME_SIZE))
+
+extern uint64_t *frames; // start of bitset frames
+extern uint64_t nframes; // Total frames
+
+extern volatile uint64_t  kernel_placement_address;
+extern uint64_t kernel_end_address;
+extern uint64_t kernel_length;
+
+// The kernel will using the below address to store the user heap
+extern volatile uint64_t user_placement_address;
+extern uint64_t user_end_address;
+extern uint64_t user_length;
 
 
 void set_frame(uint64_t frame_addr);
 void clear_frame(uint64_t frame_addr);
 uint64_t test_frame(uint64_t frame_addr);
-uint64_t first_frame();
+uint64_t free_frame_bit_no();
 
 void print_size_with_units(uint64_t size);
 void print_memory_map(void);
-void get_vir_to_phy_offset(void);
+uint64_t get_vir_to_phy_offset();
+
+void init_mem();
+
 
