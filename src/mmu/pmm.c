@@ -28,29 +28,38 @@ The memory map is giving
 (0XFD000000) 3.9531 GB - 3.9998 GB(47.8208 MB) : Bootloader reclaimable, can be usable.
 (0XFFFC0000) 3.9998 GB - 4.0000 GB(0.2048 MB) : Bootloader reclaimable, can be usable.
 (0X10000000) 4.0000 GB - 5.0000 GB(1 GB) : Bootloader reclaimable, can be usable.
+
+8192 - 15 entries
+6144 - 14 entries
+4096 - 13 entries
+2048 - 12 entries
+1024 - 12 entries
+512 - 12 entries
+256 - 9 entries
+128 - 8 entries
+64 - 7 entries
+32 - 6 entries
 */
 
 #include "pmm.h"
 
-__attribute__((used, section(".limine_requests")))
-static volatile LIMINE_BASE_REVISION(0);
+// Getting information from boot.c
+extern struct limine_memmap_request memmap_request;
+extern struct limine_hhdm_request hhdm_request;
+extern struct limine_kernel_address_request kernel_address_request;
 
-__attribute__((used, section(".requests")))
-static volatile struct limine_memmap_request memmap_request = {
-    .id = LIMINE_MEMMAP_REQUEST,
-    .revision = 3
-};
 
-__attribute__((used, section(".requests")))
-static volatile struct limine_hhdm_request hhdm_request = {
-    .id = LIMINE_HHDM_REQUEST,
-    .revision = 3
-};
-
+// As limine put kernel into higher half so we set userspace at first usable space and set kernel space at second usable space
 
 // The kernel will using the below address to store the kernel heap
-uint64_t placement_address = 0X10000000;  // 4 GB   // The value of it will set by bootloader memory map
-uint64_t mem_end_address = 0X140000000; // 3 GB    // The value of it will set by bootloader memory map
+volatile uint64_t  kernel_placement_address = 0;
+uint64_t kernel_end_address;
+uint64_t kernel_length;
+
+// The kernel will using the below address to store the user heap
+volatile uint64_t user_placement_address;
+uint64_t user_end_address;
+uint64_t user_length;
 
 
 // one row of bitmap can store information(free/use) of 8 * 4 KB = 32 Kb memory page(8 pages)
@@ -60,62 +69,127 @@ uint64_t *frames; // start of bitset frames
 uint64_t nframes; // Total frames
 
 
-// Static function to set a bit in the frames bitset
-void set_frame(uint64_t frame_addr)
-{
-   uint64_t frame = frame_addr/0x1000;
-   uint64_t idx = INDEX_FROM_BIT(frame);
-   uint64_t off = OFFSET_FROM_BIT(frame);
-   frames[idx] |= (0x1 << off);    // set bit of frames
+
+void set_frame(uint64_t bit_no) {
+    print("Inside set_frame bit_no : ");
+    print_dec(bit_no);
+    print("\n");
+    uint64_t bit_idx = INDEX_FROM_BIT_NO(bit_no);
+    uint64_t bit_off = OFFSET_FROM_BIT_NO(bit_no);
+
+    print("bit_idx: ");
+    print_dec(bit_idx);
+    print(" bit_off: ");
+    print_dec(bit_off);
+    print("\n");
+
+    assert(bit_off < BITMAP_SIZE);
+
+    frames[bit_idx] |= (0x1ULL << bit_off); // Set the bit
+
+    print("frames[");
+    print_dec(bit_idx);
+    print("] = ");
+    print_bin(frames[bit_idx]);
+    print("\n");
 }
 
 // Static function to clear a bit in the frames bitset
-void clear_frame(uint64_t frame_addr)
+void clear_frame(uint64_t frame_idx)
 {
-   uint64_t frame = frame_addr/0x1000;
-   uint64_t idx = INDEX_FROM_BIT(frame);
-   uint64_t off = OFFSET_FROM_BIT(frame);
-   frames[idx] &= ~(0x1 << off);  // clears bit of frames
+   uint64_t bitmap_idx = INDEX_FROM_BIT_NO(frame_idx);
+   uint64_t bitmap_off = OFFSET_FROM_BIT_NO(frame_idx);
+   frames[bitmap_idx] &= ~(0x1ULL << bitmap_off);  // clears bit of frames
 }
 
-// Static function to test if a bit is set.
-uint64_t test_frame(uint64_t frame_addr)
+// Static function to test if a bit is set or not.
+uint64_t test_frame(uint64_t frame_idx)
 {
-   uint64_t frame = frame_addr/0x1000;
-   uint64_t idx = INDEX_FROM_BIT(frame);
-   uint64_t off = OFFSET_FROM_BIT(frame);
-   return (frames[idx] & (0x1 << off));  // returns 0 or 1
+   uint64_t bitmap_idx = INDEX_FROM_BIT_NO(frame_idx);
+   uint64_t bitmap_off = OFFSET_FROM_BIT_NO(frame_idx);
+   return (frames[bitmap_idx] & (0x1ULL << bitmap_off));  // returns 0 or 1
 }
+
 
 // Static function to find the first free frame.
 // The below function will return a physical address or invalid frame address -1
-uint64_t first_frame()
+uint64_t free_frame_bit_no()
 {
-   uint64_t i, j;
-   for (i = 0; i < INDEX_FROM_BIT(nframes); i++)
-   {
-       if (frames[i] != 0xFFFFFFFFFFFFFFFF) // if all bits set or not
-       {
-           // at least one bit is free here.
-           for (j = 0; j < 64; j++)
-           {
-               uint64_t toTest = 0x1ULL << j; // Ensure the shift is handled as a 64-bit value.ULL means Unsigned Long Long 
-               if ( !(frames[i] & toTest) ) // if corresponding bit is zero
-               {
-                   return i * 64 + j; // return corresponding address from index i and offset j
-               }
-           }
-       }
+    for (uint64_t bitmap_idx = 0; bitmap_idx < INDEX_FROM_BIT_NO(nframes); bitmap_idx++)
+    {
+        if (frames[bitmap_idx] != 0xFFFFFFFFFFFFFFFF) // if all bits not set
+        {    
+            // at least one bit is free here.
+            for (uint64_t bitmap_off = 0; bitmap_off < BITMAP_SIZE; bitmap_off++)
+            {
+                uint64_t toTest = (uint64_t) 0x1ULL << bitmap_off; // Ensure the shift is handled as a 64-bit value.ULL means Unsigned Long Long 
+
+                if ( !(frames[bitmap_idx] & toTest) ) // if corresponding bit is zero
+                {
+                    return CONVERT_BIT_NO(bitmap_idx, bitmap_off); // return corresponding bit number i.e frame index
+                    break;
+                }
+            }
+        }
    }
    return (uint64_t)-1; // Return an invalid frame index to indicate failure.
 }
 
 
+void init_mem(){
+    size_t entry_ids[4]; // This array will store the index of the first 4 usable memory regions
+    // initialise the entry_ids array with 0
+    for (size_t i = 0; i < 4; i++)
+    {
+        entry_ids[i] = 0;
+    }
+    
+    // Check if the memory map response is available
+    if (memmap_request.response == NULL) {
+        print("Memory map request failed.\n");
+        return;
+    }
+
+    uint64_t entry_count = memmap_request.response->entry_count;
+    struct limine_memmap_entry **entries = memmap_request.response->entries;
+
+    size_t tmp = 0;
+
+    for (size_t i = 0; i < entry_count; i++)
+    {
+        struct limine_memmap_entry *entry = entries[i];
+
+        if(entry->type == LIMINE_MEMMAP_USABLE){
+            entry_ids[tmp] = i; // store the index of the first 4 usable memory regions
+            tmp++;
+        }
+    }
+
+    if(entry_ids[3] == 0){
+        entry_ids[3] = entry_ids[2];
+    }
+
+    // place kernel into higher  usable memory space
+    kernel_placement_address = entries[entry_ids[3]]->base;
+    kernel_length = entries[entry_ids[3]]->length;
+    kernel_end_address = kernel_placement_address + kernel_length;
+
+    // place user into lower half usable memory space
+    user_placement_address = entries[entry_ids[1]]->base;
+    user_length = entries[entry_ids[1]]->length;
+    user_end_address = user_placement_address + user_length;
+
+    nframes = (uint64_t) kernel_length / FRAME_SIZE;
+    frames = (uint64_t*) kmalloc_a(nframes * BITMAP_SIZE, 1); // Allocate enough bytes for the bitmap
+    memset(frames, 0, nframes * BITMAP_SIZE); // Zero out the bitmap
+    
+    print("Successfully initialized memory!\n");
+}
+
 
 void print_size_with_units(uint64_t size) {
     const char *units[] = {"Bytes", "KB", "MB", "GB", "TB"};
     int unit_index = 0;
-
 
     // Determine the appropriate unit
     while (size >= 1024 && unit_index < 4) {
@@ -130,8 +204,6 @@ void print_size_with_units(uint64_t size) {
 }
 
 
-
-
 void print_memory_map(void) {
     // Check if the memory map response is available
     if (memmap_request.response == NULL) {
@@ -139,8 +211,33 @@ void print_memory_map(void) {
         return;
     }
 
+    print("Kernel memory start address : ");
+    print_size_with_units(kernel_placement_address);
+    print("\n");
+    print("Kernel memory size : ");
+    print_size_with_units(kernel_length);
+    print("\n");
+
+    print("User memory start address : ");
+    print_size_with_units(user_placement_address);
+    print("\n");
+    print("User memory size : ");
+    print_size_with_units(user_length);
+    print("\n");
+
+    print("Start address of storing frames used or unused data : ");
+    print_hex((uint64_t)frames);
+    print("\n");
+    print("Total frames : ");
+    print_dec(nframes);
+    print("\n");
+
     uint64_t entry_count = memmap_request.response->entry_count;
     struct limine_memmap_entry **entries = memmap_request.response->entries;
+
+    print("Memory Map Entries : ");
+    print_dec(entry_count);
+    print("\n");
 
     print("Memory Map:\n");
     for (uint64_t i = 0; i < entry_count; i++) {
@@ -195,56 +292,38 @@ void print_memory_map(void) {
 
 
 
-
-
 uint64_t HIGHER_HALF_DIRECT_MAP_REVISION;
 uint64_t HIGHER_HALF_DIRECT_MAP_OFFSET;
 
 void get_hhdm_info(void){
-    if(hhdm_request.response != NULL){
-        HIGHER_HALF_DIRECT_MAP_REVISION = hhdm_request.response->revision;
-        HIGHER_HALF_DIRECT_MAP_OFFSET = hhdm_request.response->offset;
-    }else{
-        HIGHER_HALF_DIRECT_MAP_REVISION = 0;
-        HIGHER_HALF_DIRECT_MAP_OFFSET = 0;
+    if(hhdm_request.response == NULL){
+        print("Higher Half Direct Map request failed.\n");
+        return;
     }
+
+    HIGHER_HALF_DIRECT_MAP_REVISION = hhdm_request.response->revision;
+    HIGHER_HALF_DIRECT_MAP_OFFSET = hhdm_request.response->offset;
 }
 
-__attribute__((used, section(".requests")))
-static volatile struct limine_kernel_address_request kernel_address_request = {
-    .id = LIMINE_KERNEL_ADDRESS_REQUEST,
-    .revision = 3
-};
+
 
 uint64_t VIRTUAL_BASE;
 uint64_t PHYSICAL_BASE;
-uint64_t VIRTUAL_TO_PHYSICAL_OFFSET;
+uint64_t VIRTUAL_TO_PHYSICAL_OFFSET = 0;
 
-void get_vir_to_phy_offset(void){
-     if (kernel_address_request.response != NULL) {
-        PHYSICAL_BASE = kernel_address_request.response->physical_base;
-        VIRTUAL_BASE = kernel_address_request.response->virtual_base;
-
-        // Calculate the offset between virtual and physical addresses.
-        VIRTUAL_TO_PHYSICAL_OFFSET = VIRTUAL_BASE - PHYSICAL_BASE;
-
-    }else{
-        PHYSICAL_BASE = 0;
-        VIRTUAL_BASE = 0;
-        VIRTUAL_TO_PHYSICAL_OFFSET = 0;
+uint64_t get_vir_to_phy_offset(){
+     if (kernel_address_request.response == NULL) {
+        print("Kernel address request failed.\n");
+        return 0;
     }
+    
+    PHYSICAL_BASE = kernel_address_request.response->physical_base;
+    VIRTUAL_BASE = kernel_address_request.response->virtual_base;
+
+    // Calculate the offset between virtual and physical addresses.
+    VIRTUAL_TO_PHYSICAL_OFFSET = VIRTUAL_BASE - PHYSICAL_BASE;
+
+    return VIRTUAL_TO_PHYSICAL_OFFSET;
 }
 
-void print_virtual_to_physical_offset(void){
-    print("VIRTUAL_BASE : ");
-    print_hex(VIRTUAL_BASE);
-    print("\n");
 
-    print("PHYSICAL_BASE : ");
-    print_hex(PHYSICAL_BASE);
-    print("\n");
-
-    print("VIRTUAL_TO_PHYSICAL_OFFSET : ");
-    print_hex(VIRTUAL_TO_PHYSICAL_OFFSET);
-    print("\n");
-}

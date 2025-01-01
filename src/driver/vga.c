@@ -73,7 +73,7 @@ void vga_init(){
     MAX_COLUMN = (FRAMEBUFFER_WIDTH / FONT_WIDTH) - 1; // 127
 
     TEXT_COLOR = COLOR_WHITE;
-    BACKGROUND_COLOR = COLOR_BLUE;
+    BACKGROUND_COLOR = COLOR_BLACK;
 
     cur_pos_x = 0;
     cur_pos_y = 0;

@@ -36,7 +36,10 @@ static volatile LIMINE_REQUESTS_END_MARKER;
 
 
 void kmain(void){
+
     vga_init();
+
+    get_bootloader_info();
 
     init_gdt();
     // check_gdt();
@@ -47,47 +50,15 @@ void kmain(void){
     initialise_paging();
     // test_paging();
 
-    init_timer();
+    // init_timer();
     
     initKeyboard();
 
-    print_memory_map();
+    init_mem();
+    // print_memory_map();
 
-    test_kheap();
-
-
-
-    // uint64_t var_hex = 0x1234;
-    // uint64_t var_bin = 0b100101;
-    // int var_dec = 420;
-    // print_dec(var_dec);
-
-    // int64_t neg_no = -345;
-
-    // print("var_hex = ");
-    // print_hex(var_hex);
-    // print("\n");
-
-    // print("var_bin = ");
-    // print_bin(var_bin);
-    // print("\n");
-
-    // print("var_dec = ");
-    // print_dec(var_dec);
-    // print("\n");
-
-    // print("neg_no = ");
-    // print_dec(neg_no);
-    // print("\n");
-
-    // print("\n");
-
-
-    // printf("var_hex = %x\n", var_hex);  // 0x0000000000000010
-    // printf("var_bin = %b\n", var_bin);  // 0b0000000000000000000000000000000000000000000000000000000000010000
-    // printf("var_dec = %d\n", var_dec);  // -1
-    // printf("neg_no = %d\n", neg_no);
-
+    init_kheap();
+    heap_test();
 
     halt_kernel();
 }

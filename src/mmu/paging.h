@@ -13,10 +13,7 @@
 #include "kheap.h"
 #include "../kernel/kernel.h"
 
-
-
-
-#define PAGE_SIZE 4096
+#define PAGE_SIZE    4096
 #define PAGE_PRESENT 0x1
 #define PAGE_WRITE   0x2
 #define PAGE_USER    0x4
@@ -28,21 +25,24 @@
 #define PT_INDEX(va)     (((va) >> 12) & 0x1FF)  // Bits 12-20
 #define PAGE_OFFSET(va)  ((va) & 0xFFF)          // Bits 0-11
 
+
+
 // pml4, pdpr and pd entry
 typedef struct dir_entry { // 64 bit
-    uint64_t present      : 1;
-    uint64_t rw           : 1;
-    uint64_t user         : 1;
-    uint64_t pwt          : 1;
+    uint64_t present      : 1;  // always 1
+    uint64_t rw           : 1;  // 0 for read-only, 1 for read-write
+    uint64_t user         : 1;  // 0 for kernel, 1 for user
+    uint64_t pwt          : 1;  
     uint64_t pcd          : 1;
     uint64_t accessed     : 1;
     uint64_t reserved_1   : 3;  // all zeros
     uint64_t available_1  : 3;  // zero
-    uint64_t base_addr    : 28; // Table base address
-    uint64_t reserved_2   : 12; // Reserved must be zero
+    uint64_t base_addr    : 40; // Table base address
+    // uint64_t reserved_2   : 12; // Reserved must be zero
     uint64_t available_2  : 11; // zero
     uint64_t xd           : 1;
 } __attribute__((packed)) dir_entry_t;
+
 
 typedef struct page { // 64 bit
     uint64_t present   : 1;
@@ -60,6 +60,7 @@ typedef struct page { // 64 bit
     uint64_t nx        : 1;
 } __attribute__((packed)) page_t;
 
+
 typedef struct pt { // page table structure is containing 512 page entries
     page_t pages[512];
 } __attribute__((aligned(PAGE_SIZE))) pt_t;
@@ -76,6 +77,9 @@ typedef struct pml4 { // pml4 structure is containing 512 pdpt directory entries
     dir_entry_t entry_t[512]; // Each entry have Physical addresses of PDPTs
 } __attribute__((aligned(PAGE_SIZE))) pml4_t;
 
+extern pml4_t *user_pml4; 
+extern pml4_t *kernel_pml4;
+extern pml4_t *current_pml4;
 
 void alloc_frame(page_t *page, int is_kernel, int is_writeable);
 void free_frame(page_t *page);
