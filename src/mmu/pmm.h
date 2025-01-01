@@ -15,7 +15,8 @@
 #define BITMAP_SIZE 64 // 64 bits = 8 bytes
 
 // Getting the index and offset from the bit number
-#define INDEX_FROM_BIT_NO(x)((x)/BITMAP_SIZE) // ceiling division, ensuring that if x is less than or equal to BITMAP_SIZE, the result is 1.
+// #define INDEX_FROM_BIT_NO(x)((x+BITMAP_SIZE+1)/BITMAP_SIZE) // ceiling division, ensuring that if x is less than or equal to BITMAP_SIZE, the result is 1.
+#define INDEX_FROM_BIT_NO(x)(x / BITMAP_SIZE)
 #define OFFSET_FROM_BIT_NO(x)(x % BITMAP_SIZE)
 
 // Converting bit no from index and offset

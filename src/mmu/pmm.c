@@ -71,27 +71,12 @@ uint64_t nframes; // Total frames
 
 
 void set_frame(uint64_t bit_no) {
-    print("Inside set_frame bit_no : ");
-    print_dec(bit_no);
-    print("\n");
     uint64_t bit_idx = INDEX_FROM_BIT_NO(bit_no);
     uint64_t bit_off = OFFSET_FROM_BIT_NO(bit_no);
-
-    print("bit_idx: ");
-    print_dec(bit_idx);
-    print(" bit_off: ");
-    print_dec(bit_off);
-    print("\n");
 
     assert(bit_off < BITMAP_SIZE);
 
     frames[bit_idx] |= (0x1ULL << bit_off); // Set the bit
-
-    print("frames[");
-    print_dec(bit_idx);
-    print("] = ");
-    print_bin(frames[bit_idx]);
-    print("\n");
 }
 
 // Static function to clear a bit in the frames bitset
