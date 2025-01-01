@@ -36,7 +36,7 @@
     * 4 Level 4KB Paging 
     * VMM
     * Dynamic Memory Management
-- [x] Standard Library initialization [stdio, math, string]
+- [x] Standard Library initialization [stdio, math, string, assert]
 
 ------------------------------------------------------
 ### Introducing the KeblaOS Operating System
