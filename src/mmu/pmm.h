@@ -51,7 +51,7 @@ uint64_t free_frame_bit_no();
 
 void print_size_with_units(uint64_t size);
 void print_memory_map(void);
-uint64_t get_vir_to_phy_offset();
+
 
 void init_mem();
 
