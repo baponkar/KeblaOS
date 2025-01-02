@@ -6,6 +6,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "../bootloader/boot.h"
+
 #include "pmm.h"
 #include "../driver/vga.h"
 #include "../lib/string.h"  // For memcpy
@@ -62,11 +64,7 @@ type_t lookup_ordered_array(uint64_t i, ordered_array_t *array);
 void remove_ordered_array(uint64_t i, ordered_array_t *array);
 
 
-
-
-
 // Kheap implementation
-
 struct header{
   uint64_t magic;     // Magic number, used for error checking and identification
   uint8_t is_hole;    // 1 if this is a hole. 0 if this is a block.

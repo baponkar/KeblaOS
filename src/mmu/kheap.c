@@ -10,7 +10,7 @@
 
 #include "kheap.h"
 
-
+extern uint64_t PHYSICAL_TO_VIRTUAL_OFFSET;
 
 heap_t *kheap;
 
@@ -97,12 +97,12 @@ uint64_t kmalloc_ap(uint64_t sz, int align, uint64_t *phys)  // page aligned and
 void init_kheap()
 {
     uint64_t start_addr = PAGE_ALIGN(kernel_placement_address);
-    uint64_t end_addr = PAGE_ALIGN(kernel_placement_address + KHEAP_INITIAL_SIZE);
+    uint64_t end_addr = PAGE_ALIGN(kernel_placement_address + 2*KHEAP_INITIAL_SIZE);
     uint64_t max_addr = PAGE_ALIGN(kernel_placement_address + kernel_length);
 
-    uint64_t phy_to_vir_offset = get_vir_to_phy_offset();
-    uint64_t start_virtual_addr = start_addr + phy_to_vir_offset;
-    uint64_t end_virtual_addr = end_addr + phy_to_vir_offset;
+    
+    uint64_t start_virtual_addr = start_addr + PHYSICAL_TO_VIRTUAL_OFFSET;
+    uint64_t end_virtual_addr = end_addr + PHYSICAL_TO_VIRTUAL_OFFSET;
 
     // Now allocate those pages we mapped earlier.
     for (uint64_t i = start_virtual_addr; i < end_virtual_addr; i += PAGE_SIZE){
@@ -119,20 +119,13 @@ void init_kheap()
 
     }
 
-    // Ensure start address is page-aligned
-    if ((start_addr & 0xFFF) != 0) {
-        start_addr = (start_addr & 0xFFFFFFFFFFFFF000) + PAGE_SIZE;
-    }
 
-    if ((end_addr & 0xFFF) != 0) {
-        end_addr &= 0xFFFFFFFFFFFFF000;
-    }
-   
-    if((max_addr & 0xFFF) != 0){
-        max_addr &= 0xFFFFFFFFFFFFF000;
-    }
 
     kheap = create_heap(start_addr, end_addr, max_addr, 0, 0);  // supervisor = 0, readonly = 0
+
+    print("kheap pointer: ");
+    print_hex((uint64_t)kheap);
+    print("\n");
     
     print("Kernel Heap initialized successfully!\n");
 }
@@ -348,7 +341,8 @@ heap_t *create_heap(uint64_t start_addr, uint64_t end_addr, uint64_t max_addr, u
     }
 
     // Allocate memory for the heap structure
-    heap_t *heap = (heap_t*) kmalloc_a(sizeof(heap_t),1);
+    heap_t *heap = (heap_t*) kmalloc_a(sizeof(heap_t), 1);
+
     if (!heap) {
         return NULL; // Allocation failed
     }
@@ -363,6 +357,14 @@ heap_t *create_heap(uint64_t start_addr, uint64_t end_addr, uint64_t max_addr, u
     // Adjust the start address forward to where we can start putting data
     start_addr += sizeof(type_t) * HEAP_INDEX_SIZE;
 
+    print("start address: ");
+    print_hex(start_addr);
+    print("\n");
+
+    print("end address: ");
+    print_hex(end_addr);
+    print("\n");
+
     // Ensure the start address is page-aligned
     if ((start_addr & 0xFFFFFFFFFFFFF000) != 0) {
         start_addr = (start_addr & 0xFFFFFFFFFFFFF000) + PAGE_SIZE;
@@ -370,6 +372,7 @@ heap_t *create_heap(uint64_t start_addr, uint64_t end_addr, uint64_t max_addr, u
 
     // Verify that the adjusted start address is still within bounds
     if (start_addr >= end_addr) {
+        print("Not enough space to create a heap\n");
         return NULL; // Not enough space to create a heap
     }
 
@@ -385,6 +388,10 @@ heap_t *create_heap(uint64_t start_addr, uint64_t end_addr, uint64_t max_addr, u
     hole->size = end_addr - start_addr;
     hole->magic = HEAP_MAGIC;
     hole->is_hole = 1;
+
+    print("hole: ");
+    print_hex((uint64_t) hole);
+    print("\n");
 
     // Insert the hole into the ordered array
     insert_ordered_array((void*)hole, &heap->ordered_array);
@@ -468,7 +475,17 @@ void kfree(void *p, heap_t *heap) {
     // Retrieve the header of the block
     header_t *header = (header_t *)((uint64_t)p - sizeof(header_t));
 
+    print("header->magic: ");
+    print_hex(header->magic);
+    print("\n");
+
+    print("HEAP_MAGIC: ");
+    print_hex(HEAP_MAGIC);
+    print("\n");
+
     assert(header->magic == HEAP_MAGIC); // Ensure the block is valid
+
+
 
     // Mark the block as a hole
     header->is_hole = 1;
@@ -532,20 +549,24 @@ void free(void *p) {
 
 void heap_test(){
     // void *alloc(uint64_t size, uint8_t page_align, heap_t *heap)
-    void *a = alloc(8, 1, kheap);
-    void *b = alloc(8, 1, kheap);
-    void *c = alloc(8, 1, kheap);
+    void *a = alloc(8, 0, kheap);
+    void *b = alloc(8, 0, kheap);
+    void *c = alloc(8, 0, kheap);
 
-    // print("a: ");
-    // print_hex((uint64_t)a);
-    // print(", b: ");
-    // print_hex((uint64_t)b);
-    // print("\nc: ");
-    // print_hex((uint64_t)c);
+    print("a: ");
+    print_dec((uint64_t)a);
+    print(", b: ");
+    print_dec((uint64_t)b);
+    print(", c: ");
+    print_dec((uint64_t)c);
+    print("\n");
 
-    // free(&c);
-    // free(&b);
-    // void *d = alloc(12, 1, kheap);
-    // print(", d: ");
-    // print_hex((uint64_t)d);
+    free(&c);
+    free(&b);
+
+    void *d = alloc(12, 1, kheap);
+
+    print(", d: ");
+    print_hex((uint64_t)d);
+    print("\n");
 }

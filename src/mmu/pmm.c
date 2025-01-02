@@ -120,6 +120,9 @@ uint64_t free_frame_bit_no()
    return (uint64_t)-1; // Return an invalid frame index to indicate failure.
 }
 
+extern struct limine_memmap_request memmap_request;
+extern uint64_t entry_count;
+extern struct limine_memmap_entry **entries;
 
 void init_mem(){
     size_t entry_ids[4]; // This array will store the index of the first 4 usable memory regions
@@ -135,8 +138,7 @@ void init_mem(){
         return;
     }
 
-    uint64_t entry_count = memmap_request.response->entry_count;
-    struct limine_memmap_entry **entries = memmap_request.response->entries;
+
 
     size_t tmp = 0;
 
@@ -189,126 +191,14 @@ void print_size_with_units(uint64_t size) {
 }
 
 
-void print_memory_map(void) {
-    // Check if the memory map response is available
-    if (memmap_request.response == NULL) {
-        print("Memory map request failed.\n");
-        return;
-    }
-
-    print("Kernel memory start address : ");
-    print_size_with_units(kernel_placement_address);
-    print("\n");
-    print("Kernel memory size : ");
-    print_size_with_units(kernel_length);
-    print("\n");
-
-    print("User memory start address : ");
-    print_size_with_units(user_placement_address);
-    print("\n");
-    print("User memory size : ");
-    print_size_with_units(user_length);
-    print("\n");
-
-    print("Start address of storing frames used or unused data : ");
-    print_hex((uint64_t)frames);
-    print("\n");
-    print("Total frames : ");
-    print_dec(nframes);
-    print("\n");
-
-    uint64_t entry_count = memmap_request.response->entry_count;
-    struct limine_memmap_entry **entries = memmap_request.response->entries;
-
-    print("Memory Map Entries : ");
-    print_dec(entry_count);
-    print("\n");
-
-    print("Memory Map:\n");
-    for (uint64_t i = 0; i < entry_count; i++) {
-        struct limine_memmap_entry *entry = entries[i];
-        print("\tRegion ");
-        print_dec(i);
-
-        print(": Base = ");
-        print_hex(entry->base);
-        print(" [");
-        print_size_with_units(entry->base);
-        print("] ");
-
-        print(", Length = ");
-        print_hex(entry->length);
-        print(" [");
-        print_size_with_units(entry->length);
-        print("] ");
-
-
-        // Check the type and print it
-        switch (entry->type) {
-            case LIMINE_MEMMAP_USABLE: // 0, This memory is available for the operating system to use freely. It is not reserved for any specific purpose by hardware or firmware.
-                print(" Usable.\n");
-                break;
-            case LIMINE_MEMMAP_RESERVED: // 1, This memory is reserved and should not be modified. It might be used by firmware, hardware, or other components that the OS cannot interfere with.
-                print(" Reserved, not be modified!\n");
-                break;
-            case LIMINE_MEMMAP_ACPI_RECLAIMABLE: // 2, Memory used by the ACPI (Advanced Configuration and Power Interface) tables. After the ACPI tables have been parsed and used, this memory can be reclaimed and repurposed by the operating system.
-                print(" ACPI Reclaimable, can be usable.\n");
-                break;
-            case LIMINE_MEMMAP_ACPI_NVS :   // 3, Non-Volatile Storage (NVS) memory used by the ACPI for storing runtime configuration and state. This memory must not be modified or reclaimed as it is needed by the system during runtime.
-                print(" ACPI NVS, not be modified!\n");
-                break;
-            case LIMINE_MEMMAP_BAD_MEMORY: // 4, This memory region is marked as bad and unreliable due to detected hardware errors or inconsistencies.
-                print(" Bad Memory, not usable!\n");
-                break;
-            case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE: // 5, Memory used temporarily by the bootloader. Once the operating system is fully loaded, this memory can be reclaimed and repurposed.
-                print(" Bootloader reclaimable, can be usable.\n");
-                break;
-            case 6: // LIMINE_MEMMAP_EXECUTABLE_AND_MODULES tag not working so i used custom value 6, Memory occupied by the kernel image and modules loaded by the bootloader. This type is typically not directly supported in some Limine versions and might need custom handling.
-                    print(" Kernel/Modules, not usable!\n");
-                break;
-            case LIMINE_MEMMAP_FRAMEBUFFER: // 7, Memory used for the framebuffer, which holds pixel data for the display. The operating system must not overwrite this memory unless it takes control of the display.
-                print(" Framebuffer, not be usable!\n");
-                break;
-            default:
-                print(" Unknown Type !!\n"); // An undefined or unrecognized type, often indicative of an implementation issue or an unsupported memory region.
-        }
-    }
-}
 
 
 
-uint64_t HIGHER_HALF_DIRECT_MAP_REVISION;
-uint64_t HIGHER_HALF_DIRECT_MAP_OFFSET;
-
-void get_hhdm_info(void){
-    if(hhdm_request.response == NULL){
-        print("Higher Half Direct Map request failed.\n");
-        return;
-    }
-
-    HIGHER_HALF_DIRECT_MAP_REVISION = hhdm_request.response->revision;
-    HIGHER_HALF_DIRECT_MAP_OFFSET = hhdm_request.response->offset;
-}
 
 
 
-uint64_t VIRTUAL_BASE;
-uint64_t PHYSICAL_BASE;
-uint64_t VIRTUAL_TO_PHYSICAL_OFFSET = 0;
 
-uint64_t get_vir_to_phy_offset(){
-     if (kernel_address_request.response == NULL) {
-        print("Kernel address request failed.\n");
-        return 0;
-    }
-    
-    PHYSICAL_BASE = kernel_address_request.response->physical_base;
-    VIRTUAL_BASE = kernel_address_request.response->virtual_base;
 
-    // Calculate the offset between virtual and physical addresses.
-    VIRTUAL_TO_PHYSICAL_OFFSET = VIRTUAL_BASE - PHYSICAL_BASE;
 
-    return VIRTUAL_TO_PHYSICAL_OFFSET;
-}
 
 
