@@ -1,6 +1,4 @@
-#!/usr/bin/bash
-
-qemu-system-x86_64 -cdrom build/image.iso  -m 4096 -serial file:serial_output.log \
+qemu-system-x86_64 -cdrom build/KeblaOS-0.11-image.iso  -m 4096 -serial file:serial_output.log \
     -d guest_errors,int,cpu_reset -vga std -no-shutdown -no-reboot -S -s &
 QEMU_PID=$!
 
