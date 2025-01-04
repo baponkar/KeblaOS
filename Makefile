@@ -151,7 +151,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						
 
 
-	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel.bin \
+	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
 						$(BUILD_DIR)/boot.o \
 						$(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/util.o \
@@ -180,11 +180,11 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						
 
 
-$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin
-	$(OBJDUMP) -DxS $< >$@
+# $(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin
+# 	$(OBJDUMP) -DxS $< >$@
 
 # Creating ISO image
-$(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin $(DEBUG_DIR)/objdump.txt
+$(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBUG_DIR)/objdump.txt
 	# CLONING LIMINE BOOTLOADER
 	# git clone https://github.com/limine-bootloader/limine.git --branch=v8.x-binary --depth=1
 	# make -C limine
