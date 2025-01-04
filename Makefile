@@ -59,16 +59,16 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/lib/stdlib.c -o $(BUILD_DIR)/stdlib.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/lib/stdio.c -o $(BUILD_DIR)/stdio.o
 
-	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/gdt.c -o $(BUILD_DIR)/gdt.o
-	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/gdt_load.asm -o $(BUILD_DIR)/gdt_load.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/gdt/gdt.c -o $(BUILD_DIR)/gdt.o
+	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/gdt/gdt_load.asm -o $(BUILD_DIR)/gdt_load.o
 
-	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/idt.c -o $(BUILD_DIR)/idt.o
-	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/idt_load.asm -o $(BUILD_DIR)/idt_load.o
-	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/idt_load.asm -o $(BUILD_DIR)/idt_load.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/idt/idt.c -o $(BUILD_DIR)/idt.o
+	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/idt/idt_load.asm -o $(BUILD_DIR)/idt_load.o
+	$(NASM) $(NASM_FLAG) $(SRC_DIR)/x86_64/idt/idt_load.asm -o $(BUILD_DIR)/idt_load.o
 
-	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/pit_timer.c -o $(BUILD_DIR)/pit_timer.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/pit/pit_timer.c -o $(BUILD_DIR)/pit_timer.o
 
-	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/rtc.c -o $(BUILD_DIR)/rtc.o
+	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/x86_64/rtc/rtc.c -o $(BUILD_DIR)/rtc.o
 
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/keyboard.c -o $(BUILD_DIR)/keyboard.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/driver/speaker.c -o $(BUILD_DIR)/speaker.o
@@ -81,7 +81,7 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/pmm.c -o $(BUILD_DIR)/pmm.o
 	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/mmu/vmm.c -o $(BUILD_DIR)/vmm.o
 
-	$(GCC) $(GCC_FLAG) -c $(SRC_DIR)/acpi/acpi.c -o $(BUILD_DIR)/acpi.o
+	
 
 
 # Linking object files into kernel binary
@@ -109,8 +109,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/load_paging.o \
 						$(BUILD_DIR)/paging.o \
 						$(BUILD_DIR)/pmm.o \
-						$(BUILD_DIR)/vmm.o \
-						$(BUILD_DIR)/acpi.o
+						$(BUILD_DIR)/vmm.o
+						
 
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel.bin \
@@ -138,8 +138,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/load_paging.o \
 						$(BUILD_DIR)/paging.o \
 						$(BUILD_DIR)/pmm.o \
-						$(BUILD_DIR)/vmm.o \
-						$(BUILD_DIR)/acpi.o
+						$(BUILD_DIR)/vmm.o
+						
 
 
 # objdump.txt: $(BUILD_DIR)/kernel.bin
@@ -160,8 +160,11 @@ $(BUILD_DIR)/image.iso: $(BUILD_DIR)/kernel.bin objdump.txt
 	mkdir -p $(ISO_DIR)/EFI/BOOT
 	cp -v $(SRC_DIR)/limine/BOOTX64.EFI $(ISO_DIR)/EFI/BOOT/
 	cp -v $(SRC_DIR)/limine/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
-	xorriso -as mkisofs -b boot/limine/limine-bios-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine/limine-uefi-cd.bin -efi-boot-part --efi-boot-image --protective-msdos-label $(ISO_DIR) -o $(BUILD_DIR)/image.iso
-	$(SRC_DIR)/limine/limine bios-install $(BUILD_DIR)/image.iso
+
+	cp -v $(SRC_DIR)/initrd/initrd.cpio $(ISO_DIR)/boot/initrd.cpio
+
+	xorriso -as mkisofs -b boot/limine/limine-bios-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine/limine-uefi-cd.bin -efi-boot-part --efi-boot-image --protective-msdos-label $(ISO_DIR) -o $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
+	$(SRC_DIR)/limine/limine bios-install $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
 
 	make clean
 
@@ -175,13 +178,13 @@ clean:
 # Running by qemu
 run: $(BUILD_DIR)/image.iso
 	# GDB Debuging
-	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu -s -S
+	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso  -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu -s -S
 
 	# UEFI Boot
-	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu -bios /usr/share/OVMF/OVMF_CODE.fd
+	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso  -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu -bios /usr/share/OVMF/OVMF_CODE.fd
 
 	# BIOS Boot
-	qemu-system-x86_64 -cdrom $(BUILD_DIR)/image.iso  -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu # -smp cores=2,threads=4,sockets=1,maxcpus=8
+	qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso  -m 4096 -serial file:serial_output.log -d guest_errors,int,cpu_reset -D qemu.log -vga std -machine ubuntu # -smp cores=2,threads=4,sockets=1,maxcpus=8
 	
 
 .PHONY: run clean

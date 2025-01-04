@@ -4,14 +4,14 @@
 #include "../driver/ports.h"
 #include "../lib/string.h"    // Assuming you have string manipulation functions.
 #include "../driver/keyboard.h"  // Assuming you have keyboard input handling.
-#include "../x86_64/gdt.h"
+#include "../x86_64/gdt/gdt.h"
 #include "../util/util.h"
 
 #include "../acpi/acpi.h"
 
 #include "../kernel/kernel.h"
 
-#include "../x86_64/rtc.h"
+#include "../x86_64/rtc/rtc.h"
 
 #include "../driver/image_data.h"
 

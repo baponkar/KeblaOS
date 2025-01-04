@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 
-#include "../x86_64/idt.h"
+#include "../x86_64/idt/idt.h"
 #include "../util/util.h"
 #include "../lib/stdlib.h"
 #include "../lib/string.h"

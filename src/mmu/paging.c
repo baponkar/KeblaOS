@@ -39,8 +39,8 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
     page->present = 1;       // Mark it as present.
     page->rw = (is_writeable) ? 1 : 0; // Should the page be writeable?
     page->user = (is_kernel) ? 0 : 1; // Should the page be user-mode?
-    page->frame = (kernel_placement_address + (bit_no * FRAME_SIZE)) >> 12;
-    kernel_placement_address += FRAME_SIZE; // Update the new kernel_placement_address
+    page->frame = (KERNEL_MEM_START_ADDRESS + (bit_no * FRAME_SIZE)) >> 12;
+    KERNEL_MEM_START_ADDRESS += FRAME_SIZE; // Update the new KERNEL_MEM_START_ADDRESS
 }
 
 
