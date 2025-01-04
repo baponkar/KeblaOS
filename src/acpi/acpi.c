@@ -1,10 +1,19 @@
 /*
 
+Reference: https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/06_ACPITables.md
 
 */
 
 #include "acpi.h"
 
+
+bool validate_RSDP(char *byte_array, size_t size) {
+    uint32_t sum = 0;
+    for(int i = 0; i < size; i++) {
+        sum += byte_array[i];
+    }
+    return (sum & 0xFF) == 0;
+}
 
 
 #define PM1A_CNT_REG  0x604  // Default address of PM1a_CNT for many systems
@@ -35,3 +44,6 @@ void qemu_poweroff() {
 void reboot(){
     outb(0x64, 0xFE);   // Send reset command to the keyboard controller
 }
+
+
+

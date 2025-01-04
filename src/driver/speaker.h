@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include "ports.h"
-#include "../x86_64/pit_timer.h"
+#include "../x86_64/pit/pit_timer.h"
 
 void play_sound(uint32_t frequency);
 void stop_sound(void);

@@ -43,23 +43,10 @@ The memory map is giving
 
 #include "pmm.h"
 
-// Getting information from boot.c
-extern struct limine_memmap_request memmap_request;
-extern struct limine_hhdm_request hhdm_request;
-extern struct limine_kernel_address_request kernel_address_request;
-
 
 // As limine put kernel into higher half so we set userspace at first usable space and set kernel space at second usable space
 
-// The kernel will using the below address to store the kernel heap
-volatile uint64_t  kernel_placement_address = 0;
-uint64_t kernel_end_address;
-uint64_t kernel_length;
 
-// The kernel will using the below address to store the user heap
-volatile uint64_t user_placement_address;
-uint64_t user_end_address;
-uint64_t user_length;
 
 
 // one row of bitmap can store information(free/use) of 8 * 4 KB = 32 Kb memory page(8 pages)
@@ -120,53 +107,10 @@ uint64_t free_frame_bit_no()
    return (uint64_t)-1; // Return an invalid frame index to indicate failure.
 }
 
-extern struct limine_memmap_request memmap_request;
-extern uint64_t entry_count;
-extern struct limine_memmap_entry **entries;
+
 
 void init_mem(){
-    size_t entry_ids[4]; // This array will store the index of the first 4 usable memory regions
-    // initialise the entry_ids array with 0
-    for (size_t i = 0; i < 4; i++)
-    {
-        entry_ids[i] = 0;
-    }
-    
-    // Check if the memory map response is available
-    if (memmap_request.response == NULL) {
-        print("Memory map request failed.\n");
-        return;
-    }
-
-
-
-    size_t tmp = 0;
-
-    for (size_t i = 0; i < entry_count; i++)
-    {
-        struct limine_memmap_entry *entry = entries[i];
-
-        if(entry->type == LIMINE_MEMMAP_USABLE){
-            entry_ids[tmp] = i; // store the index of the first 4 usable memory regions
-            tmp++;
-        }
-    }
-
-    if(entry_ids[3] == 0){
-        entry_ids[3] = entry_ids[2];
-    }
-
-    // place kernel into higher  usable memory space
-    kernel_placement_address = entries[entry_ids[3]]->base;
-    kernel_length = entries[entry_ids[3]]->length;
-    kernel_end_address = kernel_placement_address + kernel_length;
-
-    // place user into lower half usable memory space
-    user_placement_address = entries[entry_ids[1]]->base;
-    user_length = entries[entry_ids[1]]->length;
-    user_end_address = user_placement_address + user_length;
-
-    nframes = (uint64_t) kernel_length / FRAME_SIZE;
+    nframes = (uint64_t) KERNEL_MEM_LENGTH / FRAME_SIZE;
     frames = (uint64_t*) kmalloc_a(nframes * BITMAP_SIZE, 1); // Allocate enough bytes for the bitmap
     memset(frames, 0, nframes * BITMAP_SIZE); // Zero out the bitmap
     

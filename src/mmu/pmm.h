@@ -8,6 +8,7 @@
 #include "../limine/limine.h"
 #include "../bootloader/boot.h"
 #include "paging.h"
+#include "../bootloader/boot.h"
 #include  "../driver/vga.h"
 #include "../kernel/kernel.h"
 
@@ -34,14 +35,7 @@
 extern uint64_t *frames; // start of bitset frames
 extern uint64_t nframes; // Total frames
 
-extern volatile uint64_t  kernel_placement_address;
-extern uint64_t kernel_end_address;
-extern uint64_t kernel_length;
 
-// The kernel will using the below address to store the user heap
-extern volatile uint64_t user_placement_address;
-extern uint64_t user_end_address;
-extern uint64_t user_length;
 
 
 void set_frame(uint64_t frame_addr);

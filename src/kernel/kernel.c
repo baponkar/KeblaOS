@@ -4,7 +4,7 @@ Kernel.c
 Build Date  : 16/12/2024
 Description :
 Reference   : 
-              https://github.com/limine-bootloader/limine/blob/v8.x/PROTOCOL.md#kernel-address-feature
+              
               https://wiki.osdev.org/Limine
               https://github.com/limine-bootloader/limine-c-template
               https://wiki.osdev.org/Limine_Bare_Bones
@@ -42,23 +42,23 @@ void kmain(void){
     get_bootloader_info();
 
     init_gdt();
-    // check_gdt();
+    check_gdt();
 
     init_idt();
     // test_interrupt();
 
-    initialise_paging();
+    // initialise_paging();
     // test_paging();
 
     // init_timer();
     
-    initKeyboard();
+    // initKeyboard();
 
-    init_mem();
+    // init_mem();
     // print_memory_map();
 
-    init_kheap();
-    heap_test();
+    // init_kheap();
+    // heap_test();
 
     halt_kernel();
 }

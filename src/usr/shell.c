@@ -11,16 +11,16 @@ void shell_prompt() {
 void execute_command(char* command) {
     
     if (strcmp(command, "help") == 0) {
-        print("Available commands:\n [ help, clear, reboot, poweroff, bootinfo, time, uptime, regvalue, checkgdt, features, testint, logo, image, exit. ]\n");
+        print("Available commands:\n [ help, clear, reboot, poweroff, bootinfo, time, uptime, regvalue, checkgdt, features, testint, logo, image, memorymap,  exit. ]\n");
     } else if (strcmp(command, "clear") == 0) {
         clear_screen();  // Clear the screen using your VGA driver
     } else if (strcmp(command, "reboot") == 0) {
         print("Rebooting...\n");
-        reboot();
+        // reboot();
     } else if (strcmp(command, "poweroff") == 0){
         print("Shutting Down!\n");
         print("Please Wait...");
-        poweroff();
+        // poweroff();
     } else if(strcmp(command, "bootinfo") == 0){
         print_bootloader_info();
     } else if (strcmp(command, "time") == 0){
@@ -49,6 +49,8 @@ void execute_command(char* command) {
         display_image(0, 0, (const uint64_t*) girl_6352783_640, GIRL_6352783_640_WIDTH, GIRL_6352783_640_HEIGHT);
     }else if(strcmp(command, "") == 0){
         print("type 'help'\n");
+    }else if(strcmp(command, "memorymap") == 0){
+        print_memory_map();
     }else {
         print("!Unknown command: ");
         print(command);
@@ -67,11 +69,6 @@ void run_shell(bool is_shell_running) {
         //execute_command(input);  // Process the input command
     }
 }
-
-
-
-
-
 
 
 

@@ -6,7 +6,7 @@
 
 #include "../limine/limine.h"
 #include "../util/util.h"   
-#include "../x86_64/idt.h"
+#include "../x86_64/idt/idt.h"
 #include  "../driver/vga.h"
 #include "../limine/limine.h"
 #include "pmm.h"

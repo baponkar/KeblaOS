@@ -14,11 +14,13 @@ extern uint64_t PHYSICAL_TO_VIRTUAL_OFFSET;
 
 heap_t *kheap;
 
-// Low level memory allocation by usin base as kernel_placement_address
+
+
+// Low level memory allocation by usin base as KERNEL_MEM_START_ADDRESS
 uint64_t kmalloc(uint64_t sz)       // vanilla (normal).
 {
-    uint64_t tmp = (uint64_t) kernel_placement_address; // memory allocate in current placement address
-    kernel_placement_address += sz;    // increase the placement address for next memory allocation
+    uint64_t tmp = (uint64_t) KERNEL_MEM_START_ADDRESS; // memory allocate in current placement address
+    KERNEL_MEM_START_ADDRESS += sz;    // increase the placement address for next memory allocation
     return tmp;
 }
 
@@ -34,15 +36,15 @@ uint64_t kmalloc_a(uint64_t sz, int align)    // page aligned.
     page directory and page table addresses need to be page-aligned: that is, the bottom 12 
     bits need to be zero (otherwise they would interfere with the read/write/protection/accessed bits).
     */
-    if (align == 1 && (kernel_placement_address & 0xFFF)) // If the address is not already page-aligned i.e. multiple of PAGE_SIZE
+    if (align == 1 && (KERNEL_MEM_START_ADDRESS & 0xFFF)) // If the address is not already page-aligned i.e. multiple of PAGE_SIZE
     {
         // Align it.
-        kernel_placement_address &= 0xFFFFFFFFFFFFF000; // masking of most significant 20 bit which is used for address
-        kernel_placement_address += FRAME_SIZE;    // increase  the placement address by 4 KB, Page Size
+        KERNEL_MEM_START_ADDRESS &= 0xFFFFFFFFFFFFF000; // masking of most significant 20 bit which is used for address
+        KERNEL_MEM_START_ADDRESS += FRAME_SIZE;    // increase  the placement address by 4 KB, Page Size
     }
     
-    uint64_t tmp = kernel_placement_address;
-    kernel_placement_address += sz;
+    uint64_t tmp = KERNEL_MEM_START_ADDRESS;
+    KERNEL_MEM_START_ADDRESS += sz;
 
     return tmp;
 }
@@ -56,10 +58,10 @@ uint64_t kmalloc_p(uint64_t sz, uint64_t *phys){
     if (phys)
     {   // phys (parameter): This is a pointer to a uint64_t variable where 
         // the physical address of the allocated memory will be stored.
-        *phys = kernel_placement_address;
+        *phys = KERNEL_MEM_START_ADDRESS;
     }
-    uint64_t tmp = kernel_placement_address;
-    kernel_placement_address += sz;
+    uint64_t tmp = KERNEL_MEM_START_ADDRESS;
+    KERNEL_MEM_START_ADDRESS += sz;
     return tmp;
 }
 
@@ -70,18 +72,18 @@ and also ensure page boundary alignment
 */
 uint64_t kmalloc_ap(uint64_t sz, int align, uint64_t *phys)  // page aligned and returns a physical address.
 {
-    if (align == 1 && (kernel_placement_address & 0xFFF)) // If the address is not already page-aligned and want to make it page aligned
+    if (align == 1 && (KERNEL_MEM_START_ADDRESS & 0xFFF)) // If the address is not already page-aligned and want to make it page aligned
     {
         // Align it.
-        kernel_placement_address &= 0xFFFFFFFFFFFFF000;
-        kernel_placement_address += PAGE_SIZE;    // increase  the placement address by 4 KB, Page Size
+        KERNEL_MEM_START_ADDRESS &= 0xFFFFFFFFFFFFF000;
+        KERNEL_MEM_START_ADDRESS += PAGE_SIZE;    // increase  the placement address by 4 KB, Page Size
     }
     if (phys)
     {
-        *phys = kernel_placement_address;
+        *phys = KERNEL_MEM_START_ADDRESS;
     }
-    uint64_t tmp = kernel_placement_address;
-    kernel_placement_address += sz;
+    uint64_t tmp = KERNEL_MEM_START_ADDRESS;
+    KERNEL_MEM_START_ADDRESS += sz;
     return tmp;
 }
 
@@ -96,9 +98,9 @@ uint64_t kmalloc_ap(uint64_t sz, int align, uint64_t *phys)  // page aligned and
 
 void init_kheap()
 {
-    uint64_t start_addr = PAGE_ALIGN(kernel_placement_address);
-    uint64_t end_addr = PAGE_ALIGN(kernel_placement_address + 2*KHEAP_INITIAL_SIZE);
-    uint64_t max_addr = PAGE_ALIGN(kernel_placement_address + kernel_length);
+    uint64_t start_addr = PAGE_ALIGN(KERNEL_MEM_START_ADDRESS);
+    uint64_t end_addr = PAGE_ALIGN(KERNEL_MEM_START_ADDRESS + 2*KHEAP_INITIAL_SIZE);
+    uint64_t max_addr = PAGE_ALIGN(KERNEL_MEM_START_ADDRESS + KERNEL_MEM_LENGTH);
 
     
     uint64_t start_virtual_addr = start_addr + PHYSICAL_TO_VIRTUAL_OFFSET;

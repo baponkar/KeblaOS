@@ -9,6 +9,7 @@
 #include "../bootloader/boot.h"
 
 #include "pmm.h"
+#include "../bootloader/boot.h"
 #include "../driver/vga.h"
 #include "../lib/string.h"  // For memcpy
 #include "../lib/assert.h"  // For assert
