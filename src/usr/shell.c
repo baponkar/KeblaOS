@@ -11,16 +11,19 @@ void shell_prompt() {
 void execute_command(char* command) {
     
     if (strcmp(command, "help") == 0) {
-        print("Available commands:\n [ help, clear, reboot, poweroff, bootinfo, time, uptime, regvalue, checkgdt, features, testint, logo, image, memorymap,  exit. ]\n");
+        print("Available commands:\n [ help, clear, reboot, poweroff, bootinfo,");
+        print("time, uptime, regvalue, checkgdt, features, testint, logo, image,");
+        print("memmap,  exit,\n\t kermod, rsdp, firmware, stack, limine, pagingmod," );
+        print("phystoviroff, smp, hhdm ]\n");
     } else if (strcmp(command, "clear") == 0) {
         clear_screen();  // Clear the screen using your VGA driver
     } else if (strcmp(command, "reboot") == 0) {
         print("Rebooting...\n");
-        // reboot();
+        qemu_reboot();
     } else if (strcmp(command, "poweroff") == 0){
         print("Shutting Down!\n");
         print("Please Wait...");
-        // poweroff();
+        qemu_poweroff();
     } else if(strcmp(command, "bootinfo") == 0){
         print_bootloader_info();
     } else if (strcmp(command, "time") == 0){
@@ -49,9 +52,27 @@ void execute_command(char* command) {
         display_image(0, 0, (const uint64_t*) girl_6352783_640, GIRL_6352783_640_WIDTH, GIRL_6352783_640_HEIGHT);
     }else if(strcmp(command, "") == 0){
         print("type 'help'\n");
-    }else if(strcmp(command, "memorymap") == 0){
+    }else if(strcmp(command, "memmap") == 0){
         print_memory_map();
-    }else {
+    }else if(strcmp(command, "kermod") == 0){
+        print_kernel_modules_info();
+    }else if(strcmp(command, "rsdp") == 0){
+        print_rsdp_info();
+    }else if(strcmp(command, "firmware") == 0){
+        print_firmware_info();
+    }else if(strcmp(command, "stack") == 0){
+        print_stack_info();
+    }else if(strcmp(command, "limine") == 0){
+        print_limine_info();
+    }else if(strcmp(command, "pagingmod") == 0){
+        print_paging_mode_info();
+    }else if(strcmp(command, "phystoviroff") == 0){
+        print_kernel_to_virtual_offset();
+    }else if(strcmp(command, "smp") == 0){
+        print_smp_info();
+    }else if(strcmp(command, "hhdm") == 0){
+        print_hhdm_info();
+    }else{
         print("!Unknown command: ");
         print(command);
         print("\n");

@@ -6,7 +6,6 @@
 ; https://stackoverflow.com/questions/79282721/why-is-isr-common-stub-not-calling-my-isr-handler-function?noredirect=1#comment139806502_79282721
 ;
 
-
 [extern isr_handler]        ; defined in idt.c
 [extern irq_handler]        ; defined in idt.c 
 
@@ -50,10 +49,12 @@
     pop rax     ; Restore `ds` (was pushed last)
     mov ds, ax
 
-    pop rax
+    pop rax     ; Restore `es`
     mov es, ax
-    pop fs
+
+    pop fs      ; Restore `fs`
     pop gs
+
     pop r15
     pop r14
     pop r13
@@ -70,6 +71,8 @@
     pop rcx
     pop rbx
     pop rax
+    ; At this point, the iret_* values are still on the stack and 
+    ; will be handled automatically by `iretq`.
 %endmacro
 
 
@@ -91,7 +94,7 @@ idt_flush:
 %macro ISR_ERRCODE 1
     [global isr%1]
     isr%1:
-                             ; don't need to push error code as it is autometically push
+        ; don't need to push error code as it is autometically push
         push %1              ; Pusing Interrupt number only into the stack
         jmp isr_common_stub
 %endmacro
@@ -100,18 +103,35 @@ idt_flush:
 isr_common_stub:
     SAVE_REGISTERS
 
-    mov eax, 0x10             ; Load the kernel data segment descriptor
-    mov ds, eax
-    mov es, eax
-    mov fs, eax
-    mov gs, eax
+    mov ax, 0x10             ; Load the kernel data segment descriptor
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    ; Save `iret_*` values into the stack as part of `registers_t`
+    mov rax, [rsp + 8*0]     ; `iret_rip`
+    mov [rsp + 8*33], rax    ; Offset 33 corresponds to `iret_rip` in `registers_t`
+
+    mov rax, [rsp + 8*1]     ; `iret_cs`
+    mov [rsp + 8*34], rax    ; Offset 34 corresponds to `iret_cs`
+
+    mov rax, [rsp + 8*2]     ; `iret_rflags`
+    mov [rsp + 8*35], rax    ; Offset 35 corresponds to `iret_rflags`
+
+    mov rax, [rsp + 8*3]     ; `iret_rsp`
+    mov [rsp + 8*36], rax    ; Offset 36 corresponds to `iret_rsp`
+
+    mov rax, [rsp + 8*4]     ; `iret_ss`
+    mov [rsp + 8*37], rax    ; Offset 37 corresponds to `iret_ss`
 
     mov rdi, rsp             ; Pass the current stack pointer to `isr_handler`
     cld                      ; Required by AMD64 System V ABI
     call isr_handler
     
     RESTORE_REGISTERS
-    add rsp, 16
+    add rsp, 16              ; Clean up pushed error code and IRQ number 
+
     iretq                     ; Return from Interrupt
 
 
@@ -125,12 +145,15 @@ ISR_NOERRCODE 6
 ISR_NOERRCODE 7
 
 ISR_ERRCODE   8
+
 ISR_NOERRCODE 9 
+
 ISR_ERRCODE   10
 ISR_ERRCODE   11
 ISR_ERRCODE   12
 ISR_ERRCODE   13
 ISR_ERRCODE   14
+
 ISR_NOERRCODE 15
 ISR_NOERRCODE 16
 ISR_NOERRCODE 17
@@ -179,7 +202,9 @@ irq_common_stub:
 
     RESTORE_REGISTERS
     add rsp, 16     ; Clean up pushed error code and IRQ number 
+
     iretq           ; Return from Interrupt
+
 
 
 IRQ   0,    32

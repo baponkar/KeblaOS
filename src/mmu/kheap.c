@@ -359,13 +359,13 @@ heap_t *create_heap(uint64_t start_addr, uint64_t end_addr, uint64_t max_addr, u
     // Adjust the start address forward to where we can start putting data
     start_addr += sizeof(type_t) * HEAP_INDEX_SIZE;
 
-    print("start address: ");
-    print_hex(start_addr);
-    print("\n");
+    // print("start address: ");
+    // print_hex(start_addr);
+    // print("\n");
 
-    print("end address: ");
-    print_hex(end_addr);
-    print("\n");
+    // print("end address: ");
+    // print_hex(end_addr);
+    // print("\n");
 
     // Ensure the start address is page-aligned
     if ((start_addr & 0xFFFFFFFFFFFFF000) != 0) {
@@ -391,9 +391,9 @@ heap_t *create_heap(uint64_t start_addr, uint64_t end_addr, uint64_t max_addr, u
     hole->magic = HEAP_MAGIC;
     hole->is_hole = 1;
 
-    print("hole: ");
-    print_hex((uint64_t) hole);
-    print("\n");
+    // print("hole: ");
+    // print_hex((uint64_t) hole);
+    // print("\n");
 
     // Insert the hole into the ordered array
     insert_ordered_array((void*)hole, &heap->ordered_array);

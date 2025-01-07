@@ -3,33 +3,42 @@
 Currently I am using Limine Bootloader, so I will use the Limine Bootloader protocol 
 to get the bootloader information. The bootloader information is stored in the 
 bootloader_info_request struct. The bootloader_info_request struct is defined in 
-the kernel.c file. The bootloader_info_request struct contains the bootloader name
- and version. The bootloader name and version are stored in the name and version 
- fields of the bootloader_info_request struct.
+the kernel.c file. The bootloader_info_request struct contains the bootloader name 
+and version. The bootloader name and version are stored in the name and version  
+fields of the bootloader_info_request struct.
 
- In future I will implement a custom bootloader and will use that .
+In future I will implement a custom bootloader and will use that .
 
- Reference: https://github.com/limine-bootloader/limine/blob/v8.x/PROTOCOL.md#kernel-address-feature
+Reference: https://github.com/limine-bootloader/limine/blob/v8.x/PROTOCOL.md#kernel-address-feature
 */
 
 
 #include "boot.h"
 
 
-
 __attribute__((used, section(".limine_requests")))
-static volatile LIMINE_BASE_REVISION(0);
+static volatile LIMINE_BASE_REVISION(2);
+
+// Finally, define the start and end markers for the Limine requests.
+// These can also be moved anywhere, to any .c file, as seen fit.
+
+__attribute__((used, section(".requests_start_marker")))
+static volatile LIMINE_REQUESTS_START_MARKER;
+
+__attribute__((used, section(".requests_end_marker")))
+static volatile LIMINE_REQUESTS_END_MARKER;
 
 
+// Get Firmware info
 __attribute__((used, section(".requests")))
 static volatile struct limine_firmware_type_request firmware_type_request = {
     .id = LIMINE_FIRMWARE_TYPE_REQUEST,
-    .revision = 0
+    .revision = 2
 };
 
 char *FIRMWARE_TYPE;
 
-void get_firmware_info(void){
+void get_firmware_info(){
     if(firmware_type_request.response != NULL){
         uint64_t firmware_type = firmware_type_request.response->firmware_type;
         if(firmware_type == LIMINE_FIRMWARE_TYPE_X86BIOS){
@@ -45,69 +54,283 @@ void get_firmware_info(void){
     }
 }
 
+void print_firmware_info(){
+    if(firmware_type_request.response != NULL){
+        print("Firmware type: ");
+        print(FIRMWARE_TYPE);
+        print("\n");
+    }else{
+        FIRMWARE_TYPE = "No firmware type found!";
+        print("No firmware type found!\n");
+    }
+}
+
 
 
 
 // Multiprocessor info
-
 __attribute__((used, section(".requests")))
 static volatile struct limine_smp_request smp_request = {
     .id = LIMINE_SMP_REQUEST,
-    .revision = 0
+    .revision = 2
 };
 
+uint64_t CPU_COUNT;
+
+uint64_t MULTIPROCESSOR_REVISION;
+uint64_t MULTIPROCESSOR_OFFSET;
+
+void get_smp_info(){
+    if(smp_request.response != NULL){
+        uint64_t revision = smp_request.response->revision;
+        uint64_t flags = smp_request.response->flags;
+        uint64_t bsp_lapic_id = smp_request.response->bsp_lapic_id; // The Local APIC ID of the bootstrap processor.
+        CPU_COUNT = smp_request.response->cpu_count; //  How many CPUs are present. It includes the bootstrap processor.
+        struct limine_smp_info **cpus = smp_request.response->cpus; // Pointer to an array of cpu_count pointers to struct limine_smp_info structures.
+        for(size_t i=0;i<(size_t) CPU_COUNT;i++){
+            uint64_t processor_id = cpus[0]->processor_id;
+            uint64_t lapic_id = cpus[0]->lapic_id;
+            uint64_t reserved = cpus[0]->reserved;
+            limine_goto_address goto_address = cpus[0]->goto_address;
+            uint64_t extra_argument = cpus[0]->extra_argument;
+        }
+    }else{
+        CPU_COUNT = 0;
+        print("No SMP info found!\n");
+    }
+}
+
+void print_smp_info(){
+    if(smp_request.response != NULL){
+        print("CPU COUNT: ");
+        print_dec(CPU_COUNT);
+        print("\n");
+    }else{
+        print("No SMP info found!\n");
+    }
+}
+
+
+
+
+
+// Get Paging info
 
 __attribute__((used, section(".requests")))
 static volatile struct limine_paging_mode_request paging_mode_request = {
     .id = LIMINE_PAGING_MODE_REQUEST,
-    .revision = 0
+    .revision = 2
 };
 
 
+char *LIMINE_PAGING_MODE;
+
+void get_paging_mode_info(){
+    if(paging_mode_request.response != NULL){
+        uint64_t mode = paging_mode_request.response->mode;
+        if(mode == LIMINE_PAGING_MODE_X86_64_4LVL){
+            LIMINE_PAGING_MODE = "Limine Paging mode x86_64 4 Level";
+        } else if(mode == LIMINE_PAGING_MODE_X86_64_5LVL){
+            LIMINE_PAGING_MODE = "Limine Paging mode x86_64 5 Level";
+        }
+    }else{
+        LIMINE_PAGING_MODE = "No Paging mode found!";
+        print("No Paging mode found!\n");
+    }
+}
+
+void print_paging_mode_info(){
+     if(paging_mode_request.response != NULL){
+        print("Limine Paging Mode : ");
+        print(LIMINE_PAGING_MODE);
+        print("\n");
+    }else{
+        LIMINE_PAGING_MODE = "No Paging mode found!";
+        print("No Paging mode found!\n");
+    }
+}
+
+
+
+
+
+// Get  Limine Bootloader name, version etc 
 __attribute__((used, section(".requests")))
 static volatile struct limine_bootloader_info_request limine_info_request = {
     .id = LIMINE_BOOTLOADER_INFO_REQUEST,
-    .revision = 0
+    .revision = 2
 };
 
+char *BOOTLOADER_NAME;
+char *BOOTLOADER_VERSION;
 
+void get_limine_info(){
+    if(limine_info_request.response != NULL){
+        uint64_t revision = limine_info_request.response->revision;
+        BOOTLOADER_NAME = limine_info_request.response->name;
+        BOOTLOADER_VERSION = limine_info_request.response->version;
+    }else{
+        BOOTLOADER_NAME = "No Limine Bootloader Info found!";
+        BOOTLOADER_VERSION = NULL;
+        print("No Limine Bootloader Info found!\n");
+    }
+}
+
+void print_limine_info(){
+    if(limine_info_request.response != NULL){
+        print("Bootloader Name : ");
+        print(BOOTLOADER_NAME);
+        print("\n");
+        print("Bootloader Version : ");
+        print(BOOTLOADER_VERSION);
+        print("\n");
+
+    }else{
+        print("No Limine Bootloader Info found!\n");
+    }
+}
+
+
+
+
+
+// Get Stack size info
 __attribute__((used, section(".requests")))
 static volatile struct limine_stack_size_request stack_size_request = {
     .id = LIMINE_STACK_SIZE_REQUEST,
-    .revision = 0,
-    .stack_size = 8192
+    .revision = 2,
+    .stack_size = 16384
 };
 
+uint64_t STACK_SIZE;
 
-__attribute__((used, section(".requests")))
-static volatile struct limine_memmap_request memmap_request = {
-    .id = LIMINE_MEMMAP_REQUEST,
-    .revision = 3
-};
+void get_stack_info(){
+    if(stack_size_request.response != NULL){
+        STACK_SIZE = stack_size_request.stack_size;
+    }else{
+        STACK_SIZE = 0;
+        print("No stack size found!\n");
+    }
+}
 
+void print_stack_info(){
+    if(stack_size_request.response != NULL){
+        print("Stack Size : ");
+        print_dec(STACK_SIZE);
+        print("\n");
+    }else{
+        print("No stack size found!\n");
+    }
+}
+
+
+
+
+
+// Get Virtual to Physical offset
 __attribute__((used, section(".requests")))
 static volatile struct limine_kernel_address_request kernel_address_request = {
     .id = LIMINE_KERNEL_ADDRESS_REQUEST,
-    .revision = 3
+    .revision = 2
 };
 
+uint64_t KERNEL_ADDRESS_REVISION;
+uint64_t PHYSICAL_BASE;
+uint64_t VIRTUAL_BASE;
+uint64_t PHYSICAL_TO_VIRTUAL_OFFSET;
+
+void get_kernel_to_virtual_offset(){
+    if(kernel_address_request.response != NULL){
+        KERNEL_ADDRESS_REVISION = kernel_address_request.response->revision;
+        PHYSICAL_BASE = kernel_address_request.response->physical_base;
+        VIRTUAL_BASE = kernel_address_request.response->virtual_base;
+        PHYSICAL_TO_VIRTUAL_OFFSET = VIRTUAL_BASE - PHYSICAL_BASE;
+    }else{
+        PHYSICAL_TO_VIRTUAL_OFFSET = 0;
+        print("No kernel to virtual offset found!\n");
+    }
+}
+
+void print_kernel_to_virtual_offset(){
+    if(kernel_address_request.response != NULL){
+        print("Kernel address revision: ");
+        print_dec(KERNEL_ADDRESS_REVISION);
+        print("\n");
+        print("Physical Base : ");
+        print_hex(PHYSICAL_BASE);
+        print("\n");
+        print("Virtual Base : ");
+        print_hex(VIRTUAL_BASE);
+        print("\n");
+        print("Physical address to Virtual address Offset");
+        print_hex(PHYSICAL_TO_VIRTUAL_OFFSET);
+        print("\n");
+    }else{
+        print("No kernel to virtual offset found!\n");
+    }
+}
+
+
+
+
+
+// Get Higher half direct map offset 
 __attribute__((used, section(".requests")))
 static volatile struct limine_hhdm_request hhdm_request = {
     .id = LIMINE_HHDM_REQUEST,
-    .revision = 3
+    .revision = 2
 };
 
+uint64_t HIGHER_HALF_DIRECT_MAP_REVISION;
+uint64_t HIGHER_HALF_DIRECT_MAP_OFFSET;
+
+void get_hhdm_info(){
+    if(hhdm_request.response != NULL){
+        HIGHER_HALF_DIRECT_MAP_REVISION = hhdm_request.response->revision;
+        HIGHER_HALF_DIRECT_MAP_OFFSET = hhdm_request.response->offset;
+    }else{
+        HIGHER_HALF_DIRECT_MAP_REVISION = 0;
+        HIGHER_HALF_DIRECT_MAP_OFFSET = 0;
+        print("No Higher Half Direct Map info found!\n");
+    }
+}
+
+void print_hhdm_info(){
+    if(hhdm_request.response != NULL){
+        print("Higher half direct map revision : ");
+        print_dec(HIGHER_HALF_DIRECT_MAP_REVISION);
+        print("\n");
+        print("Higher Half Direct Map Offset : ");
+        print_hex(HIGHER_HALF_DIRECT_MAP_OFFSET);
+        print("\n");
+    }else{
+        print("No Higher Half Direct Map info found!\n");
+    }
+}
 
 
+
+
+
+// Get Module info
 __attribute__((used, section(".requests")))
 static volatile struct limine_module_request module_request = {
     .id = LIMINE_MODULE_REQUEST,
-    .revision = 3
+    .revision = 2
 };
 
 
+void get_kernel_modules_info(){
+    if(module_request.response != NULL){
+        uint64_t revision = module_request.response->revision;
+        uint64_t module_count = module_request.response->module_count;
+        struct limine_file **modules = module_request.response->modules;
+    }else{
+        print("No kernel modules found!\n");
+    }
+}
 
-void get_kernel_modules_info(void){
+void print_kernel_modules_info(){
     if(module_request.response != NULL){
         uint64_t revision = module_request.response->revision;
         uint64_t module_count = module_request.response->module_count;
@@ -159,10 +382,16 @@ void get_kernel_modules_info(void){
     }
 }
 
+
+
+
+
+
+// Get RSDP info
 __attribute__((used, section(".requests")))
 static volatile struct limine_rsdp_request rsdp_request = {
     .id = LIMINE_RSDP_REQUEST,
-    .revision = 3
+    .revision = 2
 };
 
 // void parse_xsdt(struct XSDT *xsdt) {
@@ -177,10 +406,21 @@ static volatile struct limine_rsdp_request rsdp_request = {
 //     }
 // }
 
-void get_rsdp_info(void){
+uint64_t *RSDP_PTR;
+uint64_t RSDP_REVISION;
+void get_rsdp_info(){
     if(rsdp_request.response != NULL){
-        uint64_t revision = rsdp_request.response->revision;
-        // uint64_t *address = rsdp_request.response->address;
+        RSDP_REVISION = rsdp_request.response->revision;
+        RSDP_PTR = rsdp_request.response->address; 
+    }else{
+        RSDP_PTR = NULL;
+        RSDP_REVISION = 0;
+        print("No RSDP info found!\n");
+    }
+}
+
+void print_rsdp_info(){
+    if(rsdp_request.response != NULL){
 
         struct RSDP *rsdp = (struct RSDP *) rsdp_request.response->address;
 
@@ -209,7 +449,6 @@ void get_rsdp_info(void){
             print_hex(rsdp->rsdt_address);
             print("\n");
         }
- 
     }else{
         print("No RSDP info found!\n");
     }
@@ -218,25 +457,13 @@ void get_rsdp_info(void){
 
 
 
-uint64_t CPU_COUNT;
 
-char *BOOTLOADER_NAME;
-char *BOOTLOADER_VERSION;
-
-uint64_t STACK_SIZE;
-
-uint64_t MULTIPROCESSOR_REVISION;
-uint64_t MULTIPROCESSOR_OFFSET;
-
-char *LIMINE_PAGING_MODE;
-
-uint64_t KERNEL_ADDRESS_REVISION;
-uint64_t PHYSICAL_BASE;
-uint64_t VIRTUAL_BASE;
-uint64_t PHYSICAL_TO_VIRTUAL_OFFSET;
-
-uint64_t HIGHER_HALF_DIRECT_MAP_REVISION;
-uint64_t HIGHER_HALF_DIRECT_MAP_OFFSET;
+// Get memory info
+__attribute__((used, section(".requests")))
+static volatile struct limine_memmap_request memmap_request = {
+    .id = LIMINE_MEMMAP_REQUEST,
+    .revision = 2
+};
 
 uint64_t KERNEL_MEM_START_ADDRESS;
 uint64_t KERNEL_MEM_END_ADDRESS;
@@ -257,85 +484,10 @@ uint64_t FRAMEBUFFER_MEMORY;
 uint64_t KERNEL_MODULES_MEMORY;
 uint64_t UNKNOWN_MEMORY;
 
+uint64_t entry_count;
+struct limine_memmap_entry **entries;
 
-
-
-
-
-void get_stack_info(void){
-    if(stack_size_request.response != NULL){
-        STACK_SIZE = stack_size_request.stack_size;
-    }else{
-        STACK_SIZE = 0;
-        print("No stack size found!\n");
-    }
-}
-
-
-
-void get_limine_info(void){
-    if(limine_info_request.response != NULL){
-        uint64_t revision = limine_info_request.response->revision;
-        BOOTLOADER_NAME = limine_info_request.response->name;
-        BOOTLOADER_VERSION = limine_info_request.response->version;
-    }else{
-        BOOTLOADER_NAME = "No Limine Bootloader Info found!";
-        BOOTLOADER_VERSION = NULL;
-        print("No Limine Bootloader Info found!\n");
-    }
-}
-
-
-
-void get_paging_mode_info(void){
-    if(paging_mode_request.response != NULL){
-        uint64_t mode = paging_mode_request.response->mode;
-        if(mode == LIMINE_PAGING_MODE_X86_64_4LVL){
-            LIMINE_PAGING_MODE = "Limine Paging mode x86_64 4 Level";
-        } else if(mode == LIMINE_PAGING_MODE_X86_64_5LVL){
-            LIMINE_PAGING_MODE = "Limine Paging mode x86_64 5 Level";
-        }
-    }else{
-        LIMINE_PAGING_MODE = "No Paging mode found!";
-        print("No Paging mode found!\n");
-    }
-}
-
-
-
-void get_smp_info(void){
-    if(smp_request.response != NULL){
-        uint64_t revision = smp_request.response->revision;
-        uint64_t flags = smp_request.response->flags;
-        uint64_t bsp_lapic_id = smp_request.response->bsp_lapic_id; // The Local APIC ID of the bootstrap processor.
-        CPU_COUNT = smp_request.response->cpu_count; //  How many CPUs are present. It includes the bootstrap processor.
-        struct limine_smp_info **cpus = smp_request.response->cpus; // Pointer to an array of cpu_count pointers to struct limine_smp_info structures.
-        for(size_t i=0;i<(size_t) CPU_COUNT;i++){
-            uint64_t processor_id = cpus[0]->processor_id;
-            uint64_t lapic_id = cpus[0]->lapic_id;
-            uint64_t reserved = cpus[0]->reserved;
-            limine_goto_address goto_address = cpus[0]->goto_address;
-            uint64_t extra_argument = cpus[0]->extra_argument;
-        }
-    }else{
-        CPU_COUNT = 0;
-        print("No SMP info found!\n");
-    }
-}
-
-void get_hhdm_info(void){
-    if(hhdm_request.response != NULL){
-        HIGHER_HALF_DIRECT_MAP_REVISION = hhdm_request.response->revision;
-        HIGHER_HALF_DIRECT_MAP_OFFSET = hhdm_request.response->offset;
-    }else{
-        HIGHER_HALF_DIRECT_MAP_REVISION = 0;
-        HIGHER_HALF_DIRECT_MAP_OFFSET = 0;
-        print("No Higher Half Direct Map info found!\n");
-    }
-}
-
-
-void get_memory_map(void){ 
+void get_memory_map(){ 
     size_t entry_ids[4];    // This array will store the index of the first 4 usable memory regions
     for (size_t i = 0; i < 4; i++)
     {
@@ -346,8 +498,8 @@ void get_memory_map(void){
     if(memmap_request.response != NULL){
 
         uint64_t revision = memmap_request.response->revision;
-        size_t entry_count = memmap_request.response->entry_count;
-        struct limine_memmap_entry **entries = memmap_request.response->entries;
+        entry_count = memmap_request.response->entry_count;
+        entries = memmap_request.response->entries;
 
         for(size_t i=0; i<(size_t) entry_count; i++){
             uint64_t base = entries[i]->base;
@@ -395,14 +547,49 @@ void get_memory_map(void){
 
 
 
-void print_memory_map(void) {
-    uint64_t entry_count;
-    struct limine_memmap_entry **entries;
+void print_memory_map() {
+    
     // Check if the memory map response is available
     if (memmap_request.response == NULL) {
         print("Memory map request failed.\n");
         return;
     }
+
+    print("Total Memory : ");
+    print_size_with_units(TOTAL_MEMORY);
+    print("\n");
+
+    print("Usable Memory : ");
+    print_size_with_units(USABLE_MEMORY);
+    print("\n");
+
+    print("Reserved Memory : ");
+    print_size_with_units(RESERVED_MEMORY);
+    print("\n");
+
+    print("Bad Memory : ");
+    print_size_with_units(BAD_MEMORY);
+    print("\n");
+
+    print("Bootloader Reclaimable Memory : ");
+    print_size_with_units(BOOTLOADER_RECLAIMABLE_MEMORY);
+    print("\n");
+
+    print("ACPI Reclaimable Memory : ");
+    print_size_with_units(ACPI_RECLAIMABLE_MEMORY);
+    print("\n");
+
+    print("ACPI NVS Memory : ");
+    print_size_with_units(ACPI_NVS_MEMORY);
+    print("\n");
+
+    print("Unknown Memory : ");
+    print_size_with_units(UNKNOWN_MEMORY);
+    print("\n");
+
+    print("Kernel Modules Memory : ");
+    print_size_with_units(KERNEL_MODULES_MEMORY);
+    print("\n");
 
     print("Kernel memory start address : ");
     print_size_with_units(KERNEL_MEM_START_ADDRESS);
@@ -417,14 +604,6 @@ void print_memory_map(void) {
     print("User memory size : ");
     print_size_with_units(USER_MEM_LENGTH);
     print("\n");
-
-    print("Start address of storing frames used or unused data : ");
-    print_hex((uint64_t)frames);
-    print("\n");
-    print("Total frames : ");
-    print_dec(nframes);
-    print("\n");
-
 
     print("Memory Map Entries : ");
     print_dec(entry_count);
@@ -481,22 +660,54 @@ void print_memory_map(void) {
     }
 }
 
-void get_kernel_to_virtual_offset(void){
-    if(kernel_address_request.response != NULL){
-        KERNEL_ADDRESS_REVISION = kernel_address_request.response->revision;
-        PHYSICAL_BASE = kernel_address_request.response->physical_base;
-        VIRTUAL_BASE = kernel_address_request.response->virtual_base;
-        PHYSICAL_TO_VIRTUAL_OFFSET = VIRTUAL_BASE - PHYSICAL_BASE;
-    }else{
-        PHYSICAL_TO_VIRTUAL_OFFSET = 0;
-        print("No kernel to virtual offset found!\n");
-    }
+// CPUID instruction wrapper
+static inline void cpuid(uint32_t leaf, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
+    __asm__ volatile("cpuid"
+                     : "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
+                     : "a" (leaf), "c" (0));
+}
+
+// Get the processor name
+void get_processor_name(char *name_buffer) {
+    uint32_t eax, ebx, ecx, edx;
+
+    // Leaf 0x80000002
+    cpuid(0x80000002, &eax, &ebx, &ecx, &edx);
+    memcpy(name_buffer, &eax, 4);
+    memcpy(name_buffer + 4, &ebx, 4);
+    memcpy(name_buffer + 8, &ecx, 4);
+    memcpy(name_buffer + 12, &edx, 4);
+
+    // Leaf 0x80000003
+    cpuid(0x80000003, &eax, &ebx, &ecx, &edx);
+    memcpy(name_buffer + 16, &eax, 4);
+    memcpy(name_buffer + 20, &ebx, 4);
+    memcpy(name_buffer + 24, &ecx, 4);
+    memcpy(name_buffer + 28, &edx, 4);
+
+    // Leaf 0x80000004
+    cpuid(0x80000004, &eax, &ebx, &ecx, &edx);
+    memcpy(name_buffer + 32, &eax, 4);
+    memcpy(name_buffer + 36, &ebx, 4);
+    memcpy(name_buffer + 40, &ecx, 4);
+    memcpy(name_buffer + 44, &edx, 4);
+
+    // Null-terminate the string
+    name_buffer[48] = '\0';
+}
+
+void print_processor_name(char processor_name[49]){
+    print("Processor Name: ");
+    print(processor_name);
+    print("\n");
 }
 
 
 
 
-void get_bootloader_info(void){
+char processor_name[49];
+// finuls functions which will actually use in different ways
+void get_bootloader_info(){
     get_kernel_modules_info();
     get_rsdp_info();
     get_firmware_info();
@@ -504,96 +715,23 @@ void get_bootloader_info(void){
     get_limine_info();
     get_paging_mode_info();
     get_smp_info();
+    get_processor_name(processor_name);
     get_hhdm_info();
     get_memory_map();
     get_kernel_to_virtual_offset();
 }
 
-
-
 void print_bootloader_info(void){
-
-    print("BOOTLOADER_NAME : ");
-    print(BOOTLOADER_NAME);
-    print("\n");
-
-    print("BOOTLOADER_VERSION : ");
-    print(BOOTLOADER_VERSION);
-    print("\n");
-
-    print("FIRMWARE_TYPE : ");
-    print(FIRMWARE_TYPE);
-    print("\n");
-
-
-    print("LIMINE_PAGING_MODE : ");
-    print(LIMINE_PAGING_MODE);
-    print("\n");
-
-    print("CPU_COUNT : ");
-    print_dec(CPU_COUNT);
-    print("\n");
-
-    print("STACK_SIZE : ");
-    print_dec(STACK_SIZE);
-    print("\n");
-
-    print("Total Memory : ");
-    print_size_with_units(TOTAL_MEMORY);
-    print("\n");
-
-    print("Usable Memory : ");
-    print_size_with_units(USABLE_MEMORY);
-    print("\n");
-
-    print("Reserved Memory : ");
-    print_size_with_units(RESERVED_MEMORY);
-    print("\n");
-
-    print("Bad Memory : ");
-    print_size_with_units(BAD_MEMORY);
-    print("\n");
-
-    print("Bootloader Reclaimable Memory : ");
-    print_size_with_units(BOOTLOADER_RECLAIMABLE_MEMORY);
-    print("\n");
-
-    print("ACPI Reclaimable Memory : ");
-    print_size_with_units(ACPI_RECLAIMABLE_MEMORY);
-    print("\n");
-
-    print("ACPI NVS Memory : ");
-    print_size_with_units(ACPI_NVS_MEMORY);
-    print("\n");
-
-    print("Unknown Memory : ");
-    print_size_with_units(UNKNOWN_MEMORY);
-    print("\n");
-
-    print("Kernel Modules Memory : ");
-    print_size_with_units(KERNEL_MODULES_MEMORY);
-    print("\n");
-
-    print("HIGHER_HALF_DIRECT_MAP_REVISION : ");
-    print_dec(HIGHER_HALF_DIRECT_MAP_REVISION);
-    print("\n");
-
-    print("HIGHER_HALF_DIRECT_MAP_OFFSET : ");
-    print_hex(HIGHER_HALF_DIRECT_MAP_OFFSET);
-    print("\n");
-
-    print("PHYSICAL_TO_VIRTUAL_OFFSET : ");
-    print_hex(PHYSICAL_TO_VIRTUAL_OFFSET);
-    print("\n");
-
+    print_kernel_modules_info();
+    print_rsdp_info();
+    print_firmware_info();
+    print_stack_info();
+    print_limine_info();
+    print_paging_mode_info();
+    print_smp_info();
+    print_processor_name(processor_name); 
+    print_hhdm_info();
+    print_memory_map();
+    print_kernel_to_virtual_offset();
 
 }
-
-
-
-
-
-
-
-
-

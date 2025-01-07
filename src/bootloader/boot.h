@@ -4,12 +4,17 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "../lib/string.h"
+
 #include "../limine/limine.h"
 #include "../driver/vga.h"
 
 extern char *FIRMWARE_TYPE;
 
 extern uint64_t CPU_COUNT;
+
+extern uint64_t *RSDP_PTR;
+extern uint64_t RSDP_REVISION;
 
 extern char *BOOTLOADER_NAME;
 extern char *BOOTLOADER_VERSION;
@@ -56,17 +61,38 @@ struct RSDP {
 //     uint64_t entries[];            // Array of pointers to other ACPI tables
 // };
 
-void get_kernel_modules_info(void);
-void get_rsdp_info(void);
-void get_firmware_info(void);
-void get_stack_info(void);
-void get_limine_info(void);
-void get_paging_mode_info(void);
-void get_smp_info(void);
-void get_hhdm_info(void);
-void get_memory_map(void);
-void print_memory_map(void);
-void get_kernel_to_virtual_offset(void);
+void get_kernel_modules_info();
+void print_kernel_modules_info();
 
-void get_bootloader_info(void);
-void print_bootloader_info(void);
+void get_rsdp_info();
+void print_rsdp_info();
+
+void get_firmware_info();
+void print_firmware_info();
+
+void get_stack_info();
+void print_stack_info();
+
+void get_limine_info();
+void print_limine_info();
+
+void get_paging_mode_info();
+void print_paging_mode_info();
+
+void get_smp_info();
+void print_smp_info();
+
+void get_hhdm_info();
+void print_hhdm_info();
+
+void get_memory_map();
+void print_memory_map();
+
+void get_kernel_to_virtual_offset();
+void print_kernel_to_virtual_offset();
+
+void get_processor_name(char *name_buffer);
+void print_processor_name();
+
+void get_bootloader_info();
+void print_bootloader_info();

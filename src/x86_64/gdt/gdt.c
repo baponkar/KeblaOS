@@ -32,39 +32,56 @@ void gdt_setup( uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint
     gdt_entries[idx].base_high    = (base >> 24) & 0xFF;  // 8 bit
 }
 
-
-
-// Version to create TSS and LGDT entries which require 2 GDT entries
-void gdt_setup_sysseg( uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity){
-    // First half of a system segment is the same as a regular segment
-    gdt_setup(idx, base, limit, access, granularity);
-
-    // Setup the following GDT entry with the upper 32 bits of the base and zero upper 32bits
-    // that are reserved.
-    gdt_setup(idx + 1, (base >> 48) & 0xffff , (base >> 32) & 0xffff, 0, 0);
-
-    // The line above is equivalent to:
-    // gdt_entries[idx+1].limit_low  = (base >> 32) & 0xFFFF; // lower 16 bits of the upper 32 bits of base
-    // gdt_entries[idx+1].base_low   = (base >> 48) & 0xFFFF; // upper 16 bits of the upper 32 bits of base
-    // gdt_entries[idx+1].base_middle  = 0;                   // Set the rest of fields to 0 (reserved)
-    // gdt_entries[idx+1].access       = 0;
-    // gdt_entries[idx+1].granularity  = 0;
-    // gdt_entries[idx+1].base_high    = 0;
+void print_gdt_entry(gdt_entry_t *entry) {
+    print("Limit Low: " );
+    print_hex((uint64_t) entry->limit_low);
+    print("\n");
+    print("Base Low: ");
+    print_hex((uint64_t) entry->base_low);
+    print("\n");
+    print("Base Middle: ");
+    print_hex((uint64_t) entry->base_middle);
+    print("\n");
+    print("Access: " );
+    print_hex((uint64_t) entry->access);
+    print("\n");
+    print("Granularity: ");
+    print_hex((uint64_t) entry->granularity);
+    print("\n");
+    print("Base High: ");
+    print_hex((uint64_t) entry->base_high);
+    print("\n");
 }
 
 
-
 void init_gdt(){
-    // index = 0, base = 0, limit = 0, access = 0, granularity = 0
-    gdt_setup(0, 0, 0x0, 0x0, 0x0);             // null descriptor selector : 0x0
+    //gdt_setup(index, base, limit, access, granularity)
+    gdt_setup(0, 0, 0x0, 0x0, 0x0);         // null descriptor selector : 0x0
     gdt_setup(1, 0, 0xFFFF, 0x9A, 0xA0);    // kernel mode code segment, selector : 0x8
     gdt_setup(2, 0, 0xFFFF, 0x92, 0xA0);    // kernel mode data segment, selector : 0x10
     gdt_setup(3, 0, 0xFFFF, 0xFA, 0xA0);    // user mode code segment, selector : 0x18 
     gdt_setup(4, 0, 0xFFFF, 0xF2, 0xA0);    // user mode data segment, selector : 0x20
 
+    // Print GDT entries for debugging
+    // for (int i = 0; i < 5; i++) {
+    //     print("GDT Entry : ");
+    //     print_dec(i);
+    //     print("\n");
+    //     print_gdt_entry(&gdt_entries[i]);
+    //     print("\n");
+    // }
+
     // Calculate the GDT limit and base address
-    gdtr_instance.limit = (uint16_t) (sizeof(gdt_entries) - 1); // sizeof(gdt_entries) = sizeof(gdt_entry_t) * 5 = 40
+    gdtr_instance.limit = (uint16_t) (5 * sizeof(gdt_entry_t) - 1); // sizeof(gdt_entries) = sizeof(gdt_entry_t) * 5 = 40
     gdtr_instance.base = (uint64_t) &gdt_entries;
+
+    // Print GDTR for debugging
+    // print("GDTR Limit: ");
+    // print_hex(gdtr_instance.limit);
+    // print("\n");
+    // print("GDTR Base: ");
+    // print_hex(gdtr_instance.base);
+    // print("\n");
 
     gdt_flush((gdtr_t *) &gdtr_instance);
 
