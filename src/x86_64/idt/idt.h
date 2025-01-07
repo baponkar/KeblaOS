@@ -25,6 +25,7 @@ struct idt_entry_struct
 typedef struct idt_entry_struct idt_entry_t;
 
 
+
 // A struct describing a pointer to an array of interrupt handlers.
 // This is in a format suitable for giving to 'lidt'.
 struct idt_ptr_struct
@@ -36,7 +37,9 @@ typedef struct idt_ptr_struct idt_ptr_t;
 
 void idt_set_gate(uint8_t index, uint64_t offset, uint16_t selector, uint8_t attr);
 void isr_install();
-void isr_handler(registers_t regs);
+void isr_handler(registers_t *regs);
+
+void debug_error_code(int err_code);
 
 void interrupt_install_handler(int int_no, void (*handler)(registers_t *r));
 void interrupt_uninstall_handler(int int_no);
@@ -47,6 +50,8 @@ void test_interrupt();
 void irq_remap(void);
 void irq_install();
 void irq_handler(registers_t *r);
+
+void gpf_handler(registers_t *regs);
 
 // Externel functions from ASM
 extern void idt_flush(uint64_t);

@@ -4,7 +4,6 @@ https://wiki.osdev.org/Interrupt_Descriptor_Table
 https://stackoverflow.com/questions/52214531/x86-64-order-of-passing-parameters-in-registers
 https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/05_InterruptHandling.md
 https://web.archive.org/web/20160326064709/http://jamesmolloy.co.uk/tutorial_html/4.-The%20GDT%20and%20IDT.html
-
 */
 
 #include "idt.h"
@@ -73,74 +72,182 @@ void isr_install(){
 
    // Setting Interrupts Service Routine Gate(ISR Gate)
    // https://stackoverflow.com/questions/9113310/segment-selector-in-ia-32
-   idt_set_gate(  0, (uint64_t)isr0 , 0x0008, 0x8E);  // selector = 0x08 = 0b1000, 64-bit Interrupt Gate => attr = 0x8E = 1000 1110, (p=0b1,0b0, dpl=0b00, gate type=0b1110)
-   idt_set_gate(  1, (uint64_t)isr1 , 0x0008, 0x8E);
-   idt_set_gate(  2, (uint64_t)isr2 , 0x0008, 0x8E);  // selector value is 1000 because GDT code segment index is 1
-   idt_set_gate(  3, (uint64_t)isr3 , 0x0008, 0x8E);  // selector = index + table_to_use + privilege
-   idt_set_gate(  4, (uint64_t)isr4 , 0x0008, 0x8E);  // selector  = 1<<3(index 1) + 0<<2(TI for GDT 0) + 0<<1(for ring 0) => 1000 + 000 + 00 = 1000 = 0x08
-   idt_set_gate(  5, (uint64_t)isr5 , 0x0008, 0x8E);
-   idt_set_gate(  6, (uint64_t)isr6 , 0x0008, 0x8E);
-   idt_set_gate(  7, (uint64_t)isr7 , 0x0008, 0x8E);
-   idt_set_gate(  8, (uint64_t)isr8 , 0x0008, 0x8E);
-   idt_set_gate(  9, (uint64_t)isr9 , 0x0008, 0x8E);
-   idt_set_gate( 10, (uint64_t)isr10 , 0x0008, 0x8E);
-   idt_set_gate( 11, (uint64_t)isr11 , 0x0008, 0x8E);
-   idt_set_gate( 12, (uint64_t)isr12 , 0x0008, 0x8E);
-   idt_set_gate( 13, (uint64_t)isr13 , 0x0008, 0x8E);
-   idt_set_gate( 14, (uint64_t)isr14 , 0x0008, 0x8E); // paging
-   idt_set_gate( 15, (uint64_t)isr15 , 0x0008, 0x8E);
-   idt_set_gate( 16, (uint64_t)isr16 , 0x0008, 0x8E);
-   idt_set_gate( 17, (uint64_t)isr17 , 0x0008, 0x8E);
-   idt_set_gate( 18, (uint64_t)isr18 , 0x0008, 0x8E);
-   idt_set_gate( 19, (uint64_t)isr19 , 0x0008, 0x8E);
-   idt_set_gate( 20, (uint64_t)isr20 , 0x0008, 0x8E);
-   idt_set_gate( 21, (uint64_t)isr21 , 0x0008, 0x8E);
-   idt_set_gate( 22, (uint64_t)isr22 , 0x0008, 0x8E);
-   idt_set_gate( 23, (uint64_t)isr23 , 0x0008, 0x8E);
-   idt_set_gate( 24, (uint64_t)isr24 , 0x0008, 0x8E);
-   idt_set_gate( 25, (uint64_t)isr25 , 0x0008, 0x8E);
-   idt_set_gate( 26, (uint64_t)isr26 , 0x0008, 0x8E);
-   idt_set_gate( 27, (uint64_t)isr27 , 0x0008, 0x8E);
-   idt_set_gate( 28, (uint64_t)isr28 , 0x0008, 0x8E);
-   idt_set_gate( 29, (uint64_t)isr29 , 0x0008, 0x8E);
-   idt_set_gate( 30, (uint64_t)isr30 , 0x0008, 0x8E);
-   idt_set_gate( 31, (uint64_t)isr31 , 0x0008, 0x8E);
+   idt_set_gate(  0, (uint64_t)&isr0 ,  0x8, 0x8E);  // selector = 0x08 = 0b1000, 64-bit Interrupt Gate => attr = 0x8E = 1 0 00 1110, (p=0b1,0b0, dpl=0b00, gate type=0b1110)
+   idt_set_gate(  1, (uint64_t)&isr1 ,  0x8, 0x8E);
+   idt_set_gate(  2, (uint64_t)&isr2 ,  0x8, 0x8E);  // selector value is 1000 because GDT code segment index is 1
+   idt_set_gate(  3, (uint64_t)&isr3 ,  0x8, 0x8E);  // selector = index + table_to_use + privilege
+   idt_set_gate(  4, (uint64_t)&isr4 ,  0x8, 0x8E);  // selector  = 1<<3(index 1) + 0<<2(TI for GDT 0) + 0<<1(for ring 0) => 1000 + 000 + 00 = 1000 = 0x08
+   idt_set_gate(  5, (uint64_t)&isr5 ,  0x8, 0x8E);
+   idt_set_gate(  6, (uint64_t)&isr6 ,  0x8, 0x8E);
+   idt_set_gate(  7, (uint64_t)&isr7 ,  0x8, 0x8E);
+   idt_set_gate(  8, (uint64_t)&isr8 ,  0x8, 0x8E);
+   idt_set_gate(  9, (uint64_t)&isr9 ,  0x8, 0x8E);
+   idt_set_gate( 10, (uint64_t)&isr10 , 0x8, 0x8E);
+   idt_set_gate( 11, (uint64_t)&isr11 , 0x8, 0x8E);
+   idt_set_gate( 12, (uint64_t)&isr12 , 0x8, 0x8E);
+   idt_set_gate( 13, (uint64_t)&isr13 , 0x8, 0x8E);
+   idt_set_gate( 14, (uint64_t)&isr14 , 0x8, 0x8E); // paging
+   idt_set_gate( 15, (uint64_t)&isr15 , 0x8, 0x8E);
+   idt_set_gate( 16, (uint64_t)&isr16 , 0x8, 0x8E);
+   idt_set_gate( 17, (uint64_t)&isr17 , 0x8, 0x8E);
+   idt_set_gate( 18, (uint64_t)&isr18 , 0x8, 0x8E);
+   idt_set_gate( 19, (uint64_t)&isr19 , 0x8, 0x8E);
+   idt_set_gate( 20, (uint64_t)&isr20 , 0x8, 0x8E);
+   idt_set_gate( 21, (uint64_t)&isr21 , 0x8, 0x8E);
+   idt_set_gate( 22, (uint64_t)&isr22 , 0x8, 0x8E);
+   idt_set_gate( 23, (uint64_t)&isr23 , 0x8, 0x8E);
+   idt_set_gate( 24, (uint64_t)&isr24 , 0x8, 0x8E);
+   idt_set_gate( 25, (uint64_t)&isr25 , 0x8, 0x8E);
+   idt_set_gate( 26, (uint64_t)&isr26 , 0x8, 0x8E);
+   idt_set_gate( 27, (uint64_t)&isr27 , 0x8, 0x8E);
+   idt_set_gate( 28, (uint64_t)&isr28 , 0x8, 0x8E);
+   idt_set_gate( 29, (uint64_t)&isr29 , 0x8, 0x8E);
+   idt_set_gate( 30, (uint64_t)&isr30 , 0x8, 0x8E);
+   idt_set_gate( 31, (uint64_t)&isr31 , 0x8, 0x8E);
     
-   idt_set_gate(128, (uint64_t)isr128, 0x0008, 0x8E); //System call Write
-   idt_set_gate(177, (uint64_t)isr177, 0x0008, 0x8E); //System call Read
+   idt_set_gate(128, (uint64_t)&isr128, 0x8, 0x8E); //System call Write
+   idt_set_gate(177, (uint64_t)&isr177, 0x8, 0x8E); //System call Read
 }
 
 
 // This gets called from our ASM interrupt handler stub.
-void isr_handler(registers_t regs)
+void isr_handler(registers_t *regs)
 {
-    if(regs.int_no == 128){
+    if(regs->int_no == 128){
         print("Interrupt 128\n");
         // syscall_handler(&regs);
         return;
     }
-    else if(regs.int_no == 177){
+    else if(regs->int_no == 177){
         print("Interrupt 177\n");
         // syscall_handler(&regs);
         return;
     }
-    else if (regs.int_no == 14) { // Check if it is a page fault
+    else if (regs->int_no == 14) { // Check if it is a page fault
         // print("Interrupt 14\n");
-        page_fault_handler(&regs);
+        page_fault_handler(regs);
         return;
-    }
-    else if(regs.int_no < 32){
+    }else if(regs->int_no == 13){
+        // print("test\n");
+        
+        debug_error_code(regs->err_code);
+        gpf_handler(regs);
+        return;
+    }else if(regs->int_no < 32){
         print("recieved interrupt: ");
-        print_dec(regs.int_no);
+        print_dec(regs->int_no);
         putchar('\n');
-        print(exception_messages[regs.int_no]);
+
+        print(exception_messages[regs->int_no]);
         putchar('\n');
+
         print("Error Code: ");
-        print_dec(regs.err_code);
+        print_dec(regs->err_code);
         print("\n");
+
+        print("Division by zero at RIP: ");
+        print_hex(regs->iret_rip);
+        print("\n");
+
+        debug_error_code(regs->err_code);
+
         print("System Halted!\n");
         halt_kernel();
     }
+}
+
+
+void gpf_handler(registers_t *regs){
+    print("recieved interrupt: ");
+    print_dec(regs->int_no);
+    putchar('\n');
+    print(exception_messages[regs->int_no]);
+    putchar('\n');
+    print("Error Code: ");
+    print_dec(regs->err_code);
+    print("\n");
+
+    print("CS: ");
+    print_hex(regs->iret_cs);
+    print(", RIP: ");
+    print_hex(regs->iret_rip);
+    print("\n");
+
+    print("Stack Contents:\n");
+    uint64_t *rsp = (uint64_t *)regs->iret_rsp;
+    for (int i = 0; i < 19; i++) {
+        print("  [");
+        print_hex((uint64_t)(rsp + i));
+        print("] = ");
+        print_hex(rsp[i]);
+        print("\n");
+    }
+
+    // debug_error_code(regs->err_code);
+    print("System Halted!\n");
+    halt_kernel();   
+}
+
+
+
+void debug_error_code(int err_code) {
+    // Print the raw error code in decimal and hexadecimal
+    print("Error Code (Decimal): ");
+    print_dec(err_code);
+    print("\n");
+
+    print("Error Code (Hexadecimal): ");
+    print_hex(err_code);
+    print("\n");
+
+    // Decode the error code bits
+    print("Decoding Error Code:\n");
+
+    // Bit 0: External Event
+    if (err_code & 0x1) {
+        print("  - External: The fault was caused by an external event (e.g., hardware interrupt).\n");
+    } else {
+        print("  - External: The fault was not caused by an external event.\n");
+    }
+
+    // Bit 1: Table Indicator (GDT/LDT)
+    if (err_code & 0x2) {
+        print("  - Table: The fault involves the Local Descriptor Table (LDT).\n");
+    } else {
+        print("  - Table: The fault involves the Global Descriptor Table (GDT).\n");
+    }
+
+    // Bit 2: Index (IDT/GDT)
+    if (err_code & 0x4) {
+        print("  - Index: The fault involves an Interrupt Descriptor Table (IDT) entry.\n");
+    } else {
+        print("  - Index: The fault involves a segment selector in the GDT/LDT.\n");
+    }
+
+    // Bits 3-15: Segment Selector Index
+    int selector_index = (err_code >> 3) & 0x1FFF; // Extract bits 3-15
+    print("  - Selector Index: ");
+    print_dec(selector_index);
+    print("\n");
+
+    // Additional information based on the selector index
+    if (selector_index == 0) {
+        print("    - Null Selector: The fault was caused by a null segment selector.\n");
+    } else {
+        print("    - The fault was caused by a non-null segment selector.\n");
+    }
+
+    // Print a summary of the error
+    print("\nSummary:\n");
+    if (err_code & 0x4) {
+        print("The fault likely occurred due to an invalid or misconfigured IDT entry.\n");
+    } else {
+        print("The fault likely occurred due to an invalid or misconfigured GDT/LDT entry.\n");
+    }
+
+    print("Check the segment selector index (");
+    print_dec(selector_index);
+    print(") in the corresponding descriptor table.\n");
 }
 
 
@@ -221,22 +328,22 @@ void irq_remap(void)
 void irq_install()
 {
     // Setup for Interrupts Request Gate (IRQ Gate)
-    idt_set_gate(32, (uint64_t)irq0, 0x0008, 0x8E); // Timer Interrupt
-    idt_set_gate(33, (uint64_t)irq1, 0x08, 0x8E);
-    idt_set_gate(34, (uint64_t)irq2, 0x08, 0x8E);
-    idt_set_gate(35, (uint64_t)irq3, 0x08, 0x8E);
-    idt_set_gate(36, (uint64_t)irq4, 0x08, 0x8E);
-    idt_set_gate(37, (uint64_t)irq5, 0x08, 0x8E);
-    idt_set_gate(38, (uint64_t)irq6, 0x08, 0x8E);
-    idt_set_gate(39, (uint64_t)irq7, 0x08, 0x8E);
-    idt_set_gate(40, (uint64_t)irq8, 0x08, 0x8E);
-    idt_set_gate(41, (uint64_t)irq9, 0x08, 0x8E);
-    idt_set_gate(42, (uint64_t)irq10, 0x08, 0x8E);
-    idt_set_gate(43, (uint64_t)irq11, 0x08, 0x8E);
-    idt_set_gate(44, (uint64_t)irq12, 0x08, 0x8E);
-    idt_set_gate(45, (uint64_t)irq13, 0x08, 0x8E);
-    idt_set_gate(46, (uint64_t)irq14, 0x08, 0x8E);
-    idt_set_gate(47, (uint64_t)irq15, 0x08, 0x8E);
+    idt_set_gate(32, (uint64_t)&irq0, 0x08, 0x8E); // Timer Interrupt
+    idt_set_gate(33, (uint64_t)&irq1, 0x08, 0x8E);
+    idt_set_gate(34, (uint64_t)&irq2, 0x08, 0x8E);
+    idt_set_gate(35, (uint64_t)&irq3, 0x08, 0x8E);
+    idt_set_gate(36, (uint64_t)&irq4, 0x08, 0x8E);
+    idt_set_gate(37, (uint64_t)&irq5, 0x08, 0x8E);
+    idt_set_gate(38, (uint64_t)&irq6, 0x08, 0x8E);
+    idt_set_gate(39, (uint64_t)&irq7, 0x08, 0x8E);
+    idt_set_gate(40, (uint64_t)&irq8, 0x08, 0x8E);
+    idt_set_gate(41, (uint64_t)&irq9, 0x08, 0x8E);
+    idt_set_gate(42, (uint64_t)&irq10, 0x08, 0x8E);
+    idt_set_gate(43, (uint64_t)&irq11, 0x08, 0x8E);
+    idt_set_gate(44, (uint64_t)&irq12, 0x08, 0x8E);
+    idt_set_gate(45, (uint64_t)&irq13, 0x08, 0x8E);
+    idt_set_gate(46, (uint64_t)&irq14, 0x08, 0x8E);
+    idt_set_gate(47, (uint64_t)&irq15, 0x08, 0x8E);
 }
 
 #define PIC_EOI 0x20 // End of Interrupt

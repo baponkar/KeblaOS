@@ -83,6 +83,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(KERNEL_DIR)/kernel.c -o $(BUILD_DIR)/kernel.o
 
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/boot.c -o $(BUILD_DIR)/boot.o
+	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/acpi.c -o $(BUILD_DIR)/acpi.o
 
 	$(GCC) $(GCC_FLAG) -c $(UTIL_DIR)/util.c -o $(BUILD_DIR)/util.o
 
@@ -125,6 +126,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 # Linking object files into kernel binary
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/boot.o \
+						$(BUILD_DIR)/acpi.o \
 						$(BUILD_DIR)/util.o \
 						$(BUILD_DIR)/ports.o \
 						$(BUILD_DIR)/font.o \
@@ -153,6 +155,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
 						$(BUILD_DIR)/boot.o \
+						$(BUILD_DIR)/acpi.o \
 						$(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/util.o \
 						$(BUILD_DIR)/ports.o \
@@ -180,11 +183,11 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						
 
 
-# $(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin
-# 	$(OBJDUMP) -DxS $< >$@
+$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin
+	$(OBJDUMP) -DxS $< >$@
 
 # Creating ISO image
-$(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBUG_DIR)/objdump.txt
+$(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin $(DEBUG_DIR)/objdump.txt
 	# CLONING LIMINE BOOTLOADER
 	# git clone https://github.com/limine-bootloader/limine.git --branch=v8.x-binary --depth=1
 	# make -C limine
@@ -236,6 +239,7 @@ run: $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
 
 help:
 	@echo "Available targets:"
+	@echo "  make -B              - For Fresh build"
 	@echo "  make run             - Run the default target (displays this help message)"
 	@echo "  make build           - Compile the project (simulated in this example)"
 	@echo "  make clean           - Clean up build artifacts"

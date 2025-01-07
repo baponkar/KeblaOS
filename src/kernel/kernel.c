@@ -1,11 +1,10 @@
 
 /*
 Kernel.c
-Build Date  : 16/12/2024
-Description :
-Reference   : 
-              
-              https://wiki.osdev.org/Limine
+Build Date  : 16-12-2024
+Last Update : 05-01-2025
+Description : KeblaOS is a x86 architecture based 64 bit Operating System. Currently it is using Limine Bootloader.
+Reference   : https://wiki.osdev.org/Limine
               https://github.com/limine-bootloader/limine-c-template
               https://wiki.osdev.org/Limine_Bare_Bones
 
@@ -13,27 +12,9 @@ Reference   :
 
 #include "kernel.h"
 
-
-
 char *OS_NAME = "KeblaOS";
 char *OS_VERSION = "0.11";
 char *BUILD_DATE = "16/12/2024";
-
-
-
-// Set the base revision to 3, this is recommended as this is the latest
-// base revision described by the Limine boot protocol specification.
-// See specification for further info.
-
-__attribute__((used, section(".limine_requests")))
-static volatile LIMINE_BASE_REVISION(0);
-
-__attribute__((used, section(".requests_start_marker")))
-static volatile LIMINE_REQUESTS_START_MARKER;
-
-__attribute__((used, section(".requests_end_marker")))
-static volatile LIMINE_REQUESTS_END_MARKER;
-
 
 void kmain(void){
 
@@ -41,56 +22,29 @@ void kmain(void){
 
     get_bootloader_info();
 
+    print(OS_NAME);
+    print("-");
+    print(OS_VERSION);
+    print("\n");
+
     init_gdt();
-    check_gdt();
+    // check_gdt();
 
     init_idt();
     // test_interrupt();
 
-    // initialise_paging();
+    initialise_paging();
     // test_paging();
 
     // init_timer();
     
-    // initKeyboard();
+    initKeyboard();
 
-    // init_mem();
+    init_mem();
     // print_memory_map();
 
-    // init_kheap();
-    // heap_test();
+    init_kheap();
+    heap_test();
 
     halt_kernel();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
