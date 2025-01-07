@@ -76,7 +76,7 @@ NASM_FLAG = -g -Wall -f elf64
 OBJDUMP = /usr/local/x86_64-elf/bin/x86_64-elf-objdump
 
 # Default target
-default: run
+default: build
 
 # Building kernel.o
 $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
@@ -226,7 +226,7 @@ clean:
 	#rm -rf $(ISO_DIR)
 
 # Running by qemu
-run: $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
+run: 
 	# GDB Debuging
 	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso  -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine ubuntu -s -S
 
@@ -239,7 +239,7 @@ run: $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
 
 help:
 	@echo "Available targets:"
-	@echo "  make -B              - For Fresh build"
+	@echo "  make -B              - For Fresh rebuild"
 	@echo "  make run             - Run the default target (displays this help message)"
 	@echo "  make build           - Compile the project (simulated in this example)"
 	@echo "  make clean           - Clean up build artifacts"
