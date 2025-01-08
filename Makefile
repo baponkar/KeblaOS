@@ -218,6 +218,7 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin $(DEBUG
 	make clean
 
 build: $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
+	make run
 
 
 # Clean build files

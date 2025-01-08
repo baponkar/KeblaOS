@@ -90,16 +90,16 @@ uint64_t kmalloc_ap(uint64_t sz, int align, uint64_t *phys)  // page aligned and
 /* Dynamic Memory allocation by jamesmolloy.co.uk*/
 
 
-#define KHEAP_INITIAL_SIZE  0x100000    // 1 MB
+#define KHEAP_INITIAL_SIZE  0x200000    // 2 MB
 #define HEAP_INDEX_SIZE     0x20000     // 128 KB
 #define HEAP_MAGIC          0x123890AB  // Magic number for error checking and identification.
-#define HEAP_MIN_SIZE       0x4000     // 16 KB
+#define HEAP_MIN_SIZE       0x4000      // 16 KB
 
 
 void init_kheap()
 {
     uint64_t start_addr = PAGE_ALIGN(KERNEL_MEM_START_ADDRESS);
-    uint64_t end_addr = PAGE_ALIGN(KERNEL_MEM_START_ADDRESS + 2*KHEAP_INITIAL_SIZE);
+    uint64_t end_addr = PAGE_ALIGN(KERNEL_MEM_START_ADDRESS + KHEAP_INITIAL_SIZE);
     uint64_t max_addr = PAGE_ALIGN(KERNEL_MEM_START_ADDRESS + KERNEL_MEM_LENGTH);
 
     
@@ -108,26 +108,12 @@ void init_kheap()
 
     // Now allocate those pages we mapped earlier.
     for (uint64_t i = start_virtual_addr; i < end_virtual_addr; i += PAGE_SIZE){
-
-        // print("virtual address: ");
-        // print_hex(i);
-        // print("\n");
-        // page_t *page = get_page(i, 1, current_pml4);
-
-        // print("page: ");
-        // print_hex((uint64_t)page);
-        // print("\n");
         alloc_frame( get_page(i, 1, current_pml4), 0, 0);
-
     }
 
 
 
     kheap = create_heap(start_addr, end_addr, max_addr, 0, 0);  // supervisor = 0, readonly = 0
-
-    print("kheap pointer: ");
-    print_hex((uint64_t)kheap);
-    print("\n");
     
     print("Kernel Heap initialized successfully!\n");
 }
@@ -273,15 +259,10 @@ static int64_t find_smallest_hole(uint64_t size, uint8_t page_align, heap_t *hea
 }
 
 
-
-
 static int8_t header_t_less_than(void*a, void *b)
 {
    return (((header_t*)a)->size < ((header_t*)b)->size) ? 1:0;
 }
-
-
-
 
 static void expand(uint64_t new_size, heap_t *heap)
 {
@@ -339,6 +320,7 @@ static uint64_t contract(uint64_t new_size, heap_t *heap)
 heap_t *create_heap(uint64_t start_addr, uint64_t end_addr, uint64_t max_addr, uint8_t supervisor, uint8_t readonly) {
     // Ensure valid memory range
     if (end_addr <= start_addr || max_addr < end_addr) {
+        print("Invalid heap range.\n");
         return NULL; // Invalid heap range
     }
 
@@ -357,15 +339,7 @@ heap_t *create_heap(uint64_t start_addr, uint64_t end_addr, uint64_t max_addr, u
     heap->ordered_array = place_ordered_array( (void*)start_addr, HEAP_INDEX_SIZE, &header_t_less_than);
 
     // Adjust the start address forward to where we can start putting data
-    start_addr += sizeof(type_t) * HEAP_INDEX_SIZE;
-
-    // print("start address: ");
-    // print_hex(start_addr);
-    // print("\n");
-
-    // print("end address: ");
-    // print_hex(end_addr);
-    // print("\n");
+    start_addr += sizeof(type_t) *HEAP_INDEX_SIZE;
 
     // Ensure the start address is page-aligned
     if ((start_addr & 0xFFFFFFFFFFFFF000) != 0) {
@@ -390,10 +364,6 @@ heap_t *create_heap(uint64_t start_addr, uint64_t end_addr, uint64_t max_addr, u
     hole->size = end_addr - start_addr;
     hole->magic = HEAP_MAGIC;
     hole->is_hole = 1;
-
-    // print("hole: ");
-    // print_hex((uint64_t) hole);
-    // print("\n");
 
     // Insert the hole into the ordered array
     insert_ordered_array((void*)hole, &heap->ordered_array);
