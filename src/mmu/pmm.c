@@ -46,9 +46,6 @@ The memory map is giving
 
 // As limine put kernel into higher half so we set userspace at first usable space and set kernel space at second usable space
 
-
-
-
 // one row of bitmap can store information(free/use) of 8 * 4 KB = 32 Kb memory page(8 pages)
 // A bitset of frames - used or free.
 
