@@ -556,4 +556,3 @@ void display_image( int x, int y, const uint64_t* image_data, int img_width, int
     }
 }
 
-

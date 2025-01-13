@@ -29,6 +29,8 @@ __attribute__((used, section(".requests_end_marker")))
 static volatile LIMINE_REQUESTS_END_MARKER;
 
 
+
+
 // Get Firmware info
 __attribute__((used, section(".requests")))
 static volatile struct limine_firmware_type_request firmware_type_request = {
@@ -82,18 +84,18 @@ uint64_t MULTIPROCESSOR_OFFSET;
 
 void get_smp_info(){
     if(smp_request.response != NULL){
-        uint64_t revision = smp_request.response->revision;
-        uint64_t flags = smp_request.response->flags;
-        uint64_t bsp_lapic_id = smp_request.response->bsp_lapic_id; // The Local APIC ID of the bootstrap processor.
+        // uint64_t revision = smp_request.response->revision;
+        // uint64_t flags = smp_request.response->flags;
+        // uint64_t bsp_lapic_id = smp_request.response->bsp_lapic_id; // The Local APIC ID of the bootstrap processor.
         CPU_COUNT = smp_request.response->cpu_count; //  How many CPUs are present. It includes the bootstrap processor.
-        struct limine_smp_info **cpus = smp_request.response->cpus; // Pointer to an array of cpu_count pointers to struct limine_smp_info structures.
-        for(size_t i=0;i<(size_t) CPU_COUNT;i++){
-            uint64_t processor_id = cpus[0]->processor_id;
-            uint64_t lapic_id = cpus[0]->lapic_id;
-            uint64_t reserved = cpus[0]->reserved;
-            limine_goto_address goto_address = cpus[0]->goto_address;
-            uint64_t extra_argument = cpus[0]->extra_argument;
-        }
+        //struct limine_smp_info **cpus = smp_request.response->cpus; // Pointer to an array of cpu_count pointers to struct limine_smp_info structures.
+        //for(size_t i=0;i<(size_t) CPU_COUNT;i++){
+            // uint64_t processor_id = cpus[0]->processor_id;
+            // uint64_t lapic_id = cpus[0]->lapic_id;
+            // uint64_t reserved = cpus[0]->reserved;
+            // limine_goto_address goto_address = cpus[0]->goto_address;
+            // uint64_t extra_argument = cpus[0]->extra_argument;
+        //}
     }else{
         CPU_COUNT = 0;
         print("No SMP info found!\n");
@@ -166,7 +168,7 @@ char *BOOTLOADER_VERSION;
 
 void get_limine_info(){
     if(limine_info_request.response != NULL){
-        uint64_t revision = limine_info_request.response->revision;
+        // uint64_t revision = limine_info_request.response->revision;
         BOOTLOADER_NAME = limine_info_request.response->name;
         BOOTLOADER_VERSION = limine_info_request.response->version;
     }else{
@@ -238,6 +240,7 @@ uint64_t KERNEL_ADDRESS_REVISION;
 uint64_t PHYSICAL_BASE;
 uint64_t VIRTUAL_BASE;
 uint64_t PHYSICAL_TO_VIRTUAL_OFFSET;
+
 
 void get_kernel_to_virtual_offset(){
     if(kernel_address_request.response != NULL){
@@ -322,9 +325,9 @@ static volatile struct limine_module_request module_request = {
 
 void get_kernel_modules_info(){
     if(module_request.response != NULL){
-        uint64_t revision = module_request.response->revision;
-        uint64_t module_count = module_request.response->module_count;
-        struct limine_file **modules = module_request.response->modules;
+        //uint64_t revision = module_request.response->revision;
+        //uint64_t module_count = module_request.response->module_count;
+        // struct limine_file **modules = module_request.response->modules;
     }else{
         print("No kernel modules found!\n");
     }
@@ -332,24 +335,24 @@ void get_kernel_modules_info(){
 
 void print_kernel_modules_info(){
     if(module_request.response != NULL){
-        uint64_t revision = module_request.response->revision;
+        // uint64_t revision = module_request.response->revision;
         uint64_t module_count = module_request.response->module_count;
         struct limine_file **modules = module_request.response->modules;
         for(size_t i=0;i<(size_t) module_count;i++){
-            uint64_t revision = modules[i]->revision;
+            // uint64_t revision = modules[i]->revision;
             void *address = modules[i]->address;
             uint64_t size = modules[i]->size;
             char *path = modules[i]->path;
-            char *cmdline = modules[i]->cmdline;
-            uint32_t media_type = modules[i]->media_type;
-            uint32_t unused = modules[i]->unused;
-            uint32_t tftp_ip = modules[i]->tftp_ip;
-            uint32_t tftp_port = modules[i]->tftp_port;
+            // char *cmdline = modules[i]->cmdline;
+            // uint32_t media_type = modules[i]->media_type;
+            // uint32_t unused = modules[i]->unused;
+            // uint32_t tftp_ip = modules[i]->tftp_ip;
+            // uint32_t tftp_port = modules[i]->tftp_port;
             uint32_t partition_index = modules[i]->partition_index;
             uint32_t mbr_disk_id = modules[i]->mbr_disk_id;
-            struct limine_uuid gpt_disk_uuid = modules[i]->gpt_disk_uuid;
-            struct limine_uuid gpt_part_uuid = modules[i]->gpt_part_uuid;
-            struct limine_uuid part_uuid = modules[i]->part_uuid;
+            // struct limine_uuid gpt_disk_uuid = modules[i]->gpt_disk_uuid;
+            // struct limine_uuid gpt_part_uuid = modules[i]->gpt_part_uuid;
+            // struct limine_uuid part_uuid = modules[i]->part_uuid;
 
             print("Module Path : ");
             print(path);
@@ -364,7 +367,7 @@ void print_kernel_modules_info(){
             print("\n");
 
             print("Module Media Type : ");
-            print_dec(media_type);
+            // print_dec(media_type);
             print("\n");
 
             print("Module Partition Index : ");
@@ -497,7 +500,7 @@ void get_memory_map(){
 
     if(memmap_request.response != NULL){
 
-        uint64_t revision = memmap_request.response->revision;
+        // uint64_t revision = memmap_request.response->revision;
         entry_count = memmap_request.response->entry_count;
         entries = memmap_request.response->entries;
 

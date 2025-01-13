@@ -122,14 +122,10 @@ void isr_handler(registers_t *regs)
         print("Interrupt 177\n");
         // syscall_handler(&regs);
         return;
-    }
-    else if (regs->int_no == 14) { // Check if it is a page fault
-        // print("Interrupt 14\n");
+    }else if (regs->int_no == 14) { // Check if it is a page fault
         page_fault_handler(regs);
         return;
     }else if(regs->int_no == 13){
-        // print("test\n");
-        
         debug_error_code(regs->err_code);
         gpf_handler(regs);
         return;
@@ -375,5 +371,15 @@ void irq_handler(registers_t *r)
 }
 
 
+
+// Function to disable interrupts
+void disable_interrupts() {
+    asm volatile("cli"); // Clear the interrupt flag
+}
+
+// Function to enable interrupts
+void enable_interrupts() {
+    asm volatile("sti"); // Set the interrupt flag
+}
 
 

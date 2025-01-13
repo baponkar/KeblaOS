@@ -4,14 +4,14 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "../limine/limine.h"
-#include "../util/util.h"   
+#include "../limine/limine.h" 
+
 #include "../x86_64/idt/idt.h"
+
 #include  "../driver/vga.h"
 #include "../limine/limine.h"
 #include "pmm.h"
-#include "kheap.h"
-#include "../kernel/kernel.h"
+
 
 #define PAGE_SIZE    4096
 #define PAGE_PRESENT 0x1
@@ -24,7 +24,6 @@
 #define PD_INDEX(va)     (((va) >> 21) & 0x1FF)  // Bits 21-29
 #define PT_INDEX(va)     (((va) >> 12) & 0x1FF)  // Bits 12-20
 #define PAGE_OFFSET(va)  ((va) & 0xFFF)          // Bits 0-11
-
 
 
 // pml4, pdpr and pd entry
@@ -77,17 +76,28 @@ typedef struct pml4 { // pml4 structure is containing 512 pdpt directory entries
     dir_entry_t entry_t[512]; // Each entry have Physical addresses of PDPTs
 } __attribute__((aligned(PAGE_SIZE))) pml4_t;
 
+
+// different pml4 directory pointer
 extern pml4_t *user_pml4; 
 extern pml4_t *kernel_pml4;
 extern pml4_t *current_pml4;
 
+// allocate a page into a physical free frame
 void alloc_frame(page_t *page, int is_kernel, int is_writeable);
+
+// free page from physical frame
 void free_frame(page_t *page);
-void print_cr3();
+
+// start paging system
 void initialise_paging();
-void switch_to_page_table(pml4_t *pml4);
+
+// return page pointer from virtual address
 page_t *get_page(uint64_t address, int make, pml4_t *pml4);
-void page_fault_handler(registers_t *regs);
+
+// print debug message for page fault
+void page_fault_handler(registers_t* regs);
+
+// test different paging system
 void test_paging();
 
 
