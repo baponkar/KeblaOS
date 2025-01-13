@@ -1,21 +1,6 @@
 # Automatic Bulding Process by GNU Makefile.
 # Reference: https://www.gnu.org/software/make/manual/html_node/index.html
 # Reference: https://wiki.osdev.org/Makefile
-# Reference: https://www.gnu.org/software/make/manual/html_node/Automatic-Variables.html
-# Reference: https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html
-# Reference: https://www.gnu.org/software/make/manual/html_node/Prerequisite-Types.html
-# Reference: https://www.gnu.org/software/make/manual/html_node/Pattern-Rules.html
-# Reference: https://www.gnu.org/software/make/manual/html_node/Static-Pattern.html
-# Reference: https://www.gnu.org/software/make/manual/html_node/Implicit-Rules.html
-# Reference: https://www.gnu.org/software/make/manual/html_node/Chained-Rules.html
-# Reference: https://www.gnu.org/software/make/manual/html_node/Pattern-Intro.html
-# Reference: https://www.gnu.org/software/make/manual/html_node/Pattern-Rules.html
-# Reference: https://www.gnu.org/software/make/manual/html_node/Pattern-Match.html
-# Reference: https://www.gnu.org/software/make/manual/html_node/Pattern-Examples.html
-# Reference: https://www.gnu.org/software/make/manual/html_node/Pattern-Replace.html
-# Reference: https://www.gnu.org/software/make/manual/html_node/Pattern-Search.html
-# Reference: https://www.gnu.org/software/make/manual/html_node/Pattern-Database.html
-# Reference: https://www.gnu.org/software/make/manual/html_node/Pattern-Usage.html
 
 # Last Updated : 04-01-2025
 # Author : Bapon Kar
@@ -82,14 +67,16 @@ default: build
 $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(KERNEL_DIR)/kernel.c -o $(BUILD_DIR)/kernel.o
 
+	$(GCC) $(GCC_FLAG) -c $(UTIL_DIR)/util.c -o $(BUILD_DIR)/util.o
+
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/boot.c -o $(BUILD_DIR)/boot.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/acpi.c -o $(BUILD_DIR)/acpi.o
 
-	$(GCC) $(GCC_FLAG) -c $(UTIL_DIR)/util.c -o $(BUILD_DIR)/util.o
-
+	
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/ports.c -o $(BUILD_DIR)/ports.o
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga.c -o $(BUILD_DIR)/vga.o
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/font.c -o $(BUILD_DIR)/font.o
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/greek_font.c -o $(BUILD_DIR)/greek_font.o
 
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/image_data.c -o $(BUILD_DIR)/image_data.o
 
@@ -103,31 +90,29 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 
 	$(GCC) $(GCC_FLAG) -c $(IDT_DIR)/idt.c -o $(BUILD_DIR)/idt.o
 	$(NASM) $(NASM_FLAG) $(IDT_DIR)/idt_load.asm -o $(BUILD_DIR)/idt_load.o
-	$(NASM) $(NASM_FLAG) $(IDT_DIR)/idt_load.asm -o $(BUILD_DIR)/idt_load.o
+
 
 	$(GCC) $(GCC_FLAG) -c $(PIT_DIR)/pit_timer.c -o $(BUILD_DIR)/pit_timer.o
 
-	$(GCC) $(GCC_FLAG) -c $(RTC_DIR)/rtc.c -o $(BUILD_DIR)/rtc.o
 
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/keyboard.c -o $(BUILD_DIR)/keyboard.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/speaker.c -o $(BUILD_DIR)/speaker.o
-	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/shell.c -o $(BUILD_DIR)/shell.o
-	$(NASM) $(NASM_FLAG) $(USR_DIR)/print_reg_values.asm -o $(BUILD_DIR)/print_reg_values.o
 
-	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/kheap.c -o $(BUILD_DIR)/kheap.o
+	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/shell.c -o $(BUILD_DIR)/shell.o
+
+	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/kmalloc.c -o $(BUILD_DIR)/kmalloc.o
+	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/pmm.c -o $(BUILD_DIR)/pmm.o
 	$(NASM) $(NASM_FLAG) $(MMU_DIR)/load_paging.asm -o $(BUILD_DIR)/load_paging.o
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/paging.c -o $(BUILD_DIR)/paging.o
-	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/pmm.c -o $(BUILD_DIR)/pmm.o
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/vmm.c -o $(BUILD_DIR)/vmm.o
-
+	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/kheap.c -o $(BUILD_DIR)/kheap.o
 	
+
 
 
 # Linking object files into kernel binary
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/boot.o \
 						$(BUILD_DIR)/acpi.o \
-						$(BUILD_DIR)/util.o \
 						$(BUILD_DIR)/ports.o \
 						$(BUILD_DIR)/font.o \
 						$(BUILD_DIR)/image_data.o \
@@ -137,27 +122,27 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/vga.o \
 						$(BUILD_DIR)/gdt.o \
 						$(BUILD_DIR)/gdt_load.o \
+						$(BUILD_DIR)/util.o \
 						$(BUILD_DIR)/idt.o \
 						$(BUILD_DIR)/idt_load.o \
-						$(BUILD_DIR)/pit_timer.o \
-						$(BUILD_DIR)/rtc.o \
-						$(BUILD_DIR)/keyboard.o \
-						$(BUILD_DIR)/speaker.o \
-						$(BUILD_DIR)/shell.o \
-						$(BUILD_DIR)/print_reg_values.o \
-						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/load_paging.o \
 						$(BUILD_DIR)/paging.o \
 						$(BUILD_DIR)/pmm.o \
-						$(BUILD_DIR)/vmm.o
-						
+						$(BUILD_DIR)/vmm.o \
+						$(BUILD_DIR)/kmalloc.o \
+						$(BUILD_DIR)/pit_timer.o \
+						$(BUILD_DIR)/keyboard.o  \
+						$(BUILD_DIR)/shell.o \
+						$(BUILD_DIR)/greek_font.o \
+						$(BUILD_DIR)/kheap.o
+
+
 
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
 						$(BUILD_DIR)/boot.o \
 						$(BUILD_DIR)/acpi.o \
 						$(BUILD_DIR)/kernel.o \
-						$(BUILD_DIR)/util.o \
 						$(BUILD_DIR)/ports.o \
 						$(BUILD_DIR)/font.o \
 						$(BUILD_DIR)/image_data.o \
@@ -167,27 +152,26 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/vga.o \
 						$(BUILD_DIR)/gdt.o \
 						$(BUILD_DIR)/gdt_load.o \
+						$(BUILD_DIR)/util.o \
 						$(BUILD_DIR)/idt.o \
 						$(BUILD_DIR)/idt_load.o \
-						$(BUILD_DIR)/pit_timer.o \
-						$(BUILD_DIR)/rtc.o \
-						$(BUILD_DIR)/keyboard.o \
-						$(BUILD_DIR)/speaker.o \
-						$(BUILD_DIR)/shell.o \
-						$(BUILD_DIR)/print_reg_values.o \
-						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/load_paging.o \
 						$(BUILD_DIR)/paging.o \
 						$(BUILD_DIR)/pmm.o \
-						$(BUILD_DIR)/vmm.o
-						
+						$(BUILD_DIR)/vmm.o \
+						$(BUILD_DIR)/kmalloc.o \
+						$(BUILD_DIR)/pit_timer.o \
+						$(BUILD_DIR)/keyboard.o \
+						$(BUILD_DIR)/shell.o \
+						$(BUILD_DIR)/greek_font.o \
+						$(BUILD_DIR)/kheap.o
 
 
-$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin
-	$(OBJDUMP) -DxS $< >$@
+#$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin
+#	$(OBJDUMP) -DxS $< >$@
 
 # Creating ISO image
-$(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin $(DEBUG_DIR)/objdump.txt
+$(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBUG_DIR)/objdump.txt
 	# CLONING LIMINE BOOTLOADER
 	# git clone https://github.com/limine-bootloader/limine.git --branch=v8.x-binary --depth=1
 	# make -C limine

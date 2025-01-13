@@ -11,6 +11,8 @@
 
 extern char *FIRMWARE_TYPE;
 
+
+
 extern uint64_t CPU_COUNT;
 
 extern uint64_t *RSDP_PTR;
@@ -44,6 +46,8 @@ extern uint64_t USER_MEM_LENGTH;
 
 extern uint64_t TOTAL_MEMORY;
 
+
+
 struct RSDP {
     char signature[8];    // "RSD PTR "
     uint8_t checksum;     // Checksum for the first 20 bytes
@@ -66,6 +70,9 @@ void print_kernel_modules_info();
 
 void get_rsdp_info();
 void print_rsdp_info();
+
+void get_framebuffer_info();
+void print_framebuffer_info();
 
 void get_firmware_info();
 void print_firmware_info();

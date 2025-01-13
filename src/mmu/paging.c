@@ -11,8 +11,8 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 
 #include "paging.h"
 
-extern void enable_paging(uint64_t pml4_address);
-extern void disable_paging();
+extern void enable_paging(uint64_t pml4_address); // present in load_paging.asm
+extern void disable_paging();   //  present in load_paging.asm
 
 
 pml4_t *current_pml4;
@@ -20,7 +20,7 @@ pml4_t *user_pml4;
 pml4_t *kernel_pml4;
 
 
-// allocate a page with the physical frame
+// allocate a page with the free physical frame
 void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
     if (page->frame != 0) {
         print("Frame was already allocated!\n");
@@ -39,7 +39,7 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
     page->present = 1;       // Mark it as present.
     page->rw = (is_writeable) ? 1 : 0; // Should the page be writeable?
     page->user = (is_kernel) ? 0 : 1; // Should the page be user-mode?
-    page->frame = (KERNEL_MEM_START_ADDRESS + (bit_no * FRAME_SIZE)) >> 12;
+    page->frame = (KERNEL_MEM_START_ADDRESS + (bit_no * FRAME_SIZE)) >> 12; // Store physical base address
     KERNEL_MEM_START_ADDRESS += FRAME_SIZE; // Update the new KERNEL_MEM_START_ADDRESS
 }
 
@@ -47,24 +47,24 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
 // Function to deallocate a frame.
 void free_frame(page_t *page)
 {
-   uint64_t frame_addr;
-   if (!(frame_addr=page->frame))
+   uint64_t frame_addr = page->frame;
+   if (!(frame_addr))
    {
        return; // The given page didn't actually have an allocated frame!
    }
    else
    {
         uint64_t frame_idx = ADDR_TO_BIT_NO(frame_addr);
-       clear_frame(frame_idx); // Frame is now free again.
-       page->frame = 0; // Page now doesn't have a frame.
+        clear_frame(frame_idx); // Frame is now free again.
+        page->frame = 0; // Page now doesn't have a frame.
    }
 }
 
 
+// return current cr3 address i.e. root pml4 pointer address
 uint64_t get_cr3_addr() {
     uint64_t cr3;
-    // Read the CR3 register
-    asm volatile("mov %%cr3, %0" : "=r"(cr3));
+    asm volatile("mov %%cr3, %0" : "=r"(cr3)); // Read the CR3 register
 
     return cr3;
 }
@@ -108,22 +108,24 @@ static pdpt_t* alloc_pdpt() {
     return pdpt;
 }
 
-page_t* get_page(uint64_t address, int make, pml4_t* pml4) {
-    uint64_t pml4_index = PML4_INDEX(address);
-    uint64_t pdpt_index = PDPT_INDEX(address);
-    uint64_t pd_index = PD_INDEX(address);
-    uint64_t pt_index = PT_INDEX(address);
+// This function will return corresponding page pointer from virtual address
+// The below function will not create a new pdpt, pd, pt and pages if already present for given virtual address
+page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
+    uint64_t pml4_index = PML4_INDEX(va);
+    uint64_t pdpt_index = PDPT_INDEX(va);
+    uint64_t pd_index = PD_INDEX(va);
+    uint64_t pt_index = PT_INDEX(va);
 
-    // Get the PML4 entry
+    // Get the PML4 entry from pml4_index which is found from va
     dir_entry_t* pml4_entry = &pml4->entry_t[pml4_index];
 
-    // Check if the PML4 entry is present
+    // the below if block will create pdpt if not present and make = 1
     if (!pml4_entry->present) {
         if (!make) {
             return NULL; // Page table does not exist and we are not allowed to create it
         }
         // Allocate a new PDPT
-        pdpt_t* pdpt = alloc_pdpt();
+        pdpt_t* pdpt = alloc_pdpt(); // Creating a new pdpt
         if (!pdpt) {
             return NULL; // Allocation failed
         }
@@ -135,10 +137,10 @@ page_t* get_page(uint64_t address, int make, pml4_t* pml4) {
     }
 
     // Get the PDPT entry
-    pdpt_t* pdpt = (pdpt_t*)(pml4_entry->base_addr << 12);
-    dir_entry_t* pdpt_entry = &pdpt->entry_t[pdpt_index];
+    pdpt_t* pdpt = (pdpt_t*)(pml4_entry->base_addr << 12); // Converting base address into pdpt pointer
+    dir_entry_t* pdpt_entry = &pdpt->entry_t[pdpt_index]; // 
 
-    // Check if the PDPT entry is present
+    // the below if block will create pd if not present and make = 1
     if (!pdpt_entry->present) {
         if (!make) {
             return NULL; // Page directory does not exist and we are not allowed to create it
@@ -159,7 +161,7 @@ page_t* get_page(uint64_t address, int make, pml4_t* pml4) {
     pd_t* pd = (pd_t*)(pdpt_entry->base_addr << 12);
     dir_entry_t* pd_entry = &pd->entry_t[pd_index];
 
-    // Check if the PD entry is present
+    // the below if block will create pt if not present and make = 1 
     if (!pd_entry->present) {
         if (!make) {
             return NULL; // Page table does not exist and we are not allowed to create it
@@ -176,13 +178,15 @@ page_t* get_page(uint64_t address, int make, pml4_t* pml4) {
         pd_entry->base_addr = (uint64_t)pt >> 12; // Base address of PT
     }
 
-    // Get the PT entry
+    // Get the PT entry from pd_entry->base_addr
     pt_t* pt = (pt_t*)(pd_entry->base_addr << 12);
+
+    // return page pointer
     return &pt->pages[pt_index];
 }
 
 
-
+// The below function will print some debug message for page fault 
 void page_fault_handler(registers_t *regs)
 {
     // A page fault has occurred.
@@ -231,6 +235,19 @@ void test_paging(){
 
     // uint64_t* invalid_address = (uint64_t*)0xFFFFFFFF90000000;  // Unmapped address
     // *invalid_address = 0x0;  // This should trigger a page fault
+
+    // Check if a virtual address is already mapped (no allocation)
+    page_t* page = get_page(0x400000, 0, current_pml4);
+    if (page == NULL) {
+        print("Page not mapped yet!\n");
+    }
+
+    // Allocate a page if it does not exist
+    page_t* page2 = get_page(0x400000, 1, current_pml4);
+    if (page2 != NULL) {
+        print("Page successfully allocated!\n");
+    }
+
 
     print("Finish Paging Test\n");
 }

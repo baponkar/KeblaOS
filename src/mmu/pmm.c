@@ -45,50 +45,50 @@ The memory map is giving
 
 
 // As limine put kernel into higher half so we set userspace at first usable space and set kernel space at second usable space
-
+// This file will set or free a 4KB physical Frame.
 // one row of bitmap can store information(free/use) of 8 * 4 KB = 32 Kb memory page(8 pages)
 // A bitset of frames - used or free.
+
 
 uint64_t *frames; // start of bitset frames
 uint64_t nframes; // Total frames
 
 
-
+// set the value of frames array by using bit no
 void set_frame(uint64_t bit_no) {
-    uint64_t bit_idx = INDEX_FROM_BIT_NO(bit_no);
-    uint64_t bit_off = OFFSET_FROM_BIT_NO(bit_no);
+    uint64_t bitmap_idx = INDEX_FROM_BIT_NO(bit_no);
+    uint64_t bitmap_off = OFFSET_FROM_BIT_NO(bit_no);
 
-    assert(bit_off < BITMAP_SIZE);
+    assert(bitmap_off < BITMAP_SIZE); // check either bit_off is less than total BITMAP_SIZE i.e. 64
 
-    frames[bit_idx] |= (0x1ULL << bit_off); // Set the bit
+    frames[bitmap_idx] |= (0x1ULL << bitmap_off); // Set the bit
 }
 
 // Static function to clear a bit in the frames bitset
-void clear_frame(uint64_t frame_idx)
+void clear_frame(uint64_t bit_no)
 {
-   uint64_t bitmap_idx = INDEX_FROM_BIT_NO(frame_idx);
-   uint64_t bitmap_off = OFFSET_FROM_BIT_NO(frame_idx);
+   uint64_t bitmap_idx = INDEX_FROM_BIT_NO(bit_no);
+   uint64_t bitmap_off = OFFSET_FROM_BIT_NO(bit_no);
    frames[bitmap_idx] &= ~(0x1ULL << bitmap_off);  // clears bit of frames
 }
 
 // Static function to test if a bit is set or not.
-uint64_t test_frame(uint64_t frame_idx)
+uint64_t test_frame(uint64_t bit_no)
 {
-   uint64_t bitmap_idx = INDEX_FROM_BIT_NO(frame_idx);
-   uint64_t bitmap_off = OFFSET_FROM_BIT_NO(frame_idx);
+   uint64_t bitmap_idx = INDEX_FROM_BIT_NO(bit_no);
+   uint64_t bitmap_off = OFFSET_FROM_BIT_NO(bit_no);
    return (frames[bitmap_idx] & (0x1ULL << bitmap_off));  // returns 0 or 1
 }
 
 
 // Static function to find the first free frame.
-// The below function will return a physical address or invalid frame address -1
+// The below function will return a valid bit number or invalid bit no -1
 uint64_t free_frame_bit_no()
 {
     for (uint64_t bitmap_idx = 0; bitmap_idx < INDEX_FROM_BIT_NO(nframes); bitmap_idx++)
     {
-        if (frames[bitmap_idx] != 0xFFFFFFFFFFFFFFFF) // if all bits not set
+        if (frames[bitmap_idx] != 0xFFFFFFFFFFFFFFFF) // if all bits not set, i.e. there has at least one bit is clear
         {    
-            // at least one bit is free here.
             for (uint64_t bitmap_off = 0; bitmap_off < BITMAP_SIZE; bitmap_off++)
             {
                 uint64_t toTest = (uint64_t) 0x1ULL << bitmap_off; // Ensure the shift is handled as a 64-bit value.ULL means Unsigned Long Long 
@@ -106,40 +106,11 @@ uint64_t free_frame_bit_no()
 
 
 
-void init_mem(){
+void init_pmm(){
+    print("Strating PMM initialization...\n");
     nframes = (uint64_t) KERNEL_MEM_LENGTH / FRAME_SIZE;
     frames = (uint64_t*) kmalloc_a(nframes * BITMAP_SIZE, 1); // Allocate enough bytes for the bitmap
-    memset(frames, 0, nframes * BITMAP_SIZE); // Zero out the bitmap
-    
-    print("Successfully initialized memory!\n");
+    memset(frames, 0, nframes * BITMAP_SIZE); // Zero out the bitmap array
+    print("Successfully initialized PMM!\n");
 }
-
-
-void print_size_with_units(uint64_t size) {
-    const char *units[] = {"Bytes", "KB", "MB", "GB", "TB"};
-    int unit_index = 0;
-
-    // Determine the appropriate unit
-    while (size >= 1024 && unit_index < 4) {
-        size /= 1024;
-        unit_index++;
-    }
-
-    // Print the size with the unit
-    print_dec((uint64_t)size); // Print the integer part
-    print(" ");
-    print(units[unit_index]);
-}
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -27,13 +27,13 @@ void execute_command(char* command) {
     } else if(strcmp(command, "bootinfo") == 0){
         print_bootloader_info();
     } else if (strcmp(command, "time") == 0){
-        print_current_time();
+        // print_current_time();
         // printing current time
     } else if (strcmp(command, "uptime") == 0){
         print("Up time : \n");
         // printing the time run this os
     }else if (strcmp(command, "regvalue") == 0){
-        print_registers();
+        // print_registers();
     }else if (strcmp(command, "checkgdt") == 0){
         check_gdt();
     }else if (strcmp(command, "features") == 0){

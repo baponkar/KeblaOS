@@ -18,9 +18,12 @@ char *BUILD_DATE = "16/12/2024";
 
 void kmain(void){
 
+    get_bootloader_info();
+
     vga_init();
 
-    get_bootloader_info();
+    // print_memory_map();
+    // print_bootloader_info();
 
     print(OS_NAME);
     print("-");
@@ -36,15 +39,18 @@ void kmain(void){
     initialise_paging();
     // test_paging();
 
-    // init_timer();
+    init_timer();
     
     initKeyboard();
 
-    init_mem();
-    // print_memory_map();
+    init_pmm();
+  
+    init_vmm();
+    test_vmm();
 
-    init_kheap();
-    heap_test();
+    // init_kheap();
+    // heap_test();
+    // test_kheap_alloc_free();
 
     halt_kernel();
 }

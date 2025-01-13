@@ -6,9 +6,10 @@
 
 #include "../../driver/vga.h"
 #include "../../driver/ports.h"
+
 #include "../../util/util.h"
 
-#include "../../mmu/paging.h"
+
 
 
 struct idt_entry_struct
@@ -37,6 +38,7 @@ typedef struct idt_ptr_struct idt_ptr_t;
 
 void idt_set_gate(uint8_t index, uint64_t offset, uint16_t selector, uint8_t attr);
 void isr_install();
+typedef struct registers registers_t;
 void isr_handler(registers_t *regs);
 
 void debug_error_code(int err_code);
@@ -50,6 +52,9 @@ void test_interrupt();
 void irq_remap(void);
 void irq_install();
 void irq_handler(registers_t *r);
+
+void disable_interrupts();
+void enable_interrupts();
 
 void gpf_handler(registers_t *regs);
 

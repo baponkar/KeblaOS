@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <stdint.h>
@@ -7,10 +8,12 @@
 #include "../util/util.h"
 #include "../limine/limine.h"
 #include "../bootloader/boot.h"
+#include "kmalloc.h"
 #include "paging.h"
 #include "../bootloader/boot.h"
 #include  "../driver/vga.h"
 #include "../kernel/kernel.h"
+#include "../lib/assert.h"
 
 #define FRAME_SIZE 4096   // 4 KB
 #define BITMAP_SIZE 64 // 64 bits = 8 bytes
@@ -35,18 +38,11 @@
 extern uint64_t *frames; // start of bitset frames
 extern uint64_t nframes; // Total frames
 
-
-
-
 void set_frame(uint64_t frame_addr);
 void clear_frame(uint64_t frame_addr);
 uint64_t test_frame(uint64_t frame_addr);
 uint64_t free_frame_bit_no();
 
-void print_size_with_units(uint64_t size);
-void print_memory_map(void);
-
-
-void init_mem();
+void init_pmm();
 
 
