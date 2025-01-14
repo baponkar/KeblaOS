@@ -85,7 +85,7 @@ void init_gdt(){
 
     gdt_flush((gdtr_t *) &gdtr_instance);
 
-    print("Successfully GDT Enabled!\n");
+    print("Successfully GDT initialized.\n");
 }
 
 

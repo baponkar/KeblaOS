@@ -45,7 +45,7 @@ vm_object_t* vm_objs = NULL;
 
 
 void init_vmm(){
-    print("Start VMM initializing...\n");;
+    print("Start VMM initialization...\n");;
     KERNEL_MEM_START_VIRT_ADDRESS = phys_to_vir(KERNEL_MEM_START_ADDRESS);
     KERNEL_MEM_END_VIRT_ADDRESS = phys_to_vir(KERNEL_MEM_END_ADDRESS);
     KERNEL_MEM_VIRT_LENGTH = KERNEL_MEM_END_VIRT_ADDRESS - KERNEL_MEM_START_VIRT_ADDRESS;
@@ -78,7 +78,7 @@ void init_vmm(){
     // print_hex(USER_MEM_VIRT_LENGTH);
     // print("\n");
 
-    printf("Successfully initialized VMM!\n");
+    printf("Successfully initialized VMM.\n");
 }
 
 
@@ -150,7 +150,7 @@ void* vmm_alloc(size_t length, size_t flags, void* arg){
 }
 
 
-
+// This function will physical memory into 
 void map_memory(void* _pml4, void* phys, void* virt, size_t flags){
     pml4_t *pml4 = (pml4_t *) _pml4;
     uint64_t pml4_index = PML4_INDEX((uint64_t)virt);
@@ -158,7 +158,6 @@ void map_memory(void* _pml4, void* phys, void* virt, size_t flags){
     uint64_t pd_index = PD_INDEX((uint64_t)virt);
     uint64_t pt_index = PT_INDEX((uint64_t)virt);
 
- 
     if (!pml4->entry_t[pml4_index].present) {
         pml4->entry_t[pml4_index].base_addr = (uint64_t)kmalloc(PAGE_SIZE) >> 12; // using physical address
         pml4->entry_t[pml4_index].present = 1;
@@ -190,7 +189,7 @@ void map_memory(void* _pml4, void* phys, void* virt, size_t flags){
 
 void test_vmm() {
 
-    print("Allocating 4096 bytes of memory...\n");
+    print("\nAllocating 4096 bytes of memory...\n");
     void* allocated_memory = vmm_alloc(4096, VM_FLAG_WRITE | VM_FLAG_USER, NULL);
     if (allocated_memory) {
         print("Memory allocated at: ");
@@ -201,6 +200,7 @@ void test_vmm() {
     }
 
     print("Mapping physical memory to virtual address...\n");
+
     map_memory(current_pml4, (void*)0x100000, allocated_memory, VM_FLAG_WRITE | VM_FLAG_USER);
 
     *(int*) allocated_memory = 25;

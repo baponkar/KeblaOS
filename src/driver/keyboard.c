@@ -224,7 +224,7 @@ void keyboardHandler(registers_t *regs){
 
 void initKeyboard(){
     interrupt_install_handler(1, &keyboardHandler);
-    print("Successfully Keyboard initialized!\n");
+    print("Successfully KEYBOARD initialized.\n");
 }
 
 
