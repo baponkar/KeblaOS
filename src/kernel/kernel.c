@@ -36,21 +36,20 @@ void kmain(void){
     init_idt();
     // test_interrupt();
 
-    initialise_paging();
-    // test_paging();
-
     init_timer();
     
     initKeyboard();
 
     init_pmm();
-  
-    init_vmm();
-    test_vmm();
 
-    // init_kheap();
-    // heap_test();
-    // test_kheap_alloc_free();
+    initialise_paging();
+    // test_paging();
+
+    init_vmm();
+    // test_vmm();
+
+    init_kheap();
+    test_heap();
 
     halt_kernel();
 }

@@ -75,7 +75,7 @@ void initialise_paging()
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
     current_pml4 = (pml4_t *) get_cr3_addr();
 
-    print("Successfully Paging have initialized!\n");
+    print("Successfully Paging have initialized.\n");
 }
 
 

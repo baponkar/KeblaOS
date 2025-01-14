@@ -279,7 +279,7 @@ void init_idt(){
     irq_remap();
     irq_install();
     enable_interrupts();
-    print("Successfully IDT Enabled!\n");
+    print("Successfully IDT Initialized.\n");
 }
 
 
