@@ -24,5 +24,11 @@
 #include "../mmu/vmm.h"
 #include "../mmu/kheap.h"
 
+#include "../process/ps.h"
 
-void kmain(void);
+#include "../driver/window.h"
+
+#include "../driver/mouse.h"
+
+
+void kmain();
