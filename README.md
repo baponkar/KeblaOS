@@ -28,14 +28,17 @@
 - [x] A basic Shell
 - [x] Driver :
     * VGA
+    * VGA Window manager
     * Keyboard
     * Ports
     * Speaker
+    * Mouse Driver
+    * The Schedular and Process
 - [x] MMU
     * PMM
     * 4 Level 4KB Paging 
     * VMM
-    * Dynamic Memory Management
+    * KHEAP (Dynamic Kernel Heap allocation)
 - [x] Standard Library initialization [stdio, math, string, assert]
 
 ------------------------------------------------------
