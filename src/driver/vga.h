@@ -14,6 +14,9 @@
 #define VGA_INDEX_REG_PORT 0x3D4    // VGA CRT Controller Index Register
 #define VGA_DATA_REG_PORT 0x3D5     // 0x3D5: VGA CRT Controller Data Register
 
+extern size_t FRAMEBUFFER_WIDTH;
+extern size_t FRAMEBUFFER_HEIGHT;
+
 #define COLOR_BLACK       0xFF000000  // Black
 #define COLOR_WHITE       0xFFFFFFFF  // White
 #define COLOR_RED         0xFFFF0000  // Red

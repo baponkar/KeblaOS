@@ -44,5 +44,5 @@ uint64_t test_frame(uint64_t frame_addr);
 uint64_t free_frame_bit_no();
 
 void init_pmm();
-
+void test_pmm();
 

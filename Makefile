@@ -23,6 +23,7 @@ PIT_DIR = $(SRC_DIR)/x86_64/pit
 RTC_DIR = $(SRC_DIR)/x86_64/rtc
 MMU_DIR = $(SRC_DIR)/mmu
 USR_DIR = $(SRC_DIR)/usr
+PS_DIR = $(SRC_DIR)/process
 
 
 
@@ -80,6 +81,8 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/image_data.c -o $(BUILD_DIR)/image_data.o
 
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/window.c -o $(BUILD_DIR)/window.o
+
 
 	$(GCC) $(GCC_FLAG) -c $(LIB_DIR)/string.c -o $(BUILD_DIR)/string.o
 	$(GCC) $(GCC_FLAG) -c $(LIB_DIR)/stdlib.c -o $(BUILD_DIR)/stdlib.o
@@ -97,6 +100,8 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/keyboard.c -o $(BUILD_DIR)/keyboard.o
 
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/mouse.c -o $(BUILD_DIR)/mouse.o
+
 	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/shell.c -o $(BUILD_DIR)/shell.o
 
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/kmalloc.c -o $(BUILD_DIR)/kmalloc.o
@@ -105,6 +110,8 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/paging.c -o $(BUILD_DIR)/paging.o
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/vmm.c -o $(BUILD_DIR)/vmm.o
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/kheap.c -o $(BUILD_DIR)/kheap.o
+
+	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/ps.c -o $(BUILD_DIR)/ps.o
 	
 
 
@@ -134,7 +141,10 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/keyboard.o  \
 						$(BUILD_DIR)/shell.o \
 						$(BUILD_DIR)/greek_font.o \
-						$(BUILD_DIR)/kheap.o
+						$(BUILD_DIR)/kheap.o \
+						$(BUILD_DIR)/ps.o \
+						$(BUILD_DIR)/window.o \
+						$(BUILD_DIR)/mouse.o
 
 
 
@@ -164,7 +174,10 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/shell.o \
 						$(BUILD_DIR)/greek_font.o \
-						$(BUILD_DIR)/kheap.o
+						$(BUILD_DIR)/kheap.o \
+						$(BUILD_DIR)/ps.o \
+						$(BUILD_DIR)/window.o \
+						$(BUILD_DIR)/mouse.o
 
 
 #$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin

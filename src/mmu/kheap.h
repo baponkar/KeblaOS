@@ -23,9 +23,6 @@ typedef struct heap_node heap_node_t;
 
 void init_kheap();
 
-void *third_alloc(size_t size);
-void third_free(uint64_t *ptr);
-
 void *fourth_alloc(size_t size);
 void fourth_free(uint64_t *ptr);
 

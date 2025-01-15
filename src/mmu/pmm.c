@@ -114,3 +114,12 @@ void init_pmm(){
     print("Successfully initialized PMM!\n");
 }
 
+void test_pmm(){
+    print("Frames Pointer Address : ");
+    print_hex((uint64_t) frames);
+    print("\n");
+
+    print("Total Frames : ");
+    print_dec(nframes);
+    print("\n");
+}

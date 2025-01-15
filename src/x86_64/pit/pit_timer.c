@@ -4,57 +4,43 @@ https://wiki.osdev.org/Programmable_Interval_Timer
 
 #include "pit_timer.h"
 
-uint64_t max_value = 18446744073709551615ULL; // Unsigned long long literal
 
-const uint32_t freq = 1193180; // ticks per second
-// PIT Frequency = 119318.16666 Mhz
-// uint64_t divisor = 1193182 / freq; // 1.1931816666 ~ MHz 1.193182 MHz
-uint64_t divisor = 1000;
+volatile uint64_t ticks = 0;
+const uint64_t max_value = 18446744073709551615ULL; // Unsigned long long literal
+const uint32_t freq = 1193180;  // PIT frequency (Hz)
+uint16_t divisor = 1000;        // Default divisor for ~1ms tick rate
 
-uint64_t ticks = 0;
-
-uint32_t sec = 0;
-
-void timerHadler(registers_t *regs){
-    if(ticks >= max_value){
-        ticks = 0;
-    }
+void timerHandler(registers_t *regs) {
+    (void)regs; // Suppress unused parameter warning if not used.
     ticks++;
 
-    if (ticks % freq == 0) {
-        sec++;
-
-        // Calculate hours, minutes, and seconds
-        uint32_t hours = sec / 3600;
-        uint32_t minutes = (sec % 3600) / 60;
-        uint32_t seconds = sec % 60;
-
-       // Display time in HH:MM:SS format at position (0, 0)
-       // print_dec(sec);
+    if (ticks >= max_value) {
+        ticks = 0;
     }
+    
+    // print("tick ");
 }
 
-
-void init_timer(){
+void init_timer() {
     ticks = 0;
-    interrupt_install_handler(0, &timerHadler);
+    interrupt_install_handler(0, &timerHandler);  // IRQ0 for PIT timer
 
-    // 0011 0110
-    outb(PIT_COMMAND_PORT, 0x36);
-    outb(PIT_CHANNEL_0, (uint8_t)(divisor & 0xFF));  // FF = 1111 1111 => last eight digit
-    outb(PIT_CHANNEL_0, (uint8_t)((divisor >> 8) & 0xFF)); 
-    print("Successfully PIT timer initialized.\n");
+    // Set PIT frequency using divisor (frequency = 1193180 / divisor)
+    divisor = freq / 1000;  // Set divisor for ~1ms tick rate
+    outb(0x43, 0x36);  // Command port: 0x36 for repeating square wave mode
+    outb(0x40, (uint8_t)(divisor & 0xFF));      // Low byte of divisor
+    outb(0x40, (uint8_t)((divisor >> 8) & 0xFF)); // High byte of divisor
+
+    print("PIT timer successfully initialized.\n");
 }
 
-
+// Delay function using busy-wait based on ticks
 void delay(uint32_t ms) {
-    uint64_t endTicks = ticks + (ms * freq / 1000);  // Convert milliseconds to ticks
+    uint64_t endTicks = ticks + (ms * (freq / divisor) / 1000);  // Convert milliseconds to ticks
     while (ticks < endTicks) {
-        // Wait until the desired number of ticks has passed
-        print_dec(ticks);
-        print("\n");
+        // Busy wait for the timer to reach the desired tick count
     }
+    // print("delay function completed\n");
 }
-
 
 

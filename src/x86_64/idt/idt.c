@@ -117,8 +117,7 @@ void isr_handler(registers_t *regs)
         print("Interrupt 128\n");
         // syscall_handler(&regs);
         return;
-    }
-    else if(regs->int_no == 177){
+    }else if(regs->int_no == 177){
         print("Interrupt 177\n");
         // syscall_handler(&regs);
         return;
