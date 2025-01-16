@@ -9,60 +9,35 @@
 
 #include "../x86_64/pit/pit_timer.h"
 
+#include "../mmu/kheap.h"
+
 #include "vga.h"
 
-#define MAX_WINDOWS 10
-
-
 typedef struct {
-    int x, y, width, height;
-    uint64_t color;
-    char text[16];
-    void (*on_click)();
-} button_t;
-
+    int x, y;                  // Position on screen
+    int width, height;         // Dimensions of the window
+    uint64_t background_color; // Background color
+    char title[256];           // Title of the window
+    uint64_t *framebuffer;     // Area where the window content will be drawn
+} Window;
 
 typedef struct {
     int x, y;
-    int width, height;
-    uint64_t border_color;
-    uint64_t background_color;
-    bool active;
-    char title[32];
-    button_t buttons[5]; // Maximum of 5 buttons per window
-    size_t button_count;
-} window_t;
+    bool clicked;
+} Mouse;
 
-typedef enum { KEY_PRESS, MOUSE_CLICK, WINDOW_RESIZE } event_type_t;
-typedef struct {
-    event_type_t type;
-    int x, y;
-    char keycode;
-} event_t;
+Window* create_window(int x, int y, int width, int height, uint64_t background_color, const char* title);
+void draw_window(Window* win);
+void destroy_window(Window* win);
+void add_window(Window* win);
+void render_all_windows();
+void update_mouse_position(int x, int y, bool clicked);
+Window* get_window_at(int x, int y);
+void handle_mouse_input();
+void set_focus_window(Window* win);
+void bring_window_to_front(Window* win);
+void draw_button(Window* win, int x, int y, int width, int height, const char* label);
+void set_focus_window(Window* win);
+void bring_window_to_front(Window* win);
 
-
-extern window_t windows[MAX_WINDOWS];
-
-void push_event(event_t event);
-event_t pop_event();
-
-void create_window(int x, int y, int width, int height, const char* title);
-void draw_window(window_t* window);
-void move_window(window_t* window, int new_x, int new_y);
-void close_window(window_t* window);
-void render_gui();
-
-void setup_gui();
-
-void draw_cursor(int x, int y);
-void move_cursor(int new_x, int new_y);
-
-void draw_button(button_t* button);
-void add_button_to_window(window_t* window, int x, int y, int width, int height, const char* text, void (*on_click)());
-
-void on_ok_click();
-void on_cancel_click();
-
-
-void show_loading_animation_graphic(int x, int y, int width, uint64_t border_color, uint64_t fill_color, int duration_ms);
 
