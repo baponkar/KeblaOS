@@ -7,7 +7,7 @@ https://web.archive.org/web/20160326061042/http://jamesmolloy.co.uk/tutorial_htm
 https://github.com/dreamportdev/Osdev-Notes/blob/master/04_Memory_Management/03_Paging.md
 https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 
-*/
+*/ 
 
 #include "paging.h"
 
@@ -90,6 +90,7 @@ static pt_t* alloc_pt() {
     return pt;
 }
 
+
 // Function to allocate a new page directory
 static pd_t* alloc_pd() {
     pd_t* pd = (pd_t*)kmalloc_a(sizeof(pd_t), 1);
@@ -98,6 +99,7 @@ static pd_t* alloc_pd() {
     }
     return pd;
 }
+
 
 // Function to allocate a new page directory pointer table
 static pdpt_t* alloc_pdpt() {
@@ -108,13 +110,16 @@ static pdpt_t* alloc_pdpt() {
     return pdpt;
 }
 
+
 // This function will return corresponding page pointer from virtual address
 // The below function will not create a new pdpt, pd, pt and pages if already present for given virtual address
 page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
+
     uint64_t pml4_index = PML4_INDEX(va);
     uint64_t pdpt_index = PDPT_INDEX(va);
     uint64_t pd_index = PD_INDEX(va);
     uint64_t pt_index = PT_INDEX(va);
+    uint64_t page_offset = PAGE_OFFSET(va);
 
     // Get the PML4 entry from pml4_index which is found from va
     dir_entry_t* pml4_entry = &pml4->entry_t[pml4_index];
@@ -133,7 +138,7 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
         pml4_entry->present = 1;
         pml4_entry->rw = 1; // Read/write
         pml4_entry->user = 0; // Kernel mode
-        pml4_entry->base_addr = (uint64_t)pdpt >> 12; // Base address of PDPT
+        pml4_entry->base_addr = (uint64_t) pdpt >> 12; // Base address of PDPT
     }
 
     // Get the PDPT entry
@@ -181,8 +186,25 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
     // Get the PT entry from pd_entry->base_addr
     pt_t* pt = (pt_t*)(pd_entry->base_addr << 12);
 
+    page_t *page = (page_t *) &pt->pages[pt_index];
+
+    if(!page->present){
+        page->present = 1;
+        page->rw = 1;
+        page->user = 0;
+    }
+
+    print("Page flags: present=");
+    print_dec(page->present);
+    print(", rw=");
+    print_dec(page->rw);
+    print(", user=");
+    print_dec(page->user);
+    print("\n");
+
+
     // return page pointer
-    return &pt->pages[pt_index];
+    return page;
 }
 
 
@@ -219,7 +241,6 @@ void page_fault_handler(registers_t *regs)
     // Halt the system to prevent further errors (for now).
     print("Halting the system due to page fault.\n");
     halt_kernel();
-
 }
 
 
@@ -242,14 +263,13 @@ void test_paging(){
         print("Page not mapped yet!\n");
     }
 
+
     // Allocate a page if it does not exist
     page_t* page2 = get_page(0x400000, 1, current_pml4);
     if (page2 != NULL) {
         print("Page successfully allocated!\n");
     }
 
-
     print("Finish Paging Test\n");
 }
-
 

@@ -28,7 +28,7 @@ void kmain(){
     print(OS_VERSION);
     print("\n");
 
-    display_image((FRAMEBUFFER_WIDTH - KEBLAOS_ICON_320X200X32_WIDTH)/2 , (FRAMEBUFFER_HEIGHT - KEBLAOS_ICON_320X200X32_WIDTH)/2, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
+    // display_image((FRAMEBUFFER_WIDTH - KEBLAOS_ICON_320X200X32_WIDTH)/2 , (FRAMEBUFFER_HEIGHT - KEBLAOS_ICON_320X200X32_WIDTH)/2, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
 
     get_bootloader_info();
     // print_bootloader_info();
@@ -44,8 +44,8 @@ void kmain(){
 
     initialise_paging();
     // test_paging();
+    // map_identity_higher_half();
 
-    init_vmm();
     // test_vmm();
 
     init_kheap();
@@ -54,6 +54,45 @@ void kmain(){
     init_timer();
     
     initKeyboard();
+
+    vm_alloc(0xFFFFFFFF80006000);
+
+
+
+    init_scheduler();      // Initialize the scheduler
+
+    while (1) {
+        scheduler_tick();  // Run the scheduler
+    }
+
+    // // Create a few windows
+    // Window* win1 = create_window(10, 10, 200, 100, 0xAAAAAA, "Window 1");
+    // Window* win2 = create_window(30, 30, 200, 100, 0xBBBBBB, "Window 2");
+    
+    // add_window(win1);
+    // add_window(win2);
+    
+    // // Draw all windows
+    // render_all_windows();
+    
+    // // Create a button on window 1
+    // draw_button(win1, 50, 50, 500, 400, "Click Me");
+
+    // int mouse_x = 0;
+    // int mouse_y = 0;
+    // bool mouse_clicked = false;
+    // // Main loop
+    // while (1) {
+    //     // Get input and update mouse position
+    //     // Assume you have some function for this
+    //     update_mouse_position(mouse_x, mouse_y, mouse_clicked);
+
+    //     // Handle mouse input
+    //     handle_mouse_input();
+
+    //     // Render windows periodically
+    //     render_all_windows();
+    // }
 
     halt_kernel();
 }

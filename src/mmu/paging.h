@@ -8,6 +8,8 @@
 
 #include "../x86_64/idt/idt.h"
 
+#include "../lib/stdio.h"
+
 #include  "../driver/vga.h"
 #include "../limine/limine.h"
 #include "pmm.h"

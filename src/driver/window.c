@@ -1,114 +1,134 @@
 
 #include "window.h"
 
-window_t windows[MAX_WINDOWS];
-size_t window_count = 0;
-int cursor_x = 0, cursor_y = 0;
-
-void create_window(int x, int y, int width, int height, const char* title) {
-    if (window_count >= MAX_WINDOWS) return;
-    window_t* win = &windows[window_count++];
+Window* create_window(int x, int y, int width, int height, uint64_t background_color, const char* title) {
+    Window* win = (Window*)kheap_alloc(sizeof(Window));
+    if (!win) {
+        return NULL;
+    }
     win->x = x;
     win->y = y;
     win->width = width;
     win->height = height;
-    win->border_color = COLOR_WHITE;
-    win->background_color = COLOR_GRAY;
-    win->active = true;
-    strncpy(win->title, title, sizeof(win->title) - 1);
-    draw_rectangle(x, y, width, height, win->border_color);
-    fill_rectangle(x + 1, y + 1, width - 2, height - 2, win->background_color);
-    print_char_at(y + 2, x + 2, '[');
-    print(win->title);
-    print_char_at(y + 2, x + 2 + strlen(win->title) + 1, ']');
-}
-
-void draw_window(window_t* win) {
-    draw_rectangle(win->x, win->y, win->width, win->height, win->border_color);
-    fill_rectangle(win->x + 1, win->y + 1, win->width - 2, win->height - 2, win->background_color);
-    print_char_at(win->y + 2, win->x + 2, '[');
-    print(win->title);
-    print_char_at(win->y + 2, win->x + 2 + strlen(win->title) + 1, ']');
-}
-
-void move_window(window_t* win, int new_x, int new_y) {
-    win->x = new_x;
-    win->y = new_y;
-    draw_window(win);
-}
-
-void close_window(window_t* win) {
-    fill_rectangle(win->x, win->y, win->width, win->height, COLOR_BLACK);
-    *win = windows[--window_count];
-}
-
-void draw_cursor(int x, int y) {
-    set_pixel(x, y, COLOR_WHITE);
-}
-
-void move_cursor(int new_x, int new_y) {
-    set_pixel(cursor_x, cursor_y, COLOR_BLACK);
-    cursor_x = new_x;
-    cursor_y = new_y;
-    draw_cursor(cursor_x, cursor_y);
-}
-
-void render_gui() {
-    clear_screen();
-    for (size_t i = 0; i < window_count; i++) {
-        draw_window(&windows[i]);
+    win->background_color = background_color;
+    strncpy(win->title, title, sizeof(win->title));
+    
+    // Allocate space for the window framebuffer (for drawing inside the window)
+    win->framebuffer = kheap_alloc(width * height * sizeof(uint64_t));
+    if (!win->framebuffer) {
+        kheap_free((uint64_t *)win, sizeof(Window));
+        return NULL;
     }
-    draw_cursor(cursor_x, cursor_y);
+    memset(win->framebuffer, 0, width * height * sizeof(uint64_t)); // Clear the window (black background)
+
+    return win;
 }
 
-void add_button_to_window(window_t* window, int x, int y, int width, int height, const char* text, void (*on_click)()) {
-    if (window->button_count >= 5) return; // Max button limit reached
-
-    button_t* button = &window->buttons[window->button_count++];
-    button->x = window->x + x;
-    button->y = window->y + y;
-    button->width = width;
-    button->height = height;
-    button->color = COLOR_GRAY; // Light Gray
-    strncpy(button->text, text, sizeof(button->text) - 1);
-    button->on_click = on_click;
-}
-
-
-void on_ok_click() {
-    print("OK button clicked!\n");
-}
-
-void on_cancel_click() {
-    print("Cancel button clicked!\n");
-}
-
-void setup_gui() {
-    create_window(10, 10, 100, 50, "Main Menu");
-    add_button_to_window(&windows[0], 10, 20, 30, 10, "OK", on_ok_click);
-    add_button_to_window(&windows[0], 50, 20, 30, 10, "Cancel", on_cancel_click);
-    draw_window(&windows[0]);
-}
-
-void show_loading_animation_graphic(int x, int y, int width, uint64_t border_color, uint64_t fill_color, int duration_ms) {
-    int bar_length = width; // Total width of the loading bar
-    int interval_us = 1; // Update interval in microseconds (50ms per step)
-    int total_steps = (duration_ms * 1) / interval_us;
-
-    // Draw the border of the loading bar
-    draw_rectangle(x, y, bar_length, 10, border_color);
-
-    // Animate the loading bar
-    for (int i = 0; i <= total_steps; i++) {
-        int fill_width = (i * bar_length) / total_steps; // Calculate the filled width
-        fill_rectangle(x + 1, y + 1, fill_width - 2, 8, fill_color); // Fill the bar
-        delay(interval_us); // Wait for the next frame
+void draw_window(Window* win) {
+    // Draw the window background
+    for (int y = 0; y < win->height; y++) {
+        for (int x = 0; x < win->width; x++) {
+            set_pixel(win->x + x, win->y + y, win->background_color);
+        }
     }
 
-    // Completion message
-    print_char_at(y + 2, x + bar_length / 2 - 4, '[');
-    print("Done");
-    print_char_at(y + 2, x + bar_length / 2 + 4, ']');
+    // Draw the window title at the top of the window
+    for (int i = 0; i < strlen(win->title); i++) {
+        print_char_at(win->y, win->x + i * 8, win->title[i]);
+    }
+}
+
+void destroy_window(Window* win) {
+    if (win) {
+        kheap_free((uint64_t *)win->framebuffer,  sizeof(Window));
+        kheap_free((uint64_t *)win,  sizeof(Window));
+    }
+}
+
+#define MAX_WINDOWS 10
+Window* window_list[MAX_WINDOWS];
+int window_count = 0;
+
+void add_window(Window* win) {
+    if (window_count < MAX_WINDOWS) {
+        window_list[window_count++] = win;
+    }
+}
+
+void render_all_windows() {
+    for (int i = 0; i < window_count; i++) {
+        draw_window(window_list[i]);
+    }
+}
+
+
+
+Mouse current_mouse;
+
+void update_mouse_position(int x, int y, bool clicked) {
+    current_mouse.x = x;
+    current_mouse.y = y;
+    current_mouse.clicked = clicked;
+}
+
+Window* get_window_at(int x, int y) {
+    for (int i = 0; i < window_count; i++) {
+        Window* win = window_list[i];
+        if (x >= win->x && x < win->x + win->width &&
+            y >= win->y && y < win->y + win->height) {
+            return win;
+        }
+    }
+    return NULL;
+}
+
+void handle_mouse_input() {
+    if (current_mouse.clicked) {
+        Window* win = get_window_at(current_mouse.x, current_mouse.y);
+        if (win) {
+            // Handle window focus or activation
+            // For simplicity, let's just bring this window to the front
+            // by re-rendering all windows
+            render_all_windows();
+        }
+    }
+}
+
+
+
+
+
+
+void draw_button(Window* win, int x, int y, int width, int height, const char* label) {
+    // Draw button border
+    draw_rectangle(win->x + x, win->y + y, width, height, 0xFFFFFF); // White border
+    fill_rectangle(win->x + x + 1, win->y + y + 1, width - 2, height - 2, 0xBBBBBB); // Button color
+
+    // Draw label (simplified, you may want to center it)
+    for (int i = 0; i < strlen(label); i++) {
+        print_char_at(win->y + y + 1, win->x + x + i * 8 + 1, label[i]);
+    }
+}
+
+
+Window* focused_window = NULL;
+
+void set_focus_window(Window* win) {
+    focused_window = win;
+    // Optionally, render the window with a border to indicate focus
+}
+
+void bring_window_to_front(Window* win) {
+    // Move the window to the last of the list or to the front of the display list
+    for (int i = 0; i < window_count; i++) {
+        if (window_list[i] == win) {
+            // Swap with the last window
+            Window* temp = window_list[i];
+            window_list[i] = window_list[window_count - 1];
+            window_list[window_count - 1] = temp;
+            break;
+        }
+    }
 }
 
 
