@@ -5,8 +5,8 @@
 #define KHEAP_END   0xFFFFFFFFFFFFFFFF // End of the kernel heap (e.g., 16 MiB)
 
 
-static uint64_t kheap_current = KHEAP_START;
-static uint64_t kheap_max = KHEAP_END; // Tracks the current maximum allocated address
+static uint64_t kheap_current;
+static uint64_t kheap_max; // Tracks the current maximum allocated address
 
 
 void *kheap_alloc(size_t size) {
@@ -23,9 +23,6 @@ void *kheap_alloc(size_t size) {
     uint64_t va = kheap_current;
     while (kheap_current < va + size) {
         vm_alloc(kheap_current); // Use the previous vm_alloc
-        print("kheap_current :");
-        print_hex(kheap_current);
-        print("\n");
         kheap_current += 0x1000; // Increment by page size (4 KiB)
     }
 
@@ -56,9 +53,10 @@ void kheap_free(void *ptr, size_t size) {
     }
 }
 
+
 void init_kheap() {
-    kheap_current = KHEAP_START;
-    kheap_max = KHEAP_START;
+    kheap_current = KERNEL_MEM_START_ADDRESS + PHYSICAL_TO_VIRTUAL_OFFSET;
+    kheap_max = KERNEL_MEM_END_ADDRESS - PHYSICAL_TO_VIRTUAL_OFFSET;
 
     print("Successfully VMM initialized.\n");
 }
