@@ -78,6 +78,13 @@ void initialise_paging()
     print("Successfully Paging have initialized.\n");
 }
 
+static page_t *alloc_page(){
+    page_t *pg = (page_t *) kmalloc_a(sizeof(page_t), 1);
+    if(pg){
+        memset(pg, 0, sizeof(pg));
+    }
+    return pg;
+}
 
 
 
@@ -188,21 +195,6 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
 
     page_t *page = (page_t *) &pt->pages[pt_index];
 
-    if(!page->present){
-        page->present = 1;
-        page->rw = 1;
-        page->user = 0;
-    }
-
-    print("Page flags: present=");
-    print_dec(page->present);
-    print(", rw=");
-    print_dec(page->rw);
-    print(", user=");
-    print_dec(page->user);
-    print("\n");
-
-
     // return page pointer
     return page;
 }
@@ -243,32 +235,28 @@ void page_fault_handler(registers_t *regs)
     halt_kernel();
 }
 
-
+#include "../bootloader/boot.h"
 
 void test_paging(){
-    print("Start Paging Test...\n");
-    uint64_t* test_address = (uint64_t*) 0xFFFFFFFF80000000;  // Higher-half virtual address
-    *test_address = 0x12345678ABCDEF00;
 
-    print("The value at pointer *0xFFFFFFFF80000000 : "); 
-    print_hex(*test_address);
-    print("\n");
+    uint64_t kernel_start_virtual_addr = KERNEL_MEM_START_ADDRESS + PHYSICAL_TO_VIRTUAL_OFFSET;
+    uint64_t kernel_end_virtual_addr = KERNEL_MEM_END_ADDRESS + PHYSICAL_TO_VIRTUAL_OFFSET;
 
-    // uint64_t* invalid_address = (uint64_t*)0xFFFFFFFF90000000;  // Unmapped address
-    // *invalid_address = 0x0;  // This should trigger a page fault
+    uint64_t *start_addr = (uint64_t*) kernel_start_virtual_addr;
+    uint64_t *end_addr = (uint64_t *) kernel_end_virtual_addr;
 
-    // Check if a virtual address is already mapped (no allocation)
-    page_t* page = get_page(0x400000, 0, current_pml4);
-    if (page == NULL) {
-        print("Page not mapped yet!\n");
-    }
+    *start_addr = 0x5;
+    *end_addr = 0x7;
 
+    print("Content of ");
+    print_hex((uint64_t)start_addr);
+    print(":");
+    print_hex((uint64_t)start_addr);
 
-    // Allocate a page if it does not exist
-    page_t* page2 = get_page(0x400000, 1, current_pml4);
-    if (page2 != NULL) {
-        print("Page successfully allocated!\n");
-    }
+    print("Content of ");
+    print_hex((uint64_t)end_addr);
+    print(":");
+    print_hex((uint64_t)end_addr);
 
     print("Finish Paging Test\n");
 }

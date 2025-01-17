@@ -32,6 +32,7 @@ void kmain(){
 
     get_bootloader_info();
     // print_bootloader_info();
+    // print_memory_map();
 
     init_gdt();
     // check_gdt();
@@ -42,9 +43,9 @@ void kmain(){
     init_pmm();
     // test_pmm();
 
+
     initialise_paging();
     // test_paging();
-    // map_identity_higher_half();
 
     // test_vmm();
 
@@ -54,10 +55,6 @@ void kmain(){
     init_timer();
     
     initKeyboard();
-
-    vm_alloc(0xFFFFFFFF80006000);
-
-
 
     init_scheduler();      // Initialize the scheduler
 

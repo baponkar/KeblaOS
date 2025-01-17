@@ -1,3 +1,4 @@
+
 #include "ps.h"
 
 static process_t *process_list = NULL; // Linked list of processes
@@ -45,6 +46,7 @@ process_t *create_process(void (*entry_point)()) {
 
     return new_process;
 }
+
 
 void terminate_process(process_t *process) {
     if (!process) return;

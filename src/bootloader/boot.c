@@ -313,8 +313,6 @@ void print_hhdm_info(){
 
 
 
-
-
 // Get Module info
 __attribute__((used, section(".requests")))
 static volatile struct limine_module_request module_request = {
@@ -537,7 +535,7 @@ void get_memory_map(){
         // place kernel into higher  usable memory space
         KERNEL_MEM_START_ADDRESS = entries[entry_ids[3]]->base;
         KERNEL_MEM_LENGTH = entries[entry_ids[3]]->length;
-        KERNEL_MEM_END_ADDRESS = KERNEL_MEM_START_ADDRESS +  KERNEL_MEM_LENGTH;
+        KERNEL_MEM_END_ADDRESS = KERNEL_MEM_START_ADDRESS -  KERNEL_MEM_LENGTH;
 
         // place user into lower half usable memory space
         USER_MEM_START_ADDRESS = entries[entry_ids[1]]->base;
@@ -597,12 +595,18 @@ void print_memory_map() {
     print("Kernel memory start address : ");
     print_size_with_units(KERNEL_MEM_START_ADDRESS);
     print("\n");
+    print("Kernel memory end address : ");
+    print_size_with_units(KERNEL_MEM_END_ADDRESS);
+    print("\n");
     print("Kernel memory size : ");
     print_size_with_units(KERNEL_MEM_LENGTH);
     print("\n");
 
     print("User memory start address : ");
     print_size_with_units(USER_MEM_START_ADDRESS);
+    print("\n");
+    print("User memory end address : ");
+    print_size_with_units(USER_MEM_END_ADDRESS);
     print("\n");
     print("User memory size : ");
     print_size_with_units(USER_MEM_LENGTH);

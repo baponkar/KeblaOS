@@ -1,7 +1,6 @@
 
 /*
 https://github.com/dreamportdev/Osdev-Notes/blob/master/04_Memory_Management/04_Virtual_Memory_Manager.md
-https://chatgpt.com/share/675fa60d-c044-8001-aef6-d23b3d62ab62
 */
 
 #include "vmm.h"
