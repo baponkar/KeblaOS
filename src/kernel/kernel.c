@@ -53,7 +53,7 @@ void kmain(){
     // test_vmm();
 
     // init_kheap();
-    // test_heap();
+    // test_kheap();
 
     // init_timer();
     

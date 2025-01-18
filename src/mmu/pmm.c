@@ -68,13 +68,13 @@ uint64_t free_frame_bit_no()
 
 void init_pmm(){
 
-    print("Strating PMM initialization...\n");
+    print("Strat of PMM initialization...\n");
 
     uint64_t tmp_i = KMEM_LOW_BASE;
 
     nframes = (uint64_t) KMEM_LENGTH / FRAME_SIZE;
     frames = (uint64_t*) kmalloc_a(nframes * BITMAP_SIZE, 1); // Allocate enough bytes for the bitmap
-    // memset(frames, 0, nframes * BITMAP_SIZE); // Zero out the bitmap array
+    // memset(frames, 0, (size_t) nframes * BITMAP_SIZE); // Zero out the bitmap array
 
     uint64_t tmp_f = KMEM_LOW_BASE; // KMEM_LOW_BASE changed from initial value of KMEM_LOW_BASE 
 
@@ -102,7 +102,7 @@ void test_pmm(){
 
     print("Total Memory used for bitmap : ");
     print_hex(bitmap_mem_size);
-    print("[");
+    print(" [");
     print_size_with_units(bitmap_mem_size);
     print("]");
     print("\n");

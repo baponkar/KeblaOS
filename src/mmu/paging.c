@@ -83,7 +83,6 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
     page->user = (is_kernel) ? 0 : 1;   // Should the page be user-mode?
     page->frame = (KMEM_LOW_BASE + (bit_no * FRAME_SIZE)) >> 12; // Store physical base address
     KMEM_LOW_BASE += FRAME_SIZE; // Update the new KMEM_UP_BASE
-
 }
 
 
@@ -117,10 +116,25 @@ uint64_t get_cr3_addr() {
 
 void init_paging()
 {  
+    print("Start of Paging initialization...\n");
+
+    // Lowest Virtual address 0xFFFFFFFF80322000 which have page and the page.frame address pointer have 0xFFFFFFFFFFFFFFFF value.
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
     current_pml4 = (pml4_t *) get_cr3_addr();
 
-    print("Successfully Paging have initialized.\n");
+    for(uint64_t va = VIRTUAL_BASE; va < (uint64_t)(VIRTUAL_BASE + KMEM_LENGTH); va += PAGE_SIZE){
+        page_t *tmp = NULL;
+        tmp = get_page((uint64_t)va, 1, current_pml4);
+
+        if(tmp != NULL && tmp->present ){
+            free_frame(tmp);
+            tmp->rw = 1;
+        }else{
+            break;
+        }
+    }
+
+    print("Successfully Paging initialized.\n");
 }
 
 
@@ -131,9 +145,6 @@ static page_t *alloc_page(){
     }
     return pg;
 }
-
-
-
 // Function to allocate a new page table
 static pt_t* alloc_pt() {
     pt_t* pt = (pt_t*)kmalloc_a(sizeof(pt_t), 1);
@@ -142,8 +153,6 @@ static pt_t* alloc_pt() {
     }
     return pt;
 }
-
-
 // Function to allocate a new page directory
 static pd_t* alloc_pd() {
     pd_t* pd = (pd_t*)kmalloc_a(sizeof(pd_t), 1);
@@ -152,8 +161,6 @@ static pd_t* alloc_pd() {
     }
     return pd;
 }
-
-
 // Function to allocate a new page directory pointer table
 static pdpt_t* alloc_pdpt() {
     pdpt_t* pdpt = (pdpt_t*)kmalloc_a(sizeof(pdpt_t), 1);
@@ -177,7 +184,7 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
     // Get the PML4 entry from pml4_index which is found from va
     dir_entry_t* pml4_entry = &pml4->entry_t[pml4_index];
 
-    // the below if block will create pdpt if not present and make = 1
+    // the below if block will create pdpt if not present then make a new pdpt by bool make = 1
     if (!pml4_entry->present) {
         if (!make) {
             return NULL; // Page table does not exist and we are not allowed to create it
@@ -241,6 +248,8 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
 
     page_t *page = (page_t *) &pt->pages[pt_index];
 
+    if(page != NULL) page->present = 1;
+
     // return page pointer
     return page;
 }
@@ -281,32 +290,27 @@ void page_fault_handler(registers_t *regs)
     halt_kernel();
 }
 
-
-
 void test_paging() {
 
     print("\nTest of Paging\n");
 
+    // uint64_t va1 = (uint64_t) PAGE_ALIGN(0xFFFFFFFF80322000 + 40*PAGE_SIZE);
+
     // test following address
-    uint64_t va1 = PAGE_ALIGN(KMEM_LOW_BASE) + PHYSICAL_TO_VIRTUAL_OFFSET + 40*PAGE_SIZE;
+    uint64_t va1 = PAGE_ALIGN(KMEM_LOW_BASE) + PHYSICAL_TO_VIRTUAL_OFFSET + 40 * PAGE_SIZE;
     // uint64_t va2 = PAGE_ALIGN(KMEM_LOW_BASE) + PHYSICAL_TO_VIRTUAL_OFFSET + PAGE_SIZE; 
  
     // Virtual Pointer on based higher half
     uint64_t *v_ptr1 = (uint64_t *) va1; 
     // uint64_t *v_ptr2 = (uint64_t *) va2; 
 
+    print("Previous content of v_ptr1: ");
+    print_hex(*v_ptr1);
+    print("\n");
 
     // Get Page pointer from above virtual pointer address
     page_t *page1 = (page_t *) get_page((uint64_t)v_ptr1, 1, current_pml4);
-    // page_t *page2 = get_page((uint64_t)v_ptr2, 1, current_pml4); 
-
-    assert(((uint64_t)page1 % sizeof(page_t)) == 0);
-
-
-    page1->present = 1;
-    page1->rw = 1;
-
-
+    // page_t *page2 = get_page((uint64_t)v_ptr2, 1, current_pml4);
 
     debug_page(page1);
     // debug_page(page2);
@@ -331,6 +335,10 @@ void test_paging() {
     // print("\n");
 
     print("Finish Paging Test\n");
+
+    uint64_t val = *frames;
+
+    print_bin(val);
 }
 
 
