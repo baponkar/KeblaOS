@@ -1,46 +1,4 @@
 
-/*
-I have seen that the bootloader is providing the memory map and higher half 
-direct map offset information to the kernel. So, I have implemented the code to 
-get the memory map and higher half direct map offset information from the bootloader. 
-I have also implemented the code to get the virtual to physical offset information from 
-the bootloader. I have also implemented the code to print the memory map, higher half direct 
-map offset, and virtual to physical offset information. I have also implemented the code to set 
-the frame, clear the frame, test the frame, and find the first free frame. I have also implemented 
-the code to print the size with units. I have also implemented the code to print the virtual to physical 
-offset information. I have also implemented the code to get the virtual to physical offset information from 
-the bootloader. I have also implemented the code to get the higher half direct map offset information from 
-the bootloader. I have also implemented the code to print the memory map information.
-
-The memory map is giving 
-(0x1000)   4KB - 328 KB : Bootloader reclaimable, can be usable.
-(0x52000)  328 KB -  636 KB : Usable.
-(0x9FC00)  639 KB -  640 KB : Reserved, not be modified!
-(0XF0000)  960 KB -  1024 KB / 1 MB : Reserved, not be modified!
-
-(0X100000) 1 MB - 2.9872 GB : Usable. This memory will be use for userspace programs.
-
-(0XBF28000)  2.9872 GB - 2.9903 GB(3.1744 MB) : Kernel/Modules, not usable!
-(0XBF619000) 2.9903 GB - 2.9934 GB(3.1744 MB) : Bootloader reclaimable, can be usable.
-(0XBF946000) 2.9934 GB - 2.9992 GB(5.9392 MB) : Usable.
-(0XBFF31000) 2.9992 GB - 2.9999 GB(0.7168 MB) : Bootloader reclaimable, can be usable.
-(0XBFFE0000) 2.9999 GB - 3.9531 GB(976.0768 MB) : Reserved, not be modified!
-(0XFD000000) 3.9531 GB - 3.9998 GB(47.8208 MB) : Bootloader reclaimable, can be usable.
-(0XFFFC0000) 3.9998 GB - 4.0000 GB(0.2048 MB) : Bootloader reclaimable, can be usable.
-(0X10000000) 4.0000 GB - 5.0000 GB(1 GB) : Bootloader reclaimable, can be usable.
-
-8192 - 15 entries
-6144 - 14 entries
-4096 - 13 entries
-2048 - 12 entries
-1024 - 12 entries
-512 - 12 entries
-256 - 9 entries
-128 - 8 entries
-64 - 7 entries
-32 - 6 entries
-*/
-
 #include "pmm.h"
 
 
@@ -52,6 +10,8 @@ The memory map is giving
 
 uint64_t *frames; // start of bitset frames
 uint64_t nframes; // Total frames
+
+uint64_t bitmap_mem_size;
 
 
 // set the value of frames array by using bit no
@@ -107,14 +67,26 @@ uint64_t free_frame_bit_no()
 
 
 void init_pmm(){
+
     print("Strating PMM initialization...\n");
-    nframes = (uint64_t) KERNEL_MEM_LENGTH / FRAME_SIZE;
+
+    uint64_t tmp_i = KMEM_LOW_BASE;
+
+    nframes = (uint64_t) KMEM_LENGTH / FRAME_SIZE;
     frames = (uint64_t*) kmalloc_a(nframes * BITMAP_SIZE, 1); // Allocate enough bytes for the bitmap
-    memset(frames, 0, nframes * BITMAP_SIZE); // Zero out the bitmap array
+    // memset(frames, 0, nframes * BITMAP_SIZE); // Zero out the bitmap array
+
+    uint64_t tmp_f = KMEM_LOW_BASE; // KMEM_LOW_BASE changed from initial value of KMEM_LOW_BASE 
+
+    bitmap_mem_size = tmp_f - tmp_i;
+
     print("Successfully initialized PMM!\n");
 }
 
 void test_pmm(){
+
+    print("\nTest Physical Memory Manager(pmm):\n");
+
     print("Frames Pointer Address : ");
     print_hex((uint64_t) frames);
     print("\n");
@@ -122,4 +94,21 @@ void test_pmm(){
     print("Total Frames : ");
     print_dec(nframes);
     print("\n");
+
+    
+    print("After frames allocation next free address pointer: ");
+    print_hex(KMEM_LOW_BASE);
+    print("\n");
+
+    print("Total Memory used for bitmap : ");
+    print_hex(bitmap_mem_size);
+    print("[");
+    print_size_with_units(bitmap_mem_size);
+    print("]");
+    print("\n");
+
 }
+
+
+
+

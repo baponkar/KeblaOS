@@ -14,16 +14,58 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 extern void enable_paging(uint64_t pml4_address); // present in load_paging.asm
 extern void disable_paging();   //  present in load_paging.asm
 
+extern uint64_t KMEM_UP_BASE;
+extern uint64_t KMEM_LOW_BASE;
+
+extern uint64_t V_KMEM_UP_BASE;
+extern uint64_t V_KMEM_LOW_BASE;
 
 pml4_t *current_pml4;
 pml4_t *user_pml4;
 pml4_t *kernel_pml4;
 
+void debug_page(page_t *page){
+    print("page pointer: ");
+    print_hex((uint64_t)page);
+    print("\n");
+
+    print("page->present: ");
+    print_dec(page->present);
+    print("\n");
+
+    print("page->rw: ");
+    print_dec(page->rw);
+    print("\n");
+
+    print("page->pwt: ");
+    print_hex(page->pwt);
+    print("\n");
+
+    print("page->pcd: ");
+    print_hex(page->pcd);
+    print("\n");
+
+    print("page->accessed: ");
+    print_hex(page->accessed);
+    print("\n");
+
+    print("page->user: ");
+    print_dec(page->user);
+    print("\n");
+
+    print("page->frame: ");
+    print_hex(page->frame);
+    print("\n\n");
+}
+
 
 // allocate a page with the free physical frame
 void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
+
     if (page->frame != 0) {
-        print("Frame was already allocated!\n");
+        print("Page was already allocated at ");
+        print_hex((uint64_t)page->frame);
+        print(" frame address.\n");
         return; // Frame was already allocated, return straight away.
     }
 
@@ -36,11 +78,12 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
 
     set_frame(bit_no); // Mark the frame as used by passing the frame index
 
-    page->present = 1;       // Mark it as present.
-    page->rw = (is_writeable) ? 1 : 0; // Should the page be writeable?
-    page->user = (is_kernel) ? 0 : 1; // Should the page be user-mode?
-    page->frame = (KERNEL_MEM_START_ADDRESS + (bit_no * FRAME_SIZE)) >> 12; // Store physical base address
-    KERNEL_MEM_START_ADDRESS += FRAME_SIZE; // Update the new KERNEL_MEM_START_ADDRESS
+    page->present = 1; // Mark it as present.
+    page->rw = (is_writeable) ? 1 : 0;  // Should the page be writeable?
+    page->user = (is_kernel) ? 0 : 1;   // Should the page be user-mode?
+    page->frame = (KMEM_LOW_BASE + (bit_no * FRAME_SIZE)) >> 12; // Store physical base address
+    KMEM_LOW_BASE += FRAME_SIZE; // Update the new KMEM_UP_BASE
+
 }
 
 
@@ -70,13 +113,16 @@ uint64_t get_cr3_addr() {
 }
 
 
-void initialise_paging()
+
+
+void init_paging()
 {  
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
     current_pml4 = (pml4_t *) get_cr3_addr();
 
     print("Successfully Paging have initialized.\n");
 }
+
 
 static page_t *alloc_page(){
     page_t *pg = (page_t *) kmalloc_a(sizeof(page_t), 1);
@@ -235,29 +281,56 @@ void page_fault_handler(registers_t *regs)
     halt_kernel();
 }
 
-#include "../bootloader/boot.h"
 
-void test_paging(){
 
-    uint64_t kernel_start_virtual_addr = KERNEL_MEM_START_ADDRESS + PHYSICAL_TO_VIRTUAL_OFFSET;
-    uint64_t kernel_end_virtual_addr = KERNEL_MEM_END_ADDRESS + PHYSICAL_TO_VIRTUAL_OFFSET;
+void test_paging() {
 
-    uint64_t *start_addr = (uint64_t*) kernel_start_virtual_addr;
-    uint64_t *end_addr = (uint64_t *) kernel_end_virtual_addr;
+    print("\nTest of Paging\n");
 
-    *start_addr = 0x5;
-    *end_addr = 0x7;
+    // test following address
+    uint64_t va1 = PAGE_ALIGN(KMEM_LOW_BASE) + PHYSICAL_TO_VIRTUAL_OFFSET + 40*PAGE_SIZE;
+    // uint64_t va2 = PAGE_ALIGN(KMEM_LOW_BASE) + PHYSICAL_TO_VIRTUAL_OFFSET + PAGE_SIZE; 
+ 
+    // Virtual Pointer on based higher half
+    uint64_t *v_ptr1 = (uint64_t *) va1; 
+    // uint64_t *v_ptr2 = (uint64_t *) va2; 
 
-    print("Content of ");
-    print_hex((uint64_t)start_addr);
-    print(":");
-    print_hex((uint64_t)start_addr);
 
-    print("Content of ");
-    print_hex((uint64_t)end_addr);
-    print(":");
-    print_hex((uint64_t)end_addr);
+    // Get Page pointer from above virtual pointer address
+    page_t *page1 = (page_t *) get_page((uint64_t)v_ptr1, 1, current_pml4);
+    // page_t *page2 = get_page((uint64_t)v_ptr2, 1, current_pml4); 
+
+    assert(((uint64_t)page1 % sizeof(page_t)) == 0);
+
+
+    page1->present = 1;
+    page1->rw = 1;
+
+
+
+    debug_page(page1);
+    // debug_page(page2);
+    
+    // allocate a physical frame address in above page with kernel level and writable
+    alloc_frame(page1, 1, 1); 
+    // alloc_frame(page2, 1, 1); 
+
+    debug_page(page1);
+    // debug_page(page2);  
+
+    // Store a value at the virtual pointer
+    *v_ptr1 = 0x567; 
+    // *v_ptr2 = 0xABC50;  
+
+    print("Content of v_ptr1: ");
+    print_hex(*v_ptr1);
+    print("\n");
+
+    // print("Content of v_ptr2: ");
+    // print_hex(*v_ptr2);
+    // print("\n");
 
     print("Finish Paging Test\n");
 }
+
 

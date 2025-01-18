@@ -8,6 +8,8 @@
 
 #include "../x86_64/idt/idt.h"
 
+#include "../bootloader/boot.h"
+
 #include "../lib/stdio.h"
 
 #include  "../driver/vga.h"
@@ -27,6 +29,7 @@
 #define PT_INDEX(va)     (((va) >> 12) & 0x1FF)  // Bits 12-20
 #define PAGE_OFFSET(va)  ((va) & 0xFFF)          // Bits 0-11
 
+#define PAGE_ALIGN(addr) (((addr) + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1))
 
 // pml4, pdpr and pd entry
 typedef struct dir_entry { // 64 bit
@@ -84,6 +87,9 @@ extern pml4_t *user_pml4;
 extern pml4_t *kernel_pml4;
 extern pml4_t *current_pml4;
 
+extern uint64_t V_KMEM_UP_BASE;
+extern uint64_t V_KMEM_LOW_BASE;
+
 // allocate a page into a physical free frame
 void alloc_frame(page_t *page, int is_kernel, int is_writeable);
 
@@ -91,7 +97,7 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable);
 void free_frame(page_t *page);
 
 // start paging system
-void initialise_paging();
+void init_paging();
 
 // return page pointer from virtual address
 page_t *get_page(uint64_t address, int make, pml4_t *pml4);
