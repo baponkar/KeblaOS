@@ -10,6 +10,10 @@ extern pml4_t *user_pml4;
 extern pml4_t *kernel_pml4;
 extern pml4_t *current_pml4;
 
+extern uint64_t V_KMEM_LOW_BASE;
+extern uint64_t V_KMEM_UP_BASE;
+
+
 
 // Allocate a virtual page at the specified virtual address
 void vm_alloc(uint64_t va) {

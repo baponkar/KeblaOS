@@ -6,19 +6,15 @@ static process_t *current_process = NULL; // Currently running process
 static uint64_t next_pid = 1; // Next process ID
 
 process_t *create_process(void (*entry_point)()) {
-    // Allocate memory for the PCB
     process_t *new_process = (process_t *)kheap_alloc(sizeof(process_t));
     if (!new_process) return NULL;
 
-    // Allocate a stack for the process
     void *stack = kheap_alloc(0x4000); // 16 KiB stack
-
     if (!stack) {
         kheap_free(new_process, sizeof(process_t));
         return NULL;
     }
 
-    // Allocate a new page table for the process (dummy allocation in this example)
     uint64_t *page_table = (uint64_t *)kheap_alloc(0x1000);
     if (!page_table) {
         kheap_free(stack, 0x4000);
@@ -33,7 +29,14 @@ process_t *create_process(void (*entry_point)()) {
     new_process->state = PROCESS_READY;
     new_process->next = NULL;
 
-    // Add the process to the scheduler's list
+    // Set up the initial stack for the process
+    uint64_t *stack_top = (uint64_t *)new_process->stack;
+    *(--stack_top) = (uint64_t)entry_point; // Set RIP to entry point
+    *(--stack_top) = 0;                    // Fake return address (end of process)
+
+    new_process->stack = (void *)stack_top;
+
+    // Add to process list
     if (!process_list) {
         process_list = new_process;
     } else {
@@ -46,6 +49,7 @@ process_t *create_process(void (*entry_point)()) {
 
     return new_process;
 }
+
 
 
 void terminate_process(process_t *process) {
@@ -80,15 +84,15 @@ void set_stack_pointer(void *stack) {
 void switch_to_process(process_t *process) {
     if (!process) return;
 
-    // Update page table (simplified)
-    load_page_table(process->page_table);
+    load_page_table(process->page_table); // Update page table
+    set_stack_pointer(process->stack);   // Set stack pointer
 
-    // Set stack pointer to the new process's stack
-    set_stack_pointer(process->stack);
-
-    // Update the current process
     current_process = process;
+
+    // Jump to the process's entry point
+    asm volatile("ret");
 }
+
 
 void scheduler_tick() {
     if (!current_process) {

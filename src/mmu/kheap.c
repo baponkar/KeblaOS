@@ -2,7 +2,7 @@
 
 
 #define KHEAP_START 0xFFFFFFFF80000000 // Start of the kernel heap
-#define KHEAP_END   0xFFFFFFFFFFFFFFFF // End of the kernel heap (e.g., 16 MiB)
+#define KHEAP_END   0xFFFFFFFF70000000 // End of the kernel heap (e.g., 16 MiB)
 
 
 static uint64_t kheap_current;
@@ -14,7 +14,7 @@ void *kheap_alloc(size_t size) {
     size = (size + 0xFFF) & ~0xFFF;
 
     // Check if we have enough space in the heap
-    if ((kheap_current + size) > KHEAP_END) {
+    if ((kheap_current + size) > V_KMEM_UP_BASE) {
         print("Out of memory\n");
         return NULL; // Out of heap space
     }
@@ -55,8 +55,8 @@ void kheap_free(void *ptr, size_t size) {
 
 
 void init_kheap() {
-    kheap_current = KERNEL_MEM_START_ADDRESS + PHYSICAL_TO_VIRTUAL_OFFSET;
-    kheap_max = KERNEL_MEM_END_ADDRESS - PHYSICAL_TO_VIRTUAL_OFFSET;
+    kheap_current = KMEM_LOW_BASE;
+    kheap_max = KMEM_UP_BASE;
 
     print("Successfully VMM initialized.\n");
 }

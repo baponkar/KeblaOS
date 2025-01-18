@@ -33,16 +33,22 @@ extern uint64_t PHYSICAL_BASE;
 extern uint64_t VIRTUAL_BASE;
 extern uint64_t PHYSICAL_TO_VIRTUAL_OFFSET;
 
-extern uint64_t HIGHER_HALF_DIRECT_MAP_REVISION;
-extern uint64_t HIGHER_HALF_DIRECT_MAP_OFFSET;
+extern uint64_t HHDM_REVISION;
+extern uint64_t HHDM_OFFSET;
 
-extern uint64_t KERNEL_MEM_START_ADDRESS;
-extern uint64_t KERNEL_MEM_END_ADDRESS;
-extern uint64_t KERNEL_MEM_LENGTH;
+extern uint64_t KMEM_LOW_BASE;
+extern uint64_t KMEM_UP_BASE;
+extern uint64_t KMEM_LENGTH;
 
-extern uint64_t USER_START_ADDRESS;
-extern uint64_t USER_END_ADDRESS;
-extern uint64_t USER_MEM_LENGTH;
+extern uint64_t V_KMEM_LOW_BASE;
+extern uint64_t V_KMEM_UP_BASE;
+
+extern uint64_t UMEM_LOW_BASE;
+extern uint64_t UMEM_UP_BASE;
+extern uint64_t UMEM_LENGTH;
+
+extern uint64_t V_UMEM_LOW_BASE;
+extern uint64_t V_UMEM_UP_BASE;
 
 extern uint64_t TOTAL_MEMORY;
 

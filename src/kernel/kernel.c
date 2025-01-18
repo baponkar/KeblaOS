@@ -21,7 +21,7 @@ extern process_t *current_process;
 
 
 void kmain(){
-
+    get_bootloader_info();
     vga_init();
     print(OS_NAME);
     print("--");
@@ -30,9 +30,10 @@ void kmain(){
 
     // display_image((FRAMEBUFFER_WIDTH - KEBLAOS_ICON_320X200X32_WIDTH)/2 , (FRAMEBUFFER_HEIGHT - KEBLAOS_ICON_320X200X32_WIDTH)/2, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
 
-    get_bootloader_info();
+    
     // print_bootloader_info();
     // print_memory_map();
+    // mem_info();
 
     init_gdt();
     // check_gdt();
@@ -40,27 +41,29 @@ void kmain(){
     init_idt();
     // test_interrupt();
 
+    // test_kmalloc();
+
     init_pmm();
     // test_pmm();
 
 
-    initialise_paging();
-    // test_paging();
+    init_paging();
+    test_paging();
 
     // test_vmm();
 
-    init_kheap();
+    // init_kheap();
     // test_heap();
 
-    init_timer();
+    // init_timer();
     
-    initKeyboard();
+    // initKeyboard();
 
-    init_scheduler();      // Initialize the scheduler
+    // init_scheduler();      // Initialize the scheduler
 
-    while (1) {
-        scheduler_tick();  // Run the scheduler
-    }
+    // while (1) {
+    //     scheduler_tick();  // Run the scheduler
+    // }
 
     // // Create a few windows
     // Window* win1 = create_window(10, 10, 200, 100, 0xAAAAAA, "Window 1");
@@ -92,4 +95,31 @@ void kmain(){
     // }
 
     halt_kernel();
+}
+
+void mem_info(){
+
+    print("\nKernel physical base (upper) : ");
+    print_hex(KMEM_UP_BASE);
+    print("\n");
+
+    print("Kernel physical base (lower) : ");
+    print_hex(KMEM_LOW_BASE);
+    print("\n");
+
+    print("Kernel physical LENGTH (upper - low) : ");
+    print_hex(KMEM_UP_BASE - KMEM_LOW_BASE);
+    print("\n");
+
+    print("\nKernel virtual base (upper) : ");
+    print_hex(V_KMEM_UP_BASE);
+    print("\n");
+
+    print("Kernel virtual base (lower) : ");
+    print_hex(V_KMEM_LOW_BASE);
+    print("\n");
+
+    print("Kernel virtual LENGTH (upper - low) : ");
+    print_hex(V_KMEM_UP_BASE - V_KMEM_LOW_BASE);
+    print("\n");
 }

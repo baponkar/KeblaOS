@@ -124,10 +124,11 @@ void isr_handler(registers_t *regs)
     }else if (regs->int_no == 14) { // Check if it is a page fault
         page_fault_handler(regs);
         return;
-    }else if(regs->int_no == 13){
+    /*}else if(regs->int_no == 13){
         debug_error_code(regs->err_code);
         gpf_handler(regs);
         return;
+    */
     }else if(regs->int_no < 32){
         print("recieved interrupt: ");
         print_dec(regs->int_no);
