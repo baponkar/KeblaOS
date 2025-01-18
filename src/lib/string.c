@@ -1,5 +1,7 @@
 #include "string.h"
 
+#include "stdio.h"
+
 // Copy dat of src into dest
 void *memcpy(void *dest, const void *src, size_t n) {
     uint8_t *pdest = (uint8_t *) dest;
@@ -12,6 +14,7 @@ void *memcpy(void *dest, const void *src, size_t n) {
     return dest;
 }
 
+#include "../driver/vga.h"
 
 void *memset(void *s, int c, size_t n) {
     uint8_t *p = (uint8_t *) s; // making uint8_t pointer from void pointer

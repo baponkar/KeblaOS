@@ -9,7 +9,7 @@ https://web.archive.org/web/20160326064709/http://jamesmolloy.co.uk/tutorial_htm
 #include "idt.h"
 
 idt_entry_t idt_entries[256];
-idt_ptr_t   idt_ptr;
+idt_ptr_t idt_ptr;
 
 char* exception_messages[] = {
     "Division By Zero", // 0
@@ -68,7 +68,7 @@ void isr_install(){
     idt_ptr.base  = (uint64_t) &idt_entries;
 
     // for safety clearing memories
-    memset(&idt_entries, 0, sizeof(idt_entry_t) * 256);
+    // memset((void *)&idt_entries, 0, (size_t) (sizeof(idt_entry_t) * 256));
 
    // Setting Interrupts Service Routine Gate(ISR Gate)
    // https://stackoverflow.com/questions/9113310/segment-selector-in-ia-32
@@ -121,14 +121,13 @@ void isr_handler(registers_t *regs)
         print("Interrupt 177\n");
         // syscall_handler(&regs);
         return;
-    }else if (regs->int_no == 14) { // Check if it is a page fault
+    }else if (regs->int_no == 14) {
         page_fault_handler(regs);
         return;
-    /*}else if(regs->int_no == 13){
-        debug_error_code(regs->err_code);
+    }else if(regs->int_no == 13){
+        // debug_error_code(regs->err_code);
         gpf_handler(regs);
         return;
-    */
     }else if(regs->int_no < 32){
         print("recieved interrupt: ");
         print_dec(regs->int_no);
@@ -274,6 +273,7 @@ void interrupt_uninstall_handler(int int_no)
 
 
 void init_idt(){
+    print("Start of IDT initialization...\n");
     isr_install();
     idt_flush((uint64_t) &idt_ptr);
     irq_remap();
