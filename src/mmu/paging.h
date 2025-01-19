@@ -109,3 +109,4 @@ void page_fault_handler(registers_t* regs);
 void test_paging();
 
 
+uint64_t get_cr3_addr();

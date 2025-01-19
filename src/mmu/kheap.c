@@ -66,9 +66,12 @@ void init_kheap() {
 }
 
 void test_kheap(){
+    print("Start of kheap test...\n");
     uint64_t *ptr = (uint64_t *) kheap_alloc(25);
 
     *ptr = 0xDEADBEF;
 
     print_hex(*ptr);
+    
+    print("Successfully tested kheap\n");
 }
