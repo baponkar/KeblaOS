@@ -17,7 +17,7 @@ extern uint64_t V_KMEM_UP_BASE;
 
 // Allocate a virtual page at the specified virtual address
 void vm_alloc(uint64_t va) {
-    
+    // print("inside of vm_alloc\n");
     // Get the page for the virtual address, creating necessary structures
     page_t *page = get_page(va, 1, current_pml4);
     if (!page) {
@@ -25,8 +25,12 @@ void vm_alloc(uint64_t va) {
         print("Page creation failed!\n");
         return;
     }
+
+    // print("page->present : ");
+    // print_dec(page->present);
+    // print("\n");
   
-    if (!page->present){
+    if (page->present){
         // Allocate a physical frame for the page
         alloc_frame(page, 1, 1); // Kernel-mode, writable by default
         page->present = 1;

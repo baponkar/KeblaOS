@@ -61,11 +61,11 @@ void debug_page(page_t *page){
 
 // allocate a page with the free physical frame
 void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
-
+    // print("inside of alloc frame\n");
     if (page->frame != 0) {
-        print("Page was already allocated at ");
-        print_hex((uint64_t)page->frame);
-        print(" frame address.\n");
+        // print("Page was already allocated at ");
+        // print_hex((uint64_t)page->frame);
+        // print(" frame address.\n");
         return; // Frame was already allocated, return straight away.
     }
 
@@ -91,16 +91,16 @@ void free_frame(page_t *page)
 {
     if (page->frame != NULL)
     {
-            print("Frame address: ");
-            print_hex((uint64_t)page->frame);
-            print("\n");
+        // print("Frame address: ");
+        // print_hex((uint64_t)page->frame);
+        // print("\n");
 
-            uint64_t frame_idx = ADDR_TO_BIT_NO((uint64_t)page->frame);
-            clear_frame(frame_idx); // Frame is now free again from bitmap.
-            page->frame = 0; // Page now doesn't have a frame.
+        uint64_t frame_idx = ADDR_TO_BIT_NO((uint64_t)page->frame);
+        clear_frame(frame_idx); // Frame is now free again from bitmap.
+        page->frame = 0; // Page now doesn't have a frame.
     }
 
-    print("No frame address found!\n");
+    // print("No frame address found!\n");
 
     return;
 }
@@ -134,11 +134,11 @@ void init_paging()
 
         // I do not know why this pages are required untouched otherwise system crashed
         if( (tmp != NULL) && (tmp->present == 1)){
-            // free_frame(tmp);
+            free_frame(tmp);
 
             uint64_t bit_no = ADDR_TO_BIT_NO(va);
 
-            assert(bit_no < nframes * 8);
+            // assert(bit_no < nframes * 8);
             // if (bit_no >= nframes * 8) {
             //     print("Invalid bit_no: ");
             //     print_dec(bit_no);
@@ -146,7 +146,7 @@ void init_paging()
             //     break;
             // }
 
-            set_frame(bit_no);
+            // set_frame(bit_no);
         }
 
         // print("Bitmap: ");

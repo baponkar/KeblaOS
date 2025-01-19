@@ -6,17 +6,23 @@ static process_t *current_process = NULL; // Currently running process
 static uint64_t next_pid = 1; // Next process ID
 
 process_t *create_process(void (*entry_point)()) {
+    // print("Creating a process\n");
     process_t *new_process = (process_t *)kheap_alloc(sizeof(process_t));
-    if (!new_process) return NULL;
+    if (!new_process){
+        print("null process\n");
+        return NULL;
+    } 
 
     void *stack = kheap_alloc(0x4000); // 16 KiB stack
     if (!stack) {
         kheap_free(new_process, sizeof(process_t));
+        print("null stack\n");
         return NULL;
     }
 
     uint64_t *page_table = (uint64_t *)kheap_alloc(0x1000);
     if (!page_table) {
+        print("null page_table\n");
         kheap_free(stack, 0x4000);
         kheap_free(new_process, sizeof(process_t));
         return NULL;
@@ -46,6 +52,8 @@ process_t *create_process(void (*entry_point)()) {
         }
         temp->next = new_process;
     }
+
+    // print("Successfully created a process\n");
 
     return new_process;
 }
