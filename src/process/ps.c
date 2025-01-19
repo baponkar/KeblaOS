@@ -5,6 +5,7 @@ static process_t *process_list = NULL; // Linked list of processes
 static process_t *current_process = NULL; // Currently running process
 static uint64_t next_pid = 1; // Next process ID
 
+
 process_t *create_process(void (*entry_point)()) {
     // print("Creating a process\n");
     process_t *new_process = (process_t *)kheap_alloc(sizeof(process_t));
@@ -53,7 +54,10 @@ process_t *create_process(void (*entry_point)()) {
         temp->next = new_process;
     }
 
-    // print("Successfully created a process\n");
+    print("Process created with PID: ");
+    print_dec(new_process->pid);
+    print("\n");
+
 
     return new_process;
 }
@@ -95,6 +99,7 @@ void switch_to_process(process_t *process) {
     load_page_table(process->page_table); // Update page table
     set_stack_pointer(process->stack);   // Set stack pointer
 
+    current_process->state = PROCESS_RUNNING; // Update state
     current_process = process;
 
     // Jump to the process's entry point
@@ -137,4 +142,5 @@ void init_scheduler() {
     create_process(test_process2);
 
     print("Scheduler initialized with 2 processes.\n");
+
 }

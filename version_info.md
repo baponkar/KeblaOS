@@ -45,6 +45,8 @@ Screenshot 2
 - [x] Physical Memory Manager(PMM)
 - [x] Kernel Heap(kheap)
 - [x] Paging
+- [x] Process
+- [x] Schedular
 
 
 
