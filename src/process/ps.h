@@ -13,10 +13,10 @@
 
 // Process states
 typedef enum {
-    PROCESS_READY,
-    PROCESS_RUNNING,
-    PROCESS_WAITING,
-    PROCESS_TERMINATED
+    PROCESS_READY = 0,
+    PROCESS_RUNNING = 1,
+    PROCESS_WAITING = 2,
+    PROCESS_TERMINATED = 3
 } process_state_t;
 
 // Process Control Block (PCB)
@@ -37,3 +37,4 @@ void scheduler_tick();
 void test_process1();
 void test_process2();
 void init_scheduler();
+
