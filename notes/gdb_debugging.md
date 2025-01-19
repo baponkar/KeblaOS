@@ -24,6 +24,23 @@ Now in 2nd terminal tab run `target remote:1234`.
 
 `stepi` to increase step inside of kmain function.
 
+Suppos your kmain is look follow
+
+```
+void kmain(){
+    fun1();
+    fun2();
+    fun3();
+}
+```
+You want to look inside of `fun3()` after running `fun1()` and `fun2()` then you need to run below commands
+
+```
+break fun3();
+run
+```
+
+Now see below code to look inside of a specific address
 ```
 (gdb) break *0x1000  # Break at address 0x1000
 (gdb) break isr_common_stub  # Break at the ISR common stub

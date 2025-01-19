@@ -89,17 +89,20 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
 // Function to deallocate a frame.
 void free_frame(page_t *page)
 {
-   uint64_t frame_addr = page->frame;
-   if (!(frame_addr))
-   {
-       return; // The given page didn't actually have an allocated frame!
-   }
-   else
-   {
-        uint64_t frame_idx = ADDR_TO_BIT_NO(frame_addr);
-        clear_frame(frame_idx); // Frame is now free again.
-        page->frame = 0; // Page now doesn't have a frame.
-   }
+    if (page->frame != NULL)
+    {
+            print("Frame address: ");
+            print_hex((uint64_t)page->frame);
+            print("\n");
+
+            uint64_t frame_idx = ADDR_TO_BIT_NO((uint64_t)page->frame);
+            clear_frame(frame_idx); // Frame is now free again from bitmap.
+            page->frame = 0; // Page now doesn't have a frame.
+    }
+
+    print("No frame address found!\n");
+
+    return;
 }
 
 
@@ -122,17 +125,36 @@ void init_paging()
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
     current_pml4 = (pml4_t *) get_cr3_addr();
 
-    for(uint64_t va = VIRTUAL_BASE; va < (uint64_t)(VIRTUAL_BASE + KMEM_LENGTH); va += PAGE_SIZE){
-        page_t *tmp = NULL;
-        tmp = get_page((uint64_t)va, 1, current_pml4);
 
-        if(tmp != NULL && tmp->present ){
-            free_frame(tmp);
-            tmp->rw = 1;
-        }else{
-            break;
+    for(uint64_t va = V_KMEM_LOW_BASE; va < V_KMEM_UP_BASE; va++)
+    {
+        page_t *tmp = get_page(va, 0, current_pml4);
+
+        if(tmp == NULL || tmp->present == 0) break;
+
+        // I do not know why this pages are required untouched otherwise system crashed
+        if( (tmp != NULL) && (tmp->present == 1)){
+            // free_frame(tmp);
+
+            uint64_t bit_no = ADDR_TO_BIT_NO(va);
+
+            assert(bit_no < nframes * 8);
+            // if (bit_no >= nframes * 8) {
+            //     print("Invalid bit_no: ");
+            //     print_dec(bit_no);
+            //     print("\n");
+            //     break;
+            // }
+
+            set_frame(bit_no);
         }
+
+        // print("Bitmap: ");
+        // uint64_t *ptr = (uint64_t *) nframes;
+        // print_bin(*ptr);
+        // print("\n");
     }
+    
 
     print("Successfully Paging initialized.\n");
 }
@@ -145,6 +167,7 @@ static page_t *alloc_page(){
     }
     return pg;
 }
+
 // Function to allocate a new page table
 static pt_t* alloc_pt() {
     pt_t* pt = (pt_t*)kmalloc_a(sizeof(pt_t), 1);
@@ -153,6 +176,7 @@ static pt_t* alloc_pt() {
     }
     return pt;
 }
+
 // Function to allocate a new page directory
 static pd_t* alloc_pd() {
     pd_t* pd = (pd_t*)kmalloc_a(sizeof(pd_t), 1);
@@ -161,6 +185,7 @@ static pd_t* alloc_pd() {
     }
     return pd;
 }
+
 // Function to allocate a new page directory pointer table
 static pdpt_t* alloc_pdpt() {
     pdpt_t* pdpt = (pdpt_t*)kmalloc_a(sizeof(pdpt_t), 1);
@@ -180,6 +205,10 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
     uint64_t pd_index = PD_INDEX(va);
     uint64_t pt_index = PT_INDEX(va);
     uint64_t page_offset = PAGE_OFFSET(va);
+
+    if(!pml4){
+        return NULL;
+    }
 
     // Get the PML4 entry from pml4_index which is found from va
     dir_entry_t* pml4_entry = &pml4->entry_t[pml4_index];
@@ -297,7 +326,7 @@ void test_paging() {
     // uint64_t va1 = (uint64_t) PAGE_ALIGN(0xFFFFFFFF80322000 + 40*PAGE_SIZE);
 
     // test following address
-    uint64_t va1 = PAGE_ALIGN(KMEM_LOW_BASE) + PHYSICAL_TO_VIRTUAL_OFFSET + 40 * PAGE_SIZE;
+    uint64_t va1 = VIRTUAL_BASE;
     // uint64_t va2 = PAGE_ALIGN(KMEM_LOW_BASE) + PHYSICAL_TO_VIRTUAL_OFFSET + PAGE_SIZE; 
  
     // Virtual Pointer on based higher half

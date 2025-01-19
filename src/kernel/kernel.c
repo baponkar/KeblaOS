@@ -48,22 +48,22 @@ void kmain(){
 
 
     init_paging();
-    test_paging();
+    // test_paging();
 
     // test_vmm();
 
-    // init_kheap();
+    init_kheap();
     // test_kheap();
 
-    // init_timer();
+    init_timer();
     
-    // initKeyboard();
+    initKeyboard();
 
-    // init_scheduler();      // Initialize the scheduler
+    init_scheduler();      // Initialize the scheduler
 
-    // while (1) {
-    //     scheduler_tick();  // Run the scheduler
-    // }
+    while (1) {
+        scheduler_tick();  // Run the scheduler
+    }
 
     // // Create a few windows
     // Window* win1 = create_window(10, 10, 200, 100, 0xAAAAAA, "Window 1");
