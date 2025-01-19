@@ -1,12 +1,8 @@
 #include "kheap.h"
 
 
-#define KHEAP_START 0xFFFFFFFF80000000 // Start of the kernel heap
-#define KHEAP_END   0xFFFFFFFF70000000 // End of the kernel heap (e.g., 16 MiB)
-
-
-static uint64_t kheap_current;
-static uint64_t kheap_max; // Tracks the current maximum allocated address
+uint64_t kheap_current;
+uint64_t kheap_max; // Tracks the current maximum allocated address
 
 
 void *kheap_alloc(size_t size) {
@@ -55,8 +51,24 @@ void kheap_free(void *ptr, size_t size) {
 
 
 void init_kheap() {
-    kheap_current = KMEM_LOW_BASE;
-    kheap_max = KMEM_UP_BASE;
+    kheap_current = V_KMEM_LOW_BASE;
+    kheap_max = V_KMEM_UP_BASE;
+
+    print("kheap_current : ");
+    print_hex(kheap_current);
+    print("\n");
+
+    print("kheap_max : ");
+    print_hex(kheap_max);
+    print("\n");
 
     print("Successfully VMM initialized.\n");
+}
+
+void test_kheap(){
+    uint64_t *ptr = (uint64_t *) kheap_alloc(25);
+
+    *ptr = 0xDEADBEF;
+
+    print_hex(*ptr);
 }

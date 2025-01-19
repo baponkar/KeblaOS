@@ -73,8 +73,8 @@ void init_pmm(){
     uint64_t tmp_i = KMEM_LOW_BASE;
 
     nframes = (uint64_t) KMEM_LENGTH / FRAME_SIZE;
-    frames = (uint64_t*) kmalloc_a(nframes * BITMAP_SIZE, 1); // Allocate enough bytes for the bitmap
-    // memset(frames, 0, (size_t) nframes * BITMAP_SIZE); // Zero out the bitmap array
+    frames = (uint64_t*) kmalloc_a( (nframes + 63) * sizeof(uint64_t) / 64 , 1); // Allocate enough bytes for the bitmap
+    memset(frames, 0, (nframes + 63) * sizeof(uint64_t) / 64 ); // Zero out the bitmap array
 
     uint64_t tmp_f = KMEM_LOW_BASE; // KMEM_LOW_BASE changed from initial value of KMEM_LOW_BASE 
 
