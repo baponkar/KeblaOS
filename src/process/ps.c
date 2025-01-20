@@ -1,146 +1,93 @@
 
 #include "ps.h"
 
-static process_t *process_list = NULL; // Linked list of processes
-static process_t *current_process = NULL; // Currently running process
-static uint64_t next_pid = 1; // Next process ID
+
+#define PROCESS_READY    0
+#define PROCESS_RUNNING  1
+#define PROCESS_BLOCKED  2
+
+#define STACK_SIZE 16384 // 16 KB
+
+extern void switch_to_process(process_t *current, process_t *next);
+
+process_t *current_process = NULL;
+process_t *process_list = NULL; // Linked list of all processes
 
 
 process_t *create_process(void (*entry_point)()) {
-    // print("Creating a process\n");
-    process_t *new_process = (process_t *)kheap_alloc(sizeof(process_t));
-    if (!new_process){
-        print("null process\n");
-        return NULL;
-    } 
+    process_t *new_proc = (process_t *)kheap_alloc(sizeof(process_t));
+    new_proc->stack = (uint64_t *)kheap_alloc(STACK_SIZE);
 
-    void *stack = kheap_alloc(0x4000); // 16 KiB stack
-    if (!stack) {
-        kheap_free(new_process, sizeof(process_t));
-        print("null stack\n");
-        return NULL;
-    }
+    // Set up stack and registers
+    uint64_t *stack_top = new_proc->stack + (STACK_SIZE / sizeof(uint64_t));
+    new_proc->cr3 = create_new_pml4(); // Create a new page table
+    new_proc->regs = (registers_t *)(stack_top - 1); // Reserve space for saved registers
 
-    uint64_t *page_table = (uint64_t *)kheap_alloc(0x1000);
-    if (!page_table) {
-        print("null page_table\n");
-        kheap_free(stack, 0x4000);
-        kheap_free(new_process, sizeof(process_t));
-        return NULL;
-    }
+    print("test\n");
+    new_proc->regs->iret_rsp = (uint64_t)stack_top;  // Stack pointer
+    new_proc->regs->iret_rip = (uint64_t)entry_point; // Entry point
 
-    // Initialize the PCB
-    new_process->pid = next_pid++;
-    new_process->page_table = page_table;
-    new_process->stack = (void *)((uint64_t)stack + 0x4000); // Stack grows downward
-    new_process->state = PROCESS_READY;
-    new_process->next = NULL;
-
-    // Set up the initial stack for the process
-    uint64_t *stack_top = (uint64_t *)new_process->stack;
-    *(--stack_top) = (uint64_t)entry_point; // Set RIP to entry point
-    *(--stack_top) = 0;                    // Fake return address (end of process)
-
-    new_process->stack = (void *)stack_top;
+    new_proc->state = PROCESS_READY;
+    new_proc->next = NULL;
 
     // Add to process list
-    if (!process_list) {
-        process_list = new_process;
+    if (process_list == NULL) {
+        process_list = new_proc;
     } else {
         process_t *temp = process_list;
-        while (temp->next) {
-            temp = temp->next;
-        }
-        temp->next = new_process;
+        while (temp->next) temp = temp->next;
+        temp->next = new_proc;
     }
 
-    print("Process created with PID: ");
-    print_dec(new_process->pid);
-    print("\n");
-
-
-    return new_process;
+    return new_proc;
 }
 
-
-
-void terminate_process(process_t *process) {
-    if (!process) return;
-
-    // Free process resources
-    kheap_free(process->stack, 0x4000);
-    kheap_free(process->page_table, 0x1000);
-    kheap_free(process, sizeof(process_t));
-
-    // Update the process list
-    process_t **indirect = &process_list;
-    while (*indirect && (*indirect)->pid != process->pid) {
-        indirect = &(*indirect)->next;
-    }
-    if (*indirect) {
-        *indirect = (*indirect)->next;
-    }
-}
-
-void load_page_table(uint64_t *page_table) {
-    // Load the PML4 physical address into the CR3 register
-    asm volatile("mov %0, %%cr3" :: "r"(page_table) : "memory");
-}
-
-void set_stack_pointer(void *stack) {
-    // Load the stack pointer into the RSP register
-    asm volatile("mov %0, %%rsp" :: "r"(stack) : "memory");
-}
-
-
-void switch_to_process(process_t *process) {
-    if (!process) return;
-
-    load_page_table(process->page_table); // Update page table
-    set_stack_pointer(process->stack);   // Set stack pointer
-
-    current_process->state = PROCESS_RUNNING; // Update state
-    current_process = process;
-
-    // Jump to the process's entry point
-    asm volatile("ret");
-}
 
 
 void scheduler_tick() {
-    if (!current_process) {
+    if (current_process == NULL  || current_process->state != PROCESS_RUNNING) {
+        // Start with the first process in the list
         current_process = process_list;
-    }
+    } else {
+        // Move to the next process in the list
+        process_t *previous_process = current_process;
+        current_process = current_process->next;
 
-    process_t *start = current_process;
-    do {
-        current_process = current_process->next ? current_process->next : process_list;
-        if (current_process->state == PROCESS_READY) {
-            switch_to_process(current_process);
-            return;
+        if (current_process == NULL) {
+            current_process = process_list; // Wrap around if at the end
         }
-    } while (current_process != start);
 
-    // No ready process found
-    print("No ready process to run.\n");
-}
-
-void test_process1() {
-    while (1) {
-        print("Process 1 running.\n");
+        // Perform the context switch
+        switch_to_process(previous_process, current_process);
     }
 }
 
-void test_process2() {
-    while (1) {
-        print("Process 2 running.\n");
+
+void process1() {
+    while (true) {
+        print("Process 1 running...\n");
+        halt_kernel(); // Simulate some waiting
     }
 }
 
-void init_scheduler() {
-    create_process(test_process1);
-    create_process(test_process2);
+void process2() {
+    while (true) {
+        print("Process 2 running...\n");
+        halt_kernel();
+    }
+}
 
-    print("Scheduler initialized with 2 processes.\n");
 
+void init_multitasking() {
+    print("Start of multitasking\n");
+
+    create_process(process1);
+    create_process(process2);
+
+    // Start the scheduler
+    current_process = process_list;
+
+    // Enable interrupts and let the scheduler run
+    enable_interrupts();
+    print("End of multitasking\n");
 }

@@ -109,3 +109,7 @@ void print_processor_name();
 
 void get_bootloader_info();
 void print_bootloader_info();
+
+
+void disk_read_sector(uint32_t sector, void* buffer);
+void disk_write_sector(uint32_t sector, const void* buffer);

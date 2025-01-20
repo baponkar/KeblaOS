@@ -110,3 +110,5 @@ void test_paging();
 
 
 uint64_t get_cr3_addr();
+
+uint64_t create_new_pml4();

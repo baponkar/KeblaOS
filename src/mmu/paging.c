@@ -136,7 +136,7 @@ void init_paging()
         if( (tmp != NULL) && (tmp->present == 1)){
             free_frame(tmp);
 
-            uint64_t bit_no = ADDR_TO_BIT_NO(va);
+            // uint64_t bit_no = ADDR_TO_BIT_NO(va);
 
             // assert(bit_no < nframes * 8);
             // if (bit_no >= nframes * 8) {
@@ -370,4 +370,89 @@ void test_paging() {
     print_bin(val);
 }
 
+#include "paging.h"
+
+// Function to flush TLB for a specific address
+void flush_tlb(uint64_t address) {
+    // Use the invlpg instruction to invalidate the TLB entry for a specific address
+    asm volatile("invlpg (%0)" : : "r"(address) : "memory");
+}
+
+// Function to flush the entire TLB (by writing to cr3)
+void flush_tlb_all() {
+    uint64_t cr3;
+    // Get the current value of CR3 (the base of the PML4 table)
+    asm volatile("mov %%cr3, %0" : "=r"(cr3));
+
+    // Write the value of CR3 back to itself, which will flush the TLB
+    asm volatile("mov %0, %%cr3" : : "r"(cr3) : "memory");
+}
+
+
+void map_virtual_memory(void *phys_addr, size_t size, uint64_t flags) {
+    uint64_t pml4_index, pdpt_index, pd_index, pt_index;
+    uint64_t *pml4, *pdpt, *pd, *pt;
+
+    // Cast the physical address to a usable form
+    uint64_t phys = (uint64_t)phys_addr;
+    uint64_t virt = phys;  // Mapping physical to virtual 1:1 for simplicity.
+
+    // Assume we already have the base PML4 loaded in CR3
+    pml4 = (uint64_t *)get_cr3_addr();
+
+    // Iterate through the address range to map
+    for (size_t offset = 0; offset < size; offset += 0x1000) {
+        uint64_t current_phys = phys + offset;
+        uint64_t current_virt = virt + offset;
+
+        // Calculate indices in the paging hierarchy
+        pml4_index = (current_virt >> 39) & 0x1FF;
+        pdpt_index = (current_virt >> 30) & 0x1FF;
+        pd_index   = (current_virt >> 21) & 0x1FF;
+        pt_index   = (current_virt >> 12) & 0x1FF;
+
+        // Get or create PDPT
+        if (!(pml4[pml4_index] & PAGE_PRESENT)) {
+            pdpt = (uint64_t *)kmalloc_a(0x1000,1);
+            memset(pdpt, 0, 0x1000);
+            pml4[pml4_index] = ((uint64_t)pdpt | flags);
+        } else {
+            pdpt = (uint64_t *)(pml4[pml4_index] & ~0xFFF);
+        }
+
+        // Get or create PD
+        if (!(pdpt[pdpt_index] & PAGE_PRESENT)) {
+            pd = (uint64_t *)kmalloc_a(0x1000,1);
+            memset(pd, 0, 0x1000);
+            pdpt[pdpt_index] = ((uint64_t)pd | flags);
+        } else {
+            pd = (uint64_t *)(pdpt[pdpt_index] & ~0xFFF);
+        }
+
+        // Get or create PT
+        if (!(pd[pd_index] & PAGE_PRESENT)) {
+            pt = (uint64_t *)kmalloc_a(0x1000,1);
+            memset(pt, 0, 0x1000);
+            pd[pd_index] = ((uint64_t)pt | flags);
+        } else {
+            pt = (uint64_t *)(pd[pd_index] & ~0xFFF);
+        }
+
+        // Map the physical address to the virtual address
+        pt[pt_index] = (current_phys | flags);
+    }
+
+    // Ensure changes to page tables are reflected in the CPU
+    flush_tlb(virt);
+}
+
+
+uint64_t create_new_pml4() {
+    uint64_t pml4_ptr_phys = (uint64_t) kmalloc_a(sizeof(pml4_t), 1);
+    memset((void*)pml4_ptr_phys, 0, sizeof(pml4_t)); // Clear PML4 table
+
+    // Map the PML4 into the page tables
+    map_virtual_memory((void*)pml4_ptr_phys, sizeof(pml4_t), PAGE_WRITE | PAGE_PRESENT);
+    return pml4_ptr_phys;
+}
 

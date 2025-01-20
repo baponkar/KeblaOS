@@ -16,8 +16,6 @@ char *OS_NAME = "KeblaOS";
 char *OS_VERSION = "0.11";
 char *BUILD_DATE = "16/12/2024";
 
-extern process_t *processes_list;
-extern process_t *current_process;
 
 
 void kmain(){
@@ -55,15 +53,12 @@ void kmain(){
     init_kheap();
     // test_kheap();
 
-    init_timer();
-    
     initKeyboard();
 
-    init_scheduler();      // Initialize the scheduler
+    init_timer(1);
+    
 
-    while (1) {
-        scheduler_tick();  // Run the scheduler
-    }
+    init_multitasking();
 
     // // Create a few windows
     // Window* win1 = create_window(10, 10, 200, 100, 0xAAAAAA, "Window 1");
