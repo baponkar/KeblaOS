@@ -111,9 +111,8 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/vmm.c -o $(BUILD_DIR)/vmm.o
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/kheap.c -o $(BUILD_DIR)/kheap.o
 
+	$(NASM) $(NASM_FLAG) $(PS_DIR)/switch_process.asm -o $(BUILD_DIR)/switch_process.o
 	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/ps.c -o $(BUILD_DIR)/ps.o
-	
-
 
 
 # Linking object files into kernel binary
@@ -142,11 +141,10 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/shell.o \
 						$(BUILD_DIR)/greek_font.o \
 						$(BUILD_DIR)/kheap.o \
-						$(BUILD_DIR)/ps.o \
 						$(BUILD_DIR)/window.o \
-						$(BUILD_DIR)/mouse.o
-
-
+						$(BUILD_DIR)/mouse.o \
+						$(BUILD_DIR)/switch_process.o \
+						$(BUILD_DIR)/ps.o
 
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
@@ -175,9 +173,10 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/shell.o \
 						$(BUILD_DIR)/greek_font.o \
 						$(BUILD_DIR)/kheap.o \
-						$(BUILD_DIR)/ps.o \
 						$(BUILD_DIR)/window.o \
-						$(BUILD_DIR)/mouse.o
+						$(BUILD_DIR)/mouse.o \
+						$(BUILD_DIR)/switch_process.o \
+						$(BUILD_DIR)/ps.o
 
 
 #$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin

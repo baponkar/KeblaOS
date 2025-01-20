@@ -30,6 +30,8 @@
 
 #include "../driver/mouse.h"
 
+#include "../file_system/fs.h"
+
 extern uint64_t V_KMEM_LOW_BASE;
 extern uint64_t V_KMEM_UP_BASE;
 
