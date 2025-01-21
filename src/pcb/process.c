@@ -1,12 +1,15 @@
 
 #include <stddef.h>
-#include "../mmu/kmalloc.h"
+
 #include "../lib/string.h"
 #include "../driver/vga.h"
 
 #include "../x86_64/pit/pit_timer.h"
 
+#include "../mmu/kheap.h"
+
 #include "process.h"
+
 
 #define STACK_SIZE 16*1024 // 16 KB
 
@@ -58,9 +61,9 @@ void schedule(registers_t *regs) {
 
 
 process_t *create_process(void (*entry_point)(void)) {
-    process_t *process = (process_t *)kmalloc(sizeof(process_t));
+    process_t *process = (process_t *)kheap_alloc(sizeof(process_t));
     process->pid = next_pid++;
-    process->stack = (uint64_t *)kmalloc(STACK_SIZE);
+    process->stack = (uint64_t *)kheap_alloc(STACK_SIZE);
     process->state = PROCESS_READY;
     process->next = NULL;
 
@@ -74,6 +77,29 @@ process_t *create_process(void (*entry_point)(void)) {
 
     add_process(process);
     return process;
+}
+
+void terminate_process(process_t *process) {
+    process_t *temp = process_list;
+    process_t *prev = NULL;
+
+    while (temp) {
+        if (temp == process) {
+            if (prev) {
+                prev->next = temp->next;
+            } else {
+                process_list = temp->next;
+            }
+
+            kheap_free((void *)temp->stack, STACK_SIZE);
+            kheap_free((void *)temp, sizeof(process_t));
+            return;
+        }
+
+        prev = temp;
+        temp = temp->next;
+    }
+   
 }
 
 
@@ -116,4 +142,6 @@ void print_process_list() {
         temp = temp->next;
     }
 }
+
+
 
