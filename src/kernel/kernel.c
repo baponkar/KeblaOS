@@ -28,7 +28,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../driver/keyboard.h" // initKeyboard
 #include "../x86_64/pit/pit_timer.h" // init_timer
 
-#include "../pcb/process.h" // init_multitasking
+#include "../pcb/process.h" // init_processes
 
 #include "kernel.h"
 
@@ -133,3 +133,8 @@ void mem_info(){
     print_hex(V_KMEM_UP_BASE - V_KMEM_LOW_BASE);
     print("\n");
 }
+
+
+
+
+
