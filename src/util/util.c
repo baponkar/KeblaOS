@@ -2,6 +2,8 @@
     The common function is present in this file.
 */
 
+#include "../driver/vga.h"
+
 #include "util.h"
 
 

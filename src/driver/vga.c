@@ -1,4 +1,12 @@
 
+#include "font.h"
+#include "../lib/stdlib.h"       // For abs function
+#include "../lib/string.h"       // For memmov, memcpy, memset etc function
+#include "ports.h"              // For outb, inb function
+#include "../limine/limine.h"   // For LIMINE_BASE_REVISION, LIMINE_FRAMEBUFFER_REQUEST
+#include "../util/util.h"       // For halt_kernel function
+
+
 #include "vga.h"
 
 __attribute__((used, section(".limine_requests")))
@@ -282,7 +290,7 @@ void move_cur_right(){
 
 void print_hex(uint64_t n) {
     char hex_chars[] = "0123456789ABCDEF";
-    printf("0x");
+    print("0x");
 
     int leading_zero = 1; // Flag to skip leading zeros
 

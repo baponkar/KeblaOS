@@ -9,6 +9,21 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 
 */ 
 
+
+
+
+#include "../x86_64/idt/idt.h"
+
+#include "../bootloader/boot.h"
+
+#include "kmalloc.h"
+
+#include  "../lib/string.h"
+
+#include  "../driver/vga.h"
+
+#include "pmm.h"
+
 #include "paging.h"
 
 extern void enable_paging(uint64_t pml4_address); // present in load_paging.asm

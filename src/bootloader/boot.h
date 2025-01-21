@@ -1,13 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
 
-#include "../lib/string.h"
-
-#include "../limine/limine.h"
-#include "../driver/vga.h"
 
 extern char *FIRMWARE_TYPE;
 

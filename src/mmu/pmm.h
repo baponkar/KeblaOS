@@ -2,18 +2,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
 
-#include "../util/util.h"
-#include "../limine/limine.h"
-#include "../bootloader/boot.h"
-#include "kmalloc.h"
-#include "paging.h"
-#include "../bootloader/boot.h"
-#include  "../driver/vga.h"
-#include "../kernel/kernel.h"
-#include "../lib/assert.h"
 
 #define FRAME_SIZE 4096   // 4 KB
 #define BITMAP_SIZE 64 // 64 bits = 8 bytes

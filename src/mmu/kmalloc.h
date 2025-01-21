@@ -1,10 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
 
-#include "../bootloader/boot.h"
 
 
 uint64_t kmalloc(uint64_t sz); // vanilla (normal).

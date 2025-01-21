@@ -10,25 +10,38 @@ Reference   : https://wiki.osdev.org/Limine
 
 */
 
+
+#include "../limine/limine.h" // bootloader info
+#include "../bootloader/boot.h" // bootloader info
+#include "../lib/stdio.h" // printf
+#include "../util/util.h" // registers_t , halt_kernel
+
+#include "../driver/vga.h" // vga_init, print_bootloader_info, print_memory_map, display_image
+
+#include "../x86_64/gdt/gdt.h" // init_gdt
+#include "../x86_64/idt/idt.h" // init_idt, test_interrupt
+
+#include "../mmu/pmm.h" // init_pmm, test_pmm
+#include "../mmu/paging.h" // init_paging, test_paging
+#include "../mmu/vmm.h" // test_vmm
+#include "../mmu/kheap.h" // init_kheap, test_kheap
+#include "../driver/keyboard.h" // initKeyboard
+#include "../x86_64/pit/pit_timer.h" // init_timer
+
+#include "../pcb/process.h" // init_multitasking
+
 #include "kernel.h"
 
-char *OS_NAME = "KeblaOS";
-char *OS_VERSION = "0.11";
-char *BUILD_DATE = "16/12/2024";
+
 
 
 
 void kmain(){
     get_bootloader_info();
     vga_init();
-    print(OS_NAME);
-    print("--");
-    print(OS_VERSION);
-    print("\n");
 
     // display_image((FRAMEBUFFER_WIDTH - KEBLAOS_ICON_320X200X32_WIDTH)/2 , (FRAMEBUFFER_HEIGHT - KEBLAOS_ICON_320X200X32_WIDTH)/2, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
 
-    
     // print_bootloader_info();
     // print_memory_map();
     // mem_info();
@@ -58,7 +71,9 @@ void kmain(){
     init_timer(1);
     
 
-    init_multitasking();
+    init_processes();
+
+
 
     // // Create a few windows
     // Window* win1 = create_window(10, 10, 200, 100, 0xAAAAAA, "Window 1");

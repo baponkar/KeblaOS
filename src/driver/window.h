@@ -1,17 +1,6 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
-
-#include "../lib/stdlib.h"
-#include "../lib/stdio.h"
-
-#include "../x86_64/pit/pit_timer.h"
-
-#include "../mmu/kheap.h"
-
-#include "vga.h"
 
 typedef struct {
     int x, y;                  // Position on screen

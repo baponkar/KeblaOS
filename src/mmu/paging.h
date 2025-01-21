@@ -1,20 +1,9 @@
+
 #pragma once
 
 #include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
 
-#include "../limine/limine.h" 
-
-#include "../x86_64/idt/idt.h"
-
-#include "../bootloader/boot.h"
-
-#include "../lib/stdio.h"
-
-#include  "../driver/vga.h"
-#include "../limine/limine.h"
-#include "pmm.h"
+#include "../util/util.h"
 
 
 #define PAGE_SIZE    4096
@@ -32,7 +21,7 @@
 #define PAGE_ALIGN(addr) (((addr) + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1))
 
 // pml4, pdpr and pd entry
-typedef struct dir_entry { // 64 bit
+struct dir_entry { // 64 bit
     uint64_t present      : 1;  // always 1
     uint64_t rw           : 1;  // 0 for read-only, 1 for read-write
     uint64_t user         : 1;  // 0 for kernel, 1 for user
@@ -45,7 +34,8 @@ typedef struct dir_entry { // 64 bit
     // uint64_t reserved_2   : 12; // Reserved must be zero
     uint64_t available_2  : 11; // zero
     uint64_t xd           : 1;
-} __attribute__((packed)) dir_entry_t;
+} __attribute__((packed));
+typedef struct dir_entry dir_entry_t;
 
 
 typedef struct page { // 64 bit

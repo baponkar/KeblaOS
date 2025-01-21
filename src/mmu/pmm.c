@@ -1,4 +1,15 @@
 
+#include "../limine/limine.h"
+#include "../bootloader/boot.h"
+
+#include "kmalloc.h"
+#include  "../driver/vga.h"
+
+#include "../lib/assert.h"
+#include "../lib/string.h"
+
+#include "../util/util.h"
+
 #include "pmm.h"
 
 
