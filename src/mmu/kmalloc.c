@@ -2,7 +2,13 @@
 This file will manage static memory allocation
 */
 
+
+#include "../bootloader/boot.h"
+#include "../driver/vga.h"
+
 #include "kmalloc.h"
+
+#define FRAME_SIZE 4096
 
 extern uint64_t PHYSICAL_TO_VIRTUAL_OFFSET;
 extern uint64_t KMEM_UP_BASE;
@@ -66,7 +72,7 @@ uint64_t kmalloc_ap(uint64_t sz, int align, uint64_t *phys)  // page aligned and
     {
         // Align it.
         KMEM_LOW_BASE &= 0xFFFFFFFFFFFFF000;
-        KMEM_LOW_BASE += PAGE_SIZE;    // increase  the placement address by 4 KB, Page Size
+        KMEM_LOW_BASE += FRAME_SIZE;    // increase  the placement address by 4 KB, Page Size
     }
     if (phys)
     {

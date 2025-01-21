@@ -23,7 +23,7 @@ PIT_DIR = $(SRC_DIR)/x86_64/pit
 RTC_DIR = $(SRC_DIR)/x86_64/rtc
 MMU_DIR = $(SRC_DIR)/mmu
 USR_DIR = $(SRC_DIR)/usr
-PS_DIR = $(SRC_DIR)/process
+PS_DIR = $(SRC_DIR)/pcb
 
 
 
@@ -66,8 +66,8 @@ default: build
 
 # Building kernel.o
 $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
-	$(GCC) $(GCC_FLAG) -c $(KERNEL_DIR)/kernel.c -o $(BUILD_DIR)/kernel.o
 
+	$(GCC) $(GCC_FLAG) -c $(KERNEL_DIR)/kernel.c -o $(BUILD_DIR)/kernel.o
 	$(GCC) $(GCC_FLAG) -c $(UTIL_DIR)/util.c -o $(BUILD_DIR)/util.o
 
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/boot.c -o $(BUILD_DIR)/boot.o
@@ -111,8 +111,8 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/vmm.c -o $(BUILD_DIR)/vmm.o
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/kheap.c -o $(BUILD_DIR)/kheap.o
 
-	$(NASM) $(NASM_FLAG) $(PS_DIR)/switch_process.asm -o $(BUILD_DIR)/switch_process.o
-	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/ps.c -o $(BUILD_DIR)/ps.o
+	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/process.c -o $(BUILD_DIR)/process.o
+	
 
 
 # Linking object files into kernel binary
@@ -143,8 +143,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/window.o \
 						$(BUILD_DIR)/mouse.o \
-						$(BUILD_DIR)/switch_process.o \
-						$(BUILD_DIR)/ps.o
+						$(BUILD_DIR)/process.o
 
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
@@ -175,8 +174,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/window.o \
 						$(BUILD_DIR)/mouse.o \
-						$(BUILD_DIR)/switch_process.o \
-						$(BUILD_DIR)/ps.o
+						$(BUILD_DIR)/process.o
 
 
 #$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin

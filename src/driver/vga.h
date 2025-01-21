@@ -1,15 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdbool.h>
 #include <stddef.h>
-
-#include "font.h"
-#include "../lib/stdlib.h"          // For abs function
-#include "../lib/string.h"          // For memmov, memcpy, memset etc function
-#include "ports.h"
-
-#include "../kernel/kernel.h"       // To get Framebuffer values
 
 #define VGA_INDEX_REG_PORT 0x3D4    // VGA CRT Controller Index Register
 #define VGA_DATA_REG_PORT 0x3D5     // 0x3D5: VGA CRT Controller Data Register

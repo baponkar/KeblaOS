@@ -1,3 +1,12 @@
+#include <stdint.h>
+
+
+#include "../lib/string.h"
+
+
+#include "../mmu/kheap.h"
+
+#include "vga.h"
 
 #include "window.h"
 

@@ -6,6 +6,14 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/05_Inter
 https://web.archive.org/web/20160326064709/http://jamesmolloy.co.uk/tutorial_html/4.-The%20GDT%20and%20IDT.html
 */
 
+
+
+#include "../../driver/vga.h"
+#include "../../driver/ports.h"
+
+#include "../../util/util.h"
+#include "../../mmu/paging.h"
+
 #include "idt.h"
 
 idt_entry_t idt_entries[256];

@@ -12,6 +12,10 @@ In future I will implement a custom bootloader and will use that .
 Reference: https://github.com/limine-bootloader/limine/blob/v8.x/PROTOCOL.md#kernel-address-feature
 */
 
+#include "../lib/string.h"      // memcpy
+#include "../limine/limine.h"   // bootloader info
+#include "../driver/vga.h"      // print
+#include "../util/util.h"       //  print_size_with_units
 
 #include "boot.h"
 

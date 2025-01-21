@@ -3,7 +3,11 @@
 https://github.com/dreamportdev/Osdev-Notes/blob/master/04_Memory_Management/04_Virtual_Memory_Manager.md
 */
 
+#include "paging.h"
+#include "../driver/vga.h"
+
 #include "vmm.h"
+
 
 
 extern pml4_t *user_pml4;

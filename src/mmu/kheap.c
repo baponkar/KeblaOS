@@ -1,3 +1,9 @@
+
+
+#include "../driver/vga.h"
+#include "../bootloader/boot.h"
+#include "vmm.h"
+
 #include "kheap.h"
 
 
@@ -53,14 +59,6 @@ void kheap_free(void *ptr, size_t size) {
 void init_kheap() {
     kheap_current = V_KMEM_LOW_BASE;
     kheap_max = V_KMEM_UP_BASE;
-
-    print("kheap_current : ");
-    print_hex(kheap_current);
-    print("\n");
-
-    print("kheap_max : ");
-    print_hex(kheap_max);
-    print("\n");
 
     print("Successfully VMM initialized.\n");
 }

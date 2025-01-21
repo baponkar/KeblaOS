@@ -2,6 +2,7 @@
 https://wiki.osdev.org/Programmable_Interval_Timer
 */
 
+#include "../../pcb/process.h"
 #include "pit_timer.h"
 
 
@@ -9,8 +10,6 @@ volatile uint64_t ticks = 0;
 const uint32_t freq = 1193180;  // PIT frequency (Hz)
 uint16_t divisor = 1000;        // Default divisor for ~1ms tick rate
 
-extern process_t *current_process;
-extern void switch_to_process(process_t *current, process_t *next);
 
 void timerHandler(registers_t *regs) {
     // (void)regs; // Suppress unused parameter warning if not used.
@@ -18,19 +17,14 @@ void timerHandler(registers_t *regs) {
 
     // Uncomment this for debug purposes but be cautious with high-frequency output
     if (ticks % 1000 == 0) {
-        print("\nTick: ");
-        print_dec(ticks); // Assuming you have a function to print 
-        
-        // Save the current process's state
-        if (current_process != NULL) {
-            current_process->regs = regs; // Save current process's register state
-        }
+        // print("\nTick: ");
+        // print_dec(ticks); // Assuming you have a function to print 
 
-        // Switch to the next process
-        scheduler_tick();
-
-        switch_to_process(current_process, current_process->next);
+        schedule(regs);
     }
+
+    // Send End of Interrupt (EOI) to the PIC
+    outb(0x20, 0x20);
 }
 
 

@@ -11,6 +11,7 @@
     https://forum.osdev.org/viewtopic.php?t=57521
 */
 
+#include "../../driver/vga.h"
 
 #include "gdt.h"
 
