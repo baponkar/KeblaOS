@@ -13,6 +13,7 @@ https://web.archive.org/web/20160326064709/http://jamesmolloy.co.uk/tutorial_htm
 
 #include "../../util/util.h"
 #include "../../mmu/paging.h"
+#include "../../lib/string.h"
 
 #include "idt.h"
 
@@ -39,7 +40,7 @@ char* exception_messages[] = {
     "Coprocessor Fault", // 16
     "Alignment Fault", // 17
     "Machine Check",  // 18
-    "Reserved", // 19
+    "SIMD (SSE/AVX) error", // 19
     "Reserved", // 20
     "Reserved", // 21
     "Reserved", // 22
@@ -76,7 +77,7 @@ void isr_install(){
     idt_ptr.base  = (uint64_t) &idt_entries;
 
     // for safety clearing memories
-    // memset((void *)&idt_entries, 0, (size_t) (sizeof(idt_entry_t) * 256));
+    memset((void *)&idt_entries, 0, (size_t) (sizeof(idt_entry_t) * 256));
 
    // Setting Interrupts Service Routine Gate(ISR Gate)
    // https://stackoverflow.com/questions/9113310/segment-selector-in-ia-32
@@ -178,7 +179,7 @@ void gpf_handler(registers_t *regs){
 
     print("Stack Contents:\n");
     uint64_t *rsp = (uint64_t *)regs->iret_rsp;
-    for (int i = 0; i < 19; i++) {
+    for (int i = 0; i < 25; i++) {
         print("  [");
         print_hex((uint64_t)(rsp + i));
         print("] = ");
@@ -282,6 +283,7 @@ void interrupt_uninstall_handler(int int_no)
 
 void init_idt(){
     print("Start of IDT initialization...\n");
+    disable_interrupts();
     isr_install();
     idt_flush((uint64_t) &idt_ptr);
     irq_remap();
@@ -294,7 +296,7 @@ void init_idt(){
 void test_interrupt() {
     print("Testing Interrupts\n");
     // asm volatile ("div %b0" :: "a"(0)); // Int no 0
-    // asm volatile ("int $0x3");   // Breakpoint int no : 3
+    asm volatile ("int $0x3");   // Breakpoint int no : 3
     // asm volatile ("int $0x0");   // Division By Zero, int no : 0
     // asm volatile ("int $0xE");   // Page Fault Request, int no: 14
     // asm volatile("int $0xF");    // int no 15
@@ -384,6 +386,7 @@ void irq_handler(registers_t *r)
 void disable_interrupts() {
     asm volatile("cli"); // Clear the interrupt flag
 }
+
 
 // Function to enable interrupts
 void enable_interrupts() {
