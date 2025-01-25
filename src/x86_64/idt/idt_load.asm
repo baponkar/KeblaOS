@@ -1,3 +1,4 @@
+
 ;
 ; This prgrame will load idt in idtr
 ; The ISR's which not push any error code we are pushing a dummy error code 0
@@ -14,126 +15,155 @@
 ; The order is follow by registers_t structure defined in util.h 
 ;
 
-; Save all segment and general purpose registers
-%macro SAVE_REGISTERS 0
-    push rax
-    push rbx
-    push rcx
-    push rdx
-    push rbp
-    push rsi
-    push rdi
-
-    push r8
-    push r9
-    push r10
-    push r11
-    push r12
-    push r13
-    push r14
-    push r15
-
-    push gs
-    push fs
-
-    mov ax, es ; we can not push es directly into stack
-    push rax
-
-    mov ax, ds ; we can not push ds directly into stack
-    push rax
-%endmacro
-
-
-; Restore all segment and general purpose registers
-%macro RESTORE_REGISTERS 0
-    pop rax     ; Restore `ds` (was pushed last)
-    mov ds, ax
-
-    pop rax     ; Restore `es`
-    mov es, ax
-
-    pop fs      ; Restore `fs`
-    pop gs
-
-    pop r15
-    pop r14
-    pop r13
-    pop r12
-    pop r11
-    pop r10
-    pop r9
-    pop r8
-
-    pop rdi
-    pop rsi
-    pop rbp
-    pop rdx
-    pop rcx
-    pop rbx
-    pop rax
-    ; At this point, the iret_* values are still on the stack and 
-    ; will be handled automatically by `iretq`.
-%endmacro
-
-
 section .text
 [global idt_flush]
 idt_flush:
     lidt [rdi]              ; Load the IDT pointer
     ret
 
-; Setup Interrupt Service Routine(ISR)
 %macro ISR_NOERRCODE 1
     [global isr%1]
     isr%1:
-        push 0               ; Pushing Dummy error code into stack
-        push %1              ; Pushing Interrupt number into stack
-        jmp isr_common_stub
+        cli;
+
+        push 0               ; Dummy error code
+        push %1              ; Interrupt number
+        ; Save general-purpose registers in reverse order (to match RESTORE_REGISTERS)
+        push r15
+        push r14
+        push r13
+        push r12
+        push r11
+        push r10
+        push r9
+        push r8
+        push rsi
+        push rdi
+        push rbp
+        push rdx
+        push rcx
+        push rbx
+        push rax
+        ; Save segment registers
+        mov ax, ds
+        push rax
+        mov ax, es
+        push rax
+        push fs
+        push gs
+        ; Load kernel data segment selectors
+        mov ax, 0x10
+        mov ds, ax
+        mov es, ax
+        mov fs, ax
+        mov gs, ax
+        
+        ; Pass the current stack pointer (RSP) to the ISR handler
+        mov rdi, rsp         ; Pass pointer to the `registers_t` structure
+        cld                  ; Clear the direction flag
+        call isr_handler     ; Call the interrupt handler
+
+        ; Restore segment registers
+        pop gs
+        pop fs
+        pop rax
+        mov es, ax
+        pop rax
+        mov ds, ax
+        ; Restore general-purpose registers
+        pop rax
+        pop rbx
+        pop rcx
+        pop rdx
+        pop rbp
+        pop rdi
+        pop rsi
+        pop r8
+        pop r9
+        pop r10
+        pop r11
+        pop r12
+        pop r13
+        pop r14
+        pop r15
+        add rsp, 16 ; Clean up interrupt no and dummy error code
+
+        ; Return from the interrupt using IRETQ (iret values remain intact)
+        iretq
 %endmacro
+
+
 
 %macro ISR_ERRCODE 1
     [global isr%1]
     isr%1:
-        ; don't need to push error code as it is autometically push
-        push %1              ; Pusing Interrupt number only into the stack
-        jmp isr_common_stub
+        cli
+
+        ; Do not need to push dummy error code 
+        push %1              ; Interrupt number
+        ; Save general-purpose registers in reverse order (to match RESTORE_REGISTERS)
+        push r15
+        push r14
+        push r13
+        push r12
+        push r11
+        push r10
+        push r9
+        push r8
+        push rsi
+        push rdi
+        push rbp
+        push rdx
+        push rcx
+        push rbx
+        push rax
+        ; Save segment registers
+        mov ax, ds
+        push rax
+        mov ax, es
+        push rax
+        push fs
+        push gs
+        ; Load kernel data segment selectors
+        mov ax, 0x10
+        mov ds, ax
+        mov es, ax
+        mov fs, ax
+        mov gs, ax
+
+
+        ; Pass the current stack pointer (RSP) to the ISR handler
+        mov rdi, rsp         ; Pass pointer to the `registers_t` structure
+        cld                  ; Clear the direction flag
+        call isr_handler     ; Call the interrupt handler
+
+        ; Restore segment registers
+        pop gs
+        pop fs
+        pop rax
+        mov es, ax
+        pop rax
+        mov ds, ax
+        ; Restore general-purpose registers
+        pop rax
+        pop rbx
+        pop rcx
+        pop rdx
+        pop rbp
+        pop rdi
+        pop rsi
+        pop r8
+        pop r9
+        pop r10
+        pop r11
+        pop r12
+        pop r13
+        pop r14
+        pop r15
+        add rsp, 8           ; Remove the pushed interrupt number only
+        ; Return from the interrupt using IRETQ
+        iretq
 %endmacro
-
-
-isr_common_stub:
-    SAVE_REGISTERS
-
-    mov ax, 0x10             ; Load the kernel data segment descriptor
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-
-    ; Save `iret_*` values into the stack as part of `registers_t`
-    mov rax, [rsp + 8*0]     ; `iret_rip`
-    mov [rsp + 8*33], rax    ; Offset 33 corresponds to `iret_rip` in `registers_t`
-
-    mov rax, [rsp + 8*1]     ; `iret_cs`
-    mov [rsp + 8*34], rax    ; Offset 34 corresponds to `iret_cs`
-
-    mov rax, [rsp + 8*2]     ; `iret_rflags`
-    mov [rsp + 8*35], rax    ; Offset 35 corresponds to `iret_rflags`
-
-    mov rax, [rsp + 8*3]     ; `iret_rsp`
-    mov [rsp + 8*36], rax    ; Offset 36 corresponds to `iret_rsp`
-
-    mov rax, [rsp + 8*4]     ; `iret_ss`
-    mov [rsp + 8*37], rax    ; Offset 37 corresponds to `iret_ss`
-
-    mov rdi, rsp             ; Pass the current stack pointer to `isr_handler`
-    cld                      ; Required by AMD64 System V ABI
-    call isr_handler
-    
-    RESTORE_REGISTERS
-    add rsp, 16              ; Clean up pushed error code and IRQ number 
-
-    iretq                     ; Return from Interrupt
-
 
 ISR_NOERRCODE 0
 ISR_NOERRCODE 1
@@ -180,30 +210,72 @@ ISR_NOERRCODE 177   ; System Call
 %macro IRQ 2
     [global irq%1]
     irq%1:
-        push 0        ; Push a dummy error code  
-        push %2       ; Push irq code
-        jmp irq_common_stub
+        cli
+        
+        push 0               ; Dummy error code
+        push %1              ; Interrupt number
+        ; Save general-purpose registers in reverse order (to match RESTORE_REGISTERS)
+        push r15
+        push r14
+        push r13
+        push r12
+        push r11
+        push r10
+        push r9
+        push r8
+        push rsi
+        push rdi
+        push rbp
+        push rdx
+        push rcx
+        push rbx
+        push rax
+        ; Save segment registers
+        mov ax, ds
+        push rax
+        mov ax, es
+        push rax
+        push fs
+        push gs
+        ; Load kernel data segment selectors
+        mov ax, 0x10
+        mov ds, ax
+        mov es, ax
+        mov fs, ax
+        mov gs, ax
+
+        
+        mov rdi, rsp                    ; Pass the current stack pointer to `irq_handler`
+        cld
+        call irq_handler
+
+        ; Restore segment registers
+        pop gs
+        pop fs
+        pop rax
+        mov es, ax
+        pop rax
+        mov ds, ax
+        ; Restore general-purpose registers
+        pop rax
+        pop rbx
+        pop rcx
+        pop rdx
+        pop rbp
+        pop rdi
+        pop rsi
+        pop r8
+        pop r9
+        pop r10
+        pop r11
+        pop r12
+        pop r13
+        pop r14
+        pop r15
+        add rsp, 16 ; Clean up interrupt no and dummy error code
+        
+        iretq                    ; Return from Interrupt
 %endmacro
-
-
-; This is a stub that we have created for IRQ based ISRs. This calls
-irq_common_stub:
-    SAVE_REGISTERS
-
-    mov ax, 0x10    ; Load the Kernel Data Segment descriptor!
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-
-    mov rdi, rsp    ; Pass stack pointer to `irq_handler`
-    cld             ; Required by AMD64 System V ABI
-    call irq_handler
-
-    RESTORE_REGISTERS
-    add rsp, 16     ; Clean up pushed error code and IRQ number 
-
-    iretq           ; Return from Interrupt
 
 
 
@@ -223,7 +295,6 @@ IRQ  12,    44
 IRQ  13,    45
 IRQ  14,    46
 IRQ  15,    47
-
-
+    
 
 

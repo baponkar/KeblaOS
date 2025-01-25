@@ -92,7 +92,9 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(NASM) $(NASM_FLAG) $(GDT_DIR)/gdt_load.asm -o $(BUILD_DIR)/gdt_load.o
 
 	$(GCC) $(GCC_FLAG) -c $(IDT_DIR)/idt.c -o $(BUILD_DIR)/idt.o
-	$(NASM) $(NASM_FLAG) $(IDT_DIR)/idt_load.asm -o $(BUILD_DIR)/idt_load.o
+	$(NASM) $(NASM_FLAG) $(IDT_DIR)/idt_flush.asm -o $(BUILD_DIR)/idt_flush.o
+	$(NASM) $(NASM_FLAG) $(IDT_DIR)/isr.asm -o $(BUILD_DIR)/isr.o
+	$(NASM) $(NASM_FLAG) $(IDT_DIR)/irq.asm -o $(BUILD_DIR)/irq.o
 
 
 	$(GCC) $(GCC_FLAG) -c $(PIT_DIR)/pit_timer.c -o $(BUILD_DIR)/pit_timer.o
@@ -130,7 +132,9 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/gdt_load.o \
 						$(BUILD_DIR)/util.o \
 						$(BUILD_DIR)/idt.o \
-						$(BUILD_DIR)/idt_load.o \
+						$(BUILD_DIR)/idt_flush.o \
+						$(BUILD_DIR)/isr.o \
+						$(BUILD_DIR)/irq.o \
 						$(BUILD_DIR)/load_paging.o \
 						$(BUILD_DIR)/paging.o \
 						$(BUILD_DIR)/pmm.o \
@@ -161,7 +165,9 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/gdt_load.o \
 						$(BUILD_DIR)/util.o \
 						$(BUILD_DIR)/idt.o \
-						$(BUILD_DIR)/idt_load.o \
+						$(BUILD_DIR)/idt_flush.o \
+						$(BUILD_DIR)/isr.o \
+						$(BUILD_DIR)/irq.o \
 						$(BUILD_DIR)/load_paging.o \
 						$(BUILD_DIR)/paging.o \
 						$(BUILD_DIR)/pmm.o \

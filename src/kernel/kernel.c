@@ -50,31 +50,29 @@ void kmain(){
     // check_gdt();
 
     init_idt();
-    // test_interrupt();
+    test_interrupt();
 
     // test_kmalloc();
 
-    init_pmm();
+    // init_pmm();
     // test_pmm();
 
 
-    init_paging();
+    // init_paging();
     // test_paging();
 
     // test_vmm();
 
-    init_kheap();
+    // init_kheap();
     // test_kheap();
 
-    initKeyboard();
+    // initKeyboard();
 
     init_timer(1);
     
 
-    init_processes();
-
-
-
+    // init_processes();
+    
     // // Create a few windows
     // Window* win1 = create_window(10, 10, 200, 100, 0xAAAAAA, "Window 1");
     // Window* win2 = create_window(30, 30, 200, 100, 0xBBBBBB, "Window 2");
