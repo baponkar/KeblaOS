@@ -9,6 +9,7 @@
     https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/04_GDT.md
     https://stackoverflow.com/questions/79260987/why-gdt-is-not-working-in-the-x86-64-system
     https://forum.osdev.org/viewtopic.php?t=57521
+    https://stackoverflow.com/questions/37554399/what-is-the-use-of-defining-a-global-descriptor-table
 */
 
 #include "../../driver/vga.h"

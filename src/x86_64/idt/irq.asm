@@ -1,3 +1,5 @@
+
+
 [extern irq_handler]        ; defined in idt.c 
 
 
@@ -9,7 +11,8 @@
 
         ; Stack already has 5*8=40 bytes data
         push 0               ; Dummy error code
-        push %1              ; Interrupt number
+        push %2              ; Interrupt number
+        
         ; Save general-purpose registers in reverse order (to match RESTORE_REGISTERS)
         push r15
         push r14
@@ -33,6 +36,7 @@
         push rax
         push fs
         push gs
+        
         
         mov rdi, rsp                    ; Pass the current stack pointer to `irq_handler`
         cld

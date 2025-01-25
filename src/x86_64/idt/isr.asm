@@ -1,3 +1,4 @@
+
 [extern isr_handler]        ; defined in idt.c
 
 %macro ISR_NOERRCODE 1
@@ -119,7 +120,7 @@
         pop r15
         add rsp, 8           ; Remove the pushed interrupt number only
 
-        iretq               ; Return from the interrupt using IRETQ
+        iretq                ; Return from the interrupt using IRETQ
 %endmacro
 
 ISR_NOERRCODE 0
@@ -161,3 +162,6 @@ ISR_NOERRCODE 31
 
 ISR_NOERRCODE 128   ; System Call
 ISR_NOERRCODE 177   ; System Call
+
+
+

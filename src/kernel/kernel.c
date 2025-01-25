@@ -50,23 +50,23 @@ void kmain(){
     // check_gdt();
 
     init_idt();
-    test_interrupt();
+    // test_interrupt();
 
     // test_kmalloc();
 
-    // init_pmm();
+    init_pmm();
     // test_pmm();
 
 
-    // init_paging();
+    init_paging();
     // test_paging();
 
     // test_vmm();
 
-    // init_kheap();
+    init_kheap();
     // test_kheap();
 
-    // initKeyboard();
+    initKeyboard();
 
     init_timer(1);
     
