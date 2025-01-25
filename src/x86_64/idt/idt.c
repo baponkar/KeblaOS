@@ -122,6 +122,7 @@ void isr_install(){
 // This gets called from our ASM interrupt handler stub.
 void isr_handler(registers_t *regs)
 {
+    print_regs_content(regs);
     if(regs->int_no == 128){
         print("Interrupt 128\n");
         // syscall_handler(&regs);
@@ -149,11 +150,7 @@ void isr_handler(registers_t *regs)
         print_dec(regs->err_code);
         print("\n");
 
-        print("Division by zero at RIP: ");
-        print_hex(regs->iret_rip);
-        print("\n");
-
-        debug_error_code(regs->err_code);
+        // debug_error_code(regs->err_code);
 
         print("System Halted!\n");
         halt_kernel();
@@ -284,10 +281,13 @@ void interrupt_uninstall_handler(int int_no)
 void init_idt(){
     print("Start of IDT initialization...\n");
     disable_interrupts();
+
     isr_install();
     idt_flush((uint64_t) &idt_ptr);
+
     irq_remap();
     irq_install();
+
     enable_interrupts();
     print("Successfully IDT Initialized.\n");
 }
@@ -296,13 +296,13 @@ void init_idt(){
 void test_interrupt() {
     print("Testing Interrupts\n");
     // asm volatile ("div %b0" :: "a"(0)); // Int no 0
-    asm volatile ("int $0x3");   // Breakpoint int no : 3
+    // asm volatile ("int $0x3");   // Breakpoint int no : 3
     // asm volatile ("int $0x0");   // Division By Zero, int no : 0
     // asm volatile ("int $0xE");   // Page Fault Request, int no: 14
     // asm volatile("int $0xF");    // int no 15
     // asm volatile("int $0x10");   // int no 16
     // asm volatile("int $0x11");   // int no 17
-    // asm volatile ("int $0x20");  // Interrupt Request, int no: 32 
+    asm volatile ("int $0x20");  // Interrupt Request, int no: 32 
     // asm volatile ("int $0x21");     // Interrupt Request, int no : 33
     // asm volatile ("int $0x22");  // Interrupt Request, int no: 34
 }
@@ -354,23 +354,23 @@ void irq_install()
 
 #define PIC_EOI 0x20 // End of Interrupt
 
-void irq_handler(registers_t *r)
+void irq_handler(registers_t *regs)
 {
     /* This is a blank function pointer */
     void (*handler)(registers_t *r);
     
     /* Find out if we have a custom handler to run for this
     *  IRQ, and then finally, run it */
-    handler = interrupt_routines[r->int_no - 32];
+    handler = interrupt_routines[regs->int_no - 32];
     if (handler)
     {
-        handler(r);
+        handler(regs);
     }
 
     /* If the IDT entry that was invoked was greater than 40
     *  (meaning IRQ8 - 15), then we need to send an EOI to
     *  the slave controller */
-    if (r->int_no >= 40)
+    if (regs->int_no >= 40)
     {
         outb(PIC2_COMMAND_PORT, PIC_EOI); /* slave */
     }

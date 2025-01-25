@@ -19,8 +19,6 @@ void timerHandler(registers_t *regs) {
     // (void)regs; // Suppress unused parameter warning if not used.
     ticks++;
 
-    print("Tick: ");
-
     // Uncomment this for debug purposes but be cautious with high-frequency output
     if (ticks % 1000 == 0) {
         // print("\nTick: ");
