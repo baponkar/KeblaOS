@@ -4,6 +4,8 @@ https://wiki.osdev.org/Interrupt_Descriptor_Table
 https://stackoverflow.com/questions/52214531/x86-64-order-of-passing-parameters-in-registers
 https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/05_InterruptHandling.md
 https://web.archive.org/web/20160326064709/http://jamesmolloy.co.uk/tutorial_html/4.-The%20GDT%20and%20IDT.html
+https://stackoverflow.com/questions/79386685/how-does-stack-memory-will-be-use-to-store-cpu-state-during-interrupt?noredirect=1#comment140001157_79386685
+
 */
 
 
@@ -122,7 +124,6 @@ void isr_install(){
 // This gets called from our ASM interrupt handler stub.
 void isr_handler(registers_t *regs)
 {
-    print_regs_content(regs);
     if(regs->int_no == 128){
         print("Interrupt 128\n");
         // syscall_handler(&regs);
@@ -135,8 +136,9 @@ void isr_handler(registers_t *regs)
         page_fault_handler(regs);
         return;
     }else if(regs->int_no == 13){
+        // print("General Protection Fault\n");
         // debug_error_code(regs->err_code);
-        gpf_handler(regs);
+        // gpf_handler(regs);
         return;
     }else if(regs->int_no < 32){
         print("recieved interrupt: ");

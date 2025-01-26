@@ -3,11 +3,13 @@ https://wiki.osdev.org/Programmable_Interval_Timer
 */
 
 #include "../../pcb/process.h"
+
 #include "../idt/idt.h"
 #include "../../driver/vga.h"
 #include "../../driver/ports.h"
 
 #include "pit_timer.h"
+
 
 
 volatile uint64_t ticks = 0;
@@ -20,11 +22,11 @@ void timerHandler(registers_t *regs) {
     ticks++;
 
     // Uncomment this for debug purposes but be cautious with high-frequency output
-    if (ticks % 1000 == 0) {
+    if (ticks % 2000 == 0) {
         // print("\nTick: ");
         // print_dec(ticks); // Assuming you have a function to print 
 
-        // schedule(regs);
+        schedule(regs);
     }
 
     // Send End of Interrupt (EOI) to the PIC
