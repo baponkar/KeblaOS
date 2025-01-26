@@ -29,10 +29,12 @@ https://web.archive.org/web/20160326122214/http://jamesmolloy.co.uk/tutorial_htm
 
 #define STACK_SIZE 16*1024 // 16 KB
 
+
 process_t *process_list = NULL;
 process_t *current_process = NULL;
 
 uint64_t next_pid = 1;
+
 
 void add_process(process_t *process) {
     process->next = process_list;
@@ -40,27 +42,12 @@ void add_process(process_t *process) {
 }
 
 
-void context_switch(registers_t *old_state, registers_t *new_state) {
-    if (old_state) {
-        // Save the current process's state
-        *old_state = current_process->registers;
-    }
 
-    // Switch to the next process
-    current_process = current_process->next ? current_process->next : process_list;
+void context_switch(registers_t *regs) {
+     if (current_process != NULL) {
+        // current_process->registers = *regs; // Save the current process's state
+        current_process->registers.iret_rflags = 0x202; // Enable interrupts
 
-    if (new_state) {
-        // Restore the next process's state
-        *new_state = current_process->registers;
-    }
-}
-
-
-void schedule(registers_t *regs) {
-    disable_interrupts(); // Prevent interrupts during scheduling
-
-    if (current_process != NULL) {
-        current_process->registers = *regs; // Save the current process's state
         print("\nSaved state for PID: ");
         print_dec(current_process->pid);
         print("\n");
@@ -69,12 +56,23 @@ void schedule(registers_t *regs) {
     current_process = current_process->next ? current_process->next : process_list; // Switch to the next process
 
     if (current_process != NULL) {
-        *regs = current_process->registers;
+        *regs = current_process->registers;  // Restore the next process's state
+
         print("Switched to PID: ");
         print_dec(current_process->pid);
         print("\n");
+        // look_into_process(current_process);
+        // print_regs_content(&current_process->registers);
+        // print_stack_contents(current_process);
     }
+}
 
+
+
+
+void schedule(registers_t *regs) {
+    disable_interrupts(); // Prevent interrupts during scheduling
+    context_switch(regs); // Perform the context switch
     enable_interrupts(); // Re-enable interrupts after scheduling
 }
 
@@ -92,10 +90,14 @@ process_t *create_process(void (*entry_point)(void)) {
     process->registers.iret_rip = (uint64_t)entry_point;    // Set the instruction pointer to the entry point
     process->registers.iret_cs = 0x08; // Kernel code segment
     process->registers.iret_ss = 0x10; // Kernel stack segment
-    process->registers.iret_rsp = (uint64_t)(process->stack + (STACK_SIZE / sizeof(uint64_t))); // Set the stack pointer to the end of the stack
+    process->registers.iret_rsp = (uint64_t)(process->stack + (STACK_SIZE / sizeof(uint64_t)) - 1); // Set the stack pointer to the end of the stack
     process->registers.iret_rflags = 0x202; // Interrupt flag enabled
 
+    memset(process->stack, 0, STACK_SIZE); // Clear the stack
+    // process->stack[STACK_SIZE / sizeof(uint64_t) - 1] = 0xDEADBEEF;
+
     add_process(process);   // Add the process to the process list
+
     return process;
 }
 
@@ -135,6 +137,7 @@ void process_1() {
     }
 }
 
+
 void process_2() {
     while (1) {
         print("Process 2 is running\n");
@@ -170,4 +173,66 @@ void print_process_list() {
 }
 
 
+void look_into_process(process_t *process) {
 
+    print("Current process: ");
+    print_dec(process->pid);
+    print("\n");
+
+    print("Stack pointer: ");
+    print_hex(process->registers.iret_rsp);
+    print("\n");
+    print("process->registers.iret_rip: ");
+    print_hex(process->registers.iret_rip);
+    print("\n");
+    print("process->registers.iret_cs: ");
+    print_hex(process->registers.iret_cs);
+    print("\n");
+
+    print("process->registers.iret_rflags: ");
+    print_hex(process->registers.iret_rflags);
+    print("\n");
+
+    print("process->registers.iret_ss: ");
+    print_hex(process->registers.iret_ss);
+    print("\n");
+
+    print("process->registers.iret_rsp: ");
+    print_hex(process->registers.iret_rsp);
+    print("\n");
+
+    print("process->registers.rax: ");
+    print_hex(process->registers.rax);
+    print("\n");
+
+    print("process->stack[STACK_SIZE / sizeof(uint64_t) - 1] : ");
+    print_hex(process->registers.iret_rsp);
+    print("\n");
+}
+
+
+void print_stack_contents(process_t *process) {
+    if (!process || !process->stack) {
+        print("Invalid process or stack pointer\n");
+        return;
+    }
+
+    print("Stack contents for process with PID: ");
+    print_dec(process->pid);
+    print("\n");
+
+    // Calculate the number of uint64_t elements in the stack
+    size_t stack_elements = STACK_SIZE / sizeof(uint64_t);
+
+
+    // Iterate through the stack and print each element
+    for (size_t i = stack_elements - 1; i > stack_elements - 25; i--) {
+        print("Stack[");
+        print_dec(i);
+        print("] @ ");
+        print_hex((uint64_t)&process->stack[i]); // Print the address
+        print(" = ");
+        print_hex(process->stack[i]); // Print the value
+        print("\n");
+    }
+}

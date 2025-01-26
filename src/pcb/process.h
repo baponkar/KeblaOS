@@ -26,7 +26,7 @@ extern process_t *current_process;
 
 
 void add_process(process_t *process);
-void context_switch(registers_t *old_state, registers_t *new_state);
+void context_switch(registers_t *regs);
 void schedule(registers_t *regs);
 process_t *create_process(void (*entry_point)(void));
 void terminate_process(process_t *process);
@@ -34,5 +34,5 @@ void terminate_process(process_t *process);
 void init_processes();
 
 void print_process_list();
-
-
+void look_into_process(process_t *process);
+void print_stack_contents(process_t *process);

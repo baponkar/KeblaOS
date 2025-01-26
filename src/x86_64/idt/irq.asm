@@ -37,7 +37,6 @@
         push fs
         push gs
         
-        
         mov rdi, rsp                    ; Pass the current stack pointer to `irq_handler`
         cld
         call irq_handler

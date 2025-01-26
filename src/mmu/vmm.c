@@ -74,4 +74,44 @@ void vm_free(uint64_t *ptr) {
 }
 
 
+void test_vmm() {
+    print("Testing Virtual Memory Manager (VMM)...\n");
 
+    // Define a virtual address to test
+    uint64_t test_va = 0x100000; // 1 MB (example virtual address)
+
+    // Step 1: Allocate a virtual page
+    print("Allocating virtual page at ");
+    print_hex(test_va);
+    print("\n");
+    vm_alloc(test_va);
+
+    // Step 2: Write to the allocated page
+    print("Writing to the allocated page...\n");
+    uint64_t *ptr = (uint64_t *)test_va;
+    *ptr = 0xDEADBEEF; // Example value to write
+
+    // Step 3: Verify the write
+    print("Verifying the write...\n");
+    if (*ptr == 0xDEADBEEF) {
+        print("Write successful: ");
+        print_hex(*ptr);
+        print("\n");
+    } else {
+        print("Write verification failed!\n");
+    }
+
+    // Step 4: Free the virtual page
+    print("Freeing the virtual page...\n");
+    vm_free((uint64_t *)test_va);
+
+    // Step 5: Verify that the page is no longer accessible
+    print("Verifying page is no longer accessible...\n");
+    if (*ptr != 0xDEADBEEF) {
+        print("Page successfully freed and inaccessible.\n");
+    } else {
+        print("Page is still accessible after being freed!\n");
+    }
+
+    print("VMM test complete.\n");
+}

@@ -383,6 +383,7 @@ void test_paging() {
     uint64_t val = *frames;
 
     print_bin(val);
+    print("\n");
 }
 
 #include "paging.h"

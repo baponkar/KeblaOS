@@ -23,6 +23,7 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "../mmu/pmm.h" // init_pmm, test_pmm
 #include "../mmu/paging.h" // init_paging, test_paging
+#include "../mmu/kmalloc.h" // test_kmalloc
 #include "../mmu/vmm.h" // test_vmm
 #include "../mmu/kheap.h" // init_kheap, test_kheap
 #include "../driver/keyboard.h" // initKeyboard
@@ -70,8 +71,9 @@ void kmain(){
 
     init_timer(1);
     
+    clear_screen();
 
-    // init_processes();
+    init_processes();
     
     // // Create a few windows
     // Window* win1 = create_window(10, 10, 200, 100, 0xAAAAAA, "Window 1");
@@ -104,6 +106,8 @@ void kmain(){
 
     halt_kernel();
 }
+
+
 
 void mem_info(){
 
