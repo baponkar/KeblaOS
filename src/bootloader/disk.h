@@ -4,5 +4,4 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-void init_apic();
-void disable_pic();
+void get_disk_info();

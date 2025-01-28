@@ -40,8 +40,6 @@ struct registers { // Total 26*8 = 208 bytes, 16 bytes aligned
 typedef struct registers registers_t;
 
 
-
-
 void halt_kernel(void);
 void print_regs_content(registers_t *regs);
 void print_size_with_units(uint64_t size);

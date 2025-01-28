@@ -1,6 +1,5 @@
-#include "string.h"
 
-#include "stdio.h"
+#include "string.h"
 
 // Copy dat of src into dest
 void *memcpy(void *dest, const void *src, size_t n) {

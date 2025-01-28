@@ -28,7 +28,7 @@ PS_DIR = $(SRC_DIR)/pcb
 
 
 OS_NAME = KeblaOS
-OS_VERSION = 0.11
+OS_VERSION = 0.12
 
 HOST_HOME = /home/baponkar
 
@@ -72,6 +72,11 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/boot.c -o $(BUILD_DIR)/boot.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/acpi.c -o $(BUILD_DIR)/acpi.o
+	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/apic.c -o $(BUILD_DIR)/apic.o
+	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/disk.c -o $(BUILD_DIR)/disk.o
+	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/cpu.c -o $(BUILD_DIR)/cpu.o
+	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/memory.c -o $(BUILD_DIR)/memory.o
+	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/framebuffer.c -o $(BUILD_DIR)/framebuffer.o
 
 	
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/ports.c -o $(BUILD_DIR)/ports.o
@@ -121,6 +126,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/boot.o \
 						$(BUILD_DIR)/acpi.o \
+						$(BUILD_DIR)/apic.o \
 						$(BUILD_DIR)/ports.o \
 						$(BUILD_DIR)/font.o \
 						$(BUILD_DIR)/image_data.o \
@@ -147,12 +153,17 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/window.o \
 						$(BUILD_DIR)/mouse.o \
-						$(BUILD_DIR)/process.o
+						$(BUILD_DIR)/process.o \
+						$(BUILD_DIR)/disk.o \
+						$(BUILD_DIR)/cpu.o \
+						$(BUILD_DIR)/memory.o \
+						$(BUILD_DIR)/framebuffer.o
 
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
 						$(BUILD_DIR)/boot.o \
 						$(BUILD_DIR)/acpi.o \
+						$(BUILD_DIR)/apic.o \
 						$(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/ports.o \
 						$(BUILD_DIR)/font.o \
@@ -180,7 +191,11 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/window.o \
 						$(BUILD_DIR)/mouse.o \
-						$(BUILD_DIR)/process.o
+						$(BUILD_DIR)/process.o \
+						$(BUILD_DIR)/disk.o \
+						$(BUILD_DIR)/cpu.o \
+						$(BUILD_DIR)/memory.o \
+						$(BUILD_DIR)/framebuffer.o
 
 
 #$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin
@@ -232,7 +247,7 @@ run:
 	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine ubuntu -s -S
 
 	# UEFI Boot
-	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine ubuntu -bios /usr/share/OVMF/OVMF_CODE.fd
+	# -system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine ubuntu -bios /usr/share/OVMF/OVMF_CODE.fd
 
 	# BIOS Boot
 	qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine ubuntu # -smp cores=2, threads=4, sockets=1, maxcpus=8

@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 
-#include "../driver/vga.h"
+
 
 
 typedef char* va_list;  // va_list is just a pointer to the argument list

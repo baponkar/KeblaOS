@@ -26,7 +26,7 @@ void timerHandler(registers_t *regs) {
         // print("\nTick: ");
         // print_dec(ticks); // Assuming you have a function to print 
 
-        schedule(regs);
+        // schedule(regs);
     }
 
     // Send End of Interrupt (EOI) to the PIC

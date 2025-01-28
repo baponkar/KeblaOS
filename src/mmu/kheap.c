@@ -2,6 +2,7 @@
 
 #include "../driver/vga.h"
 #include "../bootloader/boot.h"
+#include "../bootloader/memory.h"
 #include "vmm.h"
 
 #include "kheap.h"
