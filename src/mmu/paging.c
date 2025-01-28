@@ -14,8 +14,7 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 
 #include "../x86_64/idt/idt.h"
 
-#include "../bootloader/boot.h"
-
+#include "../bootloader/memory.h"
 #include "kmalloc.h"
 
 #include  "../lib/string.h"

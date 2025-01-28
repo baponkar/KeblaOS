@@ -10,6 +10,12 @@ Reference   : https://wiki.osdev.org/Limine
 
 */
 
+#include "../bootloader/acpi.h" // init_acpi
+#include "../bootloader/apic.h" // init_apic
+#include "../bootloader/disk.h"
+#include "../bootloader/cpu.h"
+#include "../bootloader/framebuffer.h"
+#include "../bootloader/memory.h"
 
 #include "../limine/limine.h" // bootloader info
 #include "../bootloader/boot.h" // bootloader info
@@ -33,12 +39,13 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "kernel.h"
 
-
-
-
+__attribute__((used, section(".limine_requests")))
+static volatile LIMINE_BASE_REVISION(0);
 
 void kmain(){
+    get_framebuffer_info();
     get_bootloader_info();
+    get_memory_info();
     vga_init();
 
     // display_image((FRAMEBUFFER_WIDTH - KEBLAOS_ICON_320X200X32_WIDTH)/2 , (FRAMEBUFFER_HEIGHT - KEBLAOS_ICON_320X200X32_WIDTH)/2, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
@@ -69,12 +76,19 @@ void kmain(){
 
     initKeyboard();
 
-    init_timer(1);
+    // init_timer(1);
     
-    clear_screen();
+    // init_acpi();
+    
+    // init_apic();
 
-    init_processes();
-    
+    // get_disk_info();
+
+    get_cpu_info();
+    print_cpu_info();
+    print_cpu_vendor();
+    print_cpu_brand();
+
     // // Create a few windows
     // Window* win1 = create_window(10, 10, 200, 100, 0xAAAAAA, "Window 1");
     // Window* win2 = create_window(30, 30, 200, 100, 0xBBBBBB, "Window 2");

@@ -3,7 +3,6 @@ This file will manage static memory allocation
 */
 
 
-#include "../bootloader/boot.h"
 #include "../driver/vga.h"
 
 #include "kmalloc.h"

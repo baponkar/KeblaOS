@@ -5,13 +5,7 @@
 #include <stddef.h>
 
 
-#include "../x86_64/idt/idt.h"
 #include "../util/util.h"
-#include "../lib/stdlib.h"
-#include "../lib/string.h"
-#include "../usr/shell.h"
-#include "../driver/speaker.h"
-#include "../driver/vga.h"
 
 
 #define KEYBOARD_COMMAND_PORT 0x64  // Keyboard Command Port

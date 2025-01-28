@@ -6,6 +6,7 @@ Last Updated : 19/12/2024
 
 */
 
+#include "../driver/vga.h"
 
 #include "stdio.h"
 

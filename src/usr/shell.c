@@ -1,4 +1,22 @@
 
+#include "../driver/vga.h"  // Assuming you have a VGA text driver.
+#include "../driver/ports.h"
+#include "../lib/string.h"    // Assuming you have string manipulation functions.
+#include "../driver/keyboard.h"  // Assuming you have keyboard input handling.
+#include "../x86_64/gdt/gdt.h"
+#include "../util/util.h"
+
+#include "../x86_64/idt/idt.h"
+#include "../kernel/kernel.h"
+
+#include "../x86_64/rtc/rtc.h"
+
+#include "../driver/image_data.h"
+
+#include "../bootloader/acpi.h"
+#include "../bootloader/boot.h"
+#include "../bootloader/memory.h"
+
 #include "shell.h"
 
 bool shell_running = false;  // Global flag to manage shell state
@@ -56,8 +74,6 @@ void execute_command(char* command) {
         print_memory_map();
     }else if(strcmp(command, "kermod") == 0){
         print_kernel_modules_info();
-    }else if(strcmp(command, "rsdp") == 0){
-        print_rsdp_info();
     }else if(strcmp(command, "firmware") == 0){
         print_firmware_info();
     }else if(strcmp(command, "stack") == 0){
@@ -68,8 +84,6 @@ void execute_command(char* command) {
         print_paging_mode_info();
     }else if(strcmp(command, "phystoviroff") == 0){
         print_kernel_to_virtual_offset();
-    }else if(strcmp(command, "smp") == 0){
-        print_smp_info();
     }else if(strcmp(command, "hhdm") == 0){
         print_hhdm_info();
     }else{
@@ -91,75 +105,6 @@ void run_shell(bool is_shell_running) {
     }
 }
 
-
-
-// This C function will print the register values passed via the stack.
-void print_registers_c(uint64_t rdi, uint64_t rsi, uint64_t rbp, uint64_t rsp, 
-                       uint64_t rbx, uint64_t rdx, uint64_t rcx, uint64_t rax,
-                       uint64_t r8,  uint64_t r9,  uint64_t r10, uint64_t r11, 
-                       uint64_t r12, uint64_t r13, uint64_t r14, uint64_t r15 ) {
-    print("Register Values:\n");
-    
-    print("RAX: ");
-    print_hex(rax);
-    print("\n");
-
-    print("RBX: ");
-    print_hex(rbx);
-    print("\n");
-
-    print("RCX: ");
-    print_hex(rcx);
-    print("\n");
-
-    print("RDX: ");
-    print_hex(rdx);
-    print("\n");
-
-    print("RSI: ");
-    print_hex(rsi);
-    print("\n");
-
-    print("RDI: ");
-    print_hex(rdi);
-    print("\n");
-
-    print("RBP: ");
-    print_hex(rbp);
-    print("\n");
-
-    print("R8: ");
-    print_hex(r8);
-    print("\n");
-
-    print("R9: ");
-    print_hex(r9);
-    print("\n");
-
-    print("R10: ");
-    print_hex(r10);
-    print("\n");
-
-    print("R11: ");
-    print_hex(r11);
-    print("\n");
-
-    print("R12: ");
-    print_hex(r12);
-    print("\n");
-
-    print("R13: ");
-    print_hex(r13);
-    print("\n");
-
-    print("R14: ");
-    print_hex(r14);
-    print("\n");
-
-    print("R15: ");
-    print_hex(r15);
-    print("\n");
-}
 
 
 void print_features(){

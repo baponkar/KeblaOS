@@ -5,9 +5,7 @@
 #include <stddef.h>
 
 
-#include "../driver/vga.h"
-#include "../mmu/vmm.h"
-#include "../bootloader/boot.h"
+
 
 
 // FAT32 Boot Sector Structure

@@ -1,10 +1,9 @@
+#include "../driver/vga.h"
+#include "../mmu/vmm.h"
+#include "../bootloader/boot.h"
+
 #include "fs.h"
 
-
-#include <stdint.h>
-#include <stddef.h>
-#include <string.h>
-#include <stdio.h>
 
 // Assume these are defined elsewhere in your OS
 void* vm_alloc(size_t size);

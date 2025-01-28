@@ -1,31 +1,19 @@
 
+#include "../bootloader/framebuffer.h"
 #include "font.h"
 #include "../lib/stdlib.h"       // For abs function
 #include "../lib/string.h"       // For memmov, memcpy, memset etc function
 #include "ports.h"              // For outb, inb function
-#include "../limine/limine.h"   // For LIMINE_BASE_REVISION, LIMINE_FRAMEBUFFER_REQUEST
 #include "../util/util.h"       // For halt_kernel function
 
 
 #include "vga.h"
-
-__attribute__((used, section(".limine_requests")))
-static volatile LIMINE_BASE_REVISION(0);
-
-__attribute__((used, section(".requests")))
-static volatile struct limine_framebuffer_request framebuffer_request = {
-    .id = LIMINE_FRAMEBUFFER_REQUEST,
-    .revision = 0
-};
 
 
 
 extern unsigned char g_8x8_font[2048];  // 8x8 font data
 extern unsigned char g_8x16_font[4096]; // 8x16 font data
 
-uint32_t *FRAMEBUFFER_PTR; // Note: we assume the framebuffer model is RGB with 32-bit pixels.
-size_t FRAMEBUFFER_WIDTH;
-size_t FRAMEBUFFER_HEIGHT;
 
 size_t FONT_SIZE;
 size_t FONT_WIDTH;
@@ -45,28 +33,8 @@ size_t cur_pos_x;
 size_t cur_pos_y;
 
 
-
-
-
-
 void vga_init(){
 
-     // Ensure the bootloader actually understands our base revision (see spec).
-    if (LIMINE_BASE_REVISION_SUPPORTED == false) {
-        halt_kernel();
-    }
-
-    // Ensure the framebuffer is initialized
-    if (framebuffer_request.response == NULL || framebuffer_request.response->framebuffer_count < 1) {
-        halt_kernel();
-    }
-
-        // Fetch the first framebuffer
-    struct limine_framebuffer* framebuffer = framebuffer_request.response->framebuffers[0];
-    FRAMEBUFFER_PTR = (uint32_t*) framebuffer->address;
-
-    FRAMEBUFFER_WIDTH = framebuffer->width;
-    FRAMEBUFFER_HEIGHT = framebuffer->height;
 
     FONT_SIZE = 16;
     FONT_WIDTH = 8;
