@@ -33,50 +33,6 @@ __attribute__((used, section(".requests_end_marker")))
 static volatile LIMINE_REQUESTS_END_MARKER;
 
 
-
-
-// Get Firmware info
-__attribute__((used, section(".requests")))
-static volatile struct limine_firmware_type_request firmware_type_request = {
-    .id = LIMINE_FIRMWARE_TYPE_REQUEST,
-    .revision = 3
-};
-
-char *FIRMWARE_TYPE;
-
-void get_firmware_info(){
-    if(firmware_type_request.response != NULL){
-        uint64_t firmware_type = firmware_type_request.response->firmware_type;
-        if(firmware_type == LIMINE_FIRMWARE_TYPE_X86BIOS){
-            FIRMWARE_TYPE = "X86BIOS";
-        }else if(firmware_type == LIMINE_FIRMWARE_TYPE_UEFI32){
-            FIRMWARE_TYPE = "UEFI32";
-        }else if(firmware_type == LIMINE_FIRMWARE_TYPE_UEFI64){
-            FIRMWARE_TYPE = "UEFI64";
-        } 
-    }else{
-        FIRMWARE_TYPE = "No firmware type found!";
-        print("No firmware type found!\n");
-    }
-}
-
-void print_firmware_info(){
-    if(firmware_type_request.response != NULL){
-        print("Firmware type: ");
-        print(FIRMWARE_TYPE);
-        print("\n");
-    }else{
-        FIRMWARE_TYPE = "No firmware type found!";
-        print("No firmware type found!\n");
-    }
-}
-
-
-
-
-
-
-
 // Get Paging info
 
 __attribute__((used, section(".requests")))
@@ -258,7 +214,6 @@ void print_kernel_modules_info(){
 // finuls functions which will actually use in different ways
 void get_bootloader_info(){
     get_kernel_modules_info();
-    get_firmware_info();
     get_stack_info();
     get_limine_info();
     get_paging_mode_info();
@@ -267,7 +222,6 @@ void get_bootloader_info(){
 
 void print_bootloader_info(void){
     print_kernel_modules_info();
-    print_firmware_info();
     print_stack_info();
     print_limine_info();
     print_paging_mode_info();

@@ -16,6 +16,7 @@
 #include "../bootloader/acpi.h"
 #include "../bootloader/boot.h"
 #include "../bootloader/memory.h"
+#include "../bootloader/firmware.h"
 
 #include "shell.h"
 

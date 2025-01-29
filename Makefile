@@ -77,6 +77,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/cpu.c -o $(BUILD_DIR)/cpu.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/memory.c -o $(BUILD_DIR)/memory.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/framebuffer.c -o $(BUILD_DIR)/framebuffer.o
+	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/firmware.c -o $(BUILD_DIR)/firmware.o
 
 	
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/ports.c -o $(BUILD_DIR)/ports.o
@@ -157,7 +158,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/disk.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/memory.o \
-						$(BUILD_DIR)/framebuffer.o
+						$(BUILD_DIR)/framebuffer.o \
+						$(BUILD_DIR)/firmware.o
 
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
@@ -195,7 +197,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/disk.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/memory.o \
-						$(BUILD_DIR)/framebuffer.o
+						$(BUILD_DIR)/framebuffer.o \
+						$(BUILD_DIR)/firmware.o
 
 
 #$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin
