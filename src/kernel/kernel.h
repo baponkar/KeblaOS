@@ -6,9 +6,6 @@
 #define OS_VERSION "0.12"
 #define BUILD_DATE "26/01/2025"
 
-extern uint64_t V_KMEM_LOW_BASE;
-extern uint64_t V_KMEM_UP_BASE;
+
 
 void kmain();
-void mem_info();
-

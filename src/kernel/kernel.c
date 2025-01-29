@@ -16,6 +16,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../bootloader/cpu.h"
 #include "../bootloader/framebuffer.h"
 #include "../bootloader/memory.h"
+#include "../bootloader/firmware.h"
 
 #include "../limine/limine.h" // bootloader info
 #include "../bootloader/boot.h" // bootloader info
@@ -39,8 +40,7 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "kernel.h"
 
-__attribute__((used, section(".limine_requests")))
-static volatile LIMINE_BASE_REVISION(0);
+
 
 void kmain(){
     get_framebuffer_info();
@@ -118,37 +118,22 @@ void kmain(){
     //     render_all_windows();
     // }
 
+
+    uint64_t *var_ptr = kheap_alloc(sizeof(0x1234567890ABCDEF));
+    *var_ptr = 0x1234567890ABCDEF;
+    print("var : ");
+    print_hex(*var_ptr);
+    printf("\n");
+
+    printf("var : %x\n",(uint64_t) *var_ptr);
+
+    
+
     halt_kernel();
 }
 
 
 
-void mem_info(){
-
-    print("\nKernel physical base (upper) : ");
-    print_hex(KMEM_UP_BASE);
-    print("\n");
-
-    print("Kernel physical base (lower) : ");
-    print_hex(KMEM_LOW_BASE);
-    print("\n");
-
-    print("Kernel physical LENGTH (upper - low) : ");
-    print_hex(KMEM_UP_BASE - KMEM_LOW_BASE);
-    print("\n");
-
-    print("\nKernel virtual base (upper) : ");
-    print_hex(V_KMEM_UP_BASE);
-    print("\n");
-
-    print("Kernel virtual base (lower) : ");
-    print_hex(V_KMEM_LOW_BASE);
-    print("\n");
-
-    print("Kernel virtual LENGTH (upper - low) : ");
-    print_hex(V_KMEM_UP_BASE - V_KMEM_LOW_BASE);
-    print("\n");
-}
 
 
 

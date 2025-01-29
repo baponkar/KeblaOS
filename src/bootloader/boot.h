@@ -6,7 +6,7 @@
 
 
 
-extern char *FIRMWARE_TYPE;
+
 extern char *BOOTLOADER_NAME;
 extern char *BOOTLOADER_VERSION;
 
@@ -18,11 +18,7 @@ extern char *LIMINE_PAGING_MODE;
 void get_kernel_modules_info();
 void print_kernel_modules_info();
 
-void get_framebuffer_info();
-void print_framebuffer_info();
 
-void get_firmware_info();
-void print_firmware_info();
 
 void get_stack_info();
 void print_stack_info();
