@@ -64,9 +64,11 @@ void move_cur_up();
 void move_cur_down();
 void move_cur_left();
 void move_cur_right();
+
 void print_hex(uint64_t n);
 void print_dec(uint64_t n);
 void print_bin(uint64_t n);
+
 void backspace_manage();
 
 void draw_line( int x1, int y1, int x2, int y2, uint64_t color);
