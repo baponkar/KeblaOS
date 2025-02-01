@@ -18,6 +18,8 @@
 #include "../bootloader/memory.h"
 #include "../bootloader/firmware.h"
 
+#include "../bootloader/acpi.h"
+
 #include "shell.h"
 
 bool shell_running = false;  // Global flag to manage shell state
@@ -41,8 +43,9 @@ void execute_command(char* command) {
         qemu_reboot();
     } else if (strcmp(command, "poweroff") == 0){
         print("Shutting Down!\n");
-        print("Please Wait...");
-        qemu_poweroff();
+        print("Please Wait...\n");
+        //qemu_poweroff();
+        acpi_poweroff();
     } else if(strcmp(command, "bootinfo") == 0){
         print_bootloader_info();
     } else if (strcmp(command, "time") == 0){

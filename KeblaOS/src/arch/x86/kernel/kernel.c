@@ -1,0 +1,135 @@
+
+/*
+Kernel.c
+Build Date  : 16-12-2024
+Last Update : 15-01-2025
+Description : KeblaOS is a x86 architecture based 64 bit Operating System. Currently it is using Limine Bootloader.
+Reference   : https://wiki.osdev.org/Limine
+              https://github.com/limine-bootloader/limine-c-template
+              https://wiki.osdev.org/Limine_Bare_Bones
+
+*/
+
+#include "../boot/keblaos_bootloader/acpi.h" // init_acpi
+#include "../boot/keblaos_bootloader/apic.h" // init_apic
+#include "../boot/keblaos_bootloader/disk.h"
+#include "../boot/keblaos_bootloader/cpu.h"
+#include "../boot/keblaos_bootloader/framebuffer.h"
+#include "../boot/keblaos_bootloader/memory.h"
+#include "../boot/keblaos_bootloader/firmware.h"
+#include "../boot/keblaos_bootloader/boot.h" // bootloader info
+
+#include "../boot/limine/limine.h" // bootloader info
+
+#include "../libc/stdio.h" // printf
+#include "../util/util.h" // registers_t , halt_kernel
+
+#include "../driver/vga/vga.h" // vga_init, print_bootloader_info, print_memory_map, display_image
+
+#include "../driver/cpu/gdt.h" // init_gdt
+#include "../driver/cpu/idt.h" // init_idt, test_interrupt
+
+#include "../mm/pmm.h" // init_pmm, test_pmm
+#include "../mm/paging.h" // init_paging, test_paging
+#include "../mm/kmalloc.h" // test_kmalloc
+#include "../mm/vmm.h" // test_vmm
+#include "../mm/kheap.h" // init_kheap, test_kheap
+#include "../driver/keyboard/keyboard.h" // initKeyboard
+#include "../timers/pit_timer.h" // init_timer
+
+#include "../scheduler/process.h" // init_processes
+
+#include "kernel.h"
+
+
+
+void kmain(){
+    get_framebuffer_info();
+    get_bootloader_info();
+    get_memory_info();
+    vga_init();
+
+    // display_image((FRAMEBUFFER_WIDTH - KEBLAOS_ICON_320X200X32_WIDTH)/2 , (FRAMEBUFFER_HEIGHT - KEBLAOS_ICON_320X200X32_WIDTH)/2, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
+
+    // print_bootloader_info();
+    // print_memory_map();
+    // mem_info();
+
+    init_gdt();
+    // check_gdt();
+
+    init_idt();
+    // test_interrupt();
+
+    // test_kmalloc();
+
+    init_pmm();
+    // test_pmm();
+
+
+    init_paging();
+    // test_paging();
+
+    // test_vmm();
+
+    init_kheap();
+    // test_kheap();
+
+    initKeyboard();
+
+    // init_timer(1);
+    
+    // init_acpi();
+    
+    // init_apic();
+
+    // get_disk_info();
+
+    get_cpu_info();
+    print_cpu_info();
+    print_cpu_vendor();
+    print_cpu_brand();
+
+    // // Create a few windows
+    // Window* win1 = create_window(10, 10, 200, 100, 0xAAAAAA, "Window 1");
+    // Window* win2 = create_window(30, 30, 200, 100, 0xBBBBBB, "Window 2");
+    
+    // add_window(win1);
+    // add_window(win2);
+    
+    // // Draw all windows
+    // render_all_windows();
+    
+    // // Create a button on window 1
+    // draw_button(win1, 50, 50, 500, 400, "Click Me");
+
+    // int mouse_x = 0;
+    // int mouse_y = 0;
+    // bool mouse_clicked = false;
+    // // Main loop
+    // while (1) {
+    //     // Get input and update mouse position
+    //     // Assume you have some function for this
+    //     update_mouse_position(mouse_x, mouse_y, mouse_clicked);
+
+    //     // Handle mouse input
+    //     handle_mouse_input();
+
+    //     // Render windows periodically
+    //     render_all_windows();
+    // }
+
+
+    halt_kernel();
+}
+
+
+
+
+
+
+
+
+
+
+

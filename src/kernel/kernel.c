@@ -12,6 +12,7 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "../bootloader/acpi.h" // init_acpi
 #include "../bootloader/apic.h" // init_apic
+#include "../bootloader/ahci.h"
 #include "../bootloader/disk.h"
 #include "../bootloader/cpu.h"
 #include "../bootloader/framebuffer.h"
@@ -84,10 +85,10 @@ void kmain(){
 
     // get_disk_info();
 
-    get_cpu_info();
-    print_cpu_info();
-    print_cpu_vendor();
-    print_cpu_brand();
+    // get_cpu_info();
+    // print_cpu_info();
+    // print_cpu_vendor();
+    // print_cpu_brand();
 
     // // Create a few windows
     // Window* win1 = create_window(10, 10, 200, 100, 0xAAAAAA, "Window 1");
@@ -118,19 +119,14 @@ void kmain(){
     //     render_all_windows();
     // }
 
-
-    uint64_t *var_ptr = kheap_alloc(sizeof(0x1234567890ABCDEF));
-    *var_ptr = 0x1234567890ABCDEF;
-    print("var : ");
-    print_hex(*var_ptr);
-    printf("\n");
-
-    printf("var : %x\n",(uint64_t) *var_ptr);
-
-    
+    init_acpi();
+    // init_ahci();
 
     halt_kernel();
 }
+
+
+
 
 
 

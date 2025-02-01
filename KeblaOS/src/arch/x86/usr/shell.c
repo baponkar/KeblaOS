@@ -1,0 +1,125 @@
+
+#include "../driver/vga.h"  // Assuming you have a VGA text driver.
+#include "../driver/ports.h"
+#include "../lib/string.h"    // Assuming you have string manipulation functions.
+#include "../driver/keyboard.h"  // Assuming you have keyboard input handling.
+#include "../x86_64/gdt/gdt.h"
+#include "../util/util.h"
+
+#include "../x86_64/idt/idt.h"
+#include "../kernel/kernel.h"
+
+#include "../x86_64/rtc/rtc.h"
+
+#include "../driver/image_data.h"
+
+#include "../bootloader/acpi.h"
+#include "../bootloader/boot.h"
+#include "../bootloader/memory.h"
+#include "../bootloader/firmware.h"
+
+#include "shell.h"
+
+bool shell_running = false;  // Global flag to manage shell state
+
+void shell_prompt() {
+    print("KeblaOS>> ");
+}
+
+
+void execute_command(char* command) {
+    
+    if (strcmp(command, "help") == 0) {
+        print("Available commands:\n [ help, clear, reboot, poweroff, bootinfo,");
+        print("time, uptime, regvalue, checkgdt, features, testint, logo, image,");
+        print("memmap,  exit,\n\t kermod, rsdp, firmware, stack, limine, pagingmod," );
+        print("phystoviroff, smp, hhdm ]\n");
+    } else if (strcmp(command, "clear") == 0) {
+        clear_screen();  // Clear the screen using your VGA driver
+    } else if (strcmp(command, "reboot") == 0) {
+        print("Rebooting...\n");
+        qemu_reboot();
+    } else if (strcmp(command, "poweroff") == 0){
+        print("Shutting Down!\n");
+        print("Please Wait...");
+        qemu_poweroff();
+    } else if(strcmp(command, "bootinfo") == 0){
+        print_bootloader_info();
+    } else if (strcmp(command, "time") == 0){
+        // print_current_time();
+        // printing current time
+    } else if (strcmp(command, "uptime") == 0){
+        print("Up time : \n");
+        // printing the time run this os
+    }else if (strcmp(command, "regvalue") == 0){
+        // print_registers();
+    }else if (strcmp(command, "checkgdt") == 0){
+        check_gdt();
+    }else if (strcmp(command, "features") == 0){
+        print_features();
+    }else if (strcmp(command, "testint") == 0){
+        print("Test Interrupts\n");
+        test_interrupt();
+    }else if (strcmp(command, "exit") == 0) {
+        print("Exiting shell...\n");
+        shell_running = false;
+    }else if(strcmp(command, "logo") == 0){
+        clear_screen();
+        display_image(0, 0, (const uint64_t*) KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH,KEBLAOS_ICON_320X200X32_HEIGHT);
+    }else if(strcmp(command, "image") == 0){
+        clear_screen();
+        display_image(0, 0, (const uint64_t*) girl_6352783_640, GIRL_6352783_640_WIDTH, GIRL_6352783_640_HEIGHT);
+    }else if(strcmp(command, "") == 0){
+        print("type 'help'\n");
+    }else if(strcmp(command, "memmap") == 0){
+        print_memory_map();
+    }else if(strcmp(command, "kermod") == 0){
+        print_kernel_modules_info();
+    }else if(strcmp(command, "firmware") == 0){
+        print_firmware_info();
+    }else if(strcmp(command, "stack") == 0){
+        print_stack_info();
+    }else if(strcmp(command, "limine") == 0){
+        print_limine_info();
+    }else if(strcmp(command, "pagingmod") == 0){
+        print_paging_mode_info();
+    }else if(strcmp(command, "phystoviroff") == 0){
+        print_kernel_to_virtual_offset();
+    }else if(strcmp(command, "hhdm") == 0){
+        print_hhdm_info();
+    }else{
+        print("!Unknown command: ");
+        print(command);
+        print("\n");
+        print("type 'help'\n");
+    }
+}
+
+
+void run_shell(bool is_shell_running) {
+    char input[BUFFER_SIZE];
+
+    while (is_shell_running) {
+        shell_prompt();  // Display shell prompt
+        //read_command(input);  // Function to read user input (can be implemented based on your keyboard handler)
+        //execute_command(input);  // Process the input command
+    }
+}
+
+
+
+void print_features(){
+    print("KeblaOS-0.11\n");
+    print("Architecture : x86_64.\n");
+    print("1. Limine Bootloading.\n");
+    print("2. GDT initialization.\n");
+    print("3. VGA Graphics Driver.\n");
+    print("4. IDT initialization.\n");
+    print("5. Keyboard driver initialization.\n");
+    print("6. PIT Timer initialization.\n");
+    print("7. Basic User Shell\n");
+    print("8. Memory Management Unit(Kheap, PMM, 4 Level Paging)\n");
+    print("7. Standard Libraries : math.h, stddef.h, stdint.h, stdio.h, stdlib.h, string.h\n");
+}
+
+

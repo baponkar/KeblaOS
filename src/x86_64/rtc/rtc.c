@@ -1,4 +1,8 @@
 
+
+#include "../../lib/stdio.h"
+#include "../../driver/ports.h"
+
 #include "rtc.h"
 // Ports for RTC
 #define RTC_COMMAND_PORT 0x70
@@ -12,16 +16,19 @@
 #define RTC_MONTH       0x08
 #define RTC_YEAR        0x09
 
+
 // Helper function to read a byte from the RTC
 uint8_t read_rtc_register(uint8_t reg) {
     outb(RTC_COMMAND_PORT, reg);  // Write register number to RTC command port
     return inb(RTC_DATA_PORT);    // Read the value from the data port
 }
 
+
 // Convert BCD to binary (if needed)
 uint8_t bcd_to_bin(uint8_t value) {
     return ((value >> 4) * 10) + (value & 0x0F);
 }
+
 
 // Function to read and print the current time
 void print_current_time() {
@@ -44,13 +51,7 @@ void print_current_time() {
     year += 2000;
 
     // Print the time in HH:MM:SS DD/MM/YYYY format
-    printf("Current Time: %d:%d:%d %d/%d/%d\n",
-           hours, minutes, seconds, day, month, year);
-
-    print("hour: ");
-    print_dec(hours);
-     print("minute: ");
-    print_dec(minutes);
-     print("seconds: ");
-    print_dec(seconds);
+    printf("Current Time: %d:%d:%d %d/%d/%d\n", hours, minutes, seconds, day, month, year);
 }
+
+
