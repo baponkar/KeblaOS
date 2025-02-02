@@ -48,7 +48,7 @@ void print_current_time() {
     year    = bcd_to_bin(year);
 
     // RTC only provides the last two digits of the year, assume 20xx
-    year += 2000;
+   //  year += 2000;
 
     // Print the time in HH:MM:SS DD/MM/YYYY format
     printf("Current Time: %d:%d:%d %d/%d/%d\n", hours, minutes, seconds, day, month, year);
