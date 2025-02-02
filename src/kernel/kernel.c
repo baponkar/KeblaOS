@@ -13,6 +13,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../bootloader/acpi.h" // init_acpi
 #include "../bootloader/apic.h" // init_apic
 #include "../bootloader/ahci.h"
+#include "../bootloader/pci.h"
 #include "../bootloader/disk.h"
 #include "../bootloader/cpu.h"
 #include "../bootloader/framebuffer.h"
@@ -48,6 +49,8 @@ void kmain(){
     get_bootloader_info();
     get_memory_info();
     vga_init();
+
+    printf("%s - %s\n",OS_NAME, OS_VERSION);
 
     // display_image((FRAMEBUFFER_WIDTH - KEBLAOS_ICON_320X200X32_WIDTH)/2 , (FRAMEBUFFER_HEIGHT - KEBLAOS_ICON_320X200X32_WIDTH)/2, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
 
@@ -121,6 +124,7 @@ void kmain(){
 
     init_acpi();
     // init_ahci();
+    // pci_scan();
 
     halt_kernel();
 }
