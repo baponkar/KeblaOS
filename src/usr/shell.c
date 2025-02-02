@@ -71,8 +71,8 @@ void execute_command(char* command) {
         print("Exiting shell...\n");
         shell_running = false;
     }else if(strcmp(command, "logo") == 0){
-        clear_screen();
-        display_image(0, 0, (const uint64_t*) KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH,KEBLAOS_ICON_320X200X32_HEIGHT);
+        // clear_screen();
+        display_image(100, 300, (const uint64_t*) KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH,KEBLAOS_ICON_320X200X32_HEIGHT);
     }else if(strcmp(command, "image") == 0){
         clear_screen();
         display_image(0, 0, (const uint64_t*) girl_6352783_640, GIRL_6352783_640_WIDTH, GIRL_6352783_640_HEIGHT);
