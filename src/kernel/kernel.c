@@ -125,6 +125,7 @@ void kmain(){
     init_acpi();
     // init_ahci();
     // pci_scan();
+    detect_ahci();
 
     halt_kernel();
 }
