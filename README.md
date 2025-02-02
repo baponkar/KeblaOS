@@ -21,10 +21,23 @@
 * Current Progress :
 - [x] Limine Bootloader
 - [x] VGA Framebuffer initialization
+- [x] ACPI
+    * RSDP
+    * RSDT/XSDT
+    * FADT
+    * MADT
+    * AHCI
+    * PCI
+    * CMOS
+    * RTC
+
 - [x] GDT initialization
 - [x] IDT initialization
-- [x] PIT Timer initialization
-- [ ] RTC
+- [x] Timer
+    * PIT
+    * HPET
+    * RTC
+    * APIC
 - [x] A basic Shell
 - [x] Driver :
     * VGA
@@ -33,13 +46,18 @@
     * Ports
     * Speaker
     * Mouse Driver
-    * The Schedular and Process
-- [x] MMU
+- [x] The Schedular and Process
+- [x] MM
     * PMM
     * 4 Level 4KB Paging 
     * VMM
     * KHEAP (Dynamic Kernel Heap allocation)
-- [x] Standard Library initialization [stdio, math, string, assert]
+- [x] Standard Library initialization 
+    * stdio
+    * stdlib
+    * math 
+    * string
+    * assert
 
 ------------------------------------------------------
 ### Introducing the KeblaOS Operating System
