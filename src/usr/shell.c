@@ -1,4 +1,5 @@
 
+
 #include "../driver/vga.h"  // Assuming you have a VGA text driver.
 #include "../driver/ports.h"
 #include "../lib/string.h"    // Assuming you have string manipulation functions.
@@ -13,7 +14,8 @@
 
 #include "../driver/image_data.h"
 
-#include "../bootloader/acpi.h"
+
+#include "../bootloader/fadt.h"
 #include "../bootloader/boot.h"
 #include "../bootloader/memory.h"
 #include "../bootloader/firmware.h"
@@ -21,6 +23,8 @@
 #include "../bootloader/acpi.h"
 
 #include "shell.h"
+
+
 
 bool shell_running = false;  // Global flag to manage shell state
 

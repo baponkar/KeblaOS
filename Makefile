@@ -72,6 +72,8 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/boot.c -o $(BUILD_DIR)/boot.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/acpi.c -o $(BUILD_DIR)/acpi.o
+	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/fadt.c -o $(BUILD_DIR)/fadt.o
+	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/madt.c -o $(BUILD_DIR)/madt.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/ahci.c -o $(BUILD_DIR)/ahci.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/pci.c -o $(BUILD_DIR)/pci.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/apic.c -o $(BUILD_DIR)/apic.o
@@ -129,6 +131,8 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/boot.o \
 						$(BUILD_DIR)/acpi.o \
+						$(BUILD_DIR)/fadt.o \
+						$(BUILD_DIR)/madt.o \
 						$(BUILD_DIR)/ahci.o \
 						$(BUILD_DIR)/pci.o \
 						$(BUILD_DIR)/apic.o \
@@ -169,6 +173,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
 						$(BUILD_DIR)/boot.o \
 						$(BUILD_DIR)/acpi.o \
+						$(BUILD_DIR)/fadt.o \
+						$(BUILD_DIR)/madt.o \
 						$(BUILD_DIR)/ahci.o \
 						$(BUILD_DIR)/pci.o \
 						$(BUILD_DIR)/apic.o \
