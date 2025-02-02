@@ -108,6 +108,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 
 
 	$(GCC) $(GCC_FLAG) -c $(PIT_DIR)/pit_timer.c -o $(BUILD_DIR)/pit_timer.o
+	$(GCC) $(GCC_FLAG) -c $(RTC_DIR)/rtc.c -o $(BUILD_DIR)/rtc.o
 
 
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/keyboard.c -o $(BUILD_DIR)/keyboard.o
@@ -156,6 +157,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/vmm.o \
 						$(BUILD_DIR)/kmalloc.o \
 						$(BUILD_DIR)/pit_timer.o \
+						$(BUILD_DIR)/rtc.o \
 						$(BUILD_DIR)/keyboard.o  \
 						$(BUILD_DIR)/shell.o \
 						$(BUILD_DIR)/greek_font.o \
@@ -199,6 +201,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/vmm.o \
 						$(BUILD_DIR)/kmalloc.o \
 						$(BUILD_DIR)/pit_timer.o \
+						$(BUILD_DIR)/rtc.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/shell.o \
 						$(BUILD_DIR)/greek_font.o \
@@ -265,7 +268,7 @@ run:
 	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 -smp cores=2,threads=2,sockets=1,maxcpus=4 -bios /usr/share/OVMF/OVMF_CODE.fd
 
 	# BIOS Boot
-	qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 -smp cores=2,threads=2,sockets=1,maxcpus=4
+	qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 -smp cores=2,threads=2,sockets=1,maxcpus=4 -rtc base=utc,clock=host
 
 	
 

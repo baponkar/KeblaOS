@@ -26,6 +26,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../util/util.h" // registers_t , halt_kernel
 
 #include "../driver/vga.h" // vga_init, print_bootloader_info, print_memory_map, display_image
+#include "../driver/image_data.h"
 
 #include "../x86_64/gdt/gdt.h" // init_gdt
 #include "../x86_64/idt/idt.h" // init_idt, test_interrupt
@@ -50,9 +51,11 @@ void kmain(){
     get_memory_info();
     vga_init();
 
-    printf("%s - %s\n",OS_NAME, OS_VERSION);
+    
 
-    // display_image((FRAMEBUFFER_WIDTH - KEBLAOS_ICON_320X200X32_WIDTH)/2 , (FRAMEBUFFER_HEIGHT - KEBLAOS_ICON_320X200X32_WIDTH)/2, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
+    display_image((FRAMEBUFFER_WIDTH - KEBLAOS_ICON_320X200X32_WIDTH)/2 , (FRAMEBUFFER_HEIGHT - KEBLAOS_ICON_320X200X32_WIDTH)/2, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
+
+    printf("%s - %s\n",OS_NAME, OS_VERSION);
 
     // print_bootloader_info();
     // print_memory_map();

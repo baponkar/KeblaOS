@@ -44,16 +44,16 @@ void execute_command(char* command) {
         clear_screen();  // Clear the screen using your VGA driver
     } else if (strcmp(command, "reboot") == 0) {
         print("Rebooting...\n");
-        qemu_reboot();
+        // qemu_reboot();
+        acpi_reboot();
     } else if (strcmp(command, "poweroff") == 0){
         print("Shutting Down!\n");
-        print("Please Wait...\n");
         //qemu_poweroff();
         acpi_poweroff();
     } else if(strcmp(command, "bootinfo") == 0){
         print_bootloader_info();
     } else if (strcmp(command, "time") == 0){
-        // print_current_time();
+        print_current_time();
         // printing current time
     } else if (strcmp(command, "uptime") == 0){
         print("Up time : \n");
