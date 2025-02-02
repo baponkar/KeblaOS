@@ -73,6 +73,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/boot.c -o $(BUILD_DIR)/boot.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/acpi.c -o $(BUILD_DIR)/acpi.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/ahci.c -o $(BUILD_DIR)/ahci.o
+	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/pci.c -o $(BUILD_DIR)/pci.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/apic.c -o $(BUILD_DIR)/apic.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/disk.c -o $(BUILD_DIR)/disk.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/cpu.c -o $(BUILD_DIR)/cpu.o
@@ -129,6 +130,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/boot.o \
 						$(BUILD_DIR)/acpi.o \
 						$(BUILD_DIR)/ahci.o \
+						$(BUILD_DIR)/pci.o \
 						$(BUILD_DIR)/apic.o \
 						$(BUILD_DIR)/ports.o \
 						$(BUILD_DIR)/font.o \
@@ -168,6 +170,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/boot.o \
 						$(BUILD_DIR)/acpi.o \
 						$(BUILD_DIR)/ahci.o \
+						$(BUILD_DIR)/pci.o \
 						$(BUILD_DIR)/apic.o \
 						$(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/ports.o \

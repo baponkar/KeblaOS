@@ -9,6 +9,18 @@
 void qemu_poweroff();
 void qemu_reboot();
 
+typedef enum {
+    UNSPECIFIED,
+    DESKTOP,
+    MOBILE,
+    WORKSTATION,
+    ENTERPRISE_SERVER,
+    SOHO_SERVER,
+    APLLIANCE_PC,
+    PERFORMANCE_SERVER,
+    RESERVED
+}device_type_t;
+
 typedef struct {
     char signature[8];     // "RSD PTR "
     uint8_t checksum;      // Checksum of first 20 bytes

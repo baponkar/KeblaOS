@@ -14,20 +14,20 @@
 
 #define PM1A_CNT_REG  0x604  // Default address of PM1a_CNT for many systems
 #define SLP_EN        (1 << 13)  // Bit 13: SLP_EN (Sleep Enable)
-#define S5_SLEEP_TYPE (5 << 10)  // Sleep type S5 (5) in bits 10-12
+#define S5_SLEEP_TYPA (5 << 10)  // Sleep type S5 (5) in bits 10-12
 
 void qemu_poweroff() {
-    // Combine S5 Sleep Type and Sleep Enable into a single command
-    uint16_t poweroff_cmd = S5_SLEEP_TYPE | SLP_EN; // 0x1400 + 0x2000 = 0x3400
 
     // Write to the PM1a_CNT register
-    outw(PM1A_CNT_REG, poweroff_cmd); // QEMU-specific ACPI shutdown port
+    outw(PM1A_CNT_REG, S5_SLEEP_TYPA | SLP_EN); // QEMU-specific ACPI shutdown port
 
     // If the system fails to power off, hang the CPU
+    printf("ACPI Shutdown failed, halting system!\n");
     while (1) {
         __asm__ volatile ("hlt");
     }
 }
+
 
 void qemu_reboot(){
     outb(0x64, 0xFE);   // Send reset command to the keyboard controller
@@ -43,6 +43,7 @@ static volatile struct limine_rsdp_request rsdp_request = {
     .id = LIMINE_RSDP_REQUEST,
     .revision = 3
 };
+
 
 fadt_t *fadt;
 
@@ -63,101 +64,60 @@ void *find_acpi_table() {
     return (void *)(uintptr_t)rsdp; // Use RSDT for ACPI 1.0
 }
 
-
-
-
-void parse_rsdp(void * table_addr){
-
+void validate_acpi_table(void *table_addr){
     rsdp_t *rsdp = (rsdp_t *) table_addr;
-
-    if(!memcmp(rsdp->signature, "RSD PTR ", 8)){
-
-        uint8_t sum = 0;
-        uint8_t *ptr = (uint8_t *) rsdp;
-        for (int i = 0; i < 20; i++) {
-            sum += ptr[i];
-        }
-
-        if((sum % 256) == 0){
-
-            uint32_t rsdt_address = rsdp->rsdt_address;
-            rsdt_t *rsdt = (rsdt_t *) rsdt_address;
-
-            acpi_header_t header = (acpi_header_t) rsdt->header;
-            int entry_count = (header.length - sizeof(acpi_header_t)) / sizeof(uint32_t);
-            uint32_t *entries = (uint32_t *) rsdt->entries;
-
-            for(int i=0; i<entry_count; i++){
-                acpi_header_t *entry = (acpi_header_t *)(uintptr_t) entries[i];
-                if (memcmp(entry->signature, "APIC", 4) == 0) {
-                    parse_madt(entry);
-                } else if (memcmp(entry->signature, "MCFG", 4) == 0) {
-                    parse_mcfg(entry);
-                } else if (!memcmp(entry->signature, "FACP", 4)) {
-                    fadt = (fadt_t *) entry;
-                    parse_fadt(entry); // Found FADT
-                }
+    if(rsdp){
+        uint64_t acpi_version = (rsdp->revision >= 2) ? 2 : 1;
+        if(!memcmp(rsdp->signature, "RSD PTR ", 8)){
+            uint8_t sum = 0;
+            uint8_t *ptr = (uint8_t *) rsdp;
+            for (int i = 0; i < 20; i++) {
+                sum += ptr[i];
             }
-
-        }else{
-            printf("This is a invalid RSDP address w.r.t checksum\n");
-        }
-    }else{
-        printf("The RSDP is  a invalid address\n");
-    }
-
-}
-
-
-void parse_rsdp_ext(void *table_addr){
-    rsdp_ext_t *rsdp_ext = (rsdp_ext_t *) table_addr;
-    rsdp_t first_part = rsdp_ext->first_part;
-
-    if(!memcmp(first_part.signature, "RSD PTR ", 8)){
-        uint8_t sum = 0;
-        uint8_t *ptr = (uint8_t *) &first_part;
-        for (int i = 0; i < 20; i++) {
-            sum += ptr[i];
-        }
-        
-        if((sum % 256) == 0){
-            uint64_t xsdt_address = rsdp_ext->xsdt_address;
-            xsdt_t *xsdt = (xsdt_t *) xsdt_address;
-
-            acpi_header_t header = (acpi_header_t) xsdt->header;
-            int entry_count = (header.length - sizeof(acpi_header_t)) / sizeof(uint64_t);
-            uint64_t *entries = (uint64_t *) xsdt->entries;
-
-            for(int i=0; i<entry_count; i++){
-                acpi_header_t *entry = (acpi_header_t *)(uintptr_t) entries[i];
-                if (memcmp(entry->signature, "APIC", 4) == 0) {
-                    parse_madt(entry);
-                } else if (memcmp(entry->signature, "MCFG", 4) == 0) {
-                    parse_mcfg(entry);
-                }else if (!memcmp(entry->signature, "FACP", 4)) {
-                    fadt = (fadt_t *) entry;
-                    parse_fadt(entry); // Found FADT
-                }
+            if((sum % 256) == 0){
+                printf("ACPI %d.0 is signature and checksum validated\n", acpi_version);
+            }else{
+                printf("ACPI %d.0 is not checksum  validated\n", acpi_version);
             }
         }else{
-            printf("This is a invalid RSDP address w.r.t checksum\n");
+            printf("ACPI %d.0 is not signature  validated\n", acpi_version);
         }
+
     }else{
-        printf("The RSDP is  a invalid address\n");
+        printf("ACPI Table not found\n");
     }
 }
 
 
 void parse_acpi_table(void *table_addr) {
     rsdp_t *rsdp = (rsdp_t *) table_addr;
+    rsdt_t *rsdt = (rsdt_t *) rsdp->rsdt_address;
 
-    if(rsdp->revision >= 2){
-        printf("ACPI 2.0 found\n");
-        parse_rsdp_ext(table_addr);
-    }else{
-        printf("ACPI 1.0 found\n");
-        parse_rsdp(table_addr);
+    rsdp_ext_t *rsdp_ext = (rsdp->revision >= 2) ? (rsdp_ext_t *) table_addr : 0;;
+    xsdt_t *xsdt = (rsdp->revision >= 2) ? (xsdt_t *)rsdp_ext->xsdt_address : 0;
+
+    acpi_header_t header = (rsdp->revision >= 2) ? xsdt->header : rsdt->header;
+
+    int entry_size = (rsdp->revision >= 2) ? sizeof(uint64_t) : sizeof(uint32_t);
+    int entry_count = (header.length - sizeof(acpi_header_t)) / entry_size;
+
+    uint32_t *entries_32 = (uint32_t *) rsdt->entries;
+    uint64_t *entries_64 = (uint64_t *) xsdt->entries;
+    void *entries = (rsdp->revision >= 2) ? (void *)entries_64 : (void *)entries_32;
+
+    for (int i = 0; i < entry_count; i++) {
+        acpi_header_t *entry = (acpi_header_t *)(uintptr_t)((rsdp->revision >= 2) ? ((uint64_t *)entries)[i] : ((uint32_t *)entries)[i]);
+        if (memcmp(entry->signature, "APIC", 4) == 0) {
+            parse_madt(entry);
+        } else if (memcmp(entry->signature, "MCFG", 4) == 0) {
+            parse_mcfg(entry);
+        }else if (!memcmp(entry->signature, "FACP", 4)) {
+            fadt = (fadt_t *) entry;
+            parse_fadt(entry); // Found FADT
+        }
     }
+
+    
 }
 
 
@@ -203,26 +163,28 @@ void parse_fadt(acpi_header_t *table){
 // Function to read ACPI enable status
 int is_acpi_enabled() {
     if (!fadt) {
-        printf("FADT not found! ACPI status unknown.\n");
+        // printf("FADT not found! ACPI status unknown.\n");
         return -1;
     }
 
-    uint32_t pm1a_control = (fadt->header.revision >= 2 && fadt->X_PM1aControlBlock.Address) 
-                            ? (uint32_t)fadt->X_PM1aControlBlock.Address 
-                            : fadt->PM1aControlBlock;
+    uint32_t pm1a_control = (fadt->header.revision >= 2 && fadt->X_PM1aControlBlock.Address) ? \
+                                (uint32_t)fadt->X_PM1aControlBlock.Address : fadt->PM1aControlBlock;
+
+    printf("FADT PM1a Control Block: %x\n", fadt->PM1aControlBlock);
+    printf("FADT X_PM1a Control Block: %x\n", fadt->X_PM1aControlBlock.Address);
 
     if (!pm1a_control) {
-        printf("PM1a Control Block not found!\n");
+        // printf("PM1a Control Block not found!\n");
         return -1;
     }
 
     uint16_t acpi_status = inw(pm1a_control); // Read PM1a Control Block register
 
     if (acpi_status & 1) { // Check SCI_EN (Bit 0)
-        printf("ACPI is ENABLED.\n");
+        // printf("ACPI is ENABLED.\n");
         return 1;
     } else {
-        printf("ACPI is DISABLED.\n");
+        // printf("ACPI is DISABLED.\n");
         return 0;
     }
 }
@@ -230,20 +192,21 @@ int is_acpi_enabled() {
 
 void acpi_enable() {
     if (!fadt) {
-        printf("FADT not found, ACPI cannot be enabled!\n");
+        // printf("FADT not found, ACPI cannot be enabled!\n");
         return;
     }
 
     // Check if ACPI mode needs to be enabled
     if (fadt->SMI_CommandPort && fadt->AcpiEnable) {
-        printf("Enabling ACPI Mode...\n");
+        // printf("Enabling ACPI Mode...\n");
         outb(fadt->SMI_CommandPort, fadt->AcpiEnable);
 
         // Wait a bit for ACPI mode to activate
         for (volatile int i = 0; i < 100000; i++);
-        printf("Succesfully ACPI Mode enable\n");
+        // printf("Succesfully ACPI Mode enable\n");
     }
 }
+
 
 void acpi_poweroff() {
     if (!fadt) {
@@ -252,32 +215,30 @@ void acpi_poweroff() {
     }
 
     // Enable ACPI first (if needed)
-    acpi_enable();
+    if(!is_acpi_enabled()){
+        acpi_enable();
+    }
 
     uint32_t pm1a_control = 0;
 
-    // Use ACPI 2.0+ PM1a Control Block if available
-    if (fadt->header.revision >= 2 && fadt->X_PM1aControlBlock.Address) {
-        pm1a_control = (uint32_t)fadt->X_PM1aControlBlock.Address;
-    } else {
-        // Use ACPI 1.0 PM1a Control Block
-        pm1a_control = fadt->PM1aControlBlock;
-    }
+    pm1a_control = (fadt->header.revision >= 2 && fadt->X_PM1aControlBlock.Address) ? (uint32_t)fadt->X_PM1aControlBlock.Address : fadt->PM1aControlBlock;
+
     uint32_t pm1b_control = fadt->PM1bControlBlock;
 
+    // printf("PreferredPowerManagementProfile : %d\n", fadt->PreferredPowerManagementProfile);
     // uint16_t slp_typa = (fadt->PreferredPowerManagementProfile == 5) ? (1 << 10) : (1 << 13); // SLP_TYPa for S5
-    uint16_t slp_typa = (5 << 10);  // Standard S5 Sleep Type
-    uint16_t slp_en = 1 << 13;   // SLP_EN bit
+
 
     if (!pm1a_control) {
         printf("PM1a Control Block not found!\n");
         return;
     }
 
-    printf("Sending ACPI shutdown command: outw(%x, %x)\n", pm1a_control, slp_typa | slp_en);
+    printf("Sending ACPI shutdown command: outw(%x, %x)\n", pm1a_control, S5_SLEEP_TYPA | SLP_EN);
 
     // Shutdown by setting SLP_EN (bit 13) with S5 sleep type (bits 10-12)
-    outw(pm1a_control, slp_typa | slp_en);
+    outw(pm1a_control, S5_SLEEP_TYPA | SLP_EN);
+    if(pm1b_control) outw(pm1b_control, S5_SLEEP_TYPA | SLP_EN);
 
     // If ACPI fails, use fallback methods
     printf("ACPI Shutdown failed, halting system!\n");
@@ -285,6 +246,7 @@ void acpi_poweroff() {
         __asm__ volatile ("hlt");
     }
 }
+
 
 void acpi_reboot(){
     uint8_t reset_value = fadt->ResetValue;
@@ -316,8 +278,9 @@ void acpi_reboot(){
 
 
 void init_acpi(){
-    void *rsdt_addr = find_acpi_table();
-    parse_acpi_table(rsdt_addr);
+    void *rsdp_addr = find_acpi_table();
+    validate_acpi_table(rsdp_addr);
+    parse_acpi_table(rsdp_addr);
 }
 
 
