@@ -59,6 +59,8 @@
     * string
     * assert
 
+![Latest Screenshot](./screenshot/latest_screenshot.png)
+
 ------------------------------------------------------
 ### Introducing the KeblaOS Operating System
 
