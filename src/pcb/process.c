@@ -1,8 +1,8 @@
 
 #include "../driver/vga.h"  // for print, print_dec, print_hex functions
 #include "../mmu/kheap.h"   // for kheap_alloc, kfree functions
-#include "../x86_64/pit/pit_timer.h" // for delay function
-#include "../x86_64/idt/idt.h" // for enable_interrupts and disable_interrupts functions
+#include "../x86_64/timer/pic_timer.h" // for delay function
+#include "../x86_64/interrupt/pic.h" // for enable_interrupts and disable_interrupts functions
 #include "../lib/string.h"  // for strncpy function
 #include "../driver/vga.h"  // for print function
 

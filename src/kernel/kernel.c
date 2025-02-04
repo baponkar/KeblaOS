@@ -11,7 +11,7 @@ Reference   : https://wiki.osdev.org/Limine
 */
 
 #include "../bootloader/acpi.h" // init_acpi
-#include "../bootloader/apic.h" // init_apic
+#include "../x86_64/interrupt/apic.h"
 #include "../bootloader/ahci.h"
 #include "../bootloader/pci.h"
 #include "../bootloader/disk.h"
@@ -27,9 +27,10 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "../driver/vga.h" // vga_init, print_bootloader_info, print_memory_map, display_image
 #include "../driver/image_data.h"
+#include "../driver/window.h"
 
 #include "../x86_64/gdt/gdt.h" // init_gdt
-#include "../x86_64/idt/idt.h" // init_idt, test_interrupt
+#include "../x86_64/interrupt/pic.h" // init_idt, test_interrupt
 
 #include "../mmu/pmm.h" // init_pmm, test_pmm
 #include "../mmu/paging.h" // init_paging, test_paging
@@ -37,7 +38,8 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../mmu/vmm.h" // test_vmm
 #include "../mmu/kheap.h" // init_kheap, test_kheap
 #include "../driver/keyboard.h" // initKeyboard
-#include "../x86_64/pit/pit_timer.h" // init_timer
+#include "../x86_64/timer/pic_timer.h" // init_timer
+#include "../x86_64/timer/apic_timer.h"
 
 #include "../pcb/process.h" // init_processes
 
@@ -51,10 +53,6 @@ void kmain(){
     get_memory_info();
     vga_init();
 
-    
-
-    display_image((FRAMEBUFFER_WIDTH - KEBLAOS_ICON_320X200X32_WIDTH)/2 , (FRAMEBUFFER_HEIGHT - KEBLAOS_ICON_320X200X32_WIDTH)/2, KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH, KEBLAOS_ICON_320X200X32_HEIGHT);
-
     printf("%s - %s\n",OS_NAME, OS_VERSION);
 
     // print_bootloader_info();
@@ -64,7 +62,8 @@ void kmain(){
     init_gdt();
     // check_gdt();
 
-    init_idt();
+    // init_idt();
+    init_apic();
     // test_interrupt();
 
     // test_kmalloc();
@@ -83,11 +82,14 @@ void kmain(){
 
     initKeyboard();
 
-    // init_timer(1);
+    // init_pic_timer(1);
+    apic_timer_init(1000);
     
-    // init_acpi();
+    init_acpi();
     
-    // init_apic();
+    // init_ahci();
+    // pci_scan();
+    // detect_ahci();
 
     // get_disk_info();
 
@@ -96,14 +98,15 @@ void kmain(){
     // print_cpu_vendor();
     // print_cpu_brand();
 
-    // // Create a few windows
-    // Window* win1 = create_window(10, 10, 200, 100, 0xAAAAAA, "Window 1");
-    // Window* win2 = create_window(30, 30, 200, 100, 0xBBBBBB, "Window 2");
+    // Create a few windows
+    // Window* create_window(int x, int y, int width, int height, uint64_t background_color, const char* title)
+    // Window* win1 = create_window(10, 10, 200, 100, COLOR_GRAY, "Window 1");
+    // Window* win2 = create_window(30, 30, 200, 100, COLOR_GRAY, "Window 2");
     
     // add_window(win1);
     // add_window(win2);
     
-    // // Draw all windows
+    // Draw all windows
     // render_all_windows();
     
     // // Create a button on window 1
@@ -125,13 +128,10 @@ void kmain(){
     //     render_all_windows();
     // }
 
-    init_acpi();
-    // init_ahci();
-    // pci_scan();
-    // detect_ahci();
-
     halt_kernel();
 }
+
+
 
 
 

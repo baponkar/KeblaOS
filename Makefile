@@ -18,8 +18,8 @@ DRIVER_DIR = $(SRC_DIR)/driver
 LIB_DIR = $(SRC_DIR)/lib
 X86_64_DIR = $(SRC_DIR)/x86_64
 GDT_DIR = $(SRC_DIR)/x86_64/gdt
-IDT_DIR = $(SRC_DIR)/x86_64/idt
-PIT_DIR = $(SRC_DIR)/x86_64/pit
+IDT_DIR = $(SRC_DIR)/x86_64/interrupt
+TIMER_DIR = $(SRC_DIR)/x86_64/timer
 RTC_DIR = $(SRC_DIR)/x86_64/rtc
 MMU_DIR = $(SRC_DIR)/mmu
 USR_DIR = $(SRC_DIR)/usr
@@ -76,7 +76,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/madt.c -o $(BUILD_DIR)/madt.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/ahci.c -o $(BUILD_DIR)/ahci.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/pci.c -o $(BUILD_DIR)/pci.o
-	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/apic.c -o $(BUILD_DIR)/apic.o
+	
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/disk.c -o $(BUILD_DIR)/disk.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/cpu.c -o $(BUILD_DIR)/cpu.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/memory.c -o $(BUILD_DIR)/memory.o
@@ -101,13 +101,15 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(GDT_DIR)/gdt.c -o $(BUILD_DIR)/gdt.o
 	$(NASM) $(NASM_FLAG) $(GDT_DIR)/gdt_load.asm -o $(BUILD_DIR)/gdt_load.o
 
-	$(GCC) $(GCC_FLAG) -c $(IDT_DIR)/idt.c -o $(BUILD_DIR)/idt.o
+	$(GCC) $(GCC_FLAG) -c $(IDT_DIR)/pic.c -o $(BUILD_DIR)/pic.o
 	$(NASM) $(NASM_FLAG) $(IDT_DIR)/idt_flush.asm -o $(BUILD_DIR)/idt_flush.o
 	$(NASM) $(NASM_FLAG) $(IDT_DIR)/isr.asm -o $(BUILD_DIR)/isr.o
 	$(NASM) $(NASM_FLAG) $(IDT_DIR)/irq.asm -o $(BUILD_DIR)/irq.o
+	$(GCC) $(GCC_FLAG) -c $(IDT_DIR)/apic.c -o $(BUILD_DIR)/apic.o
 
 
-	$(GCC) $(GCC_FLAG) -c $(PIT_DIR)/pit_timer.c -o $(BUILD_DIR)/pit_timer.o
+	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/pic_timer.c -o $(BUILD_DIR)/pic_timer.o
+	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/apic_timer.c -o $(BUILD_DIR)/apic_timer.o
 	$(GCC) $(GCC_FLAG) -c $(RTC_DIR)/rtc.c -o $(BUILD_DIR)/rtc.o
 
 
@@ -147,7 +149,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/gdt.o \
 						$(BUILD_DIR)/gdt_load.o \
 						$(BUILD_DIR)/util.o \
-						$(BUILD_DIR)/idt.o \
+						$(BUILD_DIR)/pic.o \
 						$(BUILD_DIR)/idt_flush.o \
 						$(BUILD_DIR)/isr.o \
 						$(BUILD_DIR)/irq.o \
@@ -156,7 +158,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/pmm.o \
 						$(BUILD_DIR)/vmm.o \
 						$(BUILD_DIR)/kmalloc.o \
-						$(BUILD_DIR)/pit_timer.o \
+						$(BUILD_DIR)/pic_timer.o \
+						$(BUILD_DIR)/apic_timer.o \
 						$(BUILD_DIR)/rtc.o \
 						$(BUILD_DIR)/keyboard.o  \
 						$(BUILD_DIR)/shell.o \
@@ -191,7 +194,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/gdt.o \
 						$(BUILD_DIR)/gdt_load.o \
 						$(BUILD_DIR)/util.o \
-						$(BUILD_DIR)/idt.o \
+						$(BUILD_DIR)/pic.o \
 						$(BUILD_DIR)/idt_flush.o \
 						$(BUILD_DIR)/isr.o \
 						$(BUILD_DIR)/irq.o \
@@ -200,7 +203,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/pmm.o \
 						$(BUILD_DIR)/vmm.o \
 						$(BUILD_DIR)/kmalloc.o \
-						$(BUILD_DIR)/pit_timer.o \
+						$(BUILD_DIR)/pic_timer.o \
+						$(BUILD_DIR)/apic_timer.o \
 						$(BUILD_DIR)/rtc.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/shell.o \
@@ -262,10 +266,10 @@ clean:
 # Running by qemu
 run: 
 	# GDB Debuging
-	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 cores=2,threads=2,sockets=1,maxcpus=4 -s -S
+	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 cores=2,threads=2,sockets=1,maxcpus=4 -s -S -rtc base=utc,clock=host
 
 	# UEFI Boot
-	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 -smp cores=2,threads=2,sockets=1,maxcpus=4 -bios /usr/share/OVMF/OVMF_CODE.fd
+	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 -smp cores=2,threads=2,sockets=1,maxcpus=4 -bios /usr/share/OVMF/OVMF_CODE.fd  -rtc base=utc,clock=host
 
 	# BIOS Boot
 	qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 -smp cores=2,threads=2,sockets=1,maxcpus=4 -rtc base=utc,clock=host

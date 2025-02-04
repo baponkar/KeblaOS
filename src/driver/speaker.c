@@ -1,3 +1,6 @@
+#include "ports.h"
+#include "../x86_64/timer/pic_timer.h"
+
 #include "speaker.h"
 
 // PIT control port and speaker port

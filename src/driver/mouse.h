@@ -1,13 +1,10 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
 
 
-#include "vga.h"
 
-#include "ports.h"
+
 
 void mouse_wait(uint8_t type);
 void mouse_write(uint8_t data);

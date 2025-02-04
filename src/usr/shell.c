@@ -7,7 +7,7 @@
 #include "../x86_64/gdt/gdt.h"
 #include "../util/util.h"
 
-#include "../x86_64/idt/idt.h"
+#include "../x86_64/interrupt/pic.h"
 #include "../kernel/kernel.h"
 
 #include "../x86_64/rtc/rtc.h"

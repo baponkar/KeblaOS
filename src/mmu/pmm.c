@@ -79,7 +79,7 @@ uint64_t free_frame_bit_no()
 
 void init_pmm(){
 
-    print("Strat of PMM initialization...\n");
+    // print("Strat of PMM initialization...\n");
 
     uint64_t tmp_i = KMEM_LOW_BASE;
 
