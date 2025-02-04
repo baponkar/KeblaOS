@@ -81,11 +81,11 @@ void kmain(){
     // test_kheap();
 
     initKeyboard();
+    
+    init_acpi();
 
     // init_pic_timer(1);
     apic_timer_init(1000);
-    
-    init_acpi();
     
     // init_ahci();
     // pci_scan();

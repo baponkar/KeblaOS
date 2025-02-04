@@ -3,7 +3,6 @@
 */
 
 #include "../../pcb/process.h"
-
 #include "../interrupt/pic.h"
 #include "../interrupt/apic.h"
 #include "../../lib/stdio.h"

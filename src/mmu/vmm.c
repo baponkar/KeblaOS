@@ -3,8 +3,8 @@
 https://github.com/dreamportdev/Osdev-Notes/blob/master/04_Memory_Management/04_Virtual_Memory_Manager.md
 */
 
+#include "../lib/stdio.h"
 #include "paging.h"
-#include "../driver/vga.h"
 
 #include "vmm.h"
 
@@ -26,13 +26,12 @@ void vm_alloc(uint64_t va) {
     page_t *page = get_page(va, 1, current_pml4);
     if (!page) {
         // Handle error if page creation fails
-        print("Page creation failed!\n");
+        printf("Page creation failed!\n");
         return;
     }
 
-    // print("page->present : ");
-    // print_dec(page->present);
-    // print("\n");
+    // printf("page->present : %d\n", page->present);
+
   
     if (page->present){
         // Allocate a physical frame for the page
@@ -74,44 +73,41 @@ void vm_free(uint64_t *ptr) {
 }
 
 
+
+
 void test_vmm() {
-    print("Testing Virtual Memory Manager (VMM)...\n");
+    printf("Testing Virtual Memory Manager (VMM)...\n");
 
     // Define a virtual address to test
     uint64_t test_va = 0x100000; // 1 MB (example virtual address)
 
-    // Step 1: Allocate a virtual page
-    print("Allocating virtual page at ");
-    print_hex(test_va);
-    print("\n");
+    printf("Allocating virtual page at %x\n");
     vm_alloc(test_va);
 
-    // Step 2: Write to the allocated page
-    print("Writing to the allocated page...\n");
+    printf("Writing to the allocated page...\n");
     uint64_t *ptr = (uint64_t *)test_va;
     *ptr = 0xDEADBEEF; // Example value to write
 
-    // Step 3: Verify the write
-    print("Verifying the write...\n");
+
+    printf("Verifying the write...\n");
     if (*ptr == 0xDEADBEEF) {
-        print("Write successful: ");
-        print_hex(*ptr);
-        print("\n");
+        printf("Write successful: %x\n", *ptr);
     } else {
-        print("Write verification failed!\n");
+        printf("Write verification failed!\n");
     }
 
-    // Step 4: Free the virtual page
-    print("Freeing the virtual page...\n");
+    printf("Freeing the virtual page...\n");
     vm_free((uint64_t *)test_va);
 
     // Step 5: Verify that the page is no longer accessible
-    print("Verifying page is no longer accessible...\n");
+    printf("Verifying page is no longer accessible...\n");
     if (*ptr != 0xDEADBEEF) {
-        print("Page successfully freed and inaccessible.\n");
+        printf("Page successfully freed and inaccessible.\n");
     } else {
-        print("Page is still accessible after being freed!\n");
+        printf("Page is still accessible after being freed!\n");
     }
 
-    print("VMM test complete.\n");
+    printf("VMM test complete.\n");
 }
+
+
