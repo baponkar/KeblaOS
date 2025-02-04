@@ -3,13 +3,14 @@ https://wiki.osdev.org/PS/2_Keyboard
 https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_Keyboard_Support.md
 */
 
-#include "../x86_64/idt/idt.h"
+#include "../x86_64/interrupt/pic.h"
 
 #include "../lib/stdlib.h"
 #include "../lib/string.h"
 #include "../usr/shell.h"
 #include "../driver/speaker.h"
 #include "../driver/vga.h"
+#include "../driver/ports.h"
 
 #include "keyboard.h"
 

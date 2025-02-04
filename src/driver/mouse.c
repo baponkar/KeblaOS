@@ -1,4 +1,11 @@
+#include <stdbool.h>
+#include <stddef.h>
+
 #include "mouse.h"
+
+#include "vga.h"
+
+#include "ports.h"
 
 
 #define MOUSE_CMD_PORT 0x64

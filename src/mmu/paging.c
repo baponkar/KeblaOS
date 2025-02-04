@@ -12,7 +12,7 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 
 
 
-#include "../x86_64/idt/idt.h"
+#include "../x86_64/interrupt/pic.h"
 
 #include "../bootloader/memory.h"
 #include "kmalloc.h"
@@ -133,7 +133,7 @@ uint64_t get_cr3_addr() {
 
 void init_paging()
 {  
-    print("Start of Paging initialization...\n");
+    // print("Start of Paging initialization...\n");
 
     // Lowest Virtual address 0xFFFFFFFF80322000 which have page and the page.frame address pointer have 0xFFFFFFFFFFFFFFFF value.
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
@@ -385,7 +385,7 @@ void test_paging() {
     print("\n");
 }
 
-#include "paging.h"
+
 
 // Function to flush TLB for a specific address
 void flush_tlb(uint64_t address) {

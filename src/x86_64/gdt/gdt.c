@@ -57,8 +57,8 @@ void print_gdt_entry(gdt_entry_t *entry) {
 
 
 void init_gdt(){
-    print("Start of GDT initializtion...\n");
-    //gdt_setup(index, base, limit, access, granularity)
+    // print("Start of GDT initializtion...\n");
+    // gdt_setup(index, base, limit, access, granularity)
     gdt_setup(0, 0, 0x0,    0x0,  0x0);     // null descriptor selector : 0x0
     gdt_setup(1, 0, 0xFFFF, 0x9A, 0xA0);    // kernel mode code segment, selector : 0x8
     gdt_setup(2, 0, 0xFFFF, 0x92, 0xA0);    // kernel mode data segment, selector : 0x10
