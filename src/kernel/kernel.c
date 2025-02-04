@@ -85,7 +85,8 @@ void kmain(){
     init_acpi();
 
     // init_pic_timer(1);
-    apic_timer_init(1000);
+    // apic_timer_init(1000);
+    apic_start_timer();
     
     // init_ahci();
     // pci_scan();
