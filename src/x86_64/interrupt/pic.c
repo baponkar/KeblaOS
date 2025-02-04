@@ -8,14 +8,11 @@ https://stackoverflow.com/questions/79386685/how-does-stack-memory-will-be-use-t
 
 */
 
-
-
-#include "../../driver/vga.h"
 #include "../../driver/ports.h"
-
 #include "../../util/util.h"
 #include "../../mmu/paging.h"
 #include "../../lib/string.h"
+#include "../../lib/stdio.h"
 
 #include "pic.h"
 
@@ -166,11 +163,11 @@ void idt_set_gate(uint8_t index, uint64_t offset, uint16_t selector, uint8_t att
 void isr_handler(registers_t *regs)
 {
     if(regs->int_no == 128){
-        print("Interrupt 128\n");
+        printf("Received Interrupt : %d\n", regs->int_no);
         // syscall_handler(&regs);
         return;
     }else if(regs->int_no == 177){
-        print("Interrupt 177\n");
+        printf("Received Interrupt : %d\n", regs->int_no);
         // syscall_handler(&regs);
         return;
     }else if (regs->int_no == 14) {
@@ -179,26 +176,19 @@ void isr_handler(registers_t *regs)
     }else if(regs->int_no == 13){
         // print("General Protection Fault\n");
         // debug_error_code(regs->err_code);
-        // gpf_handler(regs);
+        gpf_handler(regs);
         return;
     }else if(regs->int_no < 32){
-        print("recieved interrupt: ");
-        print_dec(regs->int_no);
-        putchar('\n');
-
-        print(exception_messages[regs->int_no]);
-        putchar('\n');
-
-        print("Error Code: ");
-        print_dec(regs->err_code);
-        print("\n");
-
+        printf("Received Interrupt : %d\n%s\nError Code : %d\nSystem Halted!\n", 
+            regs->int_no, exception_messages[regs->int_no], regs->err_code);
         // debug_error_code(regs->err_code);
-
-        print("System Halted!\n");
         halt_kernel();
+    }else{
+        printf("Received Interrupt : %d\n", regs->int_no);
+        return;
     }
 }
+
 
 void isr_install(){
 
@@ -252,6 +242,7 @@ void irq_handler(registers_t *regs)
     /* Find out if we have a custom handler to run for this
     *  IRQ, and then finally, run it */
     handler = interrupt_routines[regs->int_no - 32];
+
     if (handler)
     {
         handler(regs);
@@ -269,6 +260,7 @@ void irq_handler(registers_t *regs)
     *  interrupt controller too */
     outb(PIC1_COMMAND_PORT, PIC_EOI); /* master */
 }
+
 
 void irq_remap(void)
 {
@@ -325,7 +317,7 @@ void init_idt(){
     irq_install();
 
     enable_interrupts();
-    print("Successfully IDT Initialized.\n");
+    printf("Successfully IDT Initialized.\n");
 }
 
 
@@ -345,7 +337,7 @@ void enable_interrupts() {
 }
 
 void test_interrupt() {
-    print("Testing Interrupts\n");
+    printf("Testing Interrupts\n");
     // asm volatile ("div %b0" :: "a"(0)); // Int no 0
     // asm volatile ("int $0x3");   // Breakpoint int no : 3
     // asm volatile ("int $0x0");   // Division By Zero, int no : 0
@@ -359,92 +351,70 @@ void test_interrupt() {
 }
 
 void gpf_handler(registers_t *regs){
-    print("recieved interrupt: ");
-    print_dec(regs->int_no);
-    putchar('\n');
-    print(exception_messages[regs->int_no]);
-    putchar('\n');
-    print("Error Code: ");
-    print_dec(regs->err_code);
-    print("\n");
+    printf("recieved interrupt: %d\n", regs->int_no);
+    printf("%s\n", exception_messages[regs->int_no]);
+    printf("Error Code: %d\n", regs->err_code);
+    printf("CS: %x, RIP : %x\n", regs->iret_cs, regs->iret_rip);
 
-    print("CS: ");
-    print_hex(regs->iret_cs);
-    print(", RIP: ");
-    print_hex(regs->iret_rip);
-    print("\n");
-
-    print("Stack Contents:\n");
+    printf("Stack Contents:\n");
     uint64_t *rsp = (uint64_t *)regs->iret_rsp;
     for (int i = 0; i < 25; i++) {
-        print("  [");
-        print_hex((uint64_t)(rsp + i));
-        print("] = ");
-        print_hex(rsp[i]);
-        print("\n");
+        printf("  [%x] = %x\n", (uint64_t)(rsp + i), rsp[i] );
     }
 
     // debug_error_code(regs->err_code);
-    print("System Halted!\n");
+    printf("System Halted!\n");
     halt_kernel();   
 }
 
 void debug_error_code(int err_code) {
     // Print the raw error code in decimal and hexadecimal
-    print("Error Code (Decimal): ");
-    print_dec(err_code);
-    print("\n");
-
-    print("Error Code (Hexadecimal): ");
-    print_hex(err_code);
-    print("\n");
-
+    printf("Error Code (Decimal): %d\n", err_code);
+    printf("Error Code (Hexadecimal): %d\n", err_code);
     // Decode the error code bits
-    print("Decoding Error Code:\n");
+    printf("Decoding Error Code:\n");
 
     // Bit 0: External Event
     if (err_code & 0x1) {
-        print("  - External: The fault was caused by an external event (e.g., hardware interrupt).\n");
+        printf("  - External: The fault was caused by an external event (e.g., hardware interrupt).\n");
     } else {
-        print("  - External: The fault was not caused by an external event.\n");
+        printf("  - External: The fault was not caused by an external event.\n");
     }
 
     // Bit 1: Table Indicator (GDT/LDT)
     if (err_code & 0x2) {
-        print("  - Table: The fault involves the Local Descriptor Table (LDT).\n");
+        printf("  - Table: The fault involves the Local Descriptor Table (LDT).\n");
     } else {
-        print("  - Table: The fault involves the Global Descriptor Table (GDT).\n");
+        printf("  - Table: The fault involves the Global Descriptor Table (GDT).\n");
     }
 
     // Bit 2: Index (IDT/GDT)
     if (err_code & 0x4) {
-        print("  - Index: The fault involves an Interrupt Descriptor Table (IDT) entry.\n");
+        printf("  - Index: The fault involves an Interrupt Descriptor Table (IDT) entry.\n");
     } else {
-        print("  - Index: The fault involves a segment selector in the GDT/LDT.\n");
+        printf("  - Index: The fault involves a segment selector in the GDT/LDT.\n");
     }
 
     // Bits 3-15: Segment Selector Index
     int selector_index = (err_code >> 3) & 0x1FFF; // Extract bits 3-15
-    print("  - Selector Index: ");
-    print_dec(selector_index);
-    print("\n");
+    printf("  - Selector Index: %d\n", selector_index);
 
     // Additional information based on the selector index
     if (selector_index == 0) {
-        print("    - Null Selector: The fault was caused by a null segment selector.\n");
+        printf("    - Null Selector: The fault was caused by a null segment selector.\n");
     } else {
-        print("    - The fault was caused by a non-null segment selector.\n");
+        printf("    - The fault was caused by a non-null segment selector.\n");
     }
 
     // Print a summary of the error
-    print("\nSummary:\n");
+    printf("\nSummary:\n");
     if (err_code & 0x4) {
-        print("The fault likely occurred due to an invalid or misconfigured IDT entry.\n");
+        printf("The fault likely occurred due to an invalid or misconfigured IDT entry.\n");
     } else {
-        print("The fault likely occurred due to an invalid or misconfigured GDT/LDT entry.\n");
+        printf("The fault likely occurred due to an invalid or misconfigured GDT/LDT entry.\n");
     }
 
-    print("Check the segment selector index (");
-    print_dec(selector_index);
-    print(") in the corresponding descriptor table.\n");
+    printf("Check the segment selector index (%d)\n", selector_index);
 }
+
+

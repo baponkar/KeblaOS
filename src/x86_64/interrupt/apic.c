@@ -44,10 +44,9 @@ void disable_pic() {
 }
 
 uint64_t LAPIC_BASE = 0xFEE00000; // lapic base in general 0xfee0000 but system may changed
-#define APIC_SVR    0xFEE000F0 // Spurious Vector Register
-#define APIC_EOI    0xFEE000B0  // End of Interrupt (EOI)
-#define APIC_TIMER  0xFEE00320  // Timer Register
-#define APIC_LVT    0xFEE00350  // Local Vector Table (LVT)
+#define APIC_SVR    0xF0  // Spurious Vector Register
+#define APIC_EOI    0xB0  // End of Interrupt (EOI)
+#define APIC_LVT    0x350  // Local Vector Table (LVT)
 #define LAPIC_ID_REGISTER 0x20
 
 #define IOAPIC_BASE   0xFEC00000
@@ -81,31 +80,32 @@ uint32_t get_lapic_id() {
     return mmio_read(LAPIC_BASE + LAPIC_ID_REGISTER) >> 24; // APIC ID is in bits 24-31
 }
 
+
 // read msr
-static inline uint64_t rdmsr(uint32_t msr) {
+uint64_t rdmsr(uint32_t msr) {
     uint32_t low, high;
     asm volatile ("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
     return ((uint64_t)high << 32) | low;
 }
 
+
 // write msr
-static inline void wrmsr(uint32_t msr, uint64_t value) {
+void wrmsr(uint32_t msr, uint64_t value) {
     uint32_t low = value & 0xFFFFFFFF;
     uint32_t high = value >> 32;
     asm volatile ("wrmsr" : : "c"(msr), "a"(low), "d"(high));
 }
 
 void enable_apic() {
-    uint64_t apic_base = rdmsr(0x1B); // Read APIC Base MSR (0x1B)
-    LAPIC_BASE = apic_base;
+    uint64_t apic_base = rdmsr(0x1B);   // Read APIC Base MSR (0x1B)
+    LAPIC_BASE = apic_base & 0xFFFFFF00; // Extract base address
     apic_base |= (1 << 11);           // Set APIC Global Enable (Bit 11)
     wrmsr(0x1B, apic_base);           // Write back to MSR
 }
 
 
-
 void apic_send_eoi() {
-    mmio_write(APIC_EOI, 0); // Acknowledge interrupt
+    mmio_write(LAPIC_BASE + APIC_EOI, 0); // Acknowledge interrupt
 }
 
 void enable_ioapic_mode() {
@@ -135,14 +135,12 @@ void ioapic_remap_keyboard() {
 }
 
 
-
-
 void init_apic(){
     if(has_apic){
         disable_interrupts();
         disable_pic();
         enable_apic();
-        mmio_write(APIC_SVR, 0x1FF); // Enable APIC (bit 8) and set vector 0xFF
+        mmio_write(LAPIC_BASE + APIC_SVR, 0x1FF); // Enable APIC (bit 8) and set vector 0xFF
         apic_send_eoi();
         enable_ioapic_mode();
 
@@ -155,7 +153,6 @@ void init_apic(){
         irq_install();
 
         ioapic_remap_keyboard();  // Remap keyboard IRQ1 to APIC
-        
 
         enable_interrupts();
     }else{
