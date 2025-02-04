@@ -18,7 +18,7 @@ DRIVER_DIR = $(SRC_DIR)/driver
 LIB_DIR = $(SRC_DIR)/lib
 X86_64_DIR = $(SRC_DIR)/x86_64
 GDT_DIR = $(SRC_DIR)/x86_64/gdt
-IDT_DIR = $(SRC_DIR)/x86_64/interrupt
+INT_DIR = $(SRC_DIR)/x86_64/interrupt
 TIMER_DIR = $(SRC_DIR)/x86_64/timer
 RTC_DIR = $(SRC_DIR)/x86_64/rtc
 MMU_DIR = $(SRC_DIR)/mmu
@@ -101,11 +101,11 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(GDT_DIR)/gdt.c -o $(BUILD_DIR)/gdt.o
 	$(NASM) $(NASM_FLAG) $(GDT_DIR)/gdt_load.asm -o $(BUILD_DIR)/gdt_load.o
 
-	$(GCC) $(GCC_FLAG) -c $(IDT_DIR)/pic.c -o $(BUILD_DIR)/pic.o
-	$(NASM) $(NASM_FLAG) $(IDT_DIR)/idt_flush.asm -o $(BUILD_DIR)/idt_flush.o
-	$(NASM) $(NASM_FLAG) $(IDT_DIR)/isr.asm -o $(BUILD_DIR)/isr.o
-	$(NASM) $(NASM_FLAG) $(IDT_DIR)/irq.asm -o $(BUILD_DIR)/irq.o
-	$(GCC) $(GCC_FLAG) -c $(IDT_DIR)/apic.c -o $(BUILD_DIR)/apic.o
+	$(GCC) $(GCC_FLAG) -c $(INT_DIR)/pic.c -o $(BUILD_DIR)/pic.o
+	$(NASM) $(NASM_FLAG) $(INT_DIR)/idt_flush.asm -o $(BUILD_DIR)/idt_flush.o
+	$(NASM) $(NASM_FLAG) $(INT_DIR)/isr.asm -o $(BUILD_DIR)/isr.o
+	$(NASM) $(NASM_FLAG) $(INT_DIR)/irq.asm -o $(BUILD_DIR)/irq.o
+	$(GCC) $(GCC_FLAG) -c $(INT_DIR)/apic.c -o $(BUILD_DIR)/apic.o
 
 
 	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/pic_timer.c -o $(BUILD_DIR)/pic_timer.o
