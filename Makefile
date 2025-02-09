@@ -105,6 +105,8 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(NASM) $(NASM_FLAG) $(INT_DIR)/idt_flush.asm -o $(BUILD_DIR)/idt_flush.o
 	$(NASM) $(NASM_FLAG) $(INT_DIR)/isr.asm -o $(BUILD_DIR)/isr.o
 	$(NASM) $(NASM_FLAG) $(INT_DIR)/irq.asm -o $(BUILD_DIR)/irq.o
+
+	$(NASM) $(NASM_FLAG) $(INT_DIR)/apic_flush.asm -o $(BUILD_DIR)/apic_flush.o
 	$(GCC) $(GCC_FLAG) -c $(INT_DIR)/apic.c -o $(BUILD_DIR)/apic.o
 
 

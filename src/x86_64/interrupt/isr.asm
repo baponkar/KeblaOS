@@ -36,9 +36,9 @@
         call isr_handler     ; Call the interrupt handler
 
         ; Send EOI to APIC
-        mov rax, 0
-        mov rdx, 0xFEE000B0  ; APIC EOI register
-        mov [rdx], eax
+        ;mov rax, 0
+        ;mov rdx, 0xFEE000B0  ; APIC EOI register
+        ;mov [rdx], eax
 
         pop gs              ; Restore segment registers
         pop fs

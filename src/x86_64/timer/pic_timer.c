@@ -21,10 +21,8 @@ void pic_timerHandler(registers_t *regs) {
     ticks++;
 
     // Uncomment this for debug purposes but be cautious with high-frequency output
-    if (ticks % 2000 == 0) {
-        printf("\nTick: ");
-        // printf_dec(ticks); // Assuming you have a function to printf 
-
+    if (ticks % 10 == 0) {
+        printf("Tick no : %d\n", ticks); // Assuming you have a function to printf 
         // schedule(regs);
     }
 
