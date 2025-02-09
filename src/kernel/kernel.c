@@ -62,15 +62,14 @@ void kmain(){
     init_gdt();
     // check_gdt();
 
-    // init_idt();
-    init_apic();
+    init_idt();
+    // init_apic();
     // test_interrupt();
 
     // test_kmalloc();
 
     init_pmm();
     // test_pmm();
-
 
     init_paging();
     // test_paging();
@@ -82,11 +81,10 @@ void kmain(){
 
     initKeyboard();
     
-    init_acpi();
+    // init_acpi();
 
-    // init_pic_timer(1);
-    // apic_timer_init(1000);
-    apic_start_timer();
+    init_pic_timer(1);
+    // init_apic_timer();
     
     // init_ahci();
     // pci_scan();

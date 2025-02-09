@@ -283,22 +283,22 @@ void irq_remap(void)
 
 void irq_install()
 {
-    idt_set_gate(32, (uint64_t)&irq0, 0x08, 0x8E); // Timer Interrupt
-    idt_set_gate(33, (uint64_t)&irq1, 0x08, 0x8E);
-    idt_set_gate(34, (uint64_t)&irq2, 0x08, 0x8E);
-    idt_set_gate(35, (uint64_t)&irq3, 0x08, 0x8E);
-    idt_set_gate(36, (uint64_t)&irq4, 0x08, 0x8E);
-    idt_set_gate(37, (uint64_t)&irq5, 0x08, 0x8E);
-    idt_set_gate(38, (uint64_t)&irq6, 0x08, 0x8E);
-    idt_set_gate(39, (uint64_t)&irq7, 0x08, 0x8E);
-    idt_set_gate(40, (uint64_t)&irq8, 0x08, 0x8E);
-    idt_set_gate(41, (uint64_t)&irq9, 0x08, 0x8E);
-    idt_set_gate(42, (uint64_t)&irq10, 0x08, 0x8E);
-    idt_set_gate(43, (uint64_t)&irq11, 0x08, 0x8E);
-    idt_set_gate(44, (uint64_t)&irq12, 0x08, 0x8E);
-    idt_set_gate(45, (uint64_t)&irq13, 0x08, 0x8E);
-    idt_set_gate(46, (uint64_t)&irq14, 0x08, 0x8E);
-    idt_set_gate(47, (uint64_t)&irq15, 0x08, 0x8E);
+    idt_set_gate(32, (uint64_t)&irq0, 0x08, 0x8E);  // Timer Interrupt
+    idt_set_gate(33, (uint64_t)&irq1, 0x08, 0x8E);  // Keyboard Interrupt
+    idt_set_gate(34, (uint64_t)&irq2, 0x08, 0x8E);  // Cascade (for PIC chaining)
+    idt_set_gate(35, (uint64_t)&irq3, 0x08, 0x8E);  // COM2 (Serial Port 2)
+    idt_set_gate(36, (uint64_t)&irq4, 0x08, 0x8E);  // COM1 (Serial Port 1)
+    idt_set_gate(37, (uint64_t)&irq5, 0x08, 0x8E);  // LPT2 (Parallel Port 2) or Sound Card
+    idt_set_gate(38, (uint64_t)&irq6, 0x08, 0x8E);  // Floppy Disk Controller
+    idt_set_gate(39, (uint64_t)&irq7, 0x08, 0x8E);  // LPT1 (Parallel Port 1) / Spurious IRQ
+    idt_set_gate(40, (uint64_t)&irq8, 0x08, 0x8E);  // Real-Time Clock (RTC)
+    idt_set_gate(41, (uint64_t)&irq9, 0x08, 0x8E);  // ACPI / General system use
+    idt_set_gate(42, (uint64_t)&irq10, 0x08, 0x8E); // Available (often used for SCSI or NIC)
+    idt_set_gate(43, (uint64_t)&irq11, 0x08, 0x8E); // Available (often used for PCI devices)
+    idt_set_gate(44, (uint64_t)&irq12, 0x08, 0x8E); // PS/2 Mouse
+    idt_set_gate(45, (uint64_t)&irq13, 0x08, 0x8E); // FPU / Floating-Point Unit (Coprocessor)
+    idt_set_gate(46, (uint64_t)&irq14, 0x08, 0x8E); // Primary ATA Hard Disk Controller
+    idt_set_gate(47, (uint64_t)&irq15, 0x08, 0x8E); // Secondary ATA Hard Disk Controller
 }
 
 

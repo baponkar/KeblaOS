@@ -2,7 +2,6 @@
 
 [extern irq_handler]        ; defined in idt.c 
 
-
 ; Setup Interrupt Request(IRQ)
 %macro IRQ 2
     [global irq%1]
@@ -42,9 +41,9 @@
         call irq_handler
 
         ; Send EOI to APIC
-        mov rax, 0
-        mov rdx, 0xFEE000B0  ; APIC EOI register
-        mov [rdx], eax
+        ;mov rax, 0
+        ;mov rdx, 0xFEE000B0  ; APIC EOI register
+        ;mov [rdx], eax
 
         ; Restore segment registers
         pop gs
