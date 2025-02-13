@@ -84,14 +84,20 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/firmware.c -o $(BUILD_DIR)/firmware.o
 
 	
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/ports.c -o $(BUILD_DIR)/ports.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga.c -o $(BUILD_DIR)/vga.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/font.c -o $(BUILD_DIR)/font.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/greek_font.c -o $(BUILD_DIR)/greek_font.o
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/io/ports.c -o $(BUILD_DIR)/ports.o
+#	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga.c -o $(BUILD_DIR)/vga.o
+#	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/font.c -o $(BUILD_DIR)/font.o
+#	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/greek_font.c -o $(BUILD_DIR)/greek_font.o
+
+#VGA DRIVER
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/fonts/eng/eng_8x8.c -o $(BUILD_DIR)/eng_8x8.o
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/fonts/eng/eng_8x16.c -o $(BUILD_DIR)/eng_8x16.o
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/framebuffer.c -o $(BUILD_DIR)/framebuffer.o
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/vga_term.c -o $(BUILD_DIR)/vga_term.o
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/vga_gfx.c -o $(BUILD_DIR)/vga_gfx.o
 
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/image_data.c -o $(BUILD_DIR)/image_data.o
 
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/window.c -o $(BUILD_DIR)/window.o
 
 
 	$(GCC) $(GCC_FLAG) -c $(LIB_DIR)/string.c -o $(BUILD_DIR)/string.o
@@ -115,9 +121,9 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(RTC_DIR)/rtc.c -o $(BUILD_DIR)/rtc.o
 
 
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/keyboard.c -o $(BUILD_DIR)/keyboard.o
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/keyboard/keyboard.c -o $(BUILD_DIR)/keyboard.o
 
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/mouse.c -o $(BUILD_DIR)/mouse.o
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/mouse/mouse.c -o $(BUILD_DIR)/mouse.o
 
 	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/shell.c -o $(BUILD_DIR)/shell.o
 
@@ -142,12 +148,11 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/pci.o \
 						$(BUILD_DIR)/apic.o \
 						$(BUILD_DIR)/ports.o \
-						$(BUILD_DIR)/font.o \
 						$(BUILD_DIR)/image_data.o \
 						$(BUILD_DIR)/string.o \
 						$(BUILD_DIR)/stdlib.o \
 						$(BUILD_DIR)/stdio.o \
-						$(BUILD_DIR)/vga.o \
+						$(BUILD_DIR)/vga_term.o \
 						$(BUILD_DIR)/gdt.o \
 						$(BUILD_DIR)/gdt_load.o \
 						$(BUILD_DIR)/util.o \
@@ -165,16 +170,16 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/rtc.o \
 						$(BUILD_DIR)/keyboard.o  \
 						$(BUILD_DIR)/shell.o \
-						$(BUILD_DIR)/greek_font.o \
 						$(BUILD_DIR)/kheap.o \
-						$(BUILD_DIR)/window.o \
-						$(BUILD_DIR)/mouse.o \
 						$(BUILD_DIR)/process.o \
 						$(BUILD_DIR)/disk.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/memory.o \
 						$(BUILD_DIR)/framebuffer.o \
-						$(BUILD_DIR)/firmware.o
+						$(BUILD_DIR)/firmware.o \
+						$(BUILD_DIR)/eng_8x8.o \
+						$(BUILD_DIR)/eng_8x16.o \
+						$(BUILD_DIR)/vga_gfx.o
 
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
@@ -187,12 +192,11 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/apic.o \
 						$(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/ports.o \
-						$(BUILD_DIR)/font.o \
 						$(BUILD_DIR)/image_data.o \
 						$(BUILD_DIR)/string.o \
 						$(BUILD_DIR)/stdlib.o \
 						$(BUILD_DIR)/stdio.o \
-						$(BUILD_DIR)/vga.o \
+						$(BUILD_DIR)/vga_term.o \
 						$(BUILD_DIR)/gdt.o \
 						$(BUILD_DIR)/gdt_load.o \
 						$(BUILD_DIR)/util.o \
@@ -210,16 +214,16 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/rtc.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/shell.o \
-						$(BUILD_DIR)/greek_font.o \
 						$(BUILD_DIR)/kheap.o \
-						$(BUILD_DIR)/window.o \
-						$(BUILD_DIR)/mouse.o \
 						$(BUILD_DIR)/process.o \
 						$(BUILD_DIR)/disk.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/memory.o \
 						$(BUILD_DIR)/framebuffer.o \
-						$(BUILD_DIR)/firmware.o
+						$(BUILD_DIR)/firmware.o \
+						$(BUILD_DIR)/eng_8x8.o \
+						$(BUILD_DIR)/eng_8x16.o \
+						$(BUILD_DIR)/vga_gfx.o
 
 
 #$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin

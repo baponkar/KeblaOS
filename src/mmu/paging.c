@@ -19,7 +19,7 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 
 #include  "../lib/string.h"
 
-#include  "../driver/vga.h"
+#include  "../driver/vga/vga_term.h"
 
 #include "pmm.h"
 

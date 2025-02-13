@@ -1,6 +1,6 @@
 
 
-#include "../driver/vga.h"
+#include "../driver/vga/vga_term.h"
 #include "../bootloader/boot.h"
 #include "../bootloader/memory.h"
 #include "vmm.h"

@@ -3,7 +3,7 @@
 #include "../bootloader/memory.h"
 
 #include "kmalloc.h"
-#include  "../driver/vga.h"
+#include  "../driver/vga/vga_term.h"
 
 #include "../lib/assert.h"
 #include "../lib/string.h"

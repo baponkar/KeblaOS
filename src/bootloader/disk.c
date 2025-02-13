@@ -1,5 +1,5 @@
 
-#include "../driver/vga.h"
+#include "../lib/stdio.h"
 #include "../limine/limine.h"
 #include "../lib/string.h"
 
@@ -25,9 +25,9 @@ void get_bios_disk_info() {
         uint64_t revision = smbios_request.response->revision;
         uint64_t entry_32 = (uint64_t)smbios_request.response->entry_32;
         uint64_t entry_64 = (uint64_t)smbios_request.response->entry_64;
-        print("SMBIOS info found!\n");
+        printf("SMBIOS info found!\n");
     }else{
-        print("No SMBIOS info found!\n");
+        printf("No SMBIOS info found!\n");
     }
 }
 
@@ -46,12 +46,12 @@ void get_uefi_disk_info() {
         if (efi_system_table_address != NULL) {
             // Use the UEFI system table to query disk information
             // This is a simplified example; actual implementation requires using UEFI protocols
-            print("UEFI System Table found. Disk info retrieval not implemented in this example.\n");
+            printf("UEFI System Table found. Disk info retrieval not implemented in this example.\n");
         } else {
-            print("UEFI System Table not found!\n");
+            printf("UEFI System Table not found!\n");
         }
     } else {
-        print("UEFI firmware type not detected!\n");
+        printf("UEFI firmware type not detected!\n");
     }
 }
 
@@ -62,7 +62,7 @@ void get_disk_info() {
     } else if (strcmp(FIRMWARE_TYPE, "UEFI32") == 0 || strcmp(FIRMWARE_TYPE, "UEFI64") == 0) {
         get_uefi_disk_info();
     } else {
-        print("Unsupported firmware type for disk info retrieval!\n");
+        printf("Unsupported firmware type for disk info retrieval!\n");
     }
 }
 

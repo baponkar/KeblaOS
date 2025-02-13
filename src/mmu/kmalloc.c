@@ -3,7 +3,7 @@ This file will manage static memory allocation
 */
 
 
-#include "../driver/vga.h"
+#include "../driver/vga/vga_term.h"
 
 #include "kmalloc.h"
 

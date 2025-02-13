@@ -1,4 +1,4 @@
-#include "../driver/vga.h"
+#include "stdio.h"
 
 /**
  * assert(expression)
@@ -8,13 +8,13 @@
 #define assert(expr)                                                \
     do {                                                            \
         if (!(expr)) {                                              \
-            print("Assertion failed: ");                            \
-            print(#expr);                                           \
-            print(", file: ");                                      \
-            print(__FILE__);                                        \
-            print(", line: ");                                      \
-            print_dec(__LINE__);                                    \
-            print("\n");                                            \
+            printf("Assertion failed: ");                            \
+            printf(#expr);                                           \
+            printf(", file: ");                                      \
+            printf(__FILE__);                                        \
+            printf(", line: ");                                      \
+            printf("%d", __LINE__);                                    \
+            printf("\n");                                            \
             while (1) {} /* Halt execution */                       \
         }                                                           \
     } while (0)

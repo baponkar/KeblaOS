@@ -12,7 +12,7 @@
     https://stackoverflow.com/questions/37554399/what-is-the-use-of-defining-a-global-descriptor-table
 */
 
-#include "../../driver/vga.h"
+#include "../../driver/vga/vga_term.h"
 
 #include "gdt.h"
 

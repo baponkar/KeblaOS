@@ -1,5 +1,7 @@
+
 #include "../limine/limine.h"
-#include "../driver/vga.h"  
+#include "../lib/stdio.h"  
+
 
 #include "firmware.h"
 
@@ -28,17 +30,15 @@ void get_firmware_info(){
         } 
     }else{
         FIRMWARE_TYPE = "No firmware type found!";
-        print("No firmware type found!\n");
+        printf("Firmware type: %s\n", FIRMWARE_TYPE);
     }
 }
 
 void print_firmware_info(){
     if(firmware_type_request.response != NULL){
-        print("Firmware type: ");
-        print(FIRMWARE_TYPE);
-        print("\n");
+        printf("Firmware type: %s\n", FIRMWARE_TYPE);
     }else{
         FIRMWARE_TYPE = "No firmware type found!";
-        print("No firmware type found!\n");
+        printf("%s\n", FIRMWARE_TYPE);
     }
 }

@@ -1,6 +1,8 @@
 
 
-[extern irq_handler]        ; defined in idt.c 
+[extern irq_handler]        ; defined in pic.c 
+[extern apic_irq_handler]   ; defined in apic.c
+[extern print_hex]
 
 ; Setup Interrupt Request(IRQ)
 %macro IRQ 2
@@ -38,12 +40,12 @@
         
         mov rdi, rsp                    ; Pass the current stack pointer to `irq_handler`
         cld
-        call irq_handler
+        call apic_irq_handler
 
         ; Send EOI to APIC
-        ;mov rax, 0
-        ;mov rdx, 0xFEE000B0  ; APIC EOI register
-        ;mov [rdx], eax
+        ; mov rax, 0
+        ; mov rdx, 0xFEE000B0  ; APIC EOI register
+        ; mov [rdx], eax
 
         ; Restore segment registers
         pop gs

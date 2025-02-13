@@ -1,3 +1,5 @@
+
+
 /** 
  * 8x8 monochrome bitmap fonts for rendering
  * Author: Daniel Hepper <daniel@hepper.net>
@@ -17,6 +19,8 @@
  * 
  * Fetched from: http://dimensionalrift.homelinux.net/combuster/mos3/?p=viewsource&file=/modules/gfx/font8_8.asm
  **/
+
+#include "greek_8x8.h"
 
 // Constant: font8x8_0390
 // Contains an 8x8 font map for unicode points U+0390 - U+03C9 (greek characters)
@@ -80,3 +84,4 @@ char font8x8_greek[58][8] = {
     { 0x00, 0x00, 0xDB, 0xDB, 0xDB, 0x7E, 0x18, 0x00},   // U+03C8 (psi)
     { 0x00, 0x00, 0x36, 0x63, 0x6B, 0x7F, 0x36, 0x00}    // U+03C9 (omega)
 };
+

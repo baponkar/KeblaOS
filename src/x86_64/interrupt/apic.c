@@ -4,13 +4,12 @@ Reference:  https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architect
             https://wiki.osdev.org/APIC_Timer
 */
 
-#include "../../driver/ports.h"
+#include "../../driver/io/ports.h"
 #include "../../lib/stdio.h"
 #include "../../limine/limine.h"
 #include "../../lib/stdio.h"
 #include "../../lib/string.h"
-#include "../../util/util.h"
-#include "../../driver/keyboard.h"
+#include "../../driver/keyboard/keyboard.h"
 #include "pic.h"
 
 #include "apic.h"
@@ -43,7 +42,7 @@ void disable_pic() {
     outb(PIC_DATA_SLAVE, 0xFF);
 }
 
-uint32_t LAPIC_BASE = 0xFEE00000; // lapic base in general 0xFEE0000 but system may changed
+uint32_t LAPIC_BASE = 0; // lapic base in general 0xFEE0000 but system may changed
 #define APIC_SVR    0xF0  // Spurious Vector Register
 #define APIC_EOI    0xB0  // End of Interrupt (EOI)
 #define APIC_LVT    0x350  // Local Vector Table (LVT)
@@ -111,12 +110,12 @@ extern idt_ptr_t idt_ptr;
 extern void idt_flush(uint64_t);
 
 // Write to a memory-mapped I/O address
-static inline void mmio_write(uint32_t address, uint32_t value) {
+void mmio_write(uint32_t address, uint32_t value) {
     *((volatile uint32_t*)address) = value;
 }
 
 // Read from a memory-mapped I/O address
-static inline uint32_t mmio_read(uint32_t address) {
+uint32_t mmio_read(uint32_t address) {
     return *((volatile uint32_t*)address);
 }
 
@@ -135,7 +134,7 @@ uint32_t get_lapic_id() {
 
 
 // read msr
-uint64_t rdmsr(uint32_t msr) {
+static inline uint64_t rdmsr(uint32_t msr) {
     uint32_t low, high;
     asm volatile ("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
     return ((uint64_t)high << 32) | low;
@@ -143,22 +142,25 @@ uint64_t rdmsr(uint32_t msr) {
 
 
 // write msr
-void wrmsr(uint32_t msr, uint64_t value) {
+static inline void wrmsr(uint32_t msr, uint64_t value) {
     uint32_t low = value & 0xFFFFFFFF;
     uint32_t high = value >> 32;
     asm volatile ("wrmsr" : : "c"(msr), "a"(low), "d"(high));
 }
 
 void enable_apic() {
-    uint64_t apic_base = rdmsr(0x1B);   // Read APIC Base MSR (0x1B)
-    LAPIC_BASE = apic_base & 0xFFFFFF00; // Extract base address
-    apic_base |= (1 << 11);           // Set APIC Global Enable (Bit 11)
-    wrmsr(0x1B, apic_base);           // Write back to MSR
+    uint64_t apic_base = rdmsr(0x1B) & 0xFFFFF000;  // IA32_APIC_BASE_MSR
+    if (!(rdmsr(0x1B) & (1 << 11))) {
+        wrmsr(0x1B, apic_base | (1 << 11)); // Enable APIC if disabled
+    }
+    LAPIC_BASE = apic_base;  
 }
 
 
 void apic_send_eoi() {
-    mmio_write(LAPIC_BASE + APIC_EOI, 0); // Acknowledge interrupt
+    if (LAPIC_BASE) {
+        *((volatile uint32_t*)(LAPIC_BASE + APIC_EOI)) = 0;
+    }
 }
 
 void enable_ioapic_mode() {
@@ -252,6 +254,7 @@ void apic_irq_install(){
     idt_set_gate(45, (uint64_t)&irq13, 0x08, 0x8E); // FPU / Floating-Point Unit (Coprocessor)
     idt_set_gate(46, (uint64_t)&irq14, 0x08, 0x8E); // Primary ATA Hard Disk Controller
     idt_set_gate(47, (uint64_t)&irq15, 0x08, 0x8E); // Secondary ATA Hard Disk Controller
+    idt_set_gate(48, (uint64_t)&irq15, 0x08, 0x8E); // Secondary ATA Hard Disk Controller
 }
 
 /* This array is actually an array of function pointers. We use
@@ -265,9 +268,9 @@ void *apic_interrupt_routines[16] =
 
 
 /* This installs a custom Interrupt handler for the given Interrupt */
-void apic_interrupt_install_handler(int int_no, void (*handler)(registers_t *r))
+void apic_interrupt_install_handler(int irq_no, void (*handler)(registers_t *r))
 {
-    apic_interrupt_routines[int_no] = handler;
+    apic_interrupt_routines[irq_no] = handler;
 }
 
 
@@ -299,9 +302,12 @@ void apic_irq_handler(registers_t *regs)
 void init_apic(){
     if(has_apic){
         disable_interrupts();
-        // disable_pic();
+        disable_pic();
         enable_apic();
-        mmio_write(LAPIC_BASE + APIC_SVR, 0x1FF); // Enable APIC (bit 8) and set vector 0xFF
+
+        mmio_write(LAPIC_BASE + APIC_SVR, mmio_read(LAPIC_BASE + APIC_SVR) | 0x100);
+        // mmio_write(LAPIC_BASE + APIC_SVR, 0x1FF); // Enable APIC (bit 8) and set vector 0xFF
+
         apic_send_eoi();
         enable_ioapic_mode();
 
@@ -309,9 +315,6 @@ void init_apic(){
         idt_ptr.base  = (uint64_t) &idt_entries;
         memset((void *)&idt_entries, 0, (size_t) (sizeof(idt_entry_t) * 256)); // for safety clearing memories
         idt_flush((uint64_t) &idt_ptr);
-
-        // isr_install();
-        // irq_install();
 
         cpu_exception_install();
         apic_irq_install();
