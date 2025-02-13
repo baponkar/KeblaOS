@@ -6,7 +6,7 @@
 #include "../interrupt/pic.h"
 #include "../interrupt/apic.h"
 #include "../../lib/stdio.h"
-#include "../../driver/ports.h"
+#include "../../driver/io/ports.h"
 
 #include "pic_timer.h"
 
@@ -42,6 +42,7 @@ void init_pic_timer(uint16_t interval) {
 
     printf("PIC timer successfully initialized.\n");
 }
+
 
 
 // Delay function using busy-wait based on ticks

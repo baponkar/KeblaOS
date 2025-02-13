@@ -3,7 +3,7 @@
     Symmetric Multiprocessing
 */
 #include "../limine/limine.h"
-#include "../driver/vga.h"
+#include "../lib/stdio.h"
 
 #include "cpu.h"
 
@@ -33,7 +33,7 @@ void get_cpu_info(){
            uint64_t extra_argument = cpus[i]->extra_argument;
         }
     }else{
-        print("No CPU info found!\n");
+        printf("No CPU info found!\n");
     }
 }
 
@@ -46,19 +46,7 @@ void print_cpu_info(){
         uint64_t cpu_count = smp_request.response->cpu_count;
         struct limine_smp_info ** cpus = smp_request.response->cpus;
 
-        print("CPU info : \n");
-        print("Revision : ");
-        print_dec(revision);
-        print("\n");
-        print("Flags : ");
-        print_dec(flags);
-        print("\n");
-        print("BSP LAPIC ID : ");
-        print_hex(bsp_lapic_id);
-        print("\n");
-        print("CPU count : ");
-        print_dec(cpu_count);
-        print("\n");
+        printf("CPU info : \nRevision : %d\nFlags : %d\nBSP LAPIC ID : %x\nCPU count : %d\n", revision, flags, bsp_lapic_id, cpu_count);
 
         for(size_t i=0; i<(size_t) cpu_count; i++){
            uint32_t processor_id = cpus[i]->processor_id;
@@ -67,21 +55,10 @@ void print_cpu_info(){
            limine_goto_address goto_address = cpus[i]->goto_address;
            uint64_t extra_argument = cpus[i]->extra_argument;
 
-           print("Processor ID : ");
-           print_dec(processor_id);
-           print("\n");
-           print("LAPIC ID : ");
-           print_hex(lapic_id);
-           print("\n");
-           print("Reserved : ");
-           print_hex(reserved);
-           print("\n");
-           print("Extra argument : ");
-           print_hex(extra_argument);
-           print("\n");
+           printf("Processor ID : %d\nLAPIC ID : %x\nReserved : %x\nExtra argument : %x\n", processor_id,lapic_id, reserved, extra_argument );
         }
     }else{
-        print("No CPU info found!\n");
+        printf("No CPU info found!\n");
     }
 }
 
@@ -107,19 +84,17 @@ void get_cpu_vendor(char *vendor) {
 
     // Check specific feature bits
     if (edx & (1 << 25)) {
-        print("SSE supported\n");
+        printf("SSE supported\n");
     }
     if (ecx & (1 << 28)) {
-        print("AVX supported\n");
+        printf("AVX supported\n");
     }
 }
 
 void print_cpu_vendor() {
     char vendor[13];
     get_cpu_vendor(vendor);
-    print("CPU Vendor : ");
-    print(vendor);
-    print("\n");
+    printf("CPU Vendor : %s\n", vendor);
     
 }
 
@@ -167,9 +142,7 @@ void get_cpu_brand(char *brand) {
 void print_cpu_brand() {
     char brand[49];
     get_cpu_brand(brand);
-    print("CPU Brand : ");
-    print(brand);
-    print("\n");
+    printf("CPU Brand : %s\n", brand);
 }
 
 

@@ -1,6 +1,6 @@
 
 #include "../limine/limine.h"   // bootloader info
-#include "../driver/vga.h"
+#include "../driver/vga/vga_term.h"
 #include "../util/util.h" 
 
 #include "memory.h"

@@ -2,7 +2,7 @@
 
 */
 
-#include "../driver/ports.h"
+#include "../driver/io/ports.h"
 #include "../lib/stdio.h"
 
 #include "pci.h"

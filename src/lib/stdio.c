@@ -14,7 +14,7 @@ Last Updated : 19/12/2024
 #include <float.h>
 #include <iso646.h>
 
-#include "../driver/vga.h"
+#include "../driver/vga/vga_term.h"
 
 #include "stdio.h"
 

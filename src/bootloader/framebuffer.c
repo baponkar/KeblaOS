@@ -3,7 +3,7 @@
 */
 
 #include "../limine/limine.h"
-#include "../driver/vga.h"
+#include "../driver/vga/vga_term.h"
 #include "../util/util.h"
 
 #include "framebuffer.h"

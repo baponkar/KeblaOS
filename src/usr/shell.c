@@ -1,9 +1,9 @@
 
 
-#include "../driver/vga.h"  // Assuming you have a VGA text driver.
-#include "../driver/ports.h"
+#include "../driver/vga/vga_term.h"  // Assuming you have a VGA text driver.
+#include "../driver/io/ports.h"
 #include "../lib/string.h"    // Assuming you have string manipulation functions.
-#include "../driver/keyboard.h"  // Assuming you have keyboard input handling.
+#include "../driver/keyboard/keyboard.h"  // Assuming you have keyboard input handling.
 #include "../x86_64/gdt/gdt.h"
 #include "../util/util.h"
 
@@ -72,10 +72,10 @@ void execute_command(char* command) {
         shell_running = false;
     }else if(strcmp(command, "logo") == 0){
         // clear_screen();
-        display_image(100, 300, (const uint64_t*) KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH,KEBLAOS_ICON_320X200X32_HEIGHT);
+        // display_image(100, 300, (const uint64_t*) KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH,KEBLAOS_ICON_320X200X32_HEIGHT);
     }else if(strcmp(command, "image") == 0){
         clear_screen();
-        display_image(0, 0, (const uint64_t*) girl_6352783_640, GIRL_6352783_640_WIDTH, GIRL_6352783_640_HEIGHT);
+        // display_image(0, 0, (const uint64_t*) girl_6352783_640, GIRL_6352783_640_WIDTH, GIRL_6352783_640_HEIGHT);
     }else if(strcmp(command, "") == 0){
         print("type 'help'\n");
     }else if(strcmp(command, "memmap") == 0){

@@ -1,7 +1,7 @@
 
 #include "../lib/stdio.h"
 #include "acpi.h"
-#include "../driver/ports.h"
+#include "../driver/io/ports.h"
 
 #include "fadt.h"
 

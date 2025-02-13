@@ -14,7 +14,7 @@ Reference: https://github.com/limine-bootloader/limine/blob/v8.x/PROTOCOL.md#ker
 
 #include "../lib/string.h"      // memcpy
 #include "../limine/limine.h"   // bootloader info
-#include "../driver/vga.h"      // print
+#include "../lib/stdio.h"      // print
 #include "../util/util.h"       //  print_size_with_units
 
 #include "boot.h"
@@ -54,18 +54,16 @@ void get_paging_mode_info(){
         }
     }else{
         LIMINE_PAGING_MODE = "No Paging mode found!";
-        print("No Paging mode found!\n");
+        printf("No Paging mode found!\n");
     }
 }
 
 void print_paging_mode_info(){
      if(paging_mode_request.response != NULL){
-        print("Limine Paging Mode : ");
-        print(LIMINE_PAGING_MODE);
-        print("\n");
+        printf("Limine Paging Mode : %d\n", LIMINE_PAGING_MODE);
     }else{
         LIMINE_PAGING_MODE = "No Paging mode found!";
-        print("No Paging mode found!\n");
+        printf("No Paging mode found!\n");
     }
 }
 
@@ -88,21 +86,17 @@ void get_limine_info(){
     }else{
         BOOTLOADER_NAME = "No Limine Bootloader Info found!";
         BOOTLOADER_VERSION = NULL;
-        print("No Limine Bootloader Info found!\n");
+        printf("No Limine Bootloader Info found!\n");
     }
 }
 
 void print_limine_info(){
     if(limine_info_request.response != NULL){
-        print("Bootloader Name : ");
-        print(BOOTLOADER_NAME);
-        print("\n");
-        print("Bootloader Version : ");
-        print(BOOTLOADER_VERSION);
-        print("\n");
+        printf("Bootloader Name : %s\n", BOOTLOADER_NAME);
+        printf("Bootloader Version : %s\n", BOOTLOADER_VERSION);
 
     }else{
-        print("No Limine Bootloader Info found!\n");
+        printf("No Limine Bootloader Info found!\n");
     }
 }
 
@@ -125,17 +119,15 @@ void get_stack_info(){
         STACK_SIZE = stack_size_request.stack_size;
     }else{
         STACK_SIZE = 0;
-        print("No stack size found!\n");
+        printf("No stack size found!\n");
     }
 }
 
 void print_stack_info(){
     if(stack_size_request.response != NULL){
-        print("Stack Size : ");
-        print_dec(STACK_SIZE);
-        print("\n");
+        printf("Stack Size : %x\n", STACK_SIZE);
     }else{
-        print("No stack size found!\n");
+        printf("No stack size found!\n");
     }
 }
 
@@ -155,7 +147,7 @@ void get_kernel_modules_info(){
         //uint64_t module_count = module_request.response->module_count;
         // struct limine_file **modules = module_request.response->modules;
     }else{
-        print("No kernel modules found!\n");
+        printf("No kernel modules found!\n");
     }
 }
 
@@ -180,32 +172,22 @@ void print_kernel_modules_info(){
             // struct limine_uuid gpt_part_uuid = modules[i]->gpt_part_uuid;
             // struct limine_uuid part_uuid = modules[i]->part_uuid;
 
-            print("Module Path : ");
-            print(path);
-            print("\n");
-
-            print("Module Address : ");
-            print_hex((uint64_t) address);
-            print("\n");
-
-            print("Module Size : ");
+            printf("Module Path : %s\n", path);
+            printf("Module Address : %x\n", (uint64_t) address);
+            printf("Module Size : ");
             print_size_with_units(size);
-            print("\n");
+            printf("\n");
 
-            print("Module Media Type : ");
+            printf("Module Media Type : ");
             // print_dec(media_type);
-            print("\n");
+            printf("\n");
 
-            print("Module Partition Index : ");
-            print_dec(partition_index);
-            print("\n");
+            printf("Module Partition Index : %d\n", partition_index);
 
-            print("Module MBR Disk ID : ");
-            print_dec(mbr_disk_id);
-            print("\n");
+            printf("Module MBR Disk ID : %d\n", mbr_disk_id);
         }
     }else{
-        print("No kernel modules found!\n");
+        printf("No kernel modules found!\n");
     }
 }
 

@@ -1,15 +1,22 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "../vga/framebuffer.h"
+#include "../vga/vga_term.h"
+#include "../vga/vga_gfx.h"
+#include "../vga/color.h"
+
+#include "../io/ports.h"
+
 #include "mouse.h"
 
-#include "vga.h"
-
-#include "ports.h"
 
 
 #define MOUSE_CMD_PORT 0x64
 #define MOUSE_DATA_PORT 0x60
+
+extern uint64_t fb_width;
+extern uint64_t fb_height;
 
 static int mouse_x = 40; // Initial cursor x position
 static int mouse_y = 12; // Initial cursor y position
@@ -97,8 +104,8 @@ void mouse_handler() {
         // Clamp to screen boundaries
         if (mouse_x < 0) mouse_x = 0;
         if (mouse_y < 0) mouse_y = 0;
-        if (mouse_x > (FRAMEBUFFER_WIDTH - CURSOR_WIDTH)) mouse_x = (FRAMEBUFFER_WIDTH - CURSOR_WIDTH);
-        if (mouse_y > (FRAMEBUFFER_HEIGHT - CURSOR_HEIGHT)) mouse_y = (FRAMEBUFFER_HEIGHT - CURSOR_HEIGHT);
+        if (mouse_x > (fb_width - CURSOR_WIDTH)) mouse_x = (fb_width - CURSOR_WIDTH);
+        if (mouse_y > (fb_height - CURSOR_HEIGHT)) mouse_y = (fb_height - CURSOR_HEIGHT);
 
         draw_mouse_cursor();
 

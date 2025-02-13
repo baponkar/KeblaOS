@@ -2,7 +2,7 @@
     The common function is present in this file.
 */
 
-#include "../driver/vga.h"
+#include "../driver/vga/vga_term.h"
 
 #include "util.h"
 
