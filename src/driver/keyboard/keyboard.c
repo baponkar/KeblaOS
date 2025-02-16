@@ -5,9 +5,11 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_K
 
 #include "../../x86_64/interrupt/pic.h"
 #include "../../x86_64/interrupt/apic.h"
+
 #include "../../lib/stdlib.h"
 #include "../../lib/string.h"
 #include "../../lib/stdio.h"
+
 #include "../../usr/shell.h"
 #include "../../driver/speaker/speaker.h"
 #include "../../driver/io/ports.h"
@@ -230,7 +232,7 @@ void keyboardHandler(registers_t *regs){
     key_ctrl(scanCode,  press);
 }
 
-extern void *apic_interrupt_routines[16];
+
 void initKeyboard(){
     enableKeyboard();
     printf("Successfully KEYBOARD initialized.\n");
@@ -242,7 +244,7 @@ void enableKeyboard(){
 }
 
 void disableKeyboard(){
-    interrupt_uninstall_handler(1);
+    apic_interrupt_uninstall_handler(1);
 }
 
 

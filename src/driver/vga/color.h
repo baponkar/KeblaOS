@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-
 #define COLOR_BLACK       0xFF000000  // Black
 #define COLOR_WHITE       0xFFFFFFFF  // White
 #define COLOR_RED         0xFFFF0000  // Red

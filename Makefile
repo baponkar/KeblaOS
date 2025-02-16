@@ -80,14 +80,11 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/disk.c -o $(BUILD_DIR)/disk.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/cpu.c -o $(BUILD_DIR)/cpu.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/memory.c -o $(BUILD_DIR)/memory.o
-	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/framebuffer.c -o $(BUILD_DIR)/framebuffer.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/firmware.c -o $(BUILD_DIR)/firmware.o
 
 	
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/io/ports.c -o $(BUILD_DIR)/ports.o
-#	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga.c -o $(BUILD_DIR)/vga.o
-#	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/font.c -o $(BUILD_DIR)/font.o
-#	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/greek_font.c -o $(BUILD_DIR)/greek_font.o
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/io/serial.c -o $(BUILD_DIR)/serial.o
 
 #VGA DRIVER
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/fonts/eng/eng_8x8.c -o $(BUILD_DIR)/eng_8x8.o
@@ -127,6 +124,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 
 	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/shell.c -o $(BUILD_DIR)/shell.o
 
+#memory management
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/kmalloc.c -o $(BUILD_DIR)/kmalloc.o
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/pmm.c -o $(BUILD_DIR)/pmm.o
 	$(NASM) $(NASM_FLAG) $(MMU_DIR)/load_paging.asm -o $(BUILD_DIR)/load_paging.o
@@ -179,7 +177,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/firmware.o \
 						$(BUILD_DIR)/eng_8x8.o \
 						$(BUILD_DIR)/eng_8x16.o \
-						$(BUILD_DIR)/vga_gfx.o
+						$(BUILD_DIR)/vga_gfx.o \
+						$(BUILD_DIR)/serial.o
 
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
@@ -223,7 +222,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/firmware.o \
 						$(BUILD_DIR)/eng_8x8.o \
 						$(BUILD_DIR)/eng_8x16.o \
-						$(BUILD_DIR)/vga_gfx.o
+						$(BUILD_DIR)/vga_gfx.o \
+						$(BUILD_DIR)/serial.o
 
 
 #$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin
@@ -278,7 +278,7 @@ run:
 	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 -smp cores=2,threads=2,sockets=1,maxcpus=4 -bios /usr/share/OVMF/OVMF_CODE.fd  -rtc base=utc,clock=host
 
 	# BIOS Boot
-	qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 -smp cores=2,threads=2,sockets=1,maxcpus=4 -rtc base=utc,clock=host
+	qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial stdio -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 -smp cores=2,threads=2,sockets=1,maxcpus=4 -rtc base=utc,clock=host
 
 	
 

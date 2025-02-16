@@ -140,34 +140,34 @@ void init_paging()
     current_pml4 = (pml4_t *) get_cr3_addr();
 
 
-    for(uint64_t va = V_KMEM_LOW_BASE; va < V_KMEM_UP_BASE; va++)
-    {
-        page_t *tmp = get_page(va, 0, current_pml4);
+    // for(uint64_t va = V_KMEM_LOW_BASE; va < V_KMEM_UP_BASE; va++)
+    // {
+    //     page_t *tmp = get_page(va, 0, current_pml4);
 
-        if(tmp == NULL || tmp->present == 0) break;
+    //     if(tmp == NULL || tmp->present == 0) break;
 
-        // I do not know why this pages are required untouched otherwise system crashed
-        if( (tmp != NULL) && (tmp->present == 1)){
-            free_frame(tmp);
+    //     // I do not know why this pages are required untouched otherwise system crashed
+    //     if( (tmp != NULL) && (tmp->present == 1)){
+    //         free_frame(tmp);
 
-            // uint64_t bit_no = ADDR_TO_BIT_NO(va);
+    //         // uint64_t bit_no = ADDR_TO_BIT_NO(va);
 
-            // assert(bit_no < nframes * 8);
-            // if (bit_no >= nframes * 8) {
-            //     print("Invalid bit_no: ");
-            //     print_dec(bit_no);
-            //     print("\n");
-            //     break;
-            // }
+    //         // assert(bit_no < nframes * 8);
+    //         // if (bit_no >= nframes * 8) {
+    //         //     print("Invalid bit_no: ");
+    //         //     print_dec(bit_no);
+    //         //     print("\n");
+    //         //     break;
+    //         // }
 
-            // set_frame(bit_no);
-        }
+    //         // set_frame(bit_no);
+    //     }
 
-        // print("Bitmap: ");
-        // uint64_t *ptr = (uint64_t *) nframes;
-        // print_bin(*ptr);
-        // print("\n");
-    }
+    //     // print("Bitmap: ");
+    //     // uint64_t *ptr = (uint64_t *) nframes;
+    //     // print_bin(*ptr);
+    //     // print("\n");
+    // }
     
 
     print("Successfully Paging initialized.\n");
