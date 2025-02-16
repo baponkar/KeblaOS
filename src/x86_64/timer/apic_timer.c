@@ -62,12 +62,8 @@ int ticks1 = 0;
 void apic_timer_handler() {
     ticks1++;
     printf("APIC Timer Interrupt! : %d\n", ticks1); // Print message on each interrupt
-    apic_send_eoi();
 
-    if(ticks1 > 38){
-        printf("EOI : %x\n", mmio_read(LAPIC_BASE +  0xB0 ));
-        init_apic_timer();
-    }
+    apic_send_eoi();
 }
 
 void init_apic_timer(){

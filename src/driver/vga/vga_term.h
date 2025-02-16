@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 void vga_init();
 void set_pixel(int x, int y, uint32_t color);

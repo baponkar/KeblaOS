@@ -30,8 +30,8 @@ void *memset(void *s, int c, size_t n) {
 */
 
 void *memmove(void *dest, const void *src, size_t n) {
-    uint8_t *pdest = (uint8_t *) dest;
-    const uint8_t *psrc = (const uint8_t *) src;
+    uint32_t *pdest = (uint32_t *) dest;
+    const uint32_t *psrc = (const uint32_t *) src;
 
     // If src pointer location is located after dest
     if (src > dest) {

@@ -153,7 +153,8 @@ void enable_apic() {
     if (!(rdmsr(0x1B) & (1 << 11))) {
         wrmsr(0x1B, apic_base | (1 << 11)); // Enable APIC if disabled
     }
-    LAPIC_BASE = apic_base;  
+    LAPIC_BASE = apic_base;
+  
 }
 
 

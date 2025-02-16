@@ -4,6 +4,10 @@
 
 #include <stdint.h>
 
+extern uint64_t framebuffer_revision;
+extern uint64_t framebuffer_count;
+extern struct limine_framebuffer **framebuffers;
+
 extern uint32_t *fb_address;
 
 extern uint64_t fb_width;

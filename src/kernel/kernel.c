@@ -19,7 +19,6 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../bootloader/pci.h"
 #include "../bootloader/disk.h"
 #include "../bootloader/cpu.h"
-#include "../bootloader/framebuffer.h"
 #include "../bootloader/memory.h"
 #include "../bootloader/firmware.h"
 
@@ -28,9 +27,11 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../lib/stdio.h" // printf
 #include "../util/util.h" // registers_t , halt_kernel
 
+#include "../driver/vga/framebuffer.h"
 #include "../driver/vga/vga_term.h" // vga_init, print_bootloader_info, print_memory_map, display_image
 #include "../driver/image_data.h"
 
+#include "../driver/io/serial.h"
 
 #include "../x86_64/gdt/gdt.h" // init_gdt
 #include "../x86_64/interrupt/pic.h" // init_idt, test_interrupt
@@ -52,12 +53,11 @@ Reference   : https://wiki.osdev.org/Limine
 
 void kmain(){
     // get_framebuffer_info();
-    get_bootloader_info();
+    // get_bootloader_info();
     get_memory_info();
     vga_init();
 
-    printf("%s - %s\n",OS_NAME, OS_VERSION);
-
+    printf("%s - %s\n", OS_NAME, OS_VERSION);
 
     init_gdt();
     // check_gdt();
@@ -65,6 +65,10 @@ void kmain(){
     // init_idt();
     init_apic();
     // test_interrupt();
+
+    initKeyboard();
+
+    serial_init();
 
     // test_kmalloc();
 
@@ -78,13 +82,11 @@ void kmain(){
 
     init_kheap();
     // test_kheap();
-
-    initKeyboard();
     
     init_acpi();
 
     // init_pic_timer(1);
-    // init_apic_timer();
+    init_apic_timer();
     
     // init_ahci();
     // pci_scan();
@@ -96,6 +98,7 @@ void kmain(){
     // print_cpu_info();
     // print_cpu_vendor();
     // print_cpu_brand();
+
 
     halt_kernel();
 }

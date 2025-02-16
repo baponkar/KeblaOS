@@ -1,10 +1,14 @@
 
 
+#include "../io/serial.h"
+
 #include "fonts/eng/eng_8x8.h"
 #include "fonts/eng/eng_8x16.h"
 #include "color.h"
 #include "framebuffer.h"
 #include "../../lib/string.h"
+#include "../../lib/stdio.h"
+#include "../../x86_64/interrupt/apic.h"
 
 #include "vga_term.h"
 
@@ -17,20 +21,14 @@ extern uint64_t fb_pitch;
 extern uint16_t fb_bpp; // Bits per pixel
 
 // VGA variable
-int min_line_no = 0;
-int max_line_no;
-int line_heght;
-
-int min_column_no = 0;
-int max_column_no;
 
 int cur_x = 0;
 int cur_y = 0;
 
 
 // Color Settings
-uint32_t text_color;
-uint32_t back_color;
+uint32_t text_color = (uint32_t) COLOR_WHITE;
+uint32_t back_color = (uint32_t) COLOR_BLACK;
 
 uint64_t font_width = 8;
 uint64_t font_height = 16;
@@ -47,20 +45,21 @@ void vga_init(){
     cur_x = 0;
     cur_y = 0;
 
-    max_column_no = fb_width / font_width;  // Number of text columns
-    max_line_no = fb_height / font_height;  // Number of text rows
-
-    text_color = COLOR_WHITE;
-    back_color = COLOR_BLACK;
-
-    clear_screen();
+    printf("Successfully Framebuffer info. collected.\n");
+    printf("Total Framebuffer : %d\n", framebuffer_count);
+    printf("First Framebuffer:\n");
+    printf("Resolution : %dx%d pixels\n", fb_width, fb_height);
+    printf("Pitch : %d bytes\n", fb_pitch);
+    printf("Bit Per Pixel : %d\n", fb_bpp);
+    printf("Framebuffer Address : %x\n", (uint32_t)fb_address);
 }
 
 
 void clear_screen(){
-    for(int row = 0; row < (int)fb_height; row++){
-        for(int col = 0; col < (int)fb_width; col++){
-            fb_address[row * fb_width + col] = back_color;
+    size_t pitch_pixels = fb_pitch / sizeof(uint32_t);
+    for(size_t row = 0; row < (size_t) (fb_height - 1); row++){
+        for(size_t col = 0; col < pitch_pixels - 1; col++){
+            fb_address[row * pitch_pixels + col] = back_color;
         }
     }
 
@@ -79,35 +78,41 @@ void set_pixel(int x, int y, uint32_t color){
 void scroll_up() {
     if (!fb_address) return;
 
-    int line_height = font_size*font_height; // Adjust based on font height
-    int move_bytes = line_height * fb_pitch; // How much data to shift up
+    size_t pitch_pixels = fb_pitch / sizeof(uint32_t); // Convert pitch from bytes to pixels
+    size_t line_height = font_height; // Number of pixel rows per text line
 
-    // Move screen up by one line
-    memmove(fb_address, (uint8_t*)fb_address + move_bytes, (fb_height - line_height) * fb_pitch);
+    // Move screen up by one text line
+    for (size_t row = line_height; row < fb_height; row++) {
+        for (size_t col = 0; col < pitch_pixels; col++) {
+            size_t dest_row = row - line_height;
+            fb_address[dest_row * pitch_pixels + col] = fb_address[row * pitch_pixels + col];
+        }
+    }
 
-    // Clear the last line (fill with black pixels)
-    uint32_t *last_line = (uint32_t*)((uint8_t*)fb_address + (fb_height - line_height) * fb_pitch);
-    for (int i = 0; i < (fb_pitch * line_height) / 4; i++) {
-        last_line[i] = back_color; // Black color
+    // Clear the last text line (fill with background color)
+    uint32_t *last_line = fb_address + (fb_height - line_height) * pitch_pixels;
+    for (size_t i = 0; i < line_height * pitch_pixels; i++) {
+        last_line[i] = back_color;
     }
 }
 
 
 
+
 void update_cur_pos() {
     // Move cur to next position
-    cur_x += font_width / 2;
+    cur_x += (int)font_width / 2;
 
     // If cur reaches the end of the line, move to the next line
-    if (cur_x >= fb_width) {
+    if (cur_x >= (int)fb_width) {
         cur_x = 0;
-        cur_y += font_height;
+        cur_y += (int)font_height;
     }
 
     // If cur reaches the bottom of the screen, scroll up
-    if (cur_y >= fb_height) {
+    if (cur_y >= (int)fb_height) {
         scroll_up();
-        cur_y -= font_height; // Keep cur within the screen after scrolling
+        cur_y -= (int)font_height; // Keep cur within the screen after scrolling
     }
 }
 
@@ -156,7 +161,7 @@ void draw_char(int x, int y, char c, uint32_t color){
 void draw_string(int x, int y, const char* str, uint32_t color) {
     while (*str) {
         draw_char(x, y, *str++, color);
-        x += 8; // Move right for next character
+        x += font_width / 2; // Move right for next character
     }
 }
 
@@ -166,13 +171,14 @@ void create_newline() {
     cur_y += font_height; // Move to the next row
 
     // If we reach the bottom, scroll up
-    if (cur_y >= fb_height) {
+    if (cur_y >= fb_height - font_height) {
         scroll_up();
         cur_y -= font_height; // Keep cur within the screen after scrolling
     }
 }
 
 void backspace_manage() {
+    serial_clearchar();
     // If the cur is already at (0,0), do nothing
     if (cur_x == 0 && cur_y == 0) {
         return;
@@ -198,6 +204,7 @@ void backspace_manage() {
 
 // Printing a single character in the VGA screen
 void putchar(unsigned char c){
+    serial_putchar(c);
     if (c == '\t'){
         // Handle a tab by increasing the cur's X, but only to a point
         // where it is divisible by 4*DEFAULT_FONT_WIDTH.

@@ -337,7 +337,7 @@ void enable_interrupts() {
 }
 
 void test_interrupt() {
-    printf("Testing Interrupts\n");
+    // printf("Testing Interrupts\n");
     // asm volatile ("div %b0" :: "a"(0)); // Int no 0
     // asm volatile ("int $0x3");   // Breakpoint int no : 3
     // asm volatile ("int $0x0");   // Division By Zero, int no : 0
@@ -345,8 +345,8 @@ void test_interrupt() {
     // asm volatile("int $0xF");    // int no 15
     // asm volatile("int $0x10");   // int no 16
     // asm volatile("int $0x11");   // int no 17
-    // asm volatile ("int $0x20");  // Interrupt Request, int no: 32 
-    asm volatile ("int $0x21");     // Interrupt Request, int no : 33
+    // asm volatile ("int $0x20");  // Interrupt Request, int no: 32, Timer Interrupt 
+    asm volatile ("int $0x21");  // Interrupt Request, int no : 33, Keyboard Interrupt
     // asm volatile ("int $0x22");  // Interrupt Request, int no: 34
 }
 

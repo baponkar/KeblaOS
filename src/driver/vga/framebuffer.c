@@ -1,6 +1,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+
 #include "../../util/util.h"
 #include "../../limine/limine.h"
 
@@ -20,6 +21,7 @@ uint64_t framebuffer_count;
 struct limine_framebuffer **framebuffers;
 
 uint32_t *fb_address;
+uint64_t *fb_address_64 = NULL;
 
 uint64_t fb_width;
 uint64_t fb_height;
@@ -62,6 +64,8 @@ void get_fb_info(){
     fb_height = framebuffer0->height;
     fb_pitch = framebuffer0->pitch;
     fb_bpp = framebuffer0->bpp;
+
+    if(fb_bpp == 64) fb_address_64 = (uint64_t *) framebuffer0->address;
 
     fb_memory_model = framebuffer0->memory_model;
 

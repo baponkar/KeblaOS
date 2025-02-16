@@ -3,11 +3,14 @@
 #include "../driver/vga/vga_term.h"  // Assuming you have a VGA text driver.
 #include "../driver/io/ports.h"
 #include "../lib/string.h"    // Assuming you have string manipulation functions.
+#include "../lib/stdio.h"
+
 #include "../driver/keyboard/keyboard.h"  // Assuming you have keyboard input handling.
 #include "../x86_64/gdt/gdt.h"
 #include "../util/util.h"
 
 #include "../x86_64/interrupt/pic.h"
+#include "../x86_64/interrupt/apic.h"
 #include "../kernel/kernel.h"
 
 #include "../x86_64/rtc/rtc.h"
@@ -32,14 +35,12 @@ void shell_prompt() {
     print("KeblaOS>> ");
 }
 
+extern uint32_t *fb_address;
 
 void execute_command(char* command) {
     
     if (strcmp(command, "help") == 0) {
-        print("Available commands:\n [ help, clear, reboot, poweroff, bootinfo,");
-        print("time, uptime, regvalue, checkgdt, features, testint, logo, image,");
-        print("memmap,  exit,\n\t kermod, rsdp, firmware, stack, limine, pagingmod," );
-        print("phystoviroff, smp, hhdm ]\n");
+        print("Available commands: [ help, clear, reboot, poweroff, bootinfo, time, uptime, regvalue, checkgdt, features, testint, logo, image, memmap,  exit, kermod, rsdp, firmware, stack, limine, pagingmod, phystoviroff, smp, hhdm ]\n");
     } else if (strcmp(command, "clear") == 0) {
         clear_screen();  // Clear the screen using your VGA driver
     } else if (strcmp(command, "reboot") == 0) {

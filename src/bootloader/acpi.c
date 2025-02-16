@@ -19,13 +19,13 @@
 
 
 __attribute__((used, section(".limine_requests")))
-static volatile LIMINE_BASE_REVISION(3);
+static volatile LIMINE_BASE_REVISION(0);
 
 // Get RSDP info
 __attribute__((used, section(".requests")))
 static volatile struct limine_rsdp_request rsdp_request = {
     .id = LIMINE_RSDP_REQUEST,
-    .revision = 3
+    .revision = 0
 };
 
 
