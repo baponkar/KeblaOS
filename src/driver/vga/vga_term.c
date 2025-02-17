@@ -20,7 +20,6 @@ extern uint64_t fb_height;
 extern uint64_t fb_pitch;
 extern uint16_t fb_bpp; // Bits per pixel
 
-// VGA variable
 
 int cur_x = 0;
 int cur_y = 0;
@@ -44,14 +43,6 @@ void vga_init(){
 
     cur_x = 0;
     cur_y = 0;
-
-    printf("Successfully Framebuffer info. collected.\n");
-    printf("Total Framebuffer : %d\n", framebuffer_count);
-    printf("First Framebuffer:\n");
-    printf("Resolution : %dx%d pixels\n", fb_width, fb_height);
-    printf("Pitch : %d bytes\n", fb_pitch);
-    printf("Bit Per Pixel : %d\n", fb_bpp);
-    printf("Framebuffer Address : %x\n", (uint32_t)fb_address);
 }
 
 

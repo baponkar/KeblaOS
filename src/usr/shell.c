@@ -11,6 +11,7 @@
 
 #include "../x86_64/interrupt/pic.h"
 #include "../x86_64/interrupt/apic.h"
+#include "../x86_64/interrupt/interrupt.h"
 #include "../kernel/kernel.h"
 
 #include "../x86_64/rtc/rtc.h"

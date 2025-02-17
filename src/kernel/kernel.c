@@ -15,6 +15,7 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "../bootloader/acpi.h" // init_acpi
 #include "../x86_64/interrupt/apic.h"
+#include "../x86_64/interrupt/pic.h" // init_idt, test_interrupt
 #include "../bootloader/ahci.h"
 #include "../bootloader/pci.h"
 #include "../bootloader/disk.h"
@@ -34,7 +35,6 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../driver/io/serial.h"
 
 #include "../x86_64/gdt/gdt.h" // init_gdt
-#include "../x86_64/interrupt/pic.h" // init_idt, test_interrupt
 
 #include "../mmu/pmm.h" // init_pmm, test_pmm
 #include "../mmu/paging.h" // init_paging, test_paging
@@ -53,7 +53,7 @@ Reference   : https://wiki.osdev.org/Limine
 
 void kmain(){
     // get_framebuffer_info();
-    // get_bootloader_info();
+    get_bootloader_info();
     get_memory_info();
     vga_init();
 
@@ -62,9 +62,14 @@ void kmain(){
     init_gdt();
     // check_gdt();
 
-    // init_idt();
-    init_apic();
-    // test_interrupt();
+    if(has_apic() == 1){
+        init_apic_interrupt();
+        init_apic_timer();
+    }else{
+        init_pic_interrupt();
+        init_pic_timer(1);
+    }
+    
 
     initKeyboard();
 
@@ -83,11 +88,8 @@ void kmain(){
     init_kheap();
     // test_kheap();
     
-    init_acpi();
+    // init_acpi();
 
-    // init_pic_timer(1);
-    init_apic_timer();
-    
     // init_ahci();
     // pci_scan();
     // detect_ahci();
@@ -98,7 +100,6 @@ void kmain(){
     // print_cpu_info();
     // print_cpu_vendor();
     // print_cpu_brand();
-
 
     halt_kernel();
 }
