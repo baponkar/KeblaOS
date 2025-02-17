@@ -2,53 +2,68 @@
 
 #include <stdint.h>
 
-struct idt_entry_struct
-{//128 bit
-    uint16_t offset_1;        // offset bits 0..15, 16 bit
-    uint16_t selector;        // a code segment selector in GDT or LDT, 16 bit
-    uint8_t  ist;             // bits 0..2 holds Interrupt Stack Table offset, rest of bits zero.2 bit
-    uint8_t  type_attributes; // gate type, dpl, and p fields , 8 bit
-    uint16_t offset_2;        // offset bits 16..31 , 16 bit
+#include "../../util/util.h"
 
-    uint32_t offset_3;        // offset bits 32..63 , 32 bit
-    uint32_t zero;            // reserved, 
-} __attribute__((packed));
-typedef struct idt_entry_struct idt_entry_t;
+extern void pic_flush(uint64_t);
 
+extern void pic_irq0();
+extern void pic_irq1();
+extern void pic_irq2();
+extern void pic_irq3();
+extern void pic_irq4();
+extern void pic_irq5();
+extern void pic_irq6();
+extern void pic_irq7();
+extern void pic_irq8();
+extern void pic_irq9();
+extern void pic_irq10();
+extern void pic_irq11();
+extern void pic_irq12();
+extern void pic_irq13();
+extern void pic_irq14();
+extern void pic_irq15();
 
+extern void pic_isr0();
+extern void pic_isr1();
+extern void pic_isr2();
+extern void pic_isr3();
+extern void pic_isr4();
+extern void pic_isr5();
+extern void pic_isr6();
+extern void pic_isr7();
+extern void pic_isr8();
+extern void pic_isr9();
+extern void pic_isr10();
+extern void pic_isr11();
+extern void pic_isr12();
+extern void pic_isr13();
+extern void pic_isr14();
+extern void pic_isr15();
+extern void pic_isr16();
+extern void pic_isr17();
+extern void pic_isr18();
+extern void pic_isr19();
+extern void pic_isr20();
+extern void pic_isr21();
+extern void pic_isr22();
+extern void pic_isr23();
+extern void pic_isr24();
+extern void pic_isr25();
+extern void pic_isr26();
+extern void pic_isr27();
+extern void pic_isr28();
+extern void pic_isr29();
+extern void pic_isr30();
+extern void pic_isr31();
+extern void pic_isr128();
+extern void pic_isr177();
 
-// A struct describing a pointer to an array of interrupt handlers.
-// This is in a format suitable for giving to 'lidt'.
-struct idt_ptr_struct
-{
-   uint16_t limit;
-   uint64_t base;                // The address of the first element in our idt_entry_t array.
-} __attribute__((packed));
-typedef struct idt_ptr_struct idt_ptr_t;
-
-
-
-void idt_set_gate(uint8_t index, uint64_t offset, uint16_t selector, uint8_t attr);
-void isr_install();
-typedef struct registers registers_t;
-void isr_handler(registers_t *regs);
-
-void debug_error_code(int err_code);
-
-void interrupt_install_handler(int int_no, void (*handler)(registers_t *r));
-void interrupt_uninstall_handler(int int_no);
-
-void init_idt();
-void test_interrupt();
-
-void irq_remap(void);
-void irq_install();
-void irq_handler(registers_t *r);
-
-void disable_interrupts();
-void enable_interrupts();
-
-void gpf_handler(registers_t *regs);
+void pic_isr_handler(registers_t *regs);
+void pic_isr_install();
+void pic_irq_handler(registers_t *regs);
+void pic_irq_remap();
+void pic_irq_install();
+void init_pic_interrupt();
 
 
 

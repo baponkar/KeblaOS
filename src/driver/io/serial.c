@@ -1,5 +1,5 @@
 
-
+#include "../../lib/stdio.h"
 #include "ports.h"
 
 #include "serial.h"
@@ -12,6 +12,8 @@ void serial_init() {
     outb(0x3F8 + 3, 0x03); // 8 bits, no parity, one stop bit
     outb(0x3F8 + 2, 0xC7); // Enable FIFO, clear them, 14-byte threshold
     outb(0x3F8 + 4, 0x0B); // IRQs enabled, RTS/DSR set
+
+    printf("Serial read write enabled.\n");
 }
 
 void serial_putchar(char c) {

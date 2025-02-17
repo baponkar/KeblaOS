@@ -15,6 +15,8 @@ extern uint64_t fb_height;
 extern uint64_t fb_pitch;
 extern uint16_t fb_bpp; // Bits per pixel
 
+extern uint64_t fb_size;
+
 void get_fb_info();
 
 

@@ -1,12 +1,13 @@
-
+#include "../../pcb/process.h"
 #include "../interrupt/pic.h"
 #include "../interrupt/apic.h"
+#include "../interrupt/interrupt.h"
 #include "../../util/util.h"
 #include "../../lib/stdio.h"
 
 #include "apic_timer.h"
 
-#define LAPIC_BASE       0xFEE00000
+#define LAPIC_BASE 0xFEE00000
 #define APIC_TIMER_VECTOR  0x20  // Interrupt vector for timer
 
 #define APIC_REGISTER_TIMER_DIV      (LAPIC_BASE + 0x3E0)  // APIC Timer Divide Configuration Register
@@ -57,18 +58,37 @@ void apic_start_timer() {
     mmio_write(APIC_REGISTER_TIMER_INITCNT, ticksIn10ms);
 }
 
+
+void apic_delay(uint32_t milliseconds) {
+    
+    // Calculate ticks for the given delay based on 10ms calibration
+    uint32_t ticks_per_ms = mmio_read(APIC_REGISTER_TIMER_CURRCNT) / 10;
+    uint32_t ticks_to_wait = ticks_per_ms * milliseconds;
+
+    // Configure APIC timer in one-shot mode
+    mmio_write(APIC_REGISTER_LVT_TIMER, APIC_LVT_INT_MASKED);
+    mmio_write(APIC_REGISTER_TIMER_INITCNT, ticks_to_wait);
+
+    // Wait for timer to reach zero
+    while (mmio_read(APIC_REGISTER_TIMER_CURRCNT) > 0);
+}
+
+
 int ticks1 = 0;
 
-void apic_timer_handler() {
+void apic_timer_handler(registers_t *regs) {
     ticks1++;
-    printf("APIC Timer Interrupt! : %d\n", ticks1); // Print message on each interrupt
+    // printf("APIC Timer Interrupt! : %d\n", ticks1); // Print message on each interrupt
+
+    // printf("registers : %x\n", (uint64_t)regs);
 
     apic_send_eoi();
 }
 
 void init_apic_timer(){
-    apic_interrupt_install_handler(0, &apic_timer_handler);
+    interrupt_install_handler(0, &apic_timer_handler);
     apic_start_timer();
+    printf("APIC Timer enabled\n");
 }
 
 

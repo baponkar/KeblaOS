@@ -16,6 +16,7 @@ Reference: https://github.com/limine-bootloader/limine/blob/v8.x/PROTOCOL.md#ker
 #include "../limine/limine.h"   // bootloader info
 #include "../lib/stdio.h"      // print
 #include "../util/util.h"       //  print_size_with_units
+#include "firmware.h"
 
 #include "boot.h"
 
@@ -195,6 +196,7 @@ void print_kernel_modules_info(){
 
 // finuls functions which will actually use in different ways
 void get_bootloader_info(){
+    get_firmware_info();
     get_kernel_modules_info();
     get_stack_info();
     get_limine_info();

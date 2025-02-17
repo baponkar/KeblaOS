@@ -7,6 +7,7 @@
 #include "../interrupt/apic.h"
 #include "../../lib/stdio.h"
 #include "../../driver/io/ports.h"
+#include "../interrupt/interrupt.h"
 
 #include "pic_timer.h"
 

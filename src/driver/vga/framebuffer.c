@@ -28,6 +28,8 @@ uint64_t fb_height;
 uint64_t fb_pitch;
 uint16_t fb_bpp; // Bits per pixel
 
+uint64_t fb_size;
+
 uint8_t fb_memory_model;
 
 uint8_t fb_red_mask_size;
@@ -64,6 +66,8 @@ void get_fb_info(){
     fb_height = framebuffer0->height;
     fb_pitch = framebuffer0->pitch;
     fb_bpp = framebuffer0->bpp;
+
+    fb_size = fb_width * fb_height  / sizeof(uint32_t);
 
     if(fb_bpp == 64) fb_address_64 = (uint64_t *) framebuffer0->address;
 

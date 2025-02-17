@@ -5,6 +5,7 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_K
 
 #include "../../x86_64/interrupt/pic.h"
 #include "../../x86_64/interrupt/apic.h"
+#include "../../x86_64/interrupt/interrupt.h"
 
 #include "../../lib/stdlib.h"
 #include "../../lib/string.h"
@@ -240,11 +241,12 @@ void initKeyboard(){
 }
 
 void enableKeyboard(){
-    apic_interrupt_install_handler(1, &keyboardHandler);
+    // apic_interrupt_install_handler(1, &keyboardHandler);
+    interrupt_install_handler(1, &keyboardHandler);
 }
 
 void disableKeyboard(){
-    apic_interrupt_uninstall_handler(1);
+    interrupt_uninstall_handler(1);
 }
 
 
