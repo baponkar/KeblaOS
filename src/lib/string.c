@@ -4,15 +4,24 @@
 
 // Copy dat of src into dest
 void *memcpy(void *dest, const void *src, size_t n) {
-    uint8_t *pdest = (uint8_t *) dest;
-    const uint8_t *psrc = (const uint8_t *) src;
+    uint64_t *pdest64 = (uint64_t *) dest;
+    const uint64_t *psrc64 = (const uint64_t *) src;
 
-    for (size_t i = 0; i < n; i++) {
-        pdest[i] = psrc[i];
+    size_t i;
+    for (i = 0; i < (n / sizeof(uint64_t)); i++) {
+        pdest64[i] = psrc64[i];  // Copy 64-bit chunks
+    }
+
+    // Copy any remaining bytes
+    uint8_t *pdest8 = (uint8_t *) (pdest64 + i);
+    const uint8_t *psrc8 = (const uint8_t *) (psrc64 + i);
+    for (i = 0; i < (n % sizeof(uint64_t)); i++) {
+        pdest8[i] = psrc8[i];  // Copy remaining bytes
     }
 
     return dest;
 }
+
 
 
 void *memset(void *s, int c, size_t n) {

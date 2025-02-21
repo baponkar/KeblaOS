@@ -45,6 +45,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../x86_64/timer/pic_timer.h" // init_timer
 #include "../x86_64/timer/apic_timer.h"
 
+#include "../usr/shell.h"
 #include "../pcb/process.h" // init_processes
 
 #include "kernel.h"
@@ -52,7 +53,7 @@ Reference   : https://wiki.osdev.org/Limine
 
 
 void kmain(){
-    // get_framebuffer_info();
+    serial_init();
     get_bootloader_info();
     get_memory_info();
     vga_init();
@@ -60,7 +61,6 @@ void kmain(){
     printf("%s - %s\n", OS_NAME, OS_VERSION);
 
     init_gdt();
-    // check_gdt();
 
     if(has_apic() == 1){
         init_apic_interrupt();
@@ -70,37 +70,22 @@ void kmain(){
         init_pic_timer(1);
     }
     
-
     initKeyboard();
 
-    serial_init();
-
-    // test_kmalloc();
-
     init_pmm();
-    // test_pmm();
-
     init_paging();
-    // test_paging();
-
-    // test_vmm();
-
     init_kheap();
-    // test_kheap();
     
-    // init_acpi();
+    init_acpi();
 
-    // init_ahci();
-    // pci_scan();
     // detect_ahci();
-
+    // init_ahci( 0xFEBD5000);
+    // pci_scan();
     // get_disk_info();
 
-    // get_cpu_info();
-    // print_cpu_info();
-    // print_cpu_vendor();
-    // print_cpu_brand();
 
+    init_processes();
+    
     halt_kernel();
 }
 

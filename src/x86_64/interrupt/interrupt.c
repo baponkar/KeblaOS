@@ -131,8 +131,8 @@ void test_interrupt() {
     // asm volatile("int $0xF");    // int no 15
     // asm volatile("int $0x10");   // int no 16
     // asm volatile("int $0x11");   // int no 17
-    // asm volatile ("int $0x20");  // Interrupt Request, int no: 32, Timer Interrupt 
-    asm volatile ("int $0x21");  // Interrupt Request, int no : 33, Keyboard Interrupt
+    asm volatile ("int $0x20");  // Interrupt Request, int no: 32, Timer Interrupt 
+    // asm volatile ("int $0x21");  // Interrupt Request, int no : 33, Keyboard Interrupt
     // asm volatile ("int $0x22");  // Interrupt Request, int no: 34
 }
 
@@ -140,12 +140,12 @@ void test_interrupt() {
 void gpf_handler(registers_t *regs){
     printf("recieved interrupt: %d\n", regs->int_no);
     printf("%s\n", exception_messages[regs->int_no]);
-    printf("Error Code: %d\n", regs->err_code);
+    printf("Error Code: %x\n", regs->err_code);
     printf("CS: %x, RIP : %x\n", regs->iret_cs, regs->iret_rip);
 
     printf("Stack Contents:\n");
     uint64_t *rsp = (uint64_t *)regs->iret_rsp;
-    for (int i = 0; i < 25; i++) {
+    for (int i = 0; i < 26; i++) {
         printf("  [%x] = %x\n", (uint64_t)(rsp + i), rsp[i] );
     }
 

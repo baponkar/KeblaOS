@@ -22,7 +22,7 @@ void parse_madt() {
 
             if (cpu_flags & 1) {
                 // Store detected APs for SMP
-                printf("Application Processor found!\n");
+                // printf("Application Processor found!\n");
             }
         }
 

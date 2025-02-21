@@ -24,7 +24,7 @@ RTC_DIR = $(SRC_DIR)/x86_64/rtc
 MMU_DIR = $(SRC_DIR)/mmu
 USR_DIR = $(SRC_DIR)/usr
 PS_DIR = $(SRC_DIR)/pcb
-
+FS_DIR = $(SRC_DIR)/file_system
 
 
 OS_NAME = KeblaOS
@@ -135,8 +135,11 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/vmm.c -o $(BUILD_DIR)/vmm.o
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/kheap.c -o $(BUILD_DIR)/kheap.o
 
+#process management
 	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/process.c -o $(BUILD_DIR)/process.o
-	
+	$(NASM) $(NASM_FLAG) $(PS_DIR)/set_cpu_state.asm -o $(BUILD_DIR)/set_cpu_state.o
+
+#	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fs.c -o $(BUILD_DIR)/fs.o
 
 
 # Linking object files into kernel binary
@@ -176,6 +179,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/shell.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/process.o \
+						$(BUILD_DIR)/set_cpu_state.o \
 						$(BUILD_DIR)/disk.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/memory.o \
@@ -184,7 +188,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/eng_8x8.o \
 						$(BUILD_DIR)/eng_8x16.o \
 						$(BUILD_DIR)/vga_gfx.o \
-						$(BUILD_DIR)/serial.o
+						$(BUILD_DIR)/serial.o \
+					
 
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
@@ -224,6 +229,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/shell.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/process.o \
+						$(BUILD_DIR)/set_cpu_state.o \
 						$(BUILD_DIR)/disk.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/memory.o \
@@ -232,7 +238,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/eng_8x8.o \
 						$(BUILD_DIR)/eng_8x16.o \
 						$(BUILD_DIR)/vga_gfx.o \
-						$(BUILD_DIR)/serial.o
+						$(BUILD_DIR)/serial.o \
+						
 
 
 #$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin

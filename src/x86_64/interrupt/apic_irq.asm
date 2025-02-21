@@ -72,7 +72,8 @@
         pop r15
         add rsp, 16 ; Clean up interrupt no and dummy error code
         
-        iretq                    ; Return from Interrupt
+        sti         ; re enable interrupt
+        iretq       ; Return from Interrupt
 %endmacro
 
 
