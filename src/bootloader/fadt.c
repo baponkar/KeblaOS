@@ -96,3 +96,4 @@ void acpi_reboot(){
         *reset_reg_ptr = reset_value;
     }
 }
+

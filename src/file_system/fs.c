@@ -1,13 +1,13 @@
-#include "../driver/vga.h"
+
 #include "../mmu/vmm.h"
 #include "../bootloader/boot.h"
+#include "../lib/string.h"
+#include "../lib/stdio.h"
 
 #include "fs.h"
 
 
-// Assume these are defined elsewhere in your OS
-void* vm_alloc(size_t size);
-void vm_free(void* ptr);
+
 
 void disk_read_sector(uint32_t sector, void* buffer);
 void disk_write_sector(uint32_t sector, const void* buffer);

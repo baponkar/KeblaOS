@@ -91,6 +91,7 @@ void get_limine_info(){
     }
 }
 
+
 void print_limine_info(){
     if(limine_info_request.response != NULL){
         printf("Bootloader Name : %s\n", BOOTLOADER_NAME);
@@ -210,3 +211,5 @@ void print_bootloader_info(void){
     print_limine_info();
     print_paging_mode_info();
 }
+
+

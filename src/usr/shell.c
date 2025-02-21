@@ -36,7 +36,7 @@ void shell_prompt() {
     print("KeblaOS>> ");
 }
 
-extern uint32_t *fb_address;
+
 
 void execute_command(char* command) {
     
@@ -67,7 +67,7 @@ void execute_command(char* command) {
     }else if (strcmp(command, "features") == 0){
         print_features();
     }else if (strcmp(command, "testint") == 0){
-        print("Test Interrupts\n");
+        // print("Test Interrupts\n");
         test_interrupt();
     }else if (strcmp(command, "exit") == 0) {
         print("Exiting shell...\n");
@@ -110,10 +110,21 @@ void run_shell(bool is_shell_running) {
 
     while (is_shell_running) {
         shell_prompt();  // Display shell prompt
-        //read_command(input);  // Function to read user input (can be implemented based on your keyboard handler)
-        //execute_command(input);  // Process the input command
+        read_command(input);  // Function to read user input (can be implemented based on your keyboard handler)
+        execute_command(input);  // Process the input command
     }
 }
+
+void shell_main() {
+    shell_running = true;
+    run_shell(shell_running);
+    
+    // If shell exits, we should halt or restart it.
+    while (1) {
+        asm volatile("hlt");
+    }
+}
+
 
 
 

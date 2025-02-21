@@ -39,6 +39,7 @@
         mov rdi, rsp                    ; Pass the current stack pointer to `pic_irq_handler`
         cld
         call pic_irq_handler
+        
 
         ; Restore segment registers
         pop gs

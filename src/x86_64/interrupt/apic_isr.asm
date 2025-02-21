@@ -63,6 +63,7 @@
         pop r15
         add rsp, 16         ; Clean up interrupt no and dummy error code
 
+        sti                 ; re enable interrupt
         iretq               ; Return from the interrupt using IRETQ (iret values remain intact)
 %endmacro
 
@@ -130,6 +131,7 @@
         pop r15
         add rsp, 8           ; Remove the pushed interrupt number only
 
+        sti                  ; re enable interrupt
         iretq                ; Return from the interrupt using IRETQ
 %endmacro
 

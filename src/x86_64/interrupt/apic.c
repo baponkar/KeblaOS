@@ -12,6 +12,8 @@ Reference:  https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architect
 #include "../../driver/keyboard/keyboard.h"
 #include "../../driver/io/ports.h"
 
+#include "../../pcb/process.h"
+
 #include "apic.h"
 
 

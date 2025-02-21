@@ -41,7 +41,7 @@ void init_pic_timer(uint16_t interval) {
     outb(0x40, (uint8_t)(divisor & 0xFF));      // Low byte of divisor
     outb(0x40, (uint8_t)((divisor >> 8) & 0xFF)); // High byte of divisor
 
-    printf("PIC timer successfully initialized.\n");
+    printf("Successfully PIC timer successfully initialized.\n");
 }
 
 
