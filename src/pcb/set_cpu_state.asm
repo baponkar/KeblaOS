@@ -1,50 +1,59 @@
 
-global restore_cpu_state
+.text
+global restore_cpu_state 
+
 
 restore_cpu_state:
-    mov r15, rdi           ; Save original rdi in r15
+    cli                   ; Clear Interrupt Flag (IF) - Disables interrupts
 
-    mov rax, [r15 + 8*0]   ; Load gs
-    mov gs, ax
-    mov rax, [r15 + 8*1]   ; Load fs
-    mov fs, ax
-    mov rax, [r15 + 8*2]   ; Load es
-    mov es, ax
-    mov rax, [r15 + 8*3]   ; Load ds
-    mov ds, ax
+    mov r15, rdi          ; Save original rdi (points to registers_t structure)
 
-    ; Restore general-purpose registers
-    mov rax, [r15 + 8*4]   ; Restore rax
-    mov rbx, [r15 + 8*5]   ; Restore rbx
-    mov rcx, [r15 + 8*6]   ; Restore rcx
-    mov rdx, [r15 + 8*7]   ; Restore rdx
-    mov rbp, [r15 + 8*8]   ; Restore rbp
-    mov rdi, [r15 + 8*9]   ; Restore rdi
-    mov rsi, [r15 + 8*10]  ; Restore rsi
-    mov r8,  [r15 + 8*11]  ; Restore r8
-    mov r9,  [r15 + 8*12]  ; Restore r9
-    mov r10, [r15 + 8*13]  ; Restore r10
-    mov r11, [r15 + 8*14]  ; Restore r11
-    mov r12, [r15 + 8*15]  ; Restore r12
-    mov r13, [r15 + 8*16]  ; Restore r13
-    mov r14, [r15 + 8*17]  ; Restore r14
-    mov r15, [r15 + 8*18]  ; Restore r15 (AFTER using it to hold rdi)
+    ; Optional: Restore segment registers if needed
+    mov rax, [r15 + 8*0]  ; Load gs
+    mov gs, ax            ; Store gs
+    mov rax, [r15 + 8*1]  ; Load fs
+    mov fs, ax            ; Store fs
+    mov rax, [r15 + 8*2]  ; Load es
+    mov es, ax            ; Store es
+    mov rax, [r15 + 8*3]  ; Load ds
+    mov ds, ax            ; Store ds
 
-    ; Skip int_no (8*19) and err_code (8*20)
-    add rdi, 8*21          ; Use rdi again safely
+    ; Restore general-purpose registers 
+    mov rax, [r15 + 8*4]
+    mov rbx, [r15 + 8*5]
+    mov rcx, [r15 + 8*6]
+    mov rdx, [r15 + 8*7]
+    mov rbp, [r15 + 8*8]
+    mov rdi, [r15 + 8*9]
+    mov rsi, [r15 + 8*10]
+    mov r8,  [r15 + 8*11]
+    mov r9,  [r15 + 8*12]
+    mov r10, [r15 + 8*13]
+    mov r11, [r15 + 8*14]
+    mov r12, [r15 + 8*15]
+    mov r13, [r15 + 8*16]
+    mov r14, [r15 + 8*17]
+    
+    ; skip for 19, 20
 
-    ; Restore the stack frame for iretq
-    mov rax, [rdi + 8*0]   ; Load iret_rip
-    mov rcx, [rdi + 8*1]   ; Load iret_cs
-    mov rdx, [rdi + 8*2]   ; Load iret_rflags
-    mov rbx, [rdi + 8*3]   ; Load iret_rsp
-    mov rbp, [rdi + 8*4]   ; Load iret_ss
+    ; Restore stack for iretq
+    mov rax, [r15 + 8*25]   ; Load iret_ss
+    push rax                ; Push SS
 
-    ; Push onto stack for iretq
-    push rbp
-    push rbx
-    push rdx
-    push rcx
-    push rax
+    mov rax, [r15 + 8*24]   ; Load iret_rsp
+    push rax                ; Push RSP
 
-    iretq   ; Restore full CPU state and return
+    mov rax, [r15 + 8*23]   ; Load iret_rflags
+    push rax                ; Push RFLAGS
+
+    mov rax, [r15 + 8*22]   ; Load iret_cs
+    push rax                ; Push CS
+    
+    mov rax, [r15 + 8*21]   ; Load iret_rip
+    push rax                ; Push RIP
+
+    mov r15, [r15 + 8*18]   ; Restore r15 (AFTER using it) 
+
+    sti                     ; Set Interrupt Flag (IF) - Enables interrupts
+    iretq                   ; Return from interrupt
+    

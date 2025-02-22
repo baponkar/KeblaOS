@@ -143,8 +143,9 @@ void gpf_handler(registers_t *regs){
     printf("Error Code: %x\n", regs->err_code);
     printf("CS: %x, RIP : %x\n", regs->iret_cs, regs->iret_rip);
 
-    printf("Stack Contents:\n");
     uint64_t *rsp = (uint64_t *)regs->iret_rsp;
+    printf("Stack Contents RSP : %x\n", (uint64_t)rsp);
+    
     for (int i = 0; i < 26; i++) {
         printf("  [%x] = %x\n", (uint64_t)(rsp + i), rsp[i] );
     }
