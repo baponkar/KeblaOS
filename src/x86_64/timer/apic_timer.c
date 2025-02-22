@@ -1,3 +1,5 @@
+
+// #include "../../pcb/task.h"
 #include "../../pcb/process.h"
 #include "../interrupt/pic.h"
 #include "../interrupt/apic.h"
@@ -10,6 +12,8 @@
 
 #define LAPIC_BASE 0xFEE00000
 #define APIC_TIMER_VECTOR  0x20  // Interrupt vector for timer
+
+#define LAPIC_TPR  (LAPIC_BASE + 0x80)  // Task Priority Register Offset
 
 #define APIC_REGISTER_TIMER_DIV      (LAPIC_BASE + 0x3E0)  // APIC Timer Divide Configuration Register
 #define APIC_REGISTER_TIMER_INITCNT  (LAPIC_BASE + 0x380)  // APIC Timer Initial Count Register
@@ -42,6 +46,10 @@ void tsc_sleep(uint64_t microseconds) {
 
 
 void apic_start_timer() {
+
+    // Ensure the Local APIC is enabled
+    mmio_write(LAPIC_TPR, 0x00); // Accept all interrupts
+
     // Set APIC timer to use divider 16
     mmio_write(APIC_REGISTER_TIMER_DIV, 0x3);
     
@@ -56,6 +64,7 @@ void apic_start_timer() {
     
     // Calculate ticks in 10ms
     uint32_t ticksIn10ms = 0xFFFFFFFF - mmio_read(APIC_REGISTER_TIMER_CURRCNT);
+    ticksIn10ms = ticksIn10ms / 2;  // Since we measured for 20ms
     
     // Configure APIC timer in periodic mode with calculated ticks
     mmio_write(APIC_REGISTER_LVT_TIMER, APIC_TIMER_VECTOR | APIC_LVT_TIMER_MODE_PERIODIC);
@@ -67,7 +76,7 @@ void apic_start_timer() {
 
 
 void apic_delay(uint32_t milliseconds) {
-    enable_interrupts();
+    disable_interrupts(); // Disable interrupts
     
     // Calculate ticks for the given delay based on 10ms calibration
     uint32_t ticks_per_ms = mmio_read(APIC_REGISTER_TIMER_CURRCNT) / 10;
@@ -84,34 +93,25 @@ void apic_delay(uint32_t milliseconds) {
 }
 
 
+
 int ticks1 = 0;
-
-extern process_t *current_process;
-extern void restore_cpu_state(registers_t *regs);
-
 
 void apic_timer_handler(registers_t *regs) {
     ticks1++;
-
     apic_send_eoi();
 
-    printf("APIC Timer Interrupt! : %d\n", ticks1); // Print message on each interrupt
-    
-    if (!current_process) return;
+    if(ticks1 > 5) printf("ticks : %d\n", ticks1); // Print message on each interrupt
 
-    // Save current process's state
-    if(regs){
-        // memcpy((void *) current_process->registers, (void *) regs, sizeof(registers_t));
+    if (!current_process) return; 
+
+    // current_process->registers = regs;   // Save the current process state
+    memcpy((void *)current_process->registers, (void *) regs, sizeof(registers_t)); // Save the current process state
+    registers_t *new_regs = schedule(regs); // Schedule the next process
+    if(new_regs){
+        restore_cpu_state(new_regs);        // Restore the CPU state
     }
-    
-    registers_t *new_regs = schedule(regs); // Switching the current_process
-
-    // Restore the new process's state
-    if (new_regs) {
-        // memcpy((void *) regs, (void *) new_regs, sizeof(registers_t));   // Copy the full CPU state
-        restore_cpu_state(new_regs);
-    } 
 }
+
 
 void init_apic_timer(){
     interrupt_install_handler(0, &apic_timer_handler);

@@ -11,7 +11,6 @@ https://wiki.osdev.org/Context_Switching
 https://github.com/dreamportdev/Osdev-Notes/blob/master/05_Scheduling/README.md
 https://web.archive.org/web/20160326122214/http://jamesmolloy.co.uk/tutorial_html/9.-Multitasking.html
 https://wiki.osdev.org/Brendan%27s_Multi-tasking_Tutorial
-
 */
 
 
@@ -31,10 +30,67 @@ https://wiki.osdev.org/Brendan%27s_Multi-tasking_Tutorial
 #define KERNEL_CS  0x08
 
 
-size_t next_free_pid = 1;
+size_t next_free_pid = 0;
 process_t *current_process;
 process_t *processes_list = NULL;
 
+
+
+static inline uint64_t read_rip() {
+    uint64_t rip;
+    __asm__ volatile (
+        "lea (%%rip), %0" 
+        : "=r"(rip)
+    );
+    return rip;
+}
+
+static inline uint64_t read_rsp() {
+    uint64_t rsp;
+    __asm__ volatile ("movq %%rsp, %0" : "=r"(rsp));
+    return rsp;
+}
+
+static inline uint64_t read_rflags() {
+    uint64_t flags;
+    __asm__ volatile ("pushfq; pop %0" : "=r"(flags));
+    return flags;
+}
+
+
+
+process_t *create_init_process() {
+    process_t *init_process = (process_t *) kheap_alloc(sizeof(process_t));
+    if (!init_process) return NULL;
+
+    strncpy(init_process->name, "Init Proc", NAME_MAX_LEN);
+    init_process->pid = next_free_pid++;
+    init_process->status = READY;
+    init_process->registers = (registers_t *) kheap_alloc(sizeof(registers_t));
+    if (!init_process->registers) {
+        kheap_free(init_process, sizeof(process_t));
+        return NULL;
+    }
+
+    init_process->registers->iret_ss = KERNEL_SS;
+    init_process->registers->iret_rsp = read_rsp(); // Set stack pointer to current stack top
+    init_process->registers->iret_rflags = 0x202;
+    init_process->registers->iret_cs = KERNEL_CS;
+    init_process->registers->iret_rip = read_rip(); // Set instruction pointer to current instruction
+    init_process->registers->rdi = 0;      // No arguments
+    init_process->registers->rbp = 0;
+    
+    init_process->next = processes_list;
+    processes_list = init_process;
+
+    printf("Created Process: %s (PID: %d) | rsp : %x | rip : %x | rdi : %x\n", 
+        init_process->name, init_process->pid, 
+        init_process->registers->iret_rsp, 
+        init_process->registers->iret_rip, 
+        init_process->registers->rdi);
+
+    return init_process;
+}
 
 
 
@@ -56,7 +112,7 @@ process_t* create_process(char* name, void(*function)(void*), void* arg) {
     process->registers->iret_rflags = 0x202;
     process->registers->iret_cs = KERNEL_CS;
     process->registers->iret_rip = (uint64_t)function;
-    process->registers->rdi = (uint64_t)arg;
+    process->registers->rdi = (uint64_t) arg;
     process->registers->rbp = 0;
     
     process->next = processes_list;
@@ -88,29 +144,38 @@ void delete_process(process_t *prev_process, process_t *current_process) {
 
 
 
-uint64_t read_rflags() {
-    uint64_t flags;
-    __asm__ volatile ("pushfq; pop %0" : "=r"(flags));
-    return flags;
-}
-
 
 registers_t* schedule(registers_t *regs) {
+    if(current_process != NULL) {
+        current_process->registers = regs;
+        current_process->status = READY;
+    }
 
-    if (!current_process || !processes_list) 
-        return regs;
+    while(true) {
+        process_t *prev_process = current_process;
+        process_t *next_process = current_process->next;
+        if(next_process != NULL) {
+            current_process = next_process;
+        } else {
+            current_process = processes_list;
+        }
 
-    printf("Current Process PID : %d | rsp : %x | rip : %x | rdi : %x\n", 
-        current_process->pid, 
-        current_process->registers->iret_rsp, 
-        current_process->registers->iret_rip, 
-        current_process->registers->rdi);
-    
-    // Move to the next process
-    current_process = (current_process->next) ? current_process->next : processes_list;
-    
-    printf("Switching Process PID : %d\n", current_process->pid);
-
+        if(current_process != NULL && current_process->status == DEAD) {
+            delete_process(prev_process, current_process);
+        }else if(current_process->status == READY) {
+            printf("Switching to %s (PID: %d) | rip : %x | cs : %x | rflags : %x | rsp : %x | ss : %x\n",
+                current_process->name,
+                current_process->pid,
+                current_process->registers->iret_rip,
+                current_process->registers->iret_cs,
+                current_process->registers->iret_rflags,
+                current_process->registers->iret_rsp,
+                current_process->registers->iret_ss);
+            current_process->status = RUNNING;
+            return current_process->registers;
+            break;
+        }
+    }
     return current_process->registers;
 }
 
@@ -141,6 +206,7 @@ void process3(void* arg) {
 
 
 void init_processes() {
+    create_init_process();
     create_process("Process1", process1, NULL);
     create_process("Process2", process2, NULL);
     create_process("Process3", process3, NULL);

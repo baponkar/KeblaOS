@@ -29,12 +29,12 @@ struct registers { // Total 26*8 = 208 bytes, 16 bytes aligned
     uint64_t int_no;        // Offset 8*19
     uint64_t err_code;      // Offset 8*20
 
-    // Interrupt return CPU state registers value
-    uint64_t iret_rip;      // Offset 8*21
-    uint64_t iret_cs;       // Offset 8*22
-    uint64_t iret_rflags;   // Offset 8*23
-    uint64_t iret_rsp;      // Offset 8*24
-    uint64_t iret_ss;       // Offset 8*25
+    // the processor pushes the below registers automatically when an interrupt occurs
+    uint64_t iret_rip;      // Offset 8*21 instruction pointer
+    uint64_t iret_cs;       // Offset 8*22 code segment
+    uint64_t iret_rflags;   // Offset 8*23 flags register
+    uint64_t iret_rsp;      // Offset 8*24 stack pointer
+    uint64_t iret_ss;       // Offset 8*25 stack segment
     
 } __attribute__((packed));
 typedef struct registers registers_t;

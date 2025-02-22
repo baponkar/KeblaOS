@@ -138,6 +138,8 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 #process management
 	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/process.c -o $(BUILD_DIR)/process.o
 	$(NASM) $(NASM_FLAG) $(PS_DIR)/set_cpu_state.asm -o $(BUILD_DIR)/set_cpu_state.o
+#	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/task.c -o $(BUILD_DIR)/task.o
+#	$(NASM) $(NASM_FLAG) $(PS_DIR)/task_switch.asm -o $(BUILD_DIR)/task_switch.o
 
 #	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fs.c -o $(BUILD_DIR)/fs.o
 
