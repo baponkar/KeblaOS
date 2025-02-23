@@ -138,6 +138,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 #process management
 	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/process.c -o $(BUILD_DIR)/process.o
 	$(NASM) $(NASM_FLAG) $(PS_DIR)/set_cpu_state.asm -o $(BUILD_DIR)/set_cpu_state.o
+	$(NASM) $(NASM_FLAG) $(PS_DIR)/switch_process.asm -o $(BUILD_DIR)/switch_process.o
 #	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/task.c -o $(BUILD_DIR)/task.o
 #	$(NASM) $(NASM_FLAG) $(PS_DIR)/task_switch.asm -o $(BUILD_DIR)/task_switch.o
 
@@ -182,6 +183,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/process.o \
 						$(BUILD_DIR)/set_cpu_state.o \
+						$(BUILD_DIR)/switch_process.o \
 						$(BUILD_DIR)/disk.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/memory.o \
@@ -232,6 +234,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/process.o \
 						$(BUILD_DIR)/set_cpu_state.o \
+						$(BUILD_DIR)/switch_process.o \
 						$(BUILD_DIR)/disk.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/memory.o \

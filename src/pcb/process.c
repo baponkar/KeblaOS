@@ -59,11 +59,11 @@ static inline uint64_t read_rflags() {
 
 
 
-process_t *create_init_process() {
+process_t *create_init_process(char* name, void(*function)(void*), void* arg) {
     process_t *init_process = (process_t *) kheap_alloc(sizeof(process_t));
     if (!init_process) return NULL;
 
-    strncpy(init_process->name, "Init Proc", NAME_MAX_LEN);
+    strncpy(init_process->name, name, NAME_MAX_LEN);
     init_process->pid = next_free_pid++;
     init_process->status = READY;
     init_process->registers = (registers_t *) kheap_alloc(sizeof(registers_t));
@@ -76,12 +76,12 @@ process_t *create_init_process() {
     init_process->registers->iret_rsp = read_rsp(); // Set stack pointer to current stack top
     init_process->registers->iret_rflags = 0x202;
     init_process->registers->iret_cs = KERNEL_CS;
-    init_process->registers->iret_rip = read_rip(); // Set instruction pointer to current instruction
-    init_process->registers->rdi = 0;      // No arguments
+    init_process->registers->iret_rip = (uint64_t) function; // Set instruction pointer to current instruction
+    init_process->registers->rdi = (uint64_t) arg;      // No arguments
     init_process->registers->rbp = 0;
     
-    init_process->next = processes_list;
-    processes_list = init_process;
+    // init_process->next = processes_list;
+    // processes_list = init_process;
 
     printf("Created Process: %s (PID: %d) | rsp : %x | rip : %x | rdi : %x\n", 
         init_process->name, init_process->pid, 
@@ -163,14 +163,14 @@ registers_t* schedule(registers_t *regs) {
         if(current_process != NULL && current_process->status == DEAD) {
             delete_process(prev_process, current_process);
         }else if(current_process->status == READY) {
-            printf("Switching to %s (PID: %d) | rip : %x | cs : %x | rflags : %x | rsp : %x | ss : %x\n",
-                current_process->name,
-                current_process->pid,
-                current_process->registers->iret_rip,
-                current_process->registers->iret_cs,
-                current_process->registers->iret_rflags,
-                current_process->registers->iret_rsp,
-                current_process->registers->iret_ss);
+            // printf("Switching to %s (PID: %d) | rsp : %x | cs : %x | rflags : %x | rip : %x | ss : %x\n",
+            //     current_process->name,
+            //     current_process->pid,
+            //     current_process->registers->iret_rsp,
+            //     current_process->registers->iret_cs,
+            //     current_process->registers->iret_rflags,
+            //     current_process->registers->iret_rip,
+            //     current_process->registers->iret_ss);
             current_process->status = RUNNING;
             return current_process->registers;
             break;
@@ -179,6 +179,12 @@ registers_t* schedule(registers_t *regs) {
     return current_process->registers;
 }
 
+void process0(void *arg) {
+    while(1) {
+        printf("Process init is Running\n");
+        apic_delay(1000);  // Delay for 1000ms (1 second)
+    }
+}
 
 
 void process1(void* arg) {
@@ -206,7 +212,7 @@ void process3(void* arg) {
 
 
 void init_processes() {
-    create_init_process();
+    create_init_process("Init Process", process0, NULL);
     create_process("Process1", process1, NULL);
     create_process("Process2", process2, NULL);
     create_process("Process3", process3, NULL);

@@ -25,6 +25,8 @@
 
 static uint64_t cpu_frequency_hz = 0;  // Cached CPU frequency in Hz
 
+int ticks1 = 0;
+
 static inline uint64_t read_tsc() {
     uint32_t low, high;
     asm volatile ("rdtsc" : "=a"(low), "=d"(high)); // Read TSC
@@ -56,15 +58,15 @@ void apic_start_timer() {
     // Set APIC initial count to max
     mmio_write(APIC_REGISTER_TIMER_INITCNT, 0xFFFFFFFF);
     
-    // Sleep for 20,000 ms using TSC
-    tsc_sleep(20000);
+    // Sleep for 10,000 ms using TSC
+    tsc_sleep(10000); // Sleep for 1 second (1000ms)
     
     // Stop APIC timer
     mmio_write(APIC_REGISTER_LVT_TIMER, APIC_LVT_INT_MASKED);
     
     // Calculate ticks in 10ms
     uint32_t ticksIn10ms = 0xFFFFFFFF - mmio_read(APIC_REGISTER_TIMER_CURRCNT);
-    ticksIn10ms = ticksIn10ms / 2;  // Since we measured for 20ms
+    ticksIn10ms = ticksIn10ms;
     
     // Configure APIC timer in periodic mode with calculated ticks
     mmio_write(APIC_REGISTER_LVT_TIMER, APIC_TIMER_VECTOR | APIC_LVT_TIMER_MODE_PERIODIC);
@@ -75,39 +77,42 @@ void apic_start_timer() {
 }
 
 
-void apic_delay(uint32_t milliseconds) {
-    disable_interrupts(); // Disable interrupts
+// void apic_delay(uint32_t milliseconds) {
     
-    // Calculate ticks for the given delay based on 10ms calibration
-    uint32_t ticks_per_ms = mmio_read(APIC_REGISTER_TIMER_CURRCNT) / 10;
-    uint32_t ticks_to_wait = ticks_per_ms * milliseconds;
+//     // Calculate ticks for the given delay based on 10ms calibration
+//     uint32_t ticks_per_ms = mmio_read(APIC_REGISTER_TIMER_CURRCNT) / 10;
+//     uint32_t ticks_to_wait = ticks_per_ms * milliseconds;
 
-    // Configure APIC timer in one-shot mode
-    mmio_write(APIC_REGISTER_LVT_TIMER, APIC_LVT_INT_MASKED);
-    mmio_write(APIC_REGISTER_TIMER_INITCNT, ticks_to_wait);
+//     // Configure APIC timer in one-shot mode
+//     mmio_write(APIC_REGISTER_LVT_TIMER, APIC_LVT_INT_MASKED);
+//     mmio_write(APIC_REGISTER_TIMER_INITCNT, ticks_to_wait);
 
-    // Wait for timer to reach zero
-    while (mmio_read(APIC_REGISTER_TIMER_CURRCNT) > 0);
+//     // Wait for timer to reach zero
+//     while (mmio_read(APIC_REGISTER_TIMER_CURRCNT) > 0);
 
-    enable_interrupts();  // Restore interrupts
+// }
+
+void apic_delay(uint32_t milliseconds) {
+    uint32_t target_ticks = ticks1 + (milliseconds / 10);  // Convert ms to 10ms ticks
+    while (ticks1 < target_ticks);
 }
 
 
 
-int ticks1 = 0;
+
+
 
 void apic_timer_handler(registers_t *regs) {
     ticks1++;
     apic_send_eoi();
 
-    if(ticks1 > 5) printf("ticks : %d\n", ticks1); // Print message on each interrupt
-
     if (!current_process) return; 
 
-    // current_process->registers = regs;   // Save the current process state
-    memcpy((void *)current_process->registers, (void *) regs, sizeof(registers_t)); // Save the current process state
+    current_process->registers = regs;   // Save the current process state
+
     registers_t *new_regs = schedule(regs); // Schedule the next process
     if(new_regs){
+        // printf("Switching to Process: %s (PID: %d)\n", current_process->name, current_process->pid);
         restore_cpu_state(new_regs);        // Restore the CPU state
     }
 }
