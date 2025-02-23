@@ -80,8 +80,8 @@ process_t *create_init_process(char* name, void(*function)(void*), void* arg) {
     init_process->registers->rdi = (uint64_t) arg;      // No arguments
     init_process->registers->rbp = 0;
     
-    // init_process->next = processes_list;
-    // processes_list = init_process;
+    
+    processes_list = init_process;
 
     printf("Created Process: %s (PID: %d) | rsp : %x | rip : %x | rdi : %x\n", 
         init_process->name, init_process->pid, 
@@ -106,23 +106,41 @@ process_t* create_process(char* name, void(*function)(void*), void* arg) {
         kheap_free(process, sizeof(process_t));
         return NULL;
     }
-    
+
+    // Allocate stack and align it properly
+    void* stack_base = kheap_alloc(STACK_SIZE);
+    if (!stack_base) {
+        kheap_free(process->registers, sizeof(registers_t));
+        kheap_free(process, sizeof(process_t));
+        return NULL;
+    }
+
     process->registers->iret_ss = KERNEL_SS;
-    process->registers->iret_rsp = ((uint64_t) kheap_alloc(STACK_SIZE) + STACK_SIZE) & ~0xF; // Make stack pointer on top and 16 byte aligned
+    process->registers->iret_rsp = ((uint64_t) stack_base + STACK_SIZE) & ~0xF;  // Ensure 16-byte alignment
     process->registers->iret_rflags = 0x202;
     process->registers->iret_cs = KERNEL_CS;
-    process->registers->iret_rip = (uint64_t)function;
+    process->registers->iret_rip = (uint64_t) function;
     process->registers->rdi = (uint64_t) arg;
     process->registers->rbp = 0;
-    
-    process->next = processes_list;
-    processes_list = process;
+    process->next = NULL;  // Ensure it's properly terminated
 
-    printf("Created Process: %s (PID: %d)  | rsp : %x | rip : %x | rdi : %x\n", 
+    // Append process to the end of the linked list
+    if (!processes_list) {
+        processes_list = process;
+    } else {
+        process_t* temp = processes_list;
+        while (temp->next) {
+            temp = temp->next;
+        }
+        temp->next = process;
+    }
+
+    printf("Created Process: %s (PID: %d) | rsp: %x | rip: %x | rdi: %x\n", 
         process->name, process->pid, 
         process->registers->iret_rsp, 
         process->registers->iret_rip, 
         process->registers->rdi);
+
     return process;
 }
 
@@ -182,7 +200,7 @@ registers_t* schedule(registers_t *regs) {
 void process0(void *arg) {
     while(1) {
         printf("Process init is Running\n");
-        apic_delay(1000);  // Delay for 1000ms (1 second)
+        apic_delay(100);  // Delay for 1000ms (1 second)
     }
 }
 
@@ -190,7 +208,7 @@ void process0(void *arg) {
 void process1(void* arg) {
     while (1) {
         printf("Process 1 is Running\n");
-        apic_delay(1000);  // Delay for 1000ms (1 second)
+        apic_delay(100);  // Delay for 1000ms (1 second)
     }
 }
 
@@ -198,7 +216,7 @@ void process1(void* arg) {
 void process2(void* arg) {
     while(1) {
         printf("Process 2 is Running\n");
-        apic_delay(1000);
+        apic_delay(100);
     }
 }
 
@@ -206,9 +224,11 @@ void process2(void* arg) {
 void process3(void* arg) {
     while (1) {
         printf("Process 3 is Running\n");
-        apic_delay(1000);
+        apic_delay(100);
     }
 }
+
+
 
 
 void init_processes() {
