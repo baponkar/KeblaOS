@@ -66,7 +66,7 @@ void apic_start_timer() {
     
     // Calculate ticks in 10ms
     uint32_t ticksIn10ms = 0xFFFFFFFF - mmio_read(APIC_REGISTER_TIMER_CURRCNT);
-    ticksIn10ms = ticksIn10ms;
+
     
     // Configure APIC timer in periodic mode with calculated ticks
     mmio_write(APIC_REGISTER_LVT_TIMER, APIC_TIMER_VECTOR | APIC_LVT_TIMER_MODE_PERIODIC);
@@ -106,6 +106,7 @@ void apic_timer_handler(registers_t *regs) {
     ticks1++;
     apic_send_eoi();
 
+    // printf("ticks1: %d\n", ticks1);
     if (!current_process) return; 
 
     current_process->registers = regs;   // Save the current process state
@@ -115,6 +116,8 @@ void apic_timer_handler(registers_t *regs) {
         // printf("Switching to Process: %s (PID: %d)\n", current_process->name, current_process->pid);
         restore_cpu_state(new_regs);        // Restore the CPU state
     }
+
+    printf("End of APIC Timer Handler\n");
 }
 
 
