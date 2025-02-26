@@ -31,7 +31,7 @@ typedef struct process {
     uint64_t cpu_time;          // Track CPU time per process
 } process_t;
 
-extern void restore_cpu_state(registers_t* regs);
+
 
 extern size_t next_free_pid;        //Available free process id
 extern process_t *current_process;  // Current running process
@@ -41,6 +41,6 @@ process_t* create_process(const char* name, void (*main_function)(void*), void* 
 void add_process(process_t* proc);
 void remove_process(process_t* proc);
 void delete_process(process_t* proc);
-registers_t* schedule(registers_t* regs);
+registers_t* schedule(registers_t* registers);
 
 void init_processes();
