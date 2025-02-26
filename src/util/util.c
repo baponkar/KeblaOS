@@ -69,3 +69,24 @@ void print_size_with_units(uint64_t size) {
     print(units[unit_index]);
 }
 
+
+uint64_t read_rip() {
+    uint64_t rip;
+    __asm__ volatile (
+        "lea (%%rip), %0" 
+        : "=r"(rip)
+    );
+    return rip;
+}
+
+uint64_t read_rsp() {
+    uint64_t rsp;
+    __asm__ volatile ("movq %%rsp, %0" : "=r"(rsp));
+    return rsp;
+}
+
+uint64_t read_rflags() {
+    uint64_t flags;
+    __asm__ volatile ("pushfq; pop %0" : "=r"(flags));
+    return flags;
+}

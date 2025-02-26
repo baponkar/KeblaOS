@@ -2,7 +2,7 @@
     https://wiki.osdev.org/Programmable_Interval_Timer
 */
 
-#include "../../pcb/process.h"
+#include "../../process/process.h"
 #include "../interrupt/pic.h"
 #include "../interrupt/apic.h"
 #include "../../lib/stdio.h"

@@ -23,7 +23,7 @@ TIMER_DIR = $(SRC_DIR)/x86_64/timer
 RTC_DIR = $(SRC_DIR)/x86_64/rtc
 MMU_DIR = $(SRC_DIR)/mmu
 USR_DIR = $(SRC_DIR)/usr
-PS_DIR = $(SRC_DIR)/pcb
+PS_DIR = $(SRC_DIR)/process
 FS_DIR = $(SRC_DIR)/file_system
 
 
@@ -138,6 +138,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 #process management
 	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/process.c -o $(BUILD_DIR)/process.o
 	$(NASM) $(NASM_FLAG) $(PS_DIR)/set_cpu_state.asm -o $(BUILD_DIR)/set_cpu_state.o
+	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/thread.c -o $(BUILD_DIR)/thread.o
 
 #	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fs.c -o $(BUILD_DIR)/fs.o
 
@@ -180,6 +181,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/process.o \
 						$(BUILD_DIR)/set_cpu_state.o \
+						$(BUILD_DIR)/thread.o \
 						$(BUILD_DIR)/disk.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/memory.o \
@@ -230,6 +232,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/process.o \
 						$(BUILD_DIR)/set_cpu_state.o \
+						$(BUILD_DIR)/thread.o \
 						$(BUILD_DIR)/disk.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/memory.o \
