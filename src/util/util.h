@@ -35,7 +35,6 @@ struct registers { // Total 26*8 = 208 bytes, 16 bytes aligned
     uint64_t iret_rflags;   // Offset 8*23 flags register
     uint64_t iret_rsp;      // Offset 8*24 stack pointer
     uint64_t iret_ss;       // Offset 8*25 stack segment
-    
 } __attribute__((packed));
 typedef struct registers registers_t;
 
@@ -44,3 +43,6 @@ void halt_kernel(void);
 void print_regs_content(registers_t *regs);
 void print_size_with_units(uint64_t size);
 
+uint64_t read_rip();
+uint64_t read_rsp();
+uint64_t read_rflags();

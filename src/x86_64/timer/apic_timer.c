@@ -1,6 +1,8 @@
 
-// #include "../../pcb/task.h"
-#include "../../pcb/process.h"
+
+#include "../../process/types.h"
+#include "../../process/thread.h"
+#include "../../process/process.h"
 #include "../interrupt/pic.h"
 #include "../interrupt/apic.h"
 #include "../interrupt/interrupt.h"
@@ -10,18 +12,19 @@
 
 #include "apic_timer.h"
 
+
+
 #define LAPIC_BASE 0xFEE00000
 #define APIC_TIMER_VECTOR  0x20  // Interrupt vector for timer
 
-#define LAPIC_TPR  (LAPIC_BASE + 0x80)  // Task Priority Register Offset
-
+#define LAPIC_TPR                    (LAPIC_BASE + 0x80)   // Task Priority Register Offset
 #define APIC_REGISTER_TIMER_DIV      (LAPIC_BASE + 0x3E0)  // APIC Timer Divide Configuration Register
 #define APIC_REGISTER_TIMER_INITCNT  (LAPIC_BASE + 0x380)  // APIC Timer Initial Count Register
 #define APIC_REGISTER_TIMER_CURRCNT  (LAPIC_BASE + 0x390)  // APIC Timer Current Count Register
 #define APIC_REGISTER_LVT_TIMER      (LAPIC_BASE + 0x320)  // APIC Local Vector Table (LVT) Timer Register
 
-#define APIC_LVT_TIMER_MODE_PERIODIC (1 << 17)              // Periodic mode bit
-#define APIC_LVT_INT_MASKED          (1 << 16)              // Mask interrupt
+#define APIC_LVT_TIMER_MODE_PERIODIC (1 << 17)             // Periodic mode bit
+#define APIC_LVT_INT_MASKED          (1 << 16)             // Mask interrupt
 
 static uint64_t cpu_frequency_hz = 0;  // Cached CPU frequency in Hz
 
@@ -92,6 +95,7 @@ void apic_start_timer() {
 
 // }
 
+
 void apic_delay(uint32_t milliseconds) {
     uint32_t target_ticks = ticks1 + (milliseconds / 10);  // Convert ms to 10ms ticks
     while (ticks1 < target_ticks);
@@ -99,25 +103,36 @@ void apic_delay(uint32_t milliseconds) {
 
 
 
+extern size_t    next_free_pid;     //Available free process id
+extern process_t *current_process;  // Current running process
+extern process_t *processes_list;   // List of all processes
 
+extern registers_t* schedule(registers_t* regs);
+extern void restore_cpu_state(registers_t* regs);
 
 
 void apic_timer_handler(registers_t *regs) {
     ticks1++;
     apic_send_eoi();
 
-    // printf("ticks1: %d\n", ticks1);
-    if (!current_process) return; 
-
-    current_process->registers = regs;   // Save the current process state
-
-    registers_t *new_regs = schedule(regs); // Schedule the next process
-    if(new_regs){
-        // printf("Switching to Process: %s (PID: %d)\n", current_process->name, current_process->pid);
-        restore_cpu_state(new_regs);        // Restore the CPU state
+    if (!current_process || !current_process->current_thread) {
+        return;
     }
 
-    printf("End of APIC Timer Handler\n");
+    // Save the current thread's register state
+    current_process->current_thread->registers = regs;
+    memcpy(current_process->current_thread->registers, regs, sizeof(registers_t));
+    if (memcmp(current_process->current_thread->registers, regs, sizeof(registers_t)) != 0) {
+        printf("registers assignment failed!\n");
+        return;
+    }
+
+    registers_t* new_regs = schedule(regs); // Saving the current thread state and selecting the next thread
+
+    if(new_regs){
+        printf("[ Switching TID: %d | rip: %x | rsp: %x ]\n", current_process->current_thread->tid, new_regs->iret_rip, new_regs->iret_rsp);
+        restore_cpu_state(new_regs);        // Restoring the next thread's state
+    }
 }
 
 
