@@ -107,8 +107,7 @@ extern size_t    next_free_pid;     //Available free process id
 extern process_t *current_process;  // Current running process
 extern process_t *processes_list;   // List of all processes
 
-extern registers_t* schedule(registers_t* regs);
-extern void restore_cpu_state(registers_t* regs);
+extern void restore_cpu_state(registers_t* registers);
 
 
 void apic_timer_handler(registers_t *regs) {
@@ -119,18 +118,12 @@ void apic_timer_handler(registers_t *regs) {
         return;
     }
 
-    // Save the current thread's register state
-    current_process->current_thread->registers = regs;
-    memcpy(current_process->current_thread->registers, regs, sizeof(registers_t));
-    if (memcmp(current_process->current_thread->registers, regs, sizeof(registers_t)) != 0) {
-        printf("registers assignment failed!\n");
-        return;
-    }
-
     registers_t* new_regs = schedule(regs); // Saving the current thread state and selecting the next thread
 
     if(new_regs){
-        printf("[ Switching TID: %d | rip: %x | rsp: %x ]\n", current_process->current_thread->tid, new_regs->iret_rip, new_regs->iret_rsp);
+        printf("[ Switching TID: %d | rip: %x | rsp: %x ]\n", 
+            current_process->current_thread->tid, 
+            new_regs->iret_rip, new_regs->iret_rsp);
         restore_cpu_state(new_regs);        // Restoring the next thread's state
     }
 }

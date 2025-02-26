@@ -26,7 +26,7 @@ https://wiki.osdev.org/Brendan%27s_Multi-tasking_Tutorial
 #include "process.h"
 
 
-
+extern void restore_cpu_state(registers_t* registers);
 size_t next_free_pid = 0;           // Available free process id
 process_t *current_process;         // Current running process
 process_t *processes_list = NULL;   // List of all processes
@@ -121,11 +121,17 @@ void delete_process(process_t* proc) {
 }
 
 
-registers_t* schedule(registers_t* regs) {
+registers_t* schedule(registers_t* registers) {
     if (!current_process || !current_process->current_thread) return NULL;
     
-   
     current_process->current_thread->status = READY;
+
+    // Save the current thread's register state
+    memcpy(current_process->current_thread->registers, registers, sizeof(registers_t));
+    if (memcmp(current_process->current_thread->registers, registers, sizeof(registers_t)) != 0) {
+        printf("registers assignment failed!\n");
+        return NULL;
+    }
     
     thread_t* start_thread = current_process->current_thread;
     thread_t* next_thread = current_process->current_thread->next;
@@ -161,7 +167,7 @@ registers_t* schedule(registers_t* regs) {
 void thread0_func(void *arg) {
     while(true){
         printf("Init Thread is Running...\n");
-        apic_delay(100);  // Delay for 1000ms (1 second)
+        apic_delay(1000);  // Delay for 1000ms (1 second)
     }
 }
 
@@ -169,7 +175,7 @@ void thread0_func(void *arg) {
 void thread1_func(void* arg) {
     while(true) {
         printf("Thread1 is Running...\n");
-        apic_delay(100);  // Delay for 1000ms (1 second)
+        apic_delay(1000);  // Delay for 1000ms (1 second)
     }
 }
 
@@ -177,7 +183,7 @@ void thread1_func(void* arg) {
 void thread2_func(void* arg) {
     while(true) {
         printf("Thread2 is Running...\n");
-        apic_delay(100);  // Delay for 1000ms (1 second)
+        apic_delay(1000);  // Delay for 1000ms (1 second)
     }
 }
 

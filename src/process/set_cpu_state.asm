@@ -98,8 +98,9 @@ restore_cpu_state:
     mov rax, [r15 + REG_IRET_RIP]   
     push rax                        ; Storing iret_rip reg. value into stack by iretq 
 
-    mov r15, [r15 + GEN_REG_R15]   
+    mov r15, [r15 + GEN_REG_R15]  
 
+    
     sti                    
     iretq                           ; Return from interrupt
 
