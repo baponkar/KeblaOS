@@ -44,3 +44,8 @@ void delete_process(process_t* proc);
 registers_t* schedule(registers_t* registers);
 
 void init_processes();
+
+
+void thread0_func(void *arg);
+void thread1_func(void* arg);
+void thread2_func(void* arg);

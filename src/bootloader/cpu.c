@@ -146,3 +146,20 @@ void print_cpu_brand() {
 }
 
 
+int getLogicalProcessorCount() {
+    unsigned int eax, ebx, ecx, edx;
+
+    // Check CPUID support (simplified)
+    __asm__ volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0));
+
+    // Get extended CPUID support
+    __asm__ volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0x80000000));
+
+    if (eax >= 0x80000008) {
+        // Get logical processor count
+        __asm__ volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0x80000008));
+        return (ebx & 0xFF); // Extract logical core count from lower 8 bits.
+    }
+
+    return 1; // Default to 1 processor if CPUID fails.
+}

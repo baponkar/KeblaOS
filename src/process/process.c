@@ -48,7 +48,7 @@ process_t* create_process(const char* name, void (*function)(void*), void* arg) 
     proc->cpu_time = 0;
 
     // Create the main thread for the process
-    thread_t* init_thread = create_thread(proc, "init_thread", function, arg);
+    thread_t* init_thread = create_thread(proc, "Thread0", function, arg);
     if (!init_thread) {
         kheap_free(proc, sizeof(process_t)); // Free the process if thread creation fails
         next_free_pid--; // Revert the PID counter if thread creation fails
@@ -127,6 +127,7 @@ registers_t* schedule(registers_t* registers) {
     current_process->current_thread->status = READY;
 
     // Save the current thread's register state
+    // current_process->current_thread->registers = registers;
     memcpy(current_process->current_thread->registers, registers, sizeof(registers_t));
     if (memcmp(current_process->current_thread->registers, registers, sizeof(registers_t)) != 0) {
         printf("registers assignment failed!\n");
@@ -137,14 +138,14 @@ registers_t* schedule(registers_t* registers) {
     thread_t* next_thread = current_process->current_thread->next;
     
     // Look for the next READY thread in a round-robin manner
-    while (next_thread && next_thread->status != READY) {
+    while (next_thread != NULL && next_thread->status != READY) { // if next_thread is present and it's status is READY
         next_thread = next_thread->next;
     }
     
     // If no READY thread found, start from the first thread
     if (!next_thread) {
-        next_thread = current_process->threads;
-        while (next_thread && next_thread->status != READY) {
+        next_thread = current_process->threads; // Pick First Thread
+        while (next_thread != NULL && next_thread->status != READY) {
             next_thread = next_thread->next;
         }
     }
@@ -152,8 +153,8 @@ registers_t* schedule(registers_t* registers) {
     // If still no READY thread, keep running the same thread
     if (!next_thread) {
         current_process->current_thread->status = RUNNING;
-        return current_process->current_thread->registers;
     }
+
     
     // Set the next thread as RUNNING
     current_process->current_thread = next_thread;
@@ -166,27 +167,38 @@ registers_t* schedule(registers_t* registers) {
 
 void thread0_func(void *arg) {
     while(true){
-        printf("Init Thread is Running...\n");
-        apic_delay(1000);  // Delay for 1000ms (1 second)
+        printf("Ticks: %d, Thread0 is Running...\n", ticks1);
+        apic_delay(1000);
     }
 }
 
 
 void thread1_func(void* arg) {
     while(true) {
-        printf("Thread1 is Running...\n");
-        apic_delay(1000);  // Delay for 1000ms (1 second)
+        printf("Ticks: %d, Thread1 is Running...\n", ticks1);
+        apic_delay(1000);
     }
 }
 
 
 void thread2_func(void* arg) {
     while(true) {
-        printf("Thread2 is Running...\n");
-        apic_delay(1000);  // Delay for 1000ms (1 second)
+        printf("Ticks: %d, Thread2 is Running...\n", ticks1);
+        apic_delay(1000);
     }
 }
 
+void print_all_threads_name(process_t *p){
+    thread_t * t = p->threads;
+    for(int tid = 0; tid < next_free_tid; tid++){
+        printf("Thread Name : %s | *thread: %x | rsp: %x | thread_next: %x\n", 
+            t->name,
+            (uint64_t)t, 
+            t->registers->iret_rsp, 
+            (uint64_t)t->next);
+        t = t->next;
+    }
+}
 
 
 
@@ -217,11 +229,12 @@ void init_processes() {
         printf("Failed to create Thread2\n");
         return;
     }
-   
 
+    
     // Set the current process
     current_process = process;
     processes_list = process;
 
+    // print_all_threads_name(current_process);
 }
 

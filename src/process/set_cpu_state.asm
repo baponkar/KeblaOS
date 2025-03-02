@@ -43,64 +43,64 @@ global restore_cpu_state
 restore_cpu_state:
     cli                         ; Disable interrupts
 
-    mov r15, rdi                ; Save original rdi (points to registers_t structure)
+    ;mov r15, rdi               ; Save original rdi (points to registers_t structure)
 
     ; Optional: Restore segment registers if needed
-    mov rax, [r15 + SEG_REG_GS]  
+    mov rax, [rdi + SEG_REG_GS]  
     mov gs, ax            
-    mov rax, [r15 + SEG_REG_FS]  
+    mov rax, [rdi + SEG_REG_FS]  
     mov fs, ax            
-    mov rax, [r15 + SEG_REG_ES]  
+    mov rax, [rdi + SEG_REG_ES]  
     mov es, ax            
-    mov rax, [r15 + SEG_REG_DS]  
+    mov rax, [rdi + SEG_REG_DS]  
     mov ds, ax            
 
     ; Restore general-purpose registers 
-    mov rax, [r15 + GEN_REG_RAX]
-    mov rbx, [r15 + GEN_REG_RBX]
-    mov rcx, [r15 + GEN_REG_RCX]
-    mov rdx, [r15 + GEN_REG_RDX]
-    mov rbp, [r15 + GEN_REG_RBP]
-    mov rdi, [r15 + GEN_REG_RDI]
-    mov rsi, [r15 + GEN_REG_RSI]
-    mov r8,  [r15 + GEN_REG_R8]
-    mov r9,  [r15 + GEN_REG_R9]
-    mov r10, [r15 + GEN_REG_R10]
-    mov r11, [r15 + GEN_REG_R11]
-    mov r12, [r15 + GEN_REG_R12]
-    mov r13, [r15 + GEN_REG_R13]
-    mov r14, [r15 + GEN_REG_R14]
+    mov rax, [rdi + GEN_REG_RAX]
+    mov rbx, [rdi + GEN_REG_RBX]
+    mov rcx, [rdi + GEN_REG_RCX]
+    mov rdx, [rdi + GEN_REG_RDX]
+    mov rbp, [rdi + GEN_REG_RBP]
+    ;mov rdi, [rdi + GEN_REG_RDI]
+    mov rsi, [rdi + GEN_REG_RSI]
+    mov r8,  [rdi + GEN_REG_R8]
+    mov r9,  [rdi + GEN_REG_R9]
+    mov r10, [rdi + GEN_REG_R10]
+    mov r11, [rdi + GEN_REG_R11]
+    mov r12, [rdi + GEN_REG_R12]
+    mov r13, [rdi + GEN_REG_R13]
+    mov r14, [rdi + GEN_REG_R14]
+    mov r15, [rdi + GEN_REG_R15]
 
     ; Validate RSP before continuing
-    mov rax, [r15 + REG_IRET_RSP]
+    mov rax, [rdi + REG_IRET_RSP]
     test rax, rax
     jz hang_debug                   ; If RSP is zero, halt execution
 
     ; Validate RIP before continuing
-    mov rax, [r15 + REG_IRET_RIP]
+    mov rax, [rdi + REG_IRET_RIP]
     test rax, rax
     jz hang_debug                   ; If RIP is zero, halt execution
 
     ; Restore stack for iretq
-    mov rax, [r15 + REG_IRET_SS]   
+    mov rax, [rdi + REG_IRET_SS]   
     push rax                        ; Storing iret_ss reg. value into stack by iretq 
 
-    mov rax, [r15 + REG_IRET_RSP]   
+    mov rax, [rdi + REG_IRET_RSP]   
     push rax                
 
-    mov rax, [r15 + REG_IRET_RFLAGS]   
+    mov rax, [rdi + REG_IRET_RFLAGS]   
     or rax, 0x200                   ; Ensure Interrupt Flag (IF) is set
     push rax                        ; Storing iret_eflags reg. value into stack by iretq 
 
-    mov rax, [r15 + REG_IRET_CS]   
+    mov rax, [rdi + REG_IRET_CS]   
     push rax                        ; Storing iret_cs reg. value into stack by iretq 
 
-    mov rax, [r15 + REG_IRET_RIP]   
+    mov rax, [rdi + REG_IRET_RIP]   
     push rax                        ; Storing iret_rip reg. value into stack by iretq 
 
-    mov r15, [r15 + GEN_REG_R15]  
+    mov rdi, [rdi + GEN_REG_RDI]  
 
-    
     sti                    
     iretq                           ; Return from interrupt
 
@@ -110,4 +110,5 @@ hang_debug:
 .hang_loop:
     hlt                             ; Halt CPU to save power
     jmp .hang_loop                  ; Infinite loop
+
 

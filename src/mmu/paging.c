@@ -9,18 +9,11 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 
 */ 
 
-
-
-
 #include "../x86_64/interrupt/pic.h"
-
 #include "../bootloader/memory.h"
 #include "kmalloc.h"
-
 #include  "../lib/string.h"
-
 #include  "../driver/vga/vga_term.h"
-
 #include "pmm.h"
 
 #include "paging.h"
@@ -182,6 +175,7 @@ static page_t *alloc_page(){
     return pg;
 }
 
+
 // Function to allocate a new page table
 static pt_t* alloc_pt() {
     pt_t* pt = (pt_t*)kmalloc_a(sizeof(pt_t), 1);
@@ -191,6 +185,7 @@ static pt_t* alloc_pt() {
     return pt;
 }
 
+
 // Function to allocate a new page directory
 static pd_t* alloc_pd() {
     pd_t* pd = (pd_t*)kmalloc_a(sizeof(pd_t), 1);
@@ -199,6 +194,7 @@ static pd_t* alloc_pd() {
     }
     return pd;
 }
+
 
 // Function to allocate a new page directory pointer table
 static pdpt_t* alloc_pdpt() {
@@ -392,6 +388,7 @@ void flush_tlb(uint64_t address) {
     // Use the invlpg instruction to invalidate the TLB entry for a specific address
     asm volatile("invlpg (%0)" : : "r"(address) : "memory");
 }
+
 
 // Function to flush the entire TLB (by writing to cr3)
 void flush_tlb_all() {

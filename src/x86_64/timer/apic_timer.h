@@ -1,6 +1,7 @@
 
 #include <stdint.h>
 
+extern int ticks1;
 
 void tsc_sleep(uint64_t microseconds);
 void apic_delay(uint32_t milliseconds);

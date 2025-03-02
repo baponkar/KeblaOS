@@ -114,16 +114,25 @@ void apic_timer_handler(registers_t *regs) {
     ticks1++;
     apic_send_eoi();
 
+    // printf("Tick: %d\n", ticks1);
+
     if (!current_process || !current_process->current_thread) {
         return;
     }
+    
+    // Saving the current thread state and selecting the next thread
+    registers_t* new_regs = schedule(regs); 
 
-    registers_t* new_regs = schedule(regs); // Saving the current thread state and selecting the next thread
+    
+
+    // printf("[ Switching TID: %d | rip: %x | rsp: %x | *reg: %x]\n", 
+    //     current_process->current_thread->tid, 
+    //     current_process->current_thread->registers->iret_rip,
+    //     current_process->current_thread->registers->iret_rsp,
+    //     (uint64_t)current_process->current_thread->registers
+    // );
 
     if(new_regs){
-        printf("[ Switching TID: %d | rip: %x | rsp: %x ]\n", 
-            current_process->current_thread->tid, 
-            new_regs->iret_rip, new_regs->iret_rsp);
         restore_cpu_state(new_regs);        // Restoring the next thread's state
     }
 }
