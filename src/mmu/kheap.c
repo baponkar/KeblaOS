@@ -29,6 +29,9 @@ void *kheap_alloc(size_t size) {
         kheap_current += 0x1000; // Increment by page size (4 KiB)
     }
 
+    // Add 4KB padding between allocations to prevent overlapping
+    kheap_current += 0x1000;
+
     // Update the maximum allocated address
     if (kheap_current > kheap_max) {
         kheap_max = kheap_current;

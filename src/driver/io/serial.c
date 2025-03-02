@@ -4,6 +4,8 @@
 
 #include "serial.h"
 
+
+
 void serial_init() {
     outb(0x3F8 + 1, 0x00); // Disable interrupts
     outb(0x3F8 + 3, 0x80); // Enable DLAB (set baud rate divisor)
@@ -16,14 +18,17 @@ void serial_init() {
     printf("Successfully Serial read write enabled.\n");
 }
 
+
 void serial_putchar(char c) {
     while ((inb(0x3F8 + 5) & 0x20) == 0); // Wait until buffer is empty
     outb(0x3F8, c);
 }
 
+
 void serial_print(const char* str) {
     while (*str) serial_putchar(*str++);
 }
+
 
 void serial_clearchar() {
     serial_putchar('\b'); // Move cursor back
@@ -46,6 +51,8 @@ void serial_print_hex(uint64_t num) {
     serial_print("0x"); // Prefix for hex numbers
     serial_print(buffer);
 }
+
+
 
 
 void serial_print_dec(int64_t num) {
@@ -77,6 +84,7 @@ void serial_print_dec(int64_t num) {
 
     serial_print(&buffer[i + 1]);
 }
+
 
 
 void serial_print_bin(uint64_t num) {

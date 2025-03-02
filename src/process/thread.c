@@ -6,15 +6,37 @@
 #include "process.h"
 #include "types.h"
 
+#include "../x86_64/timer/apic_timer.h"
+
 #include "thread.h"
 
 
 #define THREAD_STACK_SIZE 0x4000 // 16 KB
+#define THREAD_STACK_GAP 0x2000
 #define KERNEL_SS  0x10
 #define KERNEL_CS  0x08
 
 
 size_t next_free_tid = 0;
+
+void add_thread(thread_t* thread) {
+    if (!thread) return;
+
+    process_t* parent = thread->parent;
+    if (!parent) return;
+
+    if (parent->threads == NULL) {
+        parent->threads = thread;
+    } else {
+        for (thread_t* scan = parent->threads; scan != NULL; scan = scan->next) {
+            if (scan->next) continue;
+            scan->next = thread; // Assign next thread
+            break;
+        }
+    }
+    thread->next = NULL;  // Ensure the last thread has next = NULL
+    parent->current_thread = thread;
+}
 
 
 
@@ -22,29 +44,35 @@ thread_t* create_thread(process_t* parent, const char* name, void (*function)(vo
     
     thread_t* thread = (thread_t*) kheap_alloc(sizeof(thread_t)); // Allocate memory for the thread
     if (!thread) return NULL;
-    memset(thread, 0, sizeof(thread_t)); // Initialize the thread to 0
+    memset((void*)thread, 0, sizeof(thread_t)); // Initialize the thread to 0
 
     // Assign the next available TID
     thread->tid = next_free_tid++;
     thread->status = READY;
     thread->registers = (registers_t*) kheap_alloc(sizeof(registers_t));
+
     if (!thread->registers) {
+        printf("thread->registers allocation failed!\n");
         kheap_free(thread, sizeof(thread_t));
         next_free_tid--; // Revert the TID counter if register allocation fails
         return NULL;
     }
-    memset(thread->registers, 0, sizeof(registers_t)); // Initialize registers to 0
+    memset((void*)thread->registers, 0, sizeof(registers_t)); // Initialize registers to 0
 
     strncpy(thread->name, name, THREAD_NAME_MAX_LEN - 1);
     thread->name[THREAD_NAME_MAX_LEN - 1] = '\0'; // Ensure null-termination
 
     thread->parent = parent;
-    thread->next = NULL;
+    thread->next = 0;
     thread->cpu_time = 0;
 
     // Allocate a stack for the thread
-    void* stack = (void*) kheap_alloc(THREAD_STACK_SIZE);
+    // void* stack = (void*) kheap_alloc(THREAD_STACK_SIZE);
+    void* stack = (void*) kheap_alloc(THREAD_STACK_SIZE + THREAD_STACK_GAP); // Add 4KB padding
+
+
     if (!stack) { // If stack allocation fails, free the registers and thread
+        printf("Stack allocation failed!\n");
         kheap_free(thread->registers, sizeof(registers_t));
         kheap_free(thread, sizeof(thread_t));
         next_free_tid--; // Revert the TID counter if stack allocation fails
@@ -62,10 +90,10 @@ thread_t* create_thread(process_t* parent, const char* name, void (*function)(vo
 
     add_thread(thread);                                 // Add the thread to the parent process's thread list
 
-    printf("Created Thread: %s (TID: %d) on (PID: %d) | rip : %x | rsp : %x\n", 
+    printf("Created Thread: %s (TID: %d) at %x | rip : %x | rsp : %x\n", 
         thread->name, 
         thread->tid, 
-        thread->parent->pid, 
+        (uint64_t)thread, 
         thread->registers->iret_rip, 
         thread->registers->iret_rsp);
 
@@ -73,29 +101,6 @@ thread_t* create_thread(process_t* parent, const char* name, void (*function)(vo
 }
 
 
-
-
-void add_thread(thread_t* thread) {
-    if (!thread) return;
-
-    process_t* parent = thread->parent;
-    if (!parent) return;
-
-    // Add to the head of the process's thread list
-    if (!parent->threads)
-        parent->threads = thread;
-    else {
-        for (thread_t* scan = parent->threads; scan != NULL; scan = scan->next) {
-            if (scan->next){
-                continue;
-            }else{
-                scan->next = thread;
-                break;
-            }
-        }
-    }
-    parent->current_thread = thread;
-}
 
 
 void remove_thread(thread_t* thread) {
@@ -129,7 +134,7 @@ void delete_thread(thread_t* thread) {
     remove_thread(thread); // Remove the thread from the process's thread list
 
     // Free the thread's stack and registers
-    kheap_free((void*)(thread->registers->iret_rsp - THREAD_STACK_SIZE), THREAD_STACK_SIZE); // Free the stack
+    kheap_free((void*)(thread->registers->iret_rsp - THREAD_STACK_SIZE), (THREAD_STACK_SIZE + 0x1000) ); // Free the stack
     kheap_free(thread->registers, sizeof(registers_t));  // Free the registers
     kheap_free(thread, sizeof(thread_t)); // Free the thread
 }
