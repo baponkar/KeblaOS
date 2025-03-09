@@ -36,7 +36,7 @@ extern int_entry_t int_entries[256];
 extern int_ptr_t int_ptr;
 extern char* exception_messages[];
 
-extern void *interrupt_routines[16];
+extern void (*interrupt_routines[224])(registers_t *);
 
 
 void disable_pic();

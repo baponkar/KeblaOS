@@ -2,7 +2,7 @@
 This file will hold general function which will
 be use in pic and apic interrupt.
 */
-
+#include "../timer/apic_timer.h"
 #include "../../driver/io/ports.h" // for outb
 #include "../../lib/stdio.h" //for printf
 
@@ -72,11 +72,13 @@ char* exception_messages[] = {
 int_entry_t int_entries[256];
 int_ptr_t int_ptr;
 
-void *interrupt_routines[16] =
-{
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0
-};
+// void *interrupt_routines[224] =
+// {
+//     0, 0, 0, 0, 0, 0, 0, 0,
+//     0, 0, 0, 0, 0, 0, 0, 0
+// };
+
+void (*interrupt_routines[224])(registers_t *) = { 0 };
 
 void interrupt_install_handler(int int_no, void (*handler)(registers_t *r))
 {
@@ -131,9 +133,10 @@ void test_interrupt() {
     // asm volatile("int $0xF");    // int no 15
     // asm volatile("int $0x10");   // int no 16
     // asm volatile("int $0x11");   // int no 17
-    asm volatile ("int $0x20");  // Interrupt Request, int no: 32, Timer Interrupt 
+    // asm volatile ("int $0x20");  // Interrupt Request, int no: 32, Timer Interrupt 
     // asm volatile ("int $0x21");  // Interrupt Request, int no : 33, Keyboard Interrupt
     // asm volatile ("int $0x22");  // Interrupt Request, int no: 34
+    asm volatile ("int $0x30");     // Interrupt Request, int no: 48
 }
 
 

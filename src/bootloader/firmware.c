@@ -42,3 +42,8 @@ void print_firmware_info(){
         printf("%s\n", FIRMWARE_TYPE);
     }
 }
+
+
+
+
+

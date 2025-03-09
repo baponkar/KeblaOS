@@ -134,6 +134,7 @@ void ioapic_remap_timer() {
 }
 
 
+// Installing ISR or CPU Exception into IDT
 void cpu_exception_install(){
    int_set_gate(  0, (uint64_t)&apic_isr0 ,  0x8, 0x8E);  // selector = 0x08 = 0b1000, 64-bit Interrupt Gate => attr = 0x8E = 1 0 00 1110, (p=0b1,0b0, dpl=0b00, gate type=0b1110)
    int_set_gate(  1, (uint64_t)&apic_isr1 ,  0x8, 0x8E);
@@ -170,8 +171,9 @@ void cpu_exception_install(){
    int_set_gate( 31, (uint64_t)&apic_isr31 , 0x8, 0x8E);
 }
 
+// Installing IRQ into IDT
 void apic_irq_install(){
-    int_set_gate(32, (uint64_t)&apic_irq0, 0x08, 0x8E);  // Timer Interrupt
+    int_set_gate(32, (uint64_t)&apic_irq0, 0x08, 0x8E);  // PIT Timer Interrupt
     int_set_gate(33, (uint64_t)&apic_irq1, 0x08, 0x8E);  // Keyboard Interrupt
     int_set_gate(34, (uint64_t)&apic_irq2, 0x08, 0x8E);  // Cascade (for PIC chaining)
     int_set_gate(35, (uint64_t)&apic_irq3, 0x08, 0x8E);  // COM2 (Serial Port 2)
@@ -187,18 +189,20 @@ void apic_irq_install(){
     int_set_gate(45, (uint64_t)&apic_irq13, 0x08, 0x8E); // FPU / Floating-Point Unit (Coprocessor)
     int_set_gate(46, (uint64_t)&apic_irq14, 0x08, 0x8E); // Primary ATA Hard Disk Controller
     int_set_gate(47, (uint64_t)&apic_irq15, 0x08, 0x8E); // Secondary ATA Hard Disk Controller
-    int_set_gate(48, (uint64_t)&apic_irq15, 0x08, 0x8E); // Secondary ATA Hard Disk Controller
+    int_set_gate(48, (uint64_t)&apic_irq16, 0x08, 0x8E); // APIC Timer
 }
 
 
 void apic_irq_handler(registers_t *regs)
-{
+{   
+    
     /* This is a blank function pointer */
     void (*handler)(registers_t *r);
     
     /* Find out if we have a custom handler to run for this
     *  IRQ, and then finally, run it */
     handler = interrupt_routines[regs->int_no - 32];
+
 
     if (handler)
     {
@@ -241,12 +245,13 @@ void init_apic_interrupt(){
 // This gets called from our ASM interrupt handler stub.
 void apic_isr_handler(registers_t *regs)
 {
+    printf("Inside of APIC_ISR_HANDLER\n");
     if(regs->int_no == 128){
-        printf("Received Interrupt : %d\n", regs->int_no);
+        printf("Received Interrupt(ISR) : %d\n", regs->int_no);
         // syscall_handler(&regs);
         return;
     }else if(regs->int_no == 177){
-        printf("Received Interrupt : %d\n", regs->int_no);
+        printf("Received Interrupt(ISR) : %d\n", regs->int_no);
         // syscall_handler(&regs);
         return;
     }else if (regs->int_no == 14) {
@@ -258,12 +263,12 @@ void apic_isr_handler(registers_t *regs)
         gpf_handler(regs);
         return;
     }else if(regs->int_no < 32){
-        printf("Received Interrupt : %d\n%s\nError Code : %d\nSystem Halted!\n", 
+        printf("Received Interrupt(ISR) : %d\n%s\nError Code : %d\nSystem Halted!\n", 
             regs->int_no, exception_messages[regs->int_no], regs->err_code);
         // debug_error_code(regs->err_code);
         halt_kernel();
     }else{
-        printf("Received Interrupt : %d\n", regs->int_no);
+        printf("Received Interrupt(ISR) : %d\n", regs->int_no);
         return;
     }
 }

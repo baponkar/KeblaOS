@@ -55,13 +55,16 @@ extern void pic_isr28();
 extern void pic_isr29();
 extern void pic_isr30();
 extern void pic_isr31();
+
 extern void pic_isr128();
 extern void pic_isr177();
 
 void pic_isr_handler(registers_t *regs);
 void pic_isr_install();
+
 void pic_irq_handler(registers_t *regs);
 void pic_irq_remap();
+
 void pic_irq_install();
 void init_pic_interrupt();
 

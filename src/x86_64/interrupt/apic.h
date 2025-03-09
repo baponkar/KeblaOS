@@ -22,6 +22,7 @@ extern void apic_irq12();
 extern void apic_irq13();
 extern void apic_irq14();
 extern void apic_irq15();
+extern void apic_irq16();
 
 extern void apic_isr0();
 extern void apic_isr1();
