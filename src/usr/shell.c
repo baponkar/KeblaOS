@@ -14,17 +14,18 @@
 #include "../x86_64/interrupt/interrupt.h"
 #include "../kernel/kernel.h"
 
-#include "../x86_64/rtc/rtc.h"
+#include "../x86_64/timer/rtc.h"
 
 #include "../driver/image_data.h"
 
+#include "../acpi/acpi.h"
+#include "../acpi/fadt.h"
 
-#include "../bootloader/fadt.h"
 #include "../bootloader/boot.h"
 #include "../bootloader/memory.h"
 #include "../bootloader/firmware.h"
 
-#include "../bootloader/acpi.h"
+
 
 #include "shell.h"
 

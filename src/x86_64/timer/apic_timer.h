@@ -1,10 +1,15 @@
-
+#include "../../util/util.h"
 #include <stdint.h>
 
-extern int ticks1;
+extern int apic_ticks;
 
-void tsc_sleep(uint64_t microseconds);
+
+
+
 void apic_delay(uint32_t milliseconds);
+void apic_timer_handler(registers_t *regs);
+
 void init_apic_timer();
 
-void apic_timer_handler(registers_t *regs);
+
+

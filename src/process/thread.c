@@ -15,6 +15,7 @@
 #define THREAD_STACK_GAP 0x2000
 #define KERNEL_SS  0x10
 #define KERNEL_CS  0x08
+#define FLAGS 0x202
 
 
 size_t next_free_tid = 0;
@@ -49,16 +50,6 @@ thread_t* create_thread(process_t* parent, const char* name, void (*function)(vo
     // Assign the next available TID
     thread->tid = next_free_tid++;
     thread->status = READY;
-    thread->registers = (registers_t*) kheap_alloc(sizeof(registers_t));
-
-    if (!thread->registers) {
-        printf("thread->registers allocation failed!\n");
-        kheap_free(thread, sizeof(thread_t));
-        next_free_tid--; // Revert the TID counter if register allocation fails
-        return NULL;
-    }
-    memset((void*)thread->registers, 0, sizeof(registers_t)); // Initialize registers to 0
-
     strncpy(thread->name, name, THREAD_NAME_MAX_LEN - 1);
     thread->name[THREAD_NAME_MAX_LEN - 1] = '\0'; // Ensure null-termination
 
@@ -69,24 +60,21 @@ thread_t* create_thread(process_t* parent, const char* name, void (*function)(vo
     // Allocate a stack for the thread
     // void* stack = (void*) kheap_alloc(THREAD_STACK_SIZE);
     void* stack = (void*) kheap_alloc(THREAD_STACK_SIZE + THREAD_STACK_GAP); // Add 4KB padding
-
-
-    if (!stack) { // If stack allocation fails, free the registers and thread
+    if (!stack) { // If stack allocation fails, free the thread
         printf("Stack allocation failed!\n");
-        kheap_free(thread->registers, sizeof(registers_t));
         kheap_free(thread, sizeof(thread_t));
         next_free_tid--; // Revert the TID counter if stack allocation fails
         return NULL;
     }
 
     // Set up the thread's stack and registers to execute the provided function
-    thread->registers->iret_ss = KERNEL_SS;
-    thread->registers->iret_rsp = ((uint64_t)stack + THREAD_STACK_SIZE) & ~0xF; // Align stack , Stack grows downward
-    thread->registers->iret_rflags = 0x202;             // Enable interrupts (default flags)
-    thread->registers->iret_cs = KERNEL_CS;             // Assume a default code segment selector
-    thread->registers->iret_rip = (uint64_t) function;  // Instruction pointer = function address
-    thread->registers->rdi = (uint64_t) arg;            // First argument (rdi) = arg
-    thread->registers->rbp = 0;                         // Base pointer = 0
+    thread->registers.iret_ss = KERNEL_SS;
+    thread->registers.iret_rsp = ((uint64_t)stack + THREAD_STACK_SIZE) & ~0xF; // Align stack , Stack grows downward
+    thread->registers.iret_rflags = FLAGS;              // Enable interrupts (default flags)
+    thread->registers.iret_cs = KERNEL_CS;             // Assume a default code segment selector
+    thread->registers.iret_rip = (uint64_t) function;  // Instruction pointer = function address
+    thread->registers.rdi = (uint64_t) arg;            // First argument (rdi) = arg
+    thread->registers.rbp = 0;                         // Base pointer = 0
 
     add_thread(thread);                                 // Add the thread to the parent process's thread list
 
@@ -94,8 +82,8 @@ thread_t* create_thread(process_t* parent, const char* name, void (*function)(vo
         thread->name, 
         thread->tid, 
         (uint64_t)thread, 
-        thread->registers->iret_rip, 
-        thread->registers->iret_rsp);
+        thread->registers.iret_rip, 
+        thread->registers.iret_rsp);
 
     return thread;
 }
@@ -134,8 +122,7 @@ void delete_thread(thread_t* thread) {
     remove_thread(thread); // Remove the thread from the process's thread list
 
     // Free the thread's stack and registers
-    kheap_free((void*)(thread->registers->iret_rsp - THREAD_STACK_SIZE), (THREAD_STACK_SIZE + 0x1000) ); // Free the stack
-    kheap_free(thread->registers, sizeof(registers_t));  // Free the registers
+    kheap_free((void*)(thread->registers.iret_rsp - THREAD_STACK_SIZE), (THREAD_STACK_SIZE +  THREAD_STACK_GAP) ); // Free the stack
     kheap_free(thread, sizeof(thread_t)); // Free the thread
 }
 

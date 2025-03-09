@@ -1,17 +1,23 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
 
-#include "../../bootloader/acpi.h"
+#include "../../acpi/acpi.h"
 
 
-struct HpetSdt {
-    acpi_header_t header;
+struct hpet{
+    acpi_header_t header;  // Standard ACPI header
     uint32_t event_timer_block_id;
-    uint32_t reserved;
-    uint64_t address;
-    uint8_t id;
-    uint16_t min_ticks;
-    uint8_t page_protection;
-}__attribute__((packed));
+    GenericAddressStructure_t base_address;
+    uint8_t hpet_number;
+    uint16_t min_tick;
+    uint8_t attributes;
+} __attribute__((packed));
+typedef struct hpet hpet_t;
+
+
+void init_hpet();
+
 

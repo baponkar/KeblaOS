@@ -1,7 +1,9 @@
 /*
     CPU details
-    Symmetric Multiprocessing
+    Symmetric Multi Processing(SMP)
 */
+
+
 #include "../limine/limine.h"
 #include "../lib/stdio.h"
 
@@ -91,12 +93,14 @@ void get_cpu_vendor(char *vendor) {
     }
 }
 
+
 void print_cpu_vendor() {
     char vendor[13];
     get_cpu_vendor(vendor);
     printf("CPU Vendor : %s\n", vendor);
     
 }
+
 
 void get_cpu_brand(char *brand) {
     int eax, ebx, ecx, edx;
@@ -146,20 +150,44 @@ void print_cpu_brand() {
 }
 
 
+
 int getLogicalProcessorCount() {
-    unsigned int eax, ebx, ecx, edx;
+    uint32_t eax, ebx, ecx, edx;
+    cpuid(0x1, &eax, &ebx, &ecx, &edx);
 
-    // Check CPUID support (simplified)
-    __asm__ volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0));
+    return (ebx >> 16) & 0xFF;  // Bits 23:16 contain logical processor count
+}
 
-    // Get extended CPUID support
-    __asm__ volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0x80000000));
 
-    if (eax >= 0x80000008) {
-        // Get logical processor count
-        __asm__ volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0x80000008));
-        return (ebx & 0xFF); // Extract logical core count from lower 8 bits.
+
+
+
+static inline void cpuid(uint32_t leaf, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
+    __asm__ volatile ("cpuid"
+                      : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx)
+                      : "a"(leaf));
+}
+
+uint32_t get_cpu_base_frequency() {
+    uint32_t max_cpuid_leaf, eax, ebx, ecx, edx;
+
+    // Get the maximum supported CPUID leaf
+    cpuid(0x0, &max_cpuid_leaf, &ebx, &ecx, &edx);
+
+    // Check if 0x16 is supported
+    if (max_cpuid_leaf < 0x16) {
+        return 0;  // CPUID 0x16 is not available
     }
 
-    return 1; // Default to 1 processor if CPUID fails.
+    // Call CPUID 0x16
+    cpuid(0x16, &eax, &ebx, &ecx, &edx);
+
+    if (eax == 0) {
+        return 0;  // CPU does not report frequency
+    }
+
+    return eax * 1000000ULL;  // Convert MHz to Hz
 }
+
+
+

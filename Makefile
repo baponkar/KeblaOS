@@ -12,6 +12,7 @@ DEBUG_DIR = debug
 BUILD_DIR = build
 ISO_DIR = iso_root
 BOOTLOADER_DIR = $(SRC_DIR)/bootloader
+ACPI_DIR = $(SRC_DIR)/acpi
 KERNEL_DIR = $(SRC_DIR)/kernel
 UTIL_DIR = $(SRC_DIR)/util
 DRIVER_DIR = $(SRC_DIR)/driver
@@ -20,7 +21,6 @@ X86_64_DIR = $(SRC_DIR)/x86_64
 GDT_DIR = $(SRC_DIR)/x86_64/gdt
 INT_DIR = $(SRC_DIR)/x86_64/interrupt
 TIMER_DIR = $(SRC_DIR)/x86_64/timer
-RTC_DIR = $(SRC_DIR)/x86_64/rtc
 MMU_DIR = $(SRC_DIR)/mmu
 USR_DIR = $(SRC_DIR)/usr
 PS_DIR = $(SRC_DIR)/process
@@ -71,9 +71,13 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(UTIL_DIR)/util.c -o $(BUILD_DIR)/util.o
 
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/boot.c -o $(BUILD_DIR)/boot.o
-	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/acpi.c -o $(BUILD_DIR)/acpi.o
-	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/fadt.c -o $(BUILD_DIR)/fadt.o
-	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/madt.c -o $(BUILD_DIR)/madt.o
+
+	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/acpi.c -o $(BUILD_DIR)/acpi.o
+	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/rsdt.c -o $(BUILD_DIR)/rsdt.o
+	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/fadt.c -o $(BUILD_DIR)/fadt.o
+	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/madt.c -o $(BUILD_DIR)/madt.o
+	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/mcfg.c -o $(BUILD_DIR)/mcfg.o
+
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/ahci.c -o $(BUILD_DIR)/ahci.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/pci.c -o $(BUILD_DIR)/pci.o
 	
@@ -116,9 +120,11 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(NASM) $(NASM_FLAG) $(INT_DIR)/apic_irq.asm -o $(BUILD_DIR)/apic_irq.o
 
 
-	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/pic_timer.c -o $(BUILD_DIR)/pic_timer.o
+	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/tsc.c -o $(BUILD_DIR)/tsc.o
+	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/pit_timer.c -o $(BUILD_DIR)/pit_timer.o
 	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/apic_timer.c -o $(BUILD_DIR)/apic_timer.o
-	$(GCC) $(GCC_FLAG) -c $(RTC_DIR)/rtc.c -o $(BUILD_DIR)/rtc.o
+	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/hpet_timer.c -o $(BUILD_DIR)/hpet_timer.o
+	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/rtc.c -o $(BUILD_DIR)/rtc.o
 
 
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/keyboard/keyboard.c -o $(BUILD_DIR)/keyboard.o
@@ -147,8 +153,10 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/boot.o \
 						$(BUILD_DIR)/acpi.o \
+						$(BUILD_DIR)/rsdt.o \
 						$(BUILD_DIR)/fadt.o \
 						$(BUILD_DIR)/madt.o \
+						$(BUILD_DIR)/mcfg.o \
 						$(BUILD_DIR)/ahci.o \
 						$(BUILD_DIR)/pci.o \
 						$(BUILD_DIR)/ports.o \
@@ -173,8 +181,10 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/pmm.o \
 						$(BUILD_DIR)/vmm.o \
 						$(BUILD_DIR)/kmalloc.o \
-						$(BUILD_DIR)/pic_timer.o \
+						$(BUILD_DIR)/tsc.o \
+						$(BUILD_DIR)/pit_timer.o \
 						$(BUILD_DIR)/apic_timer.o \
+						$(BUILD_DIR)/hpet_timer.o \
 						$(BUILD_DIR)/rtc.o \
 						$(BUILD_DIR)/keyboard.o  \
 						$(BUILD_DIR)/shell.o \
@@ -197,8 +207,10 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
 						$(BUILD_DIR)/boot.o \
 						$(BUILD_DIR)/acpi.o \
+						$(BUILD_DIR)/rsdt.o \
 						$(BUILD_DIR)/fadt.o \
 						$(BUILD_DIR)/madt.o \
+						$(BUILD_DIR)/mcfg.o \
 						$(BUILD_DIR)/ahci.o \
 						$(BUILD_DIR)/pci.o \
 						$(BUILD_DIR)/kernel.o \
@@ -213,6 +225,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/util.o \
 						$(BUILD_DIR)/interrupt.o \
 						$(BUILD_DIR)/interrupt_flush.o \
+						$(BUILD_DIR)/tsc.o \
 						$(BUILD_DIR)/pic.o \
 						$(BUILD_DIR)/pic_isr.o \
 						$(BUILD_DIR)/pic_irq.o \
@@ -224,8 +237,9 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/pmm.o \
 						$(BUILD_DIR)/vmm.o \
 						$(BUILD_DIR)/kmalloc.o \
-						$(BUILD_DIR)/pic_timer.o \
+						$(BUILD_DIR)/pit_timer.o \
 						$(BUILD_DIR)/apic_timer.o \
+						$(BUILD_DIR)/hpet_timer.o \
 						$(BUILD_DIR)/rtc.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/shell.o \

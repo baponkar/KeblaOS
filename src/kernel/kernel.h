@@ -1,6 +1,8 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdatomic.h>
+#include <cpuid.h>
 
 #define OS_NAME "KeblaOS"
 #define OS_VERSION "0.13"

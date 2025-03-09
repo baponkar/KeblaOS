@@ -20,6 +20,7 @@ https://wiki.osdev.org/Brendan%27s_Multi-tasking_Tutorial
 #include "../mmu/kheap.h"
 #include "../x86_64/interrupt/interrupt.h"  // for enable_interrupt and disable_interrupt
 #include "../x86_64/timer/apic_timer.h"     // for apic_delay
+#include "../x86_64/timer/pit_timer.h"      // for delay
 #include "../util/util.h"
 #include "thread.h"
 #include "types.h"
@@ -27,6 +28,7 @@ https://wiki.osdev.org/Brendan%27s_Multi-tasking_Tutorial
 
 
 extern void restore_cpu_state(registers_t* registers);
+
 size_t next_free_pid = 0;           // Available free process id
 process_t *current_process;         // Current running process
 process_t *processes_list = NULL;   // List of all processes
@@ -127,9 +129,9 @@ registers_t* schedule(registers_t* registers) {
     current_process->current_thread->status = READY;
 
     // Save the current thread's register state
-    // current_process->current_thread->registers = registers;
-    memcpy(current_process->current_thread->registers, registers, sizeof(registers_t));
-    if (memcmp(current_process->current_thread->registers, registers, sizeof(registers_t)) != 0) {
+    // current_process->current_thread->registers = *registers;
+    memcpy((void*)&current_process->current_thread->registers, registers, sizeof(registers_t));
+    if (memcmp((void*)&current_process->current_thread->registers, registers, sizeof(registers_t)) != 0) {
         printf("registers assignment failed!\n");
         return NULL;
     }
@@ -160,31 +162,34 @@ registers_t* schedule(registers_t* registers) {
     current_process->current_thread = next_thread;
     current_process->current_thread->status = RUNNING;
     
-    return current_process->current_thread->registers;
+    return (registers_t *) &current_process->current_thread->registers;
 }
 
 
 
 void thread0_func(void *arg) {
     while(true){
-        printf("Ticks: %d, Thread0 is Running...\n", ticks1);
-        apic_delay(1000);
+        printf("Ticks: %d, Thread0 is Running...\n", apic_ticks);
+        // apic_delay(1000);
+        delay(1000);
     }
 }
 
 
 void thread1_func(void* arg) {
     while(true) {
-        printf("Ticks: %d, Thread1 is Running...\n", ticks1);
-        apic_delay(1000);
+        printf("Ticks: %d, Thread1 is Running...\n", apic_ticks);
+        // apic_delay(1000);
+        delay(1000);
     }
 }
 
 
 void thread2_func(void* arg) {
     while(true) {
-        printf("Ticks: %d, Thread2 is Running...\n", ticks1);
-        apic_delay(1000);
+        printf("Ticks: %d, Thread2 is Running...\n", apic_ticks);
+        // apic_delay(1000);
+        delay(1000);
     }
 }
 
@@ -194,7 +199,7 @@ void print_all_threads_name(process_t *p){
         printf("Thread Name : %s | *thread: %x | rsp: %x | thread_next: %x\n", 
             t->name,
             (uint64_t)t, 
-            t->registers->iret_rsp, 
+            t->registers.iret_rsp, 
             (uint64_t)t->next);
         t = t->next;
     }
@@ -203,8 +208,9 @@ void print_all_threads_name(process_t *p){
 
 
 void init_processes() {
+    
     // Create the init process
-    process_t *process = create_process("process0", (void *) &thread0_func, NULL);
+    process_t *process = create_process("process0", (void *)&thread0_func, NULL);
     if (!process) {
         printf("Failed to create init process\n");
         return;
@@ -217,7 +223,7 @@ void init_processes() {
     }
 
     // Create a thread with an argument
-    thread_t* thread1 = create_thread(process, "Thread1", (void *) &thread1_func, NULL);
+    thread_t* thread1 = create_thread(process, "Thread1", (void *)&thread1_func, NULL);
     if (!thread1) {
         printf("Failed to create Thread1\n");
         return;
@@ -230,7 +236,6 @@ void init_processes() {
         return;
     }
 
-    
     // Set the current process
     current_process = process;
     processes_list = process;

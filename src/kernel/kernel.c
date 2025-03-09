@@ -1,5 +1,3 @@
-
-
 /*
 Kernel.c
 Build Date  : 16-12-2024
@@ -13,8 +11,8 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "../process/process.h" 
 // #include "../pcb/task.h"
-
-#include "../bootloader/acpi.h" // init_acpi
+#include "../acpi/acpi.h" // init_acpi
+#include "../x86_64/interrupt/interrupt.h"
 #include "../x86_64/interrupt/apic.h"
 #include "../x86_64/interrupt/pic.h" // init_idt, test_interrupt
 #include "../bootloader/ahci.h"
@@ -23,33 +21,29 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../bootloader/cpu.h"
 #include "../bootloader/memory.h"
 #include "../bootloader/firmware.h"
-
 #include "../limine/limine.h" // bootloader info
 #include "../bootloader/boot.h" // bootloader info
 #include "../lib/stdio.h" // printf
 #include "../util/util.h" // registers_t , halt_kernel
-
 #include "../driver/vga/framebuffer.h"
 #include "../driver/vga/vga_term.h" // vga_init, print_bootloader_info, print_memory_map, display_image
 #include "../driver/image_data.h"
-
 #include "../driver/io/serial.h"
-
 #include "../x86_64/gdt/gdt.h" // init_gdt
-
 #include "../mmu/pmm.h" // init_pmm, test_pmm
 #include "../mmu/paging.h" // init_paging, test_paging
 #include "../mmu/kmalloc.h" // test_kmalloc
 #include "../mmu/vmm.h" // test_vmm
 #include "../mmu/kheap.h" // init_kheap, test_kheap
 #include "../driver/keyboard/keyboard.h" // initKeyboard
-#include "../x86_64/timer/pic_timer.h" // init_timer
+#include "../x86_64/timer/pit_timer.h" // init_timer
 #include "../x86_64/timer/apic_timer.h"
-
+#include "../x86_64/timer/hpet_timer.h"
 #include "../usr/shell.h"
 
-
 #include "kernel.h"
+
+
 
 
 
@@ -61,31 +55,44 @@ void kmain(){
 
     printf("%s - %s\n", OS_NAME, OS_VERSION);
 
+    init_acpi();
+
     init_gdt();
 
-    if(has_apic() == 1){
-        init_apic_interrupt();
-        init_apic_timer();
-    }else{
-        init_pic_interrupt();
-        init_pic_timer(1);
-    }
+    // init_hpet();
+
+    // if(has_apic() == 1){
+    //     init_apic_interrupt();
+    //     init_apic_timer();
+    // }else{
+    //     init_pic_interrupt();
+    //     init_pit_timer(1);
+    // }
+
+    init_pic_interrupt();
+    init_pit_timer();
+    delay(1000);
     
-    initKeyboard();
 
     init_pmm();
     init_paging();
     init_kheap();
-    
-    init_acpi();
 
+    print_cpu_vendor();
+    print_cpu_brand();
+    printf("Logical Processor Count: %d\n", getLogicalProcessorCount());
+    
     // detect_ahci();
     // init_ahci( 0xFEBD5000);
     // pci_scan();
     // get_disk_info();
 
+    // test_interrupt();
 
-    init_processes();
+
+    initKeyboard();
+
+    // init_processes();
     
     halt_kernel();
 }

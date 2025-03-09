@@ -180,11 +180,12 @@ void init_pic_interrupt(){
     interrupt_flush((uint64_t) &int_ptr);
 
     pic_isr_install();
+
     pic_irq_remap();
     pic_irq_install();
 
     enable_interrupts();
-    printf("Successfully IDT Initialized.\n");
+    printf("Successfully PIC Initialized.\n");
 }
 
 

@@ -18,7 +18,7 @@ struct thread {                     // Allocated size 0x70
     process_t* parent;              // Reference to parent process
     struct thread* next;            // Linked list for threads
     uint64_t cpu_time;              // Track CPU time per thread
-    registers_t *registers;         // Thread registers
+    registers_t registers;          // Thread registers
 };
 
 
