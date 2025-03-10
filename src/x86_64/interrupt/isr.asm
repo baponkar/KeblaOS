@@ -1,9 +1,15 @@
+;
+; This code push a dummy error code which isr not pushing error code and pushing interrupt number
+; inside the stack. Then call the isr_handler.
+;
 
-[extern pic_isr_handler]        ; defined in pic.c
+
+
+[extern isr_handler]        ; defined in pic.c
 
 %macro ISR_NOERRCODE 1
-    [global pic_isr%1]
-    pic_isr%1:
+    [global isr%1]
+    isr%1:
         cli;
 
         push 0          ; Dummy error code
@@ -33,7 +39,7 @@
         
         mov rdi, rsp         ; Pass pointer to the `registers_t` structure
         cld                  ; Clear the direction flag
-        call pic_isr_handler ; Call the interrupt handler
+        call isr_handler ; Call the interrupt handler
 
         pop gs               ; Restore segment registers
         pop fs
@@ -64,8 +70,8 @@
 
 
 %macro ISR_ERRCODE 1
-    [global pic_isr%1]
-    pic_isr%1:
+    [global isr%1]
+    isr%1:
         cli
                             ; Do not need to push dummy error code 
         push %1             ; Interrupt number
@@ -95,7 +101,7 @@
 
         mov rdi, rsp         ; Pass pointer to the `registers_t` structure
         cld                  ; Clear the direction flag
-        call pic_isr_handler ; Call the interrupt handler
+        call isr_handler ; Call the interrupt handler
 
         pop gs               ; Restore segment registers
         pop fs

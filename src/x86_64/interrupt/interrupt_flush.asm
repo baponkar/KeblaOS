@@ -1,6 +1,6 @@
 
 section .text
-[global interrupt_flush]
-interrupt_flush:
+[global idt_flush]
+idt_flush:
     lidt [rdi]              ; Load the IDT pointer
     ret

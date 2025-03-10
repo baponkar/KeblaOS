@@ -48,6 +48,7 @@ Reference   : https://wiki.osdev.org/Limine
 
 
 void kmain(){
+
     serial_init();
     get_bootloader_info();
     get_memory_info();
@@ -61,26 +62,20 @@ void kmain(){
 
     // init_hpet();
 
-    // if(has_apic() == 1){
-    //     init_apic_interrupt();
-    //     init_apic_timer();
-    // }else{
-    //     init_pic_interrupt();
-    //     init_pit_timer(1);
-    // }
-
-    init_pic_interrupt();
+    init_interrupt();
     init_pit_timer();
-    delay(1000);
+
+    init_apic_interrupt();
+    init_apic_timer(100);
     
 
     init_pmm();
     init_paging();
     init_kheap();
 
-    print_cpu_vendor();
-    print_cpu_brand();
-    printf("Logical Processor Count: %d\n", getLogicalProcessorCount());
+    // print_cpu_vendor();
+    // print_cpu_brand();
+    // printf("Logical Processor Count: %d\n", getLogicalProcessorCount());
     
     // detect_ahci();
     // init_ahci( 0xFEBD5000);
@@ -88,7 +83,6 @@ void kmain(){
     // get_disk_info();
 
     // test_interrupt();
-
 
     initKeyboard();
 

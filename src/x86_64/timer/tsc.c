@@ -18,7 +18,7 @@ https://wiki.osdev.org/TSC
 
 
 
-uint64_t cpu_frequency_hz = 0;  // Cached CPU frequency in Hz
+uint64_t cpu_frequency_hz1 = 0;  // Cached CPU frequency in Hz
 
 
 static inline uint64_t rdmsr(uint32_t msr) {
@@ -40,7 +40,7 @@ void tsc_sleep(uint64_t microseconds) {
     uint64_t start = read_tsc();
     
     // freq cycles in 1 s; 1 cycle = 1/freq s; x µs = x/1000000 s; no. of cycle in x µs = x*freq/1000000
-    uint64_t cycles_to_wait = (microseconds * cpu_frequency_hz) / 1000000; // Adjust based on CPU frequency
+    uint64_t cycles_to_wait = (microseconds * cpu_frequency_hz1) / 1000000; // Adjust based on CPU frequency
 
     while ((read_tsc() - start) < cycles_to_wait); // Wait in loop to perform all loops
 }
@@ -69,7 +69,7 @@ uint64_t get_cpu_freq_msr() {
 
 
 void init_tsc(){
-    cpu_frequency_hz = get_cpu_freq_msr();
+    cpu_frequency_hz1 = get_cpu_freq_msr();
 }
 
 
