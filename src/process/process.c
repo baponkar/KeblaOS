@@ -33,6 +33,7 @@ size_t next_free_pid = 0;           // Available free process id
 process_t *current_process;         // Current running process
 process_t *processes_list = NULL;   // List of all processes
 
+extern volatile uint64_t pit_ticks;
 
 process_t* create_process(const char* name, void (*function)(void*), void* arg) {
     
@@ -169,27 +170,27 @@ registers_t* schedule(registers_t* registers) {
 
 void thread0_func(void *arg) {
     while(true){
-        printf("Ticks: %d, Thread0 is Running...\n", apic_ticks);
+        printf("Ticks: %d, Thread0 is Running...\n", pit_ticks);
         // apic_delay(1000);
-        delay(1000);
+        pit_sleep(1000);
     }
 }
 
 
 void thread1_func(void* arg) {
     while(true) {
-        printf("Ticks: %d, Thread1 is Running...\n", apic_ticks);
+        printf("Ticks: %d, Thread1 is Running...\n", pit_ticks);
         // apic_delay(1000);
-        delay(1000);
+        pit_sleep(1000);
     }
 }
 
 
 void thread2_func(void* arg) {
     while(true) {
-        printf("Ticks: %d, Thread2 is Running...\n", apic_ticks);
+        printf("Ticks: %d, Thread2 is Running...\n", pit_ticks);
         // apic_delay(1000);
-        delay(1000);
+        pit_sleep(1000);
     }
 }
 

@@ -3,7 +3,6 @@
 #include <stdint.h>
 
 
-
 void init_pit_timer();
-void delay(uint32_t ms);
+void pit_sleep(uint32_t ms);
 

@@ -1,15 +1,16 @@
+;
+; This code push a dummy error code(0) and interrupt number inside
+; the stack. Then call irq_handler function
 
 
-[extern apic_irq_handler]   ; defined in apic.c 
-[extern apic_irq_handler]   ; defined in apic.c
-
+[extern irq_handler]   ; defined in pic.c 
+[extern irq_handler]   ; defined in pic.c
 
 ; Setup Interrupt Request(IRQ)
 %macro IRQ 2
-    [global apic_irq%1]
-    apic_irq%1:
+    [global irq%1]
+    irq%1:
         cli
-
         ; Stack already has 5*8=40 bytes data
         push 0               ; Dummy error code
         push %2              ; Interrupt number
@@ -38,14 +39,10 @@
         push fs
         push gs
         
-        mov rdi, rsp                    ; Pass the current stack pointer to `irq_handler`
+        mov rdi, rsp                    ; Pass the current stack pointer to `pic_irq_handler`
         cld
-        call apic_irq_handler
-
-        ; Send EOI to APIC
-        ; mov rax, 0
-        ; mov rdx, 0xFEE000B0  ; APIC EOI register
-        ; mov [rdx], eax
+        call irq_handler
+        
 
         ; Restore segment registers
         pop gs
@@ -72,8 +69,7 @@
         pop r15
         add rsp, 16 ; Clean up interrupt no and dummy error code
         
-        sti         ; re enable interrupt
-        iretq       ; Return from Interrupt
+        iretq                    ; Return from Interrupt
 %endmacro
 
 
@@ -94,4 +90,5 @@ IRQ  12,    44
 IRQ  13,    45
 IRQ  14,    46
 IRQ  15,    47
+
 IRQ  16,    48

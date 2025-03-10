@@ -112,12 +112,10 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(NASM) $(NASM_FLAG) $(INT_DIR)/interrupt_flush.asm -o $(BUILD_DIR)/interrupt_flush.o
 
 	$(GCC) $(GCC_FLAG) -c $(INT_DIR)/pic.c -o $(BUILD_DIR)/pic.o
-	$(NASM) $(NASM_FLAG) $(INT_DIR)/pic_isr.asm -o $(BUILD_DIR)/pic_isr.o
-	$(NASM) $(NASM_FLAG) $(INT_DIR)/pic_irq.asm -o $(BUILD_DIR)/pic_irq.o
-
+	$(NASM) $(NASM_FLAG) $(INT_DIR)/isr.asm -o $(BUILD_DIR)/isr.o
+	$(NASM) $(NASM_FLAG) $(INT_DIR)/irq.asm -o $(BUILD_DIR)/irq.o
 	$(GCC) $(GCC_FLAG) -c $(INT_DIR)/apic.c -o $(BUILD_DIR)/apic.o
-	$(NASM) $(NASM_FLAG) $(INT_DIR)/apic_isr.asm -o $(BUILD_DIR)/apic_isr.o
-	$(NASM) $(NASM_FLAG) $(INT_DIR)/apic_irq.asm -o $(BUILD_DIR)/apic_irq.o
+
 
 
 	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/tsc.c -o $(BUILD_DIR)/tsc.o
@@ -171,11 +169,9 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/interrupt.o \
 						$(BUILD_DIR)/interrupt_flush.o \
 						$(BUILD_DIR)/pic.o \
-						$(BUILD_DIR)/pic_isr.o \
-						$(BUILD_DIR)/pic_irq.o \
+						$(BUILD_DIR)/isr.o \
+						$(BUILD_DIR)/irq.o \
 						$(BUILD_DIR)/apic.o \
-						$(BUILD_DIR)/apic_isr.o \
-						$(BUILD_DIR)/apic_irq.o \
 						$(BUILD_DIR)/load_paging.o \
 						$(BUILD_DIR)/paging.o \
 						$(BUILD_DIR)/pmm.o \
@@ -227,11 +223,9 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/interrupt_flush.o \
 						$(BUILD_DIR)/tsc.o \
 						$(BUILD_DIR)/pic.o \
-						$(BUILD_DIR)/pic_isr.o \
-						$(BUILD_DIR)/pic_irq.o \
+						$(BUILD_DIR)/isr.o \
+						$(BUILD_DIR)/irq.o \
 						$(BUILD_DIR)/apic.o \
-						$(BUILD_DIR)/apic_isr.o \
-						$(BUILD_DIR)/apic_irq.o \
 						$(BUILD_DIR)/load_paging.o \
 						$(BUILD_DIR)/paging.o \
 						$(BUILD_DIR)/pmm.o \
