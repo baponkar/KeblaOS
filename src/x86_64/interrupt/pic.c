@@ -174,13 +174,10 @@ void init_interrupt(){
 
     int_ptr.limit = (sizeof(int_entry_t) * 256) - 1;
     int_ptr.base  = (uint64_t) &int_entries;
-
     // for safety clearing memories
     memset((void *)&int_entries, 0, (size_t) (sizeof(int_entry_t) * 256));
     idt_flush((uint64_t) &int_ptr);
-
     set_descriptor_table();
-
     pic_irq_remap();
    
     enable_interrupts();

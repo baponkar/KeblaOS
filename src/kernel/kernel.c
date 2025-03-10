@@ -86,7 +86,7 @@ void kmain(){
 
     initKeyboard();
 
-    // init_processes();
+    init_processes();
     
     halt_kernel();
 }

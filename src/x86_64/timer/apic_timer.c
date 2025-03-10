@@ -36,10 +36,11 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/08_Timer
 #define APIC_LVT_TIMER_MODE_PERIODIC (1 << 17)             // Periodic mode bit
 #define APIC_LVT_INT_MASKED          (1 << 16)             // Mask interrupt
 
+extern void restore_cpu_state(registers_t* registers);
 
 extern uint64_t pit_ticks;
-uint64_t cpu_frequency_hz = 1600000000;                    // Cached CPU frequency in Hz
 volatile uint64_t apic_ticks = 0;
+uint64_t cpu_frequency_hz = 1600000000;                    // Cached CPU frequency in Hz
 volatile uint64_t apic_timer_ticks_per_ms = 0;
 
 
@@ -64,11 +65,9 @@ void calibrate_apic_timer() {
     uint64_t start_ticks = pit_ticks;  // Capture PIT ticks
 
     // Wait for 10 PIT ticks (100 ms delay)
-    // while (pit_ticks < start_ticks + 10){
-    //     printf("pit_ticks: %d\n", pit_ticks);
-    // }
-
-    pit_sleep(100); // Sleep PIT timer for 100 millisecond which can hold 10 PIT interrupt
+    while (pit_ticks < start_ticks + 10){
+        asm volatile("hlt");
+    }
 
     // Read remaining APIC timer count
     uint32_t end_count = mmio_read(APIC_REGISTER_TIMER_CURRCNT);
@@ -85,10 +84,21 @@ void apic_timer_handler(registers_t *regs) {
 
     if(apic_ticks >= MAX_APIC_TICKS) apic_ticks = 0;
     apic_ticks++;
+
+    // printf("APIC Tick: %d\n", apic_ticks);
+
+    // Saving the current thread state and selecting the next thread
+    registers_t* new_regs = schedule(regs); 
+
+    if(new_regs){
+        printf("Switching Thread: %d | rip: %x | rsp: %x\n", 
+            current_process->current_thread->tid,
+            current_process->current_thread->registers.iret_rip,
+            current_process->current_thread->registers.iret_rsp);
+        restore_cpu_state(new_regs);        // Restoring the next thread's state
+    }
+
     apic_send_eoi();
-
-    printf("APIC Tick: %d\n", apic_ticks);
-
 }
 
 void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large count
@@ -110,7 +120,9 @@ void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large cou
 
 void apic_delay(uint32_t milliseconds) {
     uint32_t target_ticks = apic_ticks + (milliseconds / 10);  // Convert ms to 10ms ticks
-    while (apic_ticks < target_ticks);
+    while (apic_ticks < target_ticks){
+        asm volatile ("hlt");
+    }
 }
 
 

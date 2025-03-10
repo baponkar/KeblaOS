@@ -40,17 +40,7 @@ void pit_timerHandler(registers_t *regs) {
     // if (ticks % 100 == 0) printf("PIT Tick no : %d\n", ticks);  // Prints every 1 sec
 
     if (pit_ticks % 10 == 0){   // Prints in every 0.1 sec interval
-        printf("(Inside of pit_timerHandler) PIT Tick no : %d\n", pit_ticks);
-        // Saving the current thread state and selecting the next thread
-        // registers_t* new_regs = schedule(regs); 
-
-        // if(new_regs){
-        //     printf("Switching Thread: %d | rip: %x | rsp: %x\n", 
-        //         current_process->current_thread->tid,
-        //         current_process->current_thread->registers.iret_rip,
-        //         current_process->current_thread->registers.iret_rsp);
-        //     restore_cpu_state(new_regs);        // Restoring the next thread's state
-        // }
+        // printf("(Inside of pit_timerHandler) PIT Tick no : %d\n", pit_ticks);
     }
 
     outb(0x20, 0x20); // Send End of Interrupt (EOI) to the PIC
@@ -79,8 +69,7 @@ void pit_sleep(uint32_t millisec) {
     uint64_t endTicks = pit_ticks + ((frequency * millisec) / 1000);  // Convert milliseconds to ticks
 
     while (pit_ticks < endTicks){             // Busy wait for the timer to reach the desired tick count
-        // asm volatile ("sti; hlt; cli");
-        printf("Inside of pit_sleep: pit_ticks: %d\n", pit_ticks);
+        asm volatile ("sti; hlt; cli");
     } 
 }
 
