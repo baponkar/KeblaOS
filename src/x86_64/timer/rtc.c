@@ -66,6 +66,8 @@ void rtc_init() {
     rtc_set_frequency(6);   // Set frequency to 1024 Hz
     rtc_enable();           // Enable RTC periodic interrupt
     enable_rtc_irq();       // Enable IRQ 8 in PIC
+
+    printf("Successfully RTC initialized\n");
 }
 
 

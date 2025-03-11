@@ -1,10 +1,12 @@
 ;
 ; This code push a dummy error code(0) and interrupt number inside
 ; the stack. Then call irq_handler function
+;
 
 
 [extern irq_handler]   ; defined in pic.c 
 [extern irq_handler]   ; defined in pic.c
+
 
 ; Setup Interrupt Request(IRQ)
 %macro IRQ 2
@@ -43,7 +45,6 @@
         cld
         call irq_handler
         
-
         ; Restore segment registers
         pop gs
         pop fs

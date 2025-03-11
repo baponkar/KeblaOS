@@ -171,8 +171,7 @@ registers_t* schedule(registers_t* registers) {
 void thread0_func(void *arg) {
     while(true){
         printf("Ticks: %d, Thread0 is Running...\n", pit_ticks);
-        // apic_delay(1000);
-        pit_sleep(1000);
+        apic_delay(1000);
     }
 }
 
@@ -180,8 +179,7 @@ void thread0_func(void *arg) {
 void thread1_func(void* arg) {
     while(true) {
         printf("Ticks: %d, Thread1 is Running...\n", pit_ticks);
-        // apic_delay(1000);
-        pit_sleep(1000);
+        apic_delay(1000);
     }
 }
 
@@ -189,8 +187,7 @@ void thread1_func(void* arg) {
 void thread2_func(void* arg) {
     while(true) {
         printf("Ticks: %d, Thread2 is Running...\n", pit_ticks);
-        // apic_delay(1000);
-        pit_sleep(1000);
+        apic_delay(1000);
     }
 }
 
