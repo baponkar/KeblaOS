@@ -15,9 +15,6 @@ https://wiki.osdev.org/TSC
 
 #include "tsc.h"
 
-
-
-
 uint64_t cpu_frequency_hz1 = 0;  // Cached CPU frequency in Hz
 
 
@@ -28,7 +25,7 @@ static inline uint64_t rdmsr(uint32_t msr) {
 }
 
 
-static inline uint64_t read_tsc() {
+uint64_t read_tsc() {
     uint32_t low, high;
     asm volatile ("rdtsc" : "=a"(low), "=d"(high)); // Read TSC
     return ((uint64_t)high << 32) | low;
@@ -36,13 +33,14 @@ static inline uint64_t read_tsc() {
 
 
 void tsc_sleep(uint64_t microseconds) {
-    enable_interrupts();
+    disable_interrupts();  // Prevent interruptions
     uint64_t start = read_tsc();
     
     // freq cycles in 1 s; 1 cycle = 1/freq s; x µs = x/1000000 s; no. of cycle in x µs = x*freq/1000000
     uint64_t cycles_to_wait = (microseconds * cpu_frequency_hz1) / 1000000; // Adjust based on CPU frequency
 
     while ((read_tsc() - start) < cycles_to_wait); // Wait in loop to perform all loops
+    enable_interrupts();
 }
 
 
@@ -70,6 +68,8 @@ uint64_t get_cpu_freq_msr() {
 
 void init_tsc(){
     cpu_frequency_hz1 = get_cpu_freq_msr();
+
+    printf("Successfully initialized TSC with CPU Frequency %d Hz\n", cpu_frequency_hz1);
 }
 
 

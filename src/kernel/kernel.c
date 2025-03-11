@@ -36,9 +36,11 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../mmu/vmm.h" // test_vmm
 #include "../mmu/kheap.h" // init_kheap, test_kheap
 #include "../driver/keyboard/keyboard.h" // initKeyboard
-#include "../x86_64/timer/pit_timer.h" // init_timer
-#include "../x86_64/timer/apic_timer.h"
-#include "../x86_64/timer/hpet_timer.h"
+#include "../x86_64/timer/tsc.h"         // time stamp counter
+#include "../x86_64/timer/rtc.h"        // RTC
+#include "../x86_64/timer/pit_timer.h"  // init_timer
+#include "../x86_64/timer/apic_timer.h" // apic timer
+#include "../x86_64/timer/hpet_timer.h" // hpet timer
 #include "../usr/shell.h"
 
 #include "kernel.h"
@@ -57,21 +59,23 @@ void kmain(){
     printf("%s - %s\n", OS_NAME, OS_VERSION);
 
     init_acpi();
-
     init_gdt();
 
-    // init_hpet();
-
-    init_interrupt();
-    init_pit_timer();
-
-    init_apic_interrupt();
-    init_apic_timer(100);
-    
-
+    // Memory management initialization
     init_pmm();
     init_paging();
     init_kheap();
+
+    // Enabling interrupt
+    init_interrupt();
+
+    // Timer initialization
+    init_tsc();
+    rtc_init();
+    // init_hpet();
+    init_pit_timer();
+    init_apic_timer(100);
+    
 
     // print_cpu_vendor();
     // print_cpu_brand();
@@ -86,7 +90,7 @@ void kmain(){
 
     initKeyboard();
 
-    init_processes();
+    // init_processes();
     
     halt_kernel();
 }
