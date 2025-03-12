@@ -40,10 +40,16 @@
 global restore_cpu_state 
 
 
-restore_cpu_state:
-    cli                         ; Disable interrupts
+section .data
+    rsp_zero_msg db "rsp is zero", 0x0A, 0x00  ; Message for RSP being zero
+    rip_zero_msg db "rip is zero", 0x0A, 0x00  ; Message for RIP being zero
 
-    ;mov r15, rdi               ; Save original rdi (points to registers_t structure)
+section .text
+    global restore_cpu_state
+    extern printf   ; Declare printf as an external symbol
+
+restore_cpu_state:
+    cli                             ; Disable interrupts
 
     ; Optional: Restore segment registers if needed
     mov rax, [rdi + SEG_REG_GS]  
@@ -61,7 +67,7 @@ restore_cpu_state:
     mov rcx, [rdi + GEN_REG_RCX]
     mov rdx, [rdi + GEN_REG_RDX]
     mov rbp, [rdi + GEN_REG_RBP]
-    ;mov rdi, [rdi + GEN_REG_RDI]
+    ; mov rdi, [rdi + GEN_REG_RDI]  ; The rdi will store at last
     mov rsi, [rdi + GEN_REG_RSI]
     mov r8,  [rdi + GEN_REG_R8]
     mov r9,  [rdi + GEN_REG_R9]
@@ -75,12 +81,12 @@ restore_cpu_state:
     ; Validate RSP before continuing
     mov rax, [rdi + REG_IRET_RSP]
     test rax, rax
-    jz hang_debug                   ; If RSP is zero, halt execution
+    jz .rsp_zero                    ; If RSP is zero, jump to debug section
 
     ; Validate RIP before continuing
     mov rax, [rdi + REG_IRET_RIP]
     test rax, rax
-    jz hang_debug                   ; If RIP is zero, halt execution
+    jz .rip_zero                    ; If RIP is zero, jump to debug section
 
     ; Restore stack for iretq
     mov rax, [rdi + REG_IRET_SS]   
@@ -99,16 +105,58 @@ restore_cpu_state:
     mov rax, [rdi + REG_IRET_RIP]   
     push rax                        ; Storing iret_rip reg. value into stack by iretq 
 
-    mov rdi, [rdi + GEN_REG_RDI]  
+    mov rdi, [rdi + GEN_REG_RDI]    ; Ultimately set rdi registers
 
-    sti                    
+    ; Align the stack to 16 bytes
+    and rsp, -16
+
+    sti                             ; Store interrupt 
+
     iretq                           ; Return from interrupt
+
+
+
+; Debug section for RSP being zero
+.rsp_zero:
+    ; Align the stack to 16 bytes
+    and rsp, -16
+
+    ; Prepare arguments for printf
+    lea rdi, [rsp_zero_msg]  ; First argument: address of the format string
+    xor eax, eax             ; Clear EAX (no floating-point arguments)
+
+    ; Call printf
+    call printf
+
+    ; Hang the system
+    jmp hang_debug
+
+; Debug section for RIP being zero
+.rip_zero:
+    ; Align the stack to 16 bytes
+    and rsp, -16
+
+    ; Prepare arguments for printf
+    lea rdi, [rip_zero_msg]  ; First argument: address of the format string
+    xor eax, eax             ; Clear EAX (no floating-point arguments)
+
+    ; Call printf
+    call printf
+
+    ; Hang the system
+    jmp hang_debug
+
+
 
 ; Hang debug section
 hang_debug:
     cli                             ; Disable interrupts to prevent unwanted execution
+
+
 .hang_loop:
     hlt                             ; Halt CPU to save power
     jmp .hang_loop                  ; Infinite loop
 
 
+
+    

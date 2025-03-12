@@ -22,7 +22,7 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/08_Timer
 #include "apic_timer.h"
 
 
-#define MAX_APIC_TICKS 0xFFFFFFFFFFFFFFFF
+#define MAX_APIC_TICKS  0xFFFFFFFFFFFFFFFF
 
 #define LAPIC_BASE 0xFEE00000
 #define APIC_TIMER_VECTOR  0x30  // 48: Interrupt vector for timer
@@ -34,7 +34,7 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/08_Timer
 #define APIC_REGISTER_LVT_TIMER      (LAPIC_BASE + 0x320)  // APIC Local Vector Table (LVT) Timer Register
 
 #define APIC_LVT_TIMER_MODE_PERIODIC (1 << 17)             // Periodic mode bit
-#define APIC_LVT_TIMER_MODE_ONESHOT 0
+#define APIC_LVT_TIMER_MODE_ONESHOT  (0 << 0 )             // One shot mode
 #define APIC_LVT_INT_MASKED          (1 << 16)             // Mask interrupt
 
 
@@ -74,7 +74,7 @@ void calibrate_apic_timer_pit() {
     uint32_t end_count = mmio_read(APIC_REGISTER_TIMER_CURRCNT); 
 
     // Calculate APIC Timer ticks per millisecond
-    apic_timer_ticks_per_ms = ( 0xFFFFFFFF - end_count) / 1000;
+    apic_timer_ticks_per_ms = ( 0xFFFFFFFF - end_count) / 100;
 
     printf("APIC Timer Frequency: %d ticks/ms\n", apic_timer_ticks_per_ms);
 }
@@ -110,9 +110,18 @@ void apic_timer_handler(registers_t *regs) {
     if(apic_ticks >= MAX_APIC_TICKS) apic_ticks = 0;
     apic_ticks++;
 
-    printf("APIC Tick: %d\n");
+    // printf("APIC Tick: %d\n", apic_ticks);
 
     apic_send_eoi();
+
+    registers_t *new_regs = schedule(regs);
+    if(new_regs){
+        // printf("=>current thread: %s, rip: %x, rsp: %x\n", 
+        //     current_process->current_thread->name,  
+        //     current_process->current_thread->registers.iret_rip,
+        //     current_process->current_thread->registers.iret_rsp);
+        restore_cpu_state(new_regs);
+    }
 }
 
 
@@ -123,32 +132,27 @@ void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large cou
 
     uint32_t apic_count = apic_timer_ticks_per_ms * interval_ms;
     
-    // disable_interrupts();
+    disable_interrupts();
     // Set APIC Timer for periodic interrupts
     mmio_write(APIC_REGISTER_LVT_TIMER, APIC_TIMER_VECTOR | APIC_LVT_TIMER_MODE_PERIODIC);   // Vector 32, Periodic Mode
     mmio_write(APIC_REGISTER_TIMER_DIV , 0x3);                          // Set divisor
     mmio_write(APIC_REGISTER_TIMER_INITCNT, apic_count);
 
     interrupt_install_handler((APIC_TIMER_VECTOR - 32), &apic_timer_handler);
-    // enable_interrupts();
+    enable_interrupts();
 
     printf("APIC Timer initialized with %d ms interval.\n", interval_ms);
 }
 
 
-void apic_delay(uint32_t milliseconds) {
-    printf("APIC delay started for %d ms!\n", milliseconds);
-    
+void apic_delay(uint32_t milliseconds) {    
     uint64_t start_ticks = apic_ticks;
     uint64_t target_ticks = start_ticks + ((uint64_t) milliseconds * apic_timer_ticks_per_ms) / 1000; 
 
-    printf("Target Ticks: %d\n", target_ticks);
-
     while (apic_ticks < target_ticks) {
         asm volatile ("hlt");
+        // printf("Inside of Delay: Ticks=%d\n", apic_ticks);
     }
-
-    printf("APIC delay completed!\n");
 }
 
 

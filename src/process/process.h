@@ -12,10 +12,10 @@
 #define NAME_MAX_LEN 64
 
 typedef enum {
-    READY,
-    RUNNING,
-    DEAD,
-    SLEEPING
+    READY,    // 0
+    RUNNING,  // 1
+    DEAD,     // 2
+    SLEEPING  // 3
 } status_t; // sizeof(status1_t) = 4 bytes
 
 
@@ -43,9 +43,4 @@ void remove_process(process_t* proc);
 void delete_process(process_t* proc);
 registers_t* schedule(registers_t* registers);
 
-void init_processes();
 
-
-void thread0_func(void *arg);
-void thread1_func(void* arg);
-void thread2_func(void* arg);
