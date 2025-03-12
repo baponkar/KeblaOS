@@ -68,13 +68,15 @@ void kmain(){
 
     // Enabling interrupt
     init_interrupt();
+    init_pic_interrupt();
+    init_apic_interrupt();
 
     // Timer initialization
     init_tsc();
     rtc_init();
     // init_hpet();
-    init_pit_timer();
-    init_apic_timer(100);
+    init_pit_timer(100);    // Interrupt in 100 ms
+    init_apic_timer(100);   // Interrupt in 100 ms
     
 
     // print_cpu_vendor();
