@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <stdint.h>
@@ -29,6 +30,11 @@ thread_t* create_thread(process_t* parent, const char* name, void (*function)(vo
 void add_thread(thread_t* thread);
 void remove_thread(thread_t* thread);
 void delete_thread(thread_t* thread);
+
+
+
+
+
 
 
 

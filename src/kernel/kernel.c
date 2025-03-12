@@ -10,7 +10,7 @@ Reference   : https://wiki.osdev.org/Limine
 */
 
 #include "../process/process.h" 
-// #include "../pcb/task.h"
+#include "../process/test_process.h"
 #include "../acpi/acpi.h" // init_acpi
 #include "../x86_64/interrupt/interrupt.h"
 #include "../x86_64/interrupt/apic.h"
@@ -92,7 +92,7 @@ void kmain(){
 
     initKeyboard();
 
-    // init_processes();
+    init_processes();
     
     halt_kernel();
 }

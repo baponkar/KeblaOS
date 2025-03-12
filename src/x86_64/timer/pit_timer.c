@@ -66,13 +66,13 @@ void pit_timerHandler(registers_t *regs) {
     pit_ticks++;
 
     if (pit_ticks % 10 == 0){   // Prints in every in 100 ms = 0.1 sec interval
-        printf("(Inside of pit_timerHandler) PIT Tick no : %d\n", pit_ticks);
+        // printf("(Inside of pit_timerHandler) PIT Tick no : %d\n", pit_ticks);
     }
 
     outb(0x20, 0x20); // Send End of Interrupt (EOI) to the PIC
 }
 
-// frequency = PIT_FREQUENCY / divisor => divisor = PIT_FREQUENCY / frequency
+
 
 void init_pit_timer(uint32_t interval_ms) {
     disable_interrupts();
