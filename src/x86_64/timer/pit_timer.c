@@ -30,9 +30,8 @@ extern void restore_cpu_state(registers_t* registers);
 extern process_t *current_process;
 
 volatile uint64_t pit_ticks = 0;
-uint32_t frequency = 100;               // 100 Hz -> 10 ms per tick
 
-
+uint32_t frequency;
 
 uint16_t read_pit_count(void) {
 	uint16_t count = 0;
@@ -67,27 +66,30 @@ void pit_timerHandler(registers_t *regs) {
     pit_ticks++;
 
     if (pit_ticks % 10 == 0){   // Prints in every in 100 ms = 0.1 sec interval
-        // printf("(Inside of pit_timerHandler) PIT Tick no : %d\n", pit_ticks);
+        printf("(Inside of pit_timerHandler) PIT Tick no : %d\n", pit_ticks);
     }
 
     outb(0x20, 0x20); // Send End of Interrupt (EOI) to the PIC
 }
 
+// frequency = PIT_FREQUENCY / divisor => divisor = PIT_FREQUENCY / frequency
 
-
-void init_pit_timer() {
+void init_pit_timer(uint32_t interval_ms) {
     disable_interrupts();
-    interrupt_install_handler((PIT_TIMER_VECTOR -  32), &pit_timerHandler);            // IRQ0 for PIT timer
+    interrupt_install_handler((PIT_TIMER_VECTOR - 32), &pit_timerHandler); // IRQ0 for PIT timer
 
-    uint16_t divisor = (uint16_t) (PIT_FREQUENCY / frequency);    // Divisor max value 65535, Here divisor = 1193180 / 100 = 11931
+    // Compute frequency and divisor dynamically
+    frequency = 1000 / interval_ms;  // Convert ms to Hz (interrupts per second)
+    uint16_t divisor = (uint16_t)(PIT_FREQUENCY / frequency); // Calculate PIT divisor
 
     outb(COMMAND_PORT, 0x36);  // Command port: 0x36 for repeating square wave mode
-    set_pit_count(divisor);
+    set_pit_count(divisor);    // Set PIT divisor
 
     enable_interrupts();
     
-    printf("Initializing PIT with divisor: %d\n", divisor);
+    printf("Initializing PIT with %d ms interval (divisor: %d, frequency: %d Hz)\n", interval_ms, divisor, frequency);
 }
+
 
 
 
