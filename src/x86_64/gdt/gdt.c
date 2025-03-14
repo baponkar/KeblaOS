@@ -19,19 +19,22 @@
 #include "../../lib/stdio.h"
 #include "../../lib/string.h"
 #include "../../mmu/kmalloc.h"
+#include "../../lib/assert.h"
 
 #include "gdt.h"
 
 
 #define STACK_SIZE 0x4000  // 16 KB
-#define GDT_ENTRIES_COUNT 6
+#define GDT_ENTRIES_COUNT 7 // 5 GDT(64 Bit) + 1 TSS (128 Bit)
 
 extern void gdt_flush(gdtr_t *gdtr_instance);
 extern void tss_flush(uint16_t selector);
 
-gdt_entry_t gdt_entries_bootstrap[GDT_ENTRIES_COUNT]; // GDT entries
+gdt_entry_t gdt_entries_bootstrap[GDT_ENTRIES_COUNT]; // 64 bit GDT entries
+tss_entry_t tss_entry_bootstrap;    // 128 bit TSS entry
+
 gdtr_t gdtr_bootstrap;                // Global Descriptor Table Register
-tss_entry_t tss_entry_bootstrap;
+tss_t tss_bootstrap;
 
 // Setup GDT entry
 void gdt_setup_bootstrap(uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity) {
@@ -39,79 +42,34 @@ void gdt_setup_bootstrap(uint8_t idx, uint64_t base, uint32_t limit, uint8_t acc
     gdt_entries_bootstrap[idx].base_low     = base & 0xFFFF;           // Lower 16 bits of base
     gdt_entries_bootstrap[idx].base_middle  = (base >> 16) & 0xFF;     // Middle 8 bits of base
     gdt_entries_bootstrap[idx].access       = access;                  // Access byte
-    gdt_entries_bootstrap[idx].granularity  = (limit >> 16) & 0x0F;   // Upper 4 bits of limit
-    gdt_entries_bootstrap[idx].granularity |= granularity & 0xF0;     // Flags
-    gdt_entries_bootstrap[idx].base_high    = (base >> 24) & 0xFF;    // Next 8 bits of base
-    gdt_entries_bootstrap[idx].base_upper   = (base >> 32) & 0xFFFFFFFF; // Upper 32 bits of base
-    gdt_entries_bootstrap[idx].reserved     = 0;                       // Reserved, set to 0
+    gdt_entries_bootstrap[idx].granularity  = (limit >> 16) & 0x0F;    // Upper 4 bits of limit
+    gdt_entries_bootstrap[idx].granularity |= granularity & 0xF0;      // Flags
+    gdt_entries_bootstrap[idx].base_high    = (base >> 24) & 0xFF;     // Next 8 bits of base
 
     printf("GDT Entry %d: Base: %x, Limit: %x, Access: %x, Granularity: %x\n", idx, base, limit, access, granularity);
 }
 
-// Initialize GDT for Bootstrap CPU
-void init_gdt_bootstrap_cpu() {
-    gdt_setup_bootstrap(0, 0, 0x0,    0x0,  0x0);     // Null descriptor selector : 0x0
-    gdt_setup_bootstrap(1, 0, 0xFFFF, 0x9A, 0xA0);    // Kernel mode code segment, selector : 0x8
-    gdt_setup_bootstrap(2, 0, 0xFFFF, 0x92, 0xA0);    // Kernel mode data segment, selector : 0x10
-    gdt_setup_bootstrap(3, 0, 0xFFFF, 0xFA, 0xA0);    // User mode code segment, selector : 0x18 
-    gdt_setup_bootstrap(4, 0, 0xFFFF, 0xF2, 0xA0);    // User mode data segment, selector : 0x20
 
-    // Calculate the GDT limit and base address
-    gdtr_bootstrap.limit = (uint16_t) (GDT_ENTRIES_COUNT * sizeof(gdt_entry_t) - 1);
-    gdtr_bootstrap.base  = (uint64_t) &gdt_entries_bootstrap;
-
-    printf("Loading GDT: Base: %x, Limit: %x\n", gdtr_bootstrap.base, gdtr_bootstrap.limit);
-
-    // Load the new GDT
-    gdt_flush((gdtr_t *) &gdtr_bootstrap);
-
-    printf("Successfully GDT initialized for Bootstrap CPU.\n");
-}
 
 // Setup TSS entry in GDT
 void tss_setup_bootstrap(uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity) {
-    gdt_entries_bootstrap[idx].limit_low = limit & 0xFFFF;
-    gdt_entries_bootstrap[idx].base_low = base & 0xFFFF;
-    gdt_entries_bootstrap[idx].base_middle = (base >> 16) & 0xFF;
-    gdt_entries_bootstrap[idx].access = access;
+    tss_entry_bootstrap.limit_low = limit & 0xFFFF;
+    tss_entry_bootstrap.base_low = base & 0xFFFF;
+    tss_entry_bootstrap.base_middle = (base >> 16) & 0xFF;
+    tss_entry_bootstrap.access = access;
+    tss_entry_bootstrap.granularity = (limit >> 16) & 0x0F;
+    tss_entry_bootstrap.granularity |= (granularity & 0xF0);
+    tss_entry_bootstrap.base_high = (base >> 24) & 0xFF;
 
-    gdt_entries_bootstrap[idx].granularity = (limit >> 16) & 0x0F;
-    gdt_entries_bootstrap[idx].granularity |= (granularity & 0xF0);
+    tss_entry_bootstrap.base_upper = (base >> 32) & 0xFFFFFFFF;
+    tss_entry_bootstrap.reserved = 0;
 
-    gdt_entries_bootstrap[idx].base_high = (base >> 24) & 0xFF;
-    gdt_entries_bootstrap[idx].base_upper = (base >> 32) & 0xFFFFFFFF;
-    gdt_entries_bootstrap[idx].reserved = 0;
+    // Ensure `tss_entry_t` is 16 bytes (two GDT entries)
+    assert(sizeof(tss_entry_t) == 16);
+    memcpy(&gdt_entries_bootstrap[5], &tss_entry_bootstrap, sizeof(tss_entry_t));
 
     printf("TSS Entry %d: Base: %x, Limit: %x, Access: %x, Granularity: %x\n", idx, base, limit, access, granularity);
 }
-
-// Initialize TSS for Bootstrap CPU
-void init_tss_bootstrap_cpu() {
-    printf("Starting TSS setup\n");
-    // Clear the TSS structure
-    memset(&tss_entry_bootstrap, 0, sizeof(tss_entry_t));
-
-    // Allocate a kernel stack for Ring 0
-    tss_entry_bootstrap.rsp0 = (uint64_t) kmalloc_a(STACK_SIZE, true);
-    if (!tss_entry_bootstrap.rsp0) {
-        printf("Error: Failed to allocate kernel stack for TSS.\n");
-        return;
-    }
-
-    // Set I/O Permission Bitmap offset (no I/O bitmap)
-    tss_entry_bootstrap.iopb_offset = sizeof(tss_entry_t);
-
-    // Add the TSS to GDT (selector 0x28)
-    tss_setup_bootstrap(5, (uint64_t)&tss_entry_bootstrap, sizeof(tss_entry_t) - 1, 0x89, 0x00);
-
-    // Load the TSS into the CPU's TR register
-    tss_flush(0x28);
-
-    printf("Successfully TSS initialized for Bootstrap CPU.\n");
-    printf("Kernel stack allocated at: %x\n", tss_entry_bootstrap.rsp0);
-}
-
-
 
 // Initialize GDT and TSS for Bootstrap CPU
 void start_bootstrap_gdt_tss() {
@@ -123,27 +81,25 @@ void start_bootstrap_gdt_tss() {
     gdt_setup_bootstrap(4, 0, 0xFFFF, 0xF2, 0xA0);    // User mode data segment, selector : 0x20
 
     // Setting TSS
-    memset(&tss_entry_bootstrap, 0, sizeof(tss_entry_t));
+    memset(&tss_bootstrap, 0, sizeof(tss_t));
     // Allocate a kernel stack for Ring 0
-    tss_entry_bootstrap.rsp0 = (uint64_t) kmalloc_a(STACK_SIZE, true);
-    if (!tss_entry_bootstrap.rsp0) {
-        printf("Error: Failed to allocate kernel stack for TSS.\n");
+    uint64_t stack = kmalloc_a(STACK_SIZE, true);
+    if (!stack) {
+        printf("Error: Stack allocation failed\n");
         return;
     }
-    // Set I/O Permission Bitmap offset (no I/O bitmap)
-    tss_entry_bootstrap.iopb_offset = sizeof(tss_entry_t);
-    // Add the TSS to GDT (selector 0x28)
-    tss_setup_bootstrap(5, (uint64_t) &tss_entry_bootstrap, sizeof(tss_entry_t) - 1, 0x89, 0x00);
-    printf("Size of tss_entry_t: %x bytes\n", sizeof(tss_entry_t) - 1);
+    tss_bootstrap.rsp0 = (uint64_t)stack + STACK_SIZE;  // Top of stack
 
-    gdtr_bootstrap.limit = (uint16_t) (GDT_ENTRIES_COUNT * sizeof(gdt_entry_t)) - 1; // 6*16 - 1 = 95 bytes
-    gdtr_bootstrap.base = (uint64_t) &gdt_entries_bootstrap;  // 0xFFFFFFFF80459F80                  
+    // Set I/O Permission Bitmap offset (no I/O bitmap)
+    tss_bootstrap.iopb_offset = sizeof(tss_t);
+    // Add the TSS to GDT (selector 0x28)
+    tss_setup_bootstrap(5, (uint64_t) &tss_bootstrap, sizeof(tss_t) - 1, 0x89, 0x00);
+
+    gdtr_bootstrap.limit = (uint16_t) (GDT_ENTRIES_COUNT * sizeof(gdt_entry_t)) - 1; // 7*16 - 1 = 111 bytes
+    gdtr_bootstrap.base = (uint64_t) &gdt_entries_bootstrap;  //                   
 
     for (int i = 0; i < GDT_ENTRIES_COUNT; i++) {
-        printf("GDT Entry %d: %x %x %x\n", i, 
-               *(uint64_t*)&gdt_entries_bootstrap[i], 
-               *((uint64_t*)&gdt_entries_bootstrap[i] + 1),
-               *((uint64_t*)&gdt_entries_bootstrap[i] + 1));
+        printf("GDT Entry %d: %x\n", i, *(uint64_t*)&gdt_entries_bootstrap[i]);
     }
 
     
@@ -155,6 +111,11 @@ void start_bootstrap_gdt_tss() {
 
     printf("Successfully started GDT and TSS for Bootstrap CPU.\n");
 }
+
+
+
+
+
 
 
 
