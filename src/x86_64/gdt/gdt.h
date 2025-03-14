@@ -13,7 +13,7 @@ struct gdt_entry
     uint8_t access;           // Access byte
     uint8_t granularity;      // Flags and upper limit
     uint8_t base_high;        // Next 8 bits of the base address
-}__attribute__((packed, aligned(16)));
+}__attribute__((packed));
 typedef struct gdt_entry gdt_entry_t;
 
 struct tss_entry
@@ -27,7 +27,7 @@ struct tss_entry
 
     uint32_t base_upper;     // Upper 32 bits of the base address (for 64-bit TSS)
     uint32_t reserved;       // Reserved, must be zero
-}__attribute__((packed, aligned(16)));
+}__attribute__((packed));
 typedef struct tss_entry tss_entry_t;
 
 
@@ -58,6 +58,6 @@ typedef struct tss tss_t;
 
 void start_bootstrap_gdt_tss();
 
-void init_gdt_ap_cpu(uint64_t core_id);
-
-gdtr_t* get_gdt_ptr_for_ap(uint64_t core_id);
+void init_all_gdt_tss();
+void core_init(int core);
+void start_secondary_cores();

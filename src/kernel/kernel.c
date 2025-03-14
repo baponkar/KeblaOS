@@ -64,9 +64,12 @@ void kmain(){
     printf("%s - %s\n", OS_NAME, OS_VERSION);
 
     init_acpi();
+
+    // Enabling GDT
     // init_gdt_bootstrap_cpu();
-    // init_tss_bootstrap_cpu();
-    start_bootstrap_gdt_tss();
+    init_all_gdt_tss();
+    core_init(0);
+    start_secondary_cores();
     
 
 
@@ -77,6 +80,7 @@ void kmain(){
 
     // Enabling interrupt
     init_bootstrap_cpu_interrupt();
+    
     
     init_pic_interrupt();
     init_apic_interrupt();
