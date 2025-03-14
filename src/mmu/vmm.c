@@ -41,6 +41,8 @@ void vm_alloc(uint64_t va) {
         page->user = 1; // User-accessible (optional, depends on use case)
     }
     
+    // Invalidate the TLB for this address
+    asm volatile("invlpg (%0)" ::"r"(va) : "memory");
 }
 
 

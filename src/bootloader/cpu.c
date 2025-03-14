@@ -48,7 +48,7 @@ void print_cpu_info(){
         uint64_t cpu_count = smp_request.response->cpu_count;
         struct limine_smp_info ** cpus = smp_request.response->cpus;
 
-        printf("CPU info : \nRevision : %d\nFlags : %d\nBSP LAPIC ID : %x\nCPU count : %d\n", revision, flags, bsp_lapic_id, cpu_count);
+        printf("CPU info : \nRevision : %d, Flags : %d, BSP LAPIC ID : %d, CPU count : %d\n", revision, flags, bsp_lapic_id, cpu_count);
 
         for(size_t i=0; i<(size_t) cpu_count; i++){
            uint32_t processor_id = cpus[i]->processor_id;
@@ -57,7 +57,7 @@ void print_cpu_info(){
            limine_goto_address goto_address = cpus[i]->goto_address;
            uint64_t extra_argument = cpus[i]->extra_argument;
 
-           printf("Processor ID : %d\nLAPIC ID : %x\nReserved : %x\nExtra argument : %x\n", processor_id,lapic_id, reserved, extra_argument );
+           printf("Processor ID : %d, LAPIC ID : %d, Reserved : %x, Extra argument : %x\n", processor_id,lapic_id, reserved, extra_argument );
         }
     }else{
         printf("No CPU info found!\n");
@@ -190,4 +190,24 @@ uint32_t get_cpu_base_frequency() {
 }
 
 
+void enable_fpu() {
+    asm volatile (
+        "mov %%cr0, %%rax\n"         
+        "and $~(1 << 2), %%rax\n"     // Clear CR0.EM (bit 2) to enable FPU  
+        "or  $ (1 << 1), %%rax\n"     // Set CR0.MP (bit 1) for FPU emulation  
+        "mov %%rax, %%cr0\n"          
+        :
+        :
+        : "rax"
+    );
+
+    asm volatile ("fninit");  // Initialize the FPU
+}
+
+
+bool has_fpu() {
+    uint32_t eax, ebx, ecx, edx;
+    cpuid(1,  &eax, &ebx, &ecx, &edx);
+    return (edx & (1 << 0));  // FPU is bit 0 of EDX
+}
 

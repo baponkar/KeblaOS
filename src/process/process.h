@@ -43,4 +43,3 @@ void remove_process(process_t* proc);
 void delete_process(process_t* proc);
 registers_t* schedule(registers_t* registers);
 
-

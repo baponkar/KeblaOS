@@ -63,8 +63,6 @@ void execute_command(char* command) {
         // printing the time run this os
     }else if (strcmp(command, "regvalue") == 0){
         // print_registers();
-    }else if (strcmp(command, "checkgdt") == 0){
-        check_gdt();
     }else if (strcmp(command, "features") == 0){
         print_features();
     }else if (strcmp(command, "testint") == 0){

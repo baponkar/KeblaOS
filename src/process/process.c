@@ -32,6 +32,7 @@ process_t *processes_list = NULL;   // List of all processes
 
 
 
+
 process_t* create_process(const char* name, void (*function)(void*), void* arg) {
     
     process_t* proc = (process_t*) kheap_alloc(sizeof(process_t)); // Allocate memory for the process
@@ -125,44 +126,57 @@ registers_t* schedule(registers_t* registers) {
     if (!current_process || !current_process->current_thread) return NULL;
 
     // Save the current thread's register state
-    // current_process->current_thread->registers = *registers;
     memcpy((void*)&current_process->current_thread->registers, registers, sizeof(registers_t));
     if (memcmp((void*)&current_process->current_thread->registers, registers, sizeof(registers_t)) != 0) {
-        printf("registers assignment failed!\n");
+        printf("Error: Register assignment failed!\n");
         return NULL;
     }
 
+    // Mark the current thread as READY
     current_process->current_thread->status = READY;
-    
+
+    // Start from the next thread in the list
     thread_t* start_thread = current_process->current_thread;
     thread_t* next_thread = current_process->current_thread->next;
-    
+
     // Look for the next READY thread in a round-robin manner
-    while (next_thread != NULL && next_thread->status != READY) { // if next_thread is present and it's status is not READY
+    while (next_thread && next_thread->status != READY) {
         next_thread = next_thread->next;
         printf("while: next_thread = %x\n", next_thread);
+        break;
     }
     
-    // If no READY thread found, start from the first thread
+
+    // If no READY thread is found, start from the first thread
     if (!next_thread) {
-        next_thread = current_process->threads; // Pick First Thread
-        while (next_thread != NULL && next_thread->status != READY) {
+        next_thread = current_process->threads;  // Start from the first thread
+        while (next_thread != start_thread && next_thread->status != READY) {
             next_thread = next_thread->next;
+            printf("Test=>next_thread->name: %s\n", next_thread->name);
+            break;
         }
     }
-    
+
     // If still no READY thread, keep running the same thread
-    if (!next_thread) {
+    if (!next_thread || next_thread == start_thread) {
+        printf("Last Thread\n");
         current_process->current_thread->status = RUNNING;
+        return (registers_t*)&current_process->current_thread->registers;
     }
 
-    
+    // printf("Current  %s, status: %d=>", current_process->current_thread->name, current_process->current_thread->status);
+
     // Set the next thread as RUNNING
     current_process->current_thread = next_thread;
     current_process->current_thread->status = RUNNING;
-    
-    return (registers_t *) &current_process->current_thread->registers;
+
+    // Debug print to verify the next thread
+    // printf("Switching to  %s, status: %d\n", current_process->current_thread->name, current_process->current_thread->status);
+
+    return (registers_t*)&current_process->current_thread->registers;
 }
+
+
 
 
 

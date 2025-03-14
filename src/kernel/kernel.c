@@ -19,6 +19,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../bootloader/pci.h"
 #include "../bootloader/disk.h"
 #include "../bootloader/cpu.h"
+#include "../bootloader/trampoline.h"
 #include "../bootloader/memory.h"
 #include "../bootloader/firmware.h"
 #include "../limine/limine.h" // bootloader info
@@ -46,8 +47,12 @@ Reference   : https://wiki.osdev.org/Limine
 #include "kernel.h"
 
 
+extern process_t *current_process;
+__attribute__((section(".data"))) uint8_t core_id = 1;  // Dummy value for now
 
-
+void store_core_id() {
+    *(volatile uint8_t*)0x9000 = core_id;
+}
 
 void kmain(){
 
@@ -59,7 +64,11 @@ void kmain(){
     printf("%s - %s\n", OS_NAME, OS_VERSION);
 
     init_acpi();
-    init_gdt();
+    // init_gdt_bootstrap_cpu();
+    // init_tss_bootstrap_cpu();
+    start_bootstrap_gdt_tss();
+    
+
 
     // Memory management initialization
     init_pmm();
@@ -67,9 +76,21 @@ void kmain(){
     init_kheap();
 
     // Enabling interrupt
-    init_interrupt();
+    init_bootstrap_cpu_interrupt();
+    
     init_pic_interrupt();
     init_apic_interrupt();
+
+    // init_core_cpu_interrupt(core_id);
+
+    // lapic_send_ipi(1, 0x4500); // INIT IPI
+    // for (volatile int i = 0; i < 100000; i++);
+    // lapic_send_ipi(1, 0x4608); // SIPI with vector 0x08
+    // for (volatile int i = 0; i < 100000; i++);
+    // lapic_send_ipi(1, 0x4608); // Second SIPI
+
+
+
 
     // Timer initialization
     init_tsc();
@@ -79,6 +100,8 @@ void kmain(){
     init_apic_timer(100);   // Interrupt in 100 ms
     
 
+    get_cpu_info();
+    print_cpu_info();
     // print_cpu_vendor();
     // print_cpu_brand();
     // printf("Logical Processor Count: %d\n", getLogicalProcessorCount());
@@ -93,6 +116,22 @@ void kmain(){
     initKeyboard();
 
     init_processes();
+    // print_all_threads_name(current_process);
+
+    // if(has_fpu){
+    //     enable_fpu();
+
+    //     float flt = 23.67890f;
+    //     printf("Test float: flt = %f\n", flt);
+    // }
+
+    uint64_t low_addr = 0x0000000000400000; 
+
+    if (is_user_page(low_addr)) {
+        printf("0x0000000000400000 : User page\n");
+    } else {
+        printf("0x0000000000400000 : Kernel page\n");
+    }
     
     halt_kernel();
 }

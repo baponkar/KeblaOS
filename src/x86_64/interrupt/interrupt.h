@@ -104,13 +104,11 @@ void int_set_gate(uint8_t index, uint64_t offset, uint16_t selector, uint8_t att
 
 void disable_interrupts();
 void enable_interrupts();
-void cpu_exception_handler(registers_t *regs);
 
-void set_descriptor_table();
-void init_interrupt();
+void init_bootstrap_cpu_interrupt();
+void init_core_cpu_interrupt(uint64_t core_id);
 
 void test_interrupt();
-
 void gpf_handler(registers_t *regs);
 void debug_error_code(int err_code);
 

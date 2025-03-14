@@ -15,3 +15,4 @@ void thread0_func(void *arg);
 void thread1_func(void* arg);
 void thread2_func(void* arg);
 
+void print_all_threads_name(process_t *p);
