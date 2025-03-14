@@ -13,10 +13,18 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 #include "../bootloader/memory.h"
 #include "kmalloc.h"
 #include  "../lib/string.h"
-#include  "../driver/vga/vga_term.h"
+#include  "../lib/stdio.h"
 #include "pmm.h"
 
 #include "paging.h"
+
+
+#define LOW_HALF_START 0x0000000000000000ULL
+// #define LOW_HALF_END   0x7FFFFFFFFFFFFFFFULL
+#define LOW_HALF_END    0x0000000000800000  // For testing purpose
+
+#define UPPER_HALF_START 0xFFFF800000000000
+#define UPPER_HALF_END   0xFFFFFFFFFFFFFFFF
 
 extern void enable_paging(uint64_t pml4_address); // present in load_paging.asm
 extern void disable_paging();   //  present in load_paging.asm
@@ -32,37 +40,14 @@ pml4_t *user_pml4;
 pml4_t *kernel_pml4;
 
 void debug_page(page_t *page){
-    print("page pointer: ");
-    print_hex((uint64_t)page);
-    print("\n");
-
-    print("page->present: ");
-    print_dec(page->present);
-    print("\n");
-
-    print("page->rw: ");
-    print_dec(page->rw);
-    print("\n");
-
-    print("page->pwt: ");
-    print_hex(page->pwt);
-    print("\n");
-
-    print("page->pcd: ");
-    print_hex(page->pcd);
-    print("\n");
-
-    print("page->accessed: ");
-    print_hex(page->accessed);
-    print("\n");
-
-    print("page->user: ");
-    print_dec(page->user);
-    print("\n");
-
-    print("page->frame: ");
-    print_hex(page->frame);
-    print("\n\n");
+    printf("page pointer: %x\n", (uint64_t)page);
+    printf("page->present: %d\n", page->present);
+    printf("page->rw: %d\n", page->rw);
+    printf("page->pwt: %x\n", page->pwt);
+    printf("page->pcd: %x\n", page->pcd);
+    printf("page->accessed: %x\n", page->accessed);
+    printf("page->user: %d\n", page->user);
+    printf("page->frame: %x\n", page->frame);
 }
 
 
@@ -79,7 +64,7 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
     uint64_t bit_no = free_frame_bit_no(); // idx is now the index of the first free frame.
 
     if (bit_no == (uint64_t)-1) {
-        print("No free frames!");
+        printf("No free frames!");
         halt_kernel();
     }
 
@@ -132,38 +117,33 @@ void init_paging()
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
     current_pml4 = (pml4_t *) get_cr3_addr();
 
+    // Updating lower half pages
+    for (uint64_t addr = LOW_HALF_START; addr < LOW_HALF_END; addr += PAGE_SIZE) {
+        page_t *page = get_page(addr, 1, (pml4_t*) get_cr3_addr());
+        if (!page) {
+            // Handle error: Failed to get the page entry
+            continue;
+        }
 
-    // for(uint64_t va = V_KMEM_LOW_BASE; va < V_KMEM_UP_BASE; va++)
-    // {
-    //     page_t *tmp = get_page(va, 0, current_pml4);
+        // Allocate a frame if not already allocated
+        if (!page->frame) {
+            alloc_frame(page, 0, 1); // Allocate a frame with user-level access
+        }
 
-    //     if(tmp == NULL || tmp->present == 0) break;
+        // Set the User flag (0x4 in x86_64) to allow user-level access
+        page->present = 1;  // Ensure the page is present
+        page->rw = 1;       // Allow read/write access
+        page->user = 1;     // Set user-accessible bit
+    }
 
-    //     // I do not know why this pages are required untouched otherwise system crashed
-    //     if( (tmp != NULL) && (tmp->present == 1)){
-    //         free_frame(tmp);
-
-    //         // uint64_t bit_no = ADDR_TO_BIT_NO(va);
-
-    //         // assert(bit_no < nframes * 8);
-    //         // if (bit_no >= nframes * 8) {
-    //         //     print("Invalid bit_no: ");
-    //         //     print_dec(bit_no);
-    //         //     print("\n");
-    //         //     break;
-    //         // }
-
-    //         // set_frame(bit_no);
-    //     }
-
-    //     // print("Bitmap: ");
-    //     // uint64_t *ptr = (uint64_t *) nframes;
-    //     // print_bin(*ptr);
-    //     // print("\n");
-    // }
+    // Invalidate the TLB for the changes to take effect
+    // asm volatile("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "rax");
+    flush_tlb_all();
     
+    printf("V_KMEM_LOW_BASE: %x\n", V_KMEM_LOW_BASE);
+    printf("V_KMEM_UP_BASE: %x\n", V_KMEM_UP_BASE);
 
-    print("Successfully Paging initialized.\n");
+    printf("Successfully Paging initialized.\n");
 }
 
 
@@ -310,28 +290,26 @@ void page_fault_handler(registers_t *regs)
     int id = regs->err_code & 0x10;        // Caused by an instruction fetch?
 
     // Output an error message with details about the page fault.
-    print("Page fault! ( ");
-    if (present) print("not present ");
-    if (rw) print("write ");
-    if (us) print("user-mode ");
-    if (reserved) print("reserved ");
-    if (id) print("instruction fetch ");
-    print(") at address ");
-    print_hex(faulting_address);
-    print("\n");
+    printf("Page fault! ( ");
+    if (present) printf("not present ");
+    if (rw) printf("write ");
+    if (us) printf("user-mode ");
+    if (reserved) printf("reserved ");
+    if (id) printf("instruction fetch ");
+    printf(") at address %x\n", faulting_address);
 
 
     // Additional action to handle the page fault could be added here,
     // such as invoking a page allocator or terminating a faulty process.
 
     // Halt the system to prevent further errors (for now).
-    print("Halting the system due to page fault.\n");
+    printf("Halting the system due to page fault.\n");
     halt_kernel();
 }
 
 void test_paging() {
 
-    print("\nTest of Paging\n");
+    printf("\nTest of Paging\n");
 
     // uint64_t va1 = (uint64_t) PAGE_ALIGN(0xFFFFFFFF80322000 + 40*PAGE_SIZE);
 
@@ -343,9 +321,7 @@ void test_paging() {
     uint64_t *v_ptr1 = (uint64_t *) va1; 
     // uint64_t *v_ptr2 = (uint64_t *) va2; 
 
-    print("Previous content of v_ptr1: ");
-    print_hex(*v_ptr1);
-    print("\n");
+    printf("Previous content of v_ptr1: %x\n", *v_ptr1);
 
     // Get Page pointer from above virtual pointer address
     page_t *page1 = (page_t *) get_page((uint64_t)v_ptr1, 1, current_pml4);
@@ -365,20 +341,18 @@ void test_paging() {
     *v_ptr1 = 0x567; 
     // *v_ptr2 = 0xABC50;  
 
-    print("Content of v_ptr1: ");
-    print_hex(*v_ptr1);
-    print("\n");
+    printf("Content of v_ptr1: %x\n", *v_ptr1);
+
 
     // print("Content of v_ptr2: ");
     // print_hex(*v_ptr2);
     // print("\n");
 
-    print("Finish Paging Test\n");
+    printf("Finish Paging Test\n");
 
     uint64_t val = *frames;
 
-    print_bin(val);
-    print("\n");
+    printf("%x\n", val);
 }
 
 
@@ -467,4 +441,34 @@ uint64_t create_new_pml4() {
     map_virtual_memory((void*)pml4_ptr_phys, sizeof(pml4_t), PAGE_WRITE | PAGE_PRESENT);
     return pml4_ptr_phys;
 }
+
+
+
+
+
+bool is_user_page(uint64_t virtual_address) {
+    uint64_t cr3 = get_cr3_addr(); // Get PML4 base address
+
+    uint64_t *pml4 = (uint64_t *)(cr3 & ~0xFFF); // Mask to get page-aligned base
+    uint64_t pml4e = pml4[PML4_INDEX(virtual_address)];
+    if (!(pml4e & 1)) return false; // Not present
+
+    uint64_t *pdpt = (uint64_t *)(pml4e & ~0xFFF);
+    uint64_t pdpte = pdpt[PDPT_INDEX(virtual_address)];
+    if (!(pdpte & 1)) return false;
+
+    uint64_t *pd = (uint64_t *)(pdpte & ~0xFFF);
+    uint64_t pde = pd[PD_INDEX(virtual_address)];
+    if (!(pde & 1)) return false;
+
+    uint64_t *pt = (uint64_t *)(pde & ~0xFFF);
+    uint64_t pte = pt[PT_INDEX(virtual_address)];
+    if (!(pte & 1)) return false;
+
+    // Check the user bit (bit 2)
+    return (pte & (1 << 2)) != 0;
+}
+
+
+
 

@@ -80,7 +80,6 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/ahci.c -o $(BUILD_DIR)/ahci.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/pci.c -o $(BUILD_DIR)/pci.o
-	
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/disk.c -o $(BUILD_DIR)/disk.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/cpu.c -o $(BUILD_DIR)/cpu.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/memory.c -o $(BUILD_DIR)/memory.o
@@ -130,6 +129,8 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/mouse/mouse.c -o $(BUILD_DIR)/mouse.o
 
 	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/shell.c -o $(BUILD_DIR)/shell.o
+
+	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/user.c -o $(BUILD_DIR)/user.o
 
 #memory management
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/kmalloc.c -o $(BUILD_DIR)/kmalloc.o
@@ -185,6 +186,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/rtc.o \
 						$(BUILD_DIR)/keyboard.o  \
 						$(BUILD_DIR)/shell.o \
+						$(BUILD_DIR)/user.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/process.o \
 						$(BUILD_DIR)/set_cpu_state.o \
@@ -239,6 +241,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/rtc.o \
 						$(BUILD_DIR)/keyboard.o \
 						$(BUILD_DIR)/shell.o \
+						$(BUILD_DIR)/user.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/process.o \
 						$(BUILD_DIR)/set_cpu_state.o \

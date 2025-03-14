@@ -80,30 +80,21 @@ extern pml4_t *current_pml4;
 extern uint64_t V_KMEM_UP_BASE;
 extern uint64_t V_KMEM_LOW_BASE;
 
-// allocate a page into a physical free frame
+void debug_page(page_t *page);
 void alloc_frame(page_t *page, int is_kernel, int is_writeable);
-
-// free page from physical frame
 void free_frame(page_t *page);
-
-// start paging system
-void init_paging();
-
-// return page pointer from virtual address
-page_t *get_page(uint64_t address, int make, pml4_t *pml4);
-
-// print debug message for page fault
-void page_fault_handler(registers_t* regs);
-
-// test different paging system
-void test_paging();
-
-
 uint64_t get_cr3_addr();
-
+void init_paging();
+static page_t *alloc_page();
+static pt_t* alloc_pt();
+static pd_t* alloc_pd();
+static pdpt_t* alloc_pdpt();
+page_t* get_page(uint64_t va, int make, pml4_t* pml4);
+void page_fault_handler(registers_t *regs);
+void test_paging();
+void flush_tlb(uint64_t address);
+void flush_tlb_all();
+void map_virtual_memory(void *phys_addr, size_t size, uint64_t flags);
 uint64_t create_new_pml4();
-
-
-
-
+bool is_user_page(uint64_t virtual_address);
 

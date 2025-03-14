@@ -110,7 +110,7 @@ void apic_timer_handler(registers_t *regs) {
     if(apic_ticks >= MAX_APIC_TICKS) apic_ticks = 0;
     apic_ticks++;
 
-    // printf("APIC Tick: %d\n", apic_ticks);
+    // printf("APIC Tick_1: %d\n", apic_ticks);
 
     apic_send_eoi();
 
@@ -122,6 +122,7 @@ void apic_timer_handler(registers_t *regs) {
         //     current_process->current_thread->registers.iret_rsp);
         restore_cpu_state(new_regs);
     }
+
 }
 
 

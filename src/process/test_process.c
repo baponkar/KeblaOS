@@ -3,20 +3,19 @@
 This file will test process-thread working
 */
 
-
-
 #include "../x86_64/timer/apic_timer.h"     // for apic_delay
 #include "../x86_64/timer/pit_timer.h"      // for delay
+#include "../x86_64/timer/tsc.h"
 #include "../lib/stdio.h"                   // for printf function
 
 #include "test_process.h"
 
 
-extern volatile uint64_t pit_ticks;
+extern volatile uint64_t apic_ticks;
 
 void thread0_func(void *arg) {
     while(true){
-        printf("==> Thread0 is Running... [Ticks: %d] \n", pit_ticks);
+        printf("==> Thread0 is Running... [Ticks: %d] \n", apic_ticks);
         apic_delay(10); // delay 10 milli seconds
     }
 }
@@ -24,18 +23,21 @@ void thread0_func(void *arg) {
 
 void thread1_func(void* arg) {
     while(true) {
-        printf("==> Thread1 is Running... [Ticks: %d] \n", pit_ticks);
-        apic_delay(20); // delay 10 milli seconds
+        printf("==> Thread1 is Running... [Ticks: %d] \n", apic_ticks);
+        apic_delay(10); // delay 10 milli seconds
     }
 }
 
 
 void thread2_func(void* arg) {
     while(true) {
-        printf("==> Thread2 is Running... [Ticks: %d] \n", pit_ticks);
-        apic_delay(50); // delay 10 milli seconds
+        printf("==> Thread2 is Running... [Ticks: %d] \n", apic_ticks);
+        apic_delay(10); // delay 10 milli seconds
     }
 }
+
+
+
 
 void print_all_threads_name(process_t *p){
     thread_t * t = p->threads;
@@ -44,7 +46,8 @@ void print_all_threads_name(process_t *p){
             t->name,
             (uint64_t)t, 
             t->registers.iret_rsp, 
-            (uint64_t)t->next);
+            (uint64_t)t->next
+        );
         t = t->next;
     }
 }
@@ -59,6 +62,8 @@ void init_processes() {
         printf("Failed to create init process\n");
         return;
     }
+
+    process->status = READY;
 
     thread_t* thread0 = process->threads; // Get the main thread of the init process
     if (!thread0) {
@@ -79,8 +84,11 @@ void init_processes() {
         printf("Failed to create Thread2\n");
         return;
     }
+
     
     // Set the current process
     current_process = process;
     processes_list = process;
+
+    printf("thread0: %x\n", current_process->threads);
 }

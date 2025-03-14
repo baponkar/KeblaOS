@@ -26,6 +26,8 @@ The useful references for OS development
 
     - [Remzi H. Arpaci-Dusseau, Andrea C. Arpaci-Dusseau - Operating Systems - Three Easy Pieces](./pdf-docs/Remzi%20H.%20Arpaci-Dusseau,%20Andrea%20C.%20Arpaci-Dusseau%20-%20Operating%20Systems%20-%20Three%20Easy%20Pieces.pdf)
 
+    - [AMD 64 Documentation](./pdf-docs/amd64_doc.pdf)
+
 * Programming Language :
 
 

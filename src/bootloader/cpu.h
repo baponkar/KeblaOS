@@ -18,3 +18,5 @@ int getLogicalProcessorCount();
 uint32_t get_cpu_base_frequency();
 
 
+void enable_fpu();
+bool has_fpu();
