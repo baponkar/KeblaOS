@@ -8,6 +8,7 @@
 static inline void cpuid(uint32_t leaf, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
 void get_cpu_info();
 void print_cpu_info();
+int get_cpu_count();
 
 void get_cpu_vendor(char *vendor);
 void print_cpu_vendor();

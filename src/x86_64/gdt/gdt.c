@@ -15,7 +15,7 @@
     https://wiki.osdev.org/Task_State_Segment
 
 */
-
+#include "../../bootloader/cpu.h"
 #include "../../lib/stdio.h"
 #include "../../lib/string.h"
 #include "../../mmu/kmalloc.h"
@@ -131,7 +131,7 @@ typedef struct {
 cpu_data_t cpu_data[MAX_CORES];  // Array indexed by CPU ID (APIC ID)
 
 int detect_cores(){
-    return 4;
+    return get_cpu_count();
 }
 
 void gdt_setup(int core, uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity) {

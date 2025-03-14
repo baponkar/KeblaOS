@@ -18,6 +18,12 @@ static volatile struct limine_smp_request smp_request = {
     .revision = 3
 };
 
+int get_cpu_count(){
+    if(smp_request.response != NULL)
+        return (int) smp_request.response->cpu_count;
+    return 1;
+}
+
 
 void get_cpu_info(){
     if(smp_request.response != NULL){
