@@ -34,6 +34,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../mmu/pmm.h" // init_pmm, test_pmm
 #include "../mmu/paging.h" // init_paging, test_paging
 #include "../mmu/kmalloc.h" // test_kmalloc
+#include "../mmu/umalloc.h" // test_umalloc
 #include "../mmu/vmm.h" // test_vmm
 #include "../mmu/kheap.h" // init_kheap, test_kheap
 #include "../driver/keyboard/keyboard.h" // initKeyboard
@@ -45,6 +46,10 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../usr/shell.h"
 
 #include "kernel.h"
+
+#define KMEM_BASE 0x7EF50000 + 0x56A000 // After 5 MB kernel
+#define UHEAP_BASE 0x40000000 // 1 GB virtual address
+
 
 
 extern process_t *current_process;
@@ -79,7 +84,11 @@ void kmain(){
     init_kheap();
 
     // Enabling interrupt
-    init_bootstrap_cpu_interrupt();
+    // init_bootstrap_cpu_interrupt();
+    init_core_cpu_interrupt(0);
+    init_core_cpu_interrupt(1);
+    init_core_cpu_interrupt(2);
+    init_core_cpu_interrupt(3);
     
     
     init_pic_interrupt();
@@ -94,8 +103,6 @@ void kmain(){
     // lapic_send_ipi(1, 0x4608); // Second SIPI
 
 
-
-
     // Timer initialization
     init_tsc();
     rtc_init();
@@ -104,8 +111,8 @@ void kmain(){
     init_apic_timer(100);   // Interrupt in 100 ms
     
 
-    get_cpu_info();
-    print_cpu_info();
+    // get_cpu_info();
+    // print_cpu_info();
     // print_cpu_vendor();
     // print_cpu_brand();
     // printf("Logical Processor Count: %d\n", getLogicalProcessorCount());
@@ -119,7 +126,7 @@ void kmain(){
 
     initKeyboard();
 
-    init_processes();
+    // init_processes();
     // print_all_threads_name(current_process);
 
     // if(has_fpu){
@@ -129,14 +136,12 @@ void kmain(){
     //     printf("Test float: flt = %f\n", flt);
     // }
 
-    uint64_t low_addr = 0x0000000000400000; 
 
-    if (is_user_page(low_addr)) {
-        printf("0x0000000000400000 : User page\n");
-    } else {
-        printf("0x0000000000400000 : Kernel page\n");
-    }
+    // print_memory_map();
+    // test_umalloc();
+
     
+
     halt_kernel();
 }
 

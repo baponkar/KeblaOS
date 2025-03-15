@@ -72,6 +72,7 @@ void tss_setup_bootstrap(uint8_t idx, uint64_t base, uint32_t limit, uint8_t acc
     // printf("TSS Entry %d: Base: %x, Limit: %x, Access: %x, Granularity: %x\n", idx, base, limit, access, granularity);
 }
 
+
 // Initialize GDT and TSS for Bootstrap CPU
 void start_bootstrap_gdt_tss() {
     // Setting GDTs
@@ -119,7 +120,7 @@ void start_bootstrap_gdt_tss() {
 
 
 
-#define MAX_CORES 16  // Adjust based on your system
+#define MAX_CORES 256
 
 typedef struct {
     gdt_entry_t gdt[GDT_ENTRIES_COUNT];  // Each core's GDT

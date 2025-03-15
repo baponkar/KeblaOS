@@ -1,6 +1,10 @@
 /*
 Paging in x86_64
 
+Limine initially started 4 level paging and place kernel into higher half.
+But limine started all pages as kernel space but I use init_paging() to
+change lower half address's pages kernel space.
+
 https://wiki.osdev.org/Paging
 https://wiki.osdev.org/Identity_Paging
 https://web.archive.org/web/20160326061042/http://jamesmolloy.co.uk/tutorial_html/6.-Paging.html
@@ -111,7 +115,6 @@ uint64_t get_cr3_addr() {
 
 void init_paging()
 {  
-    // print("Start of Paging initialization...\n");
 
     // Lowest Virtual address 0xFFFFFFFF80322000 which have page and the page.frame address pointer have 0xFFFFFFFFFFFFFFFF value.
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
@@ -140,9 +143,6 @@ void init_paging()
     // asm volatile("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "rax");
     flush_tlb_all();
     
-    printf("V_KMEM_LOW_BASE: %x\n", V_KMEM_LOW_BASE);
-    printf("V_KMEM_UP_BASE: %x\n", V_KMEM_UP_BASE);
-
     printf("Successfully Paging initialized.\n");
 }
 

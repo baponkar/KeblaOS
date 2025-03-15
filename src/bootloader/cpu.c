@@ -21,7 +21,7 @@ static volatile struct limine_smp_request smp_request = {
 int get_cpu_count(){
     if(smp_request.response != NULL)
         return (int) smp_request.response->cpu_count;
-    return 1;
+    return 1; // Defult one processor count
 }
 
 

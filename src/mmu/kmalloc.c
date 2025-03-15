@@ -2,14 +2,12 @@
 This file will manage static memory allocation
 */
 
-
-#include "../driver/vga/vga_term.h"
+#include "../lib/stdio.h"
 
 #include "kmalloc.h"
 
 #define FRAME_SIZE 4096
 
-extern uint64_t PHYSICAL_TO_VIRTUAL_OFFSET;
 extern uint64_t KMEM_UP_BASE;
 extern uint64_t KMEM_LOW_BASE;
 
@@ -17,6 +15,7 @@ extern uint64_t KMEM_LOW_BASE;
 // Low level memory allocation by usin base as KMEM_UP_BASE
 uint64_t kmalloc(uint64_t sz)       // vanilla (normal).
 {
+    if(KMEM_LOW_BASE >= KMEM_UP_BASE) return 0;
     uint64_t tmp = (uint64_t) KMEM_LOW_BASE; // memory allocate in current placement address
     KMEM_LOW_BASE += sz;    // increase the placement address for next memory allocation
     return tmp;
@@ -33,6 +32,7 @@ uint64_t kmalloc_a(uint64_t sz, int align)    // page aligned.
     page directory and page table addresses need to be page-aligned: that is, the bottom 12 
     bits need to be zero (otherwise they would interfere with the read/write/protection/accessed bits).
     */
+    if(KMEM_LOW_BASE >= KMEM_UP_BASE) return 0;
     if (align == 1 && (KMEM_LOW_BASE & 0xFFF)) // If the address is not already page-aligned i.e. multiple of PAGE_SIZE
     {
         // Align it.
@@ -73,6 +73,7 @@ uint64_t kmalloc_ap(uint64_t sz, int align, uint64_t *phys)  // page aligned and
         KMEM_LOW_BASE &= 0xFFFFFFFFFFFFF000;
         KMEM_LOW_BASE += FRAME_SIZE;    // increase  the placement address by 4 KB, Page Size
     }
+    if(KMEM_LOW_BASE >= KMEM_UP_BASE) return 0;
     if (phys)
     {
         *phys = KMEM_LOW_BASE;
@@ -84,26 +85,18 @@ uint64_t kmalloc_ap(uint64_t sz, int align, uint64_t *phys)  // page aligned and
 
 
 void test_kmalloc(){
-    print("Test of kmalloc\n");
+    printf("Test of kmalloc\n");
 
     uint64_t ptr1 = kmalloc(64);
-    print("ptr1 :");
-    print_hex(ptr1);
-    print("\n");
+    printf("ptr1 : %x\n", ptr1);
 
     uint64_t ptr2 = kmalloc_a(43, 1);
-    print("ptr2 :");
-    print_hex(ptr2);
-    print("\n");
+    printf("ptr2 : %x\n", ptr2);
 
     uint64_t ptr3 = kmalloc_p(26,&ptr2);
-    print("ptr3 :");
-    print_hex((uint64_t)ptr3);
-    print("\n");
+    printf("ptr3 : %x\n", (uint64_t)ptr3);
 
     uint64_t ptr4 = kmalloc_ap(23, 1, &ptr1);
-    print("ptr4 :");
-    print_hex(ptr4);
-    print("\n");
+    printf("ptr4 : %x\n", ptr4);
 }
 
