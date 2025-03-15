@@ -1,0 +1,16 @@
+name: Auto Issue Creator
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  create-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Scan for TODOs
+        uses: alstr/todo-to-issue-action@v4
