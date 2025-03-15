@@ -1,0 +1,46 @@
+name: Update Repo Age Badge
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight
+  workflow_dispatch:
+
+jobs:
+  update-badge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Get Repo Creation Date
+        run: |
+          created_at=$(curl -s https://api.github.com/repos/baponkar/KeblaOS | jq -r '.created_at')
+          echo "CREATED_AT=$created_at" >> $GITHUB_ENV
+
+      - name: Calculate Time Elapsed
+        run: |
+          current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          start_date="$CREATED_AT"
+          seconds_diff=$(( $(date -d "$current_date" +%s) - $(date -d "$start_date" +%s) ))
+          years=$((seconds_diff / 31536000))
+          months=$(((seconds_diff % 31536000) / 2592000))
+          message="${years} years, ${months} months"
+          echo "MESSAGE=$message" >> $GITHUB_ENV
+
+      - name: Generate JSON for Shields.io
+        run: |
+          echo '{
+            "schemaVersion": 1,
+            "label": "Repo Age",
+            "labelColor": "red",
+            "message": "'"$MESSAGE"'",
+            "color": "blue"
+          }' > time_elapsed.json
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add time_elapsed.json
+          git commit -m "Update repo age badge"
+          git push
