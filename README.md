@@ -9,7 +9,7 @@
 ![x86_32bit Badge](https://img.shields.io/badge/x86-32bit-maker?logo=intel&labelColor=white&color=blue)
 ![ASM Badge](https://img.shields.io/badge/ASM-Language-maker?logo=assembly&labelColor=white&color=blue)
 
-![GitHub repo age](https://img.shields.io/endpoint?url=https://github.com/baponkar/KeblaOS/time_elapsed.json)
+![GitHub repo age](https://img.shields.io/endpoint?url=https://baponkar.github.io/KeblaOS/time_elapsed.json)
 
 
 ------------------------------------------------------
