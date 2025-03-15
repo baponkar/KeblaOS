@@ -90,5 +90,4 @@ void init_processes() {
     current_process = process;
     processes_list = process;
 
-    printf("thread0: %x\n", current_process->threads);
 }

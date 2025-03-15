@@ -140,6 +140,8 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/vmm.c -o $(BUILD_DIR)/vmm.o
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/kheap.c -o $(BUILD_DIR)/kheap.o
 
+	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/umalloc.c -o $(BUILD_DIR)/umalloc.o
+
 #process management
 	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/process.c -o $(BUILD_DIR)/process.o
 	$(NASM) $(NASM_FLAG) $(PS_DIR)/set_cpu_state.asm -o $(BUILD_DIR)/set_cpu_state.o
@@ -179,6 +181,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/pmm.o \
 						$(BUILD_DIR)/vmm.o \
 						$(BUILD_DIR)/kmalloc.o \
+						$(BUILD_DIR)/umalloc.o \
 						$(BUILD_DIR)/tsc.o \
 						$(BUILD_DIR)/pit_timer.o \
 						$(BUILD_DIR)/apic_timer.o \
@@ -235,6 +238,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/pmm.o \
 						$(BUILD_DIR)/vmm.o \
 						$(BUILD_DIR)/kmalloc.o \
+						$(BUILD_DIR)/umalloc.o \
 						$(BUILD_DIR)/pit_timer.o \
 						$(BUILD_DIR)/apic_timer.o \
 						$(BUILD_DIR)/hpet_timer.o \

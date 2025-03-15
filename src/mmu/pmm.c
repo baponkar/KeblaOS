@@ -3,7 +3,7 @@
 #include "../bootloader/memory.h"
 
 #include "kmalloc.h"
-#include  "../driver/vga/vga_term.h"
+#include  "../lib/stdio.h"
 
 #include "../lib/assert.h"
 #include "../lib/string.h"
@@ -79,11 +79,11 @@ uint64_t free_frame_bit_no()
 
 void init_pmm(){
 
-    // print("Strat of PMM initialization...\n");
+    // printf("Strat of PMM initialization...\n");
 
     uint64_t tmp_i = KMEM_LOW_BASE;
 
-    nframes = (uint64_t) KMEM_LENGTH / FRAME_SIZE;
+    nframes = (uint64_t) (KMEM_LENGTH + UMEM_LENGTH) / FRAME_SIZE;
     frames = (uint64_t*) kmalloc_a( (nframes + 63) * sizeof(uint64_t) / 64 , 1); // Allocate enough bytes for the bitmap
     memset(frames, 0, (nframes + 63) * sizeof(uint64_t) / 64 ); // Zero out the bitmap array
 
@@ -91,34 +91,17 @@ void init_pmm(){
 
     bitmap_mem_size = tmp_f - tmp_i;
 
-    print("Successfully initialized PMM!\n");
+    printf("Successfully initialized PMM!\n");
 }
 
 
 void test_pmm(){
-
-    print("\nTest Physical Memory Manager(pmm):\n");
-
-    print("Frames Pointer Address : ");
-    print_hex((uint64_t) frames);
-    print("\n");
-
-    print("Total Frames : ");
-    print_dec(nframes);
-    print("\n");
-
-    
-    print("After frames allocation next free address pointer: ");
-    print_hex(KMEM_LOW_BASE);
-    print("\n");
-
-    print("Total Memory used for bitmap : ");
-    print_hex(bitmap_mem_size);
-    print(" [");
-    print_size_with_units(bitmap_mem_size);
-    print("]");
-    print("\n");
-
+    printf("\nTest Physical Memory Manager(pmm):\n");
+    printf("Frames Pointer Address : %x\n", (uint64_t) frames);
+    printf("Total Frames : %d\n", nframes);
+    printf("After frames allocation next free address pointer: %x\n", KMEM_LOW_BASE);
+    printf("Total Memory used for bitmap : %x\n", bitmap_mem_size);
+    printf(" [printf_size_with_units(bitmap_mem_size)]\n");
 }
 
 
