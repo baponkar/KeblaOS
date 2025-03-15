@@ -1,7 +1,9 @@
 {
     "schemaVersion": 1,
     "label": "repo age",
+    "labelColor": "red",
     "message": "2 years, 5 months",
     "color": "blue"
   }
+  
   
