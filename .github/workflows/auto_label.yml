@@ -1,0 +1,11 @@
+name: Auto PR Labeler
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  label-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v4
