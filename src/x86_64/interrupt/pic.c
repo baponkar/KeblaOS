@@ -106,11 +106,11 @@ void pic_irq_remap()
 
 
 void init_pic_interrupt(){
-    disable_interrupts();
+    asm volatile("cli");
 
     pic_irq_remap();
    
-    enable_interrupts();
+    asm volatile("sti");
     printf("Successfully PIC Initialized.\n");
 }
 

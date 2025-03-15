@@ -3,8 +3,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <cpuid.h>
 
+
+extern uint32_t is_cpuid_present(void);
 static inline void cpuid(uint32_t leaf, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
 void get_cpu_info();
 void print_cpu_info();
@@ -21,3 +22,8 @@ uint32_t get_cpu_base_frequency();
 
 void enable_fpu();
 bool has_fpu();
+
+
+void target_cpu_task(struct limine_smp_info *smp_info);
+void switch_to_core(uint32_t target_lapic_id);
+void start_secondary_cores1();

@@ -18,6 +18,6 @@ struct hpet{
 typedef struct hpet hpet_t;
 
 
-void init_hpet();
+void start_hpet();
 
 
