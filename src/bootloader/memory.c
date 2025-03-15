@@ -83,14 +83,14 @@ void get_memory_map(){
             entry_ids[3] = entry_ids[2];
         }
 
-        // place kernel into higher  usable memory space
-        KMEM_UP_BASE = entries[entry_ids[3]]->base;
-        KMEM_LENGTH = entries[entry_ids[3]]->length;
+        // Placing lower physical memory for kernel space although Higher half virtual address would be use for kernel
+        KMEM_UP_BASE = entries[entry_ids[1]]->base;
+        KMEM_LENGTH = entries[entry_ids[1]]->length;
         KMEM_LOW_BASE = KMEM_UP_BASE - KMEM_LENGTH;
 
-        // place user into lower half usable memory space
-        UMEM_LOW_BASE = entries[entry_ids[1]]->base;
-        UMEM_LENGTH = entries[entry_ids[1]]->length;
+        // Placing upper physical memory for user space although Lower half  virtual address would be use for user
+        UMEM_LOW_BASE = entries[entry_ids[3]]->base;
+        UMEM_LENGTH = entries[entry_ids[3]]->length;
         UMEM_UP_BASE = UMEM_LOW_BASE + UMEM_LENGTH;
     }else{
         print("Memory map request failed.\n");
@@ -247,6 +247,7 @@ void get_kernel_to_virtual_offset(){
 
         // V_KMEM_LOW_BASE = VIRTUAL_BASE;
         V_KMEM_LOW_BASE = 0xFFFFFFFF80322000;
+        // V_KMEM_LOW_BASE = 0xFFFF800000000000;
 
         // V_KMEM_UP_BASE = VIRTUAL_BASE + 0x40000000 - 0x322000; // 1GB
         // V_KMEM_UP_BASE = VIRTUAL_BASE + KMEM_LENGTH;
@@ -254,6 +255,9 @@ void get_kernel_to_virtual_offset(){
 
         KMEM_LOW_BASE = V_KMEM_LOW_BASE - PHYSICAL_TO_VIRTUAL_OFFSET;
         KMEM_UP_BASE = V_KMEM_UP_BASE - PHYSICAL_TO_VIRTUAL_OFFSET;
+
+        V_UMEM_LOW_BASE = 0;
+        V_UMEM_UP_BASE = 0x00007FFFFFFFFFFF;
 
     }else{
         PHYSICAL_TO_VIRTUAL_OFFSET = 0;

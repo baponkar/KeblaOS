@@ -141,6 +141,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/kheap.c -o $(BUILD_DIR)/kheap.o
 
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/umalloc.c -o $(BUILD_DIR)/umalloc.o
+	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/uheap.c -o $(BUILD_DIR)/uheap.o
 
 #process management
 	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/process.c -o $(BUILD_DIR)/process.o
@@ -182,6 +183,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/vmm.o \
 						$(BUILD_DIR)/kmalloc.o \
 						$(BUILD_DIR)/umalloc.o \
+						$(BUILD_DIR)/uheap.o \
 						$(BUILD_DIR)/tsc.o \
 						$(BUILD_DIR)/pit_timer.o \
 						$(BUILD_DIR)/apic_timer.o \
@@ -239,6 +241,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/vmm.o \
 						$(BUILD_DIR)/kmalloc.o \
 						$(BUILD_DIR)/umalloc.o \
+						$(BUILD_DIR)/uheap.o \
 						$(BUILD_DIR)/pit_timer.o \
 						$(BUILD_DIR)/apic_timer.o \
 						$(BUILD_DIR)/hpet_timer.o \

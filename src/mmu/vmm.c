@@ -1,6 +1,6 @@
 
 /*
-https://github.com/dreamportdev/Osdev-Notes/blob/master/04_Memory_Management/04_Virtual_Memory_Manager.md
+    https://github.com/dreamportdev/Osdev-Notes/blob/master/04_Memory_Management/04_Virtual_Memory_Manager.md
 */
 
 #include "../lib/stdio.h"
@@ -8,37 +8,46 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/04_Memory_Management/04_
 
 #include "vmm.h"
 
+#define LOW_HALF_START 0x0000000000000000ULL
+#define LOW_HALF_END   0x7FFFFFFFFFFFFFFFULL
 
-
-extern pml4_t *user_pml4;
-extern pml4_t *kernel_pml4;
-extern pml4_t *current_pml4;
+#define UPPER_HALF_START 0xFFFF800000000000
+#define UPPER_HALF_END   0xFFFFFFFFFFFFFFFF
 
 extern uint64_t V_KMEM_LOW_BASE;
 extern uint64_t V_KMEM_UP_BASE;
 
+extern uint64_t V_UMEM_LOW_BASE;
+extern uint64_t V_UMEM_UP_BASE;
+
+extern pml4_t *current_pml4;
 
 
 // Allocate a virtual page at the specified virtual address
 void vm_alloc(uint64_t va) {
-    // print("inside of vm_alloc\n");
-    // Get the page for the virtual address, creating necessary structures
-    page_t *page = get_page(va, 1, current_pml4);
+    
+    page_t *page = get_page(va, 1, current_pml4); // if not present then create the page
+
     if (!page) {
         // Handle error if page creation fails
         printf("Page creation failed!\n");
         return;
     }
-
-    // printf("page->present : %d\n", page->present);
-
   
     if (page->present){
-        // Allocate a physical frame for the page
-        alloc_frame(page, 1, 1); // Kernel-mode, writable by default
-        page->present = 1;
-        page->rw = 1; // Writable
-        page->user = 1; // User-accessible (optional, depends on use case)
+        if(va > V_UMEM_UP_BASE){ // For kernel page
+            // Allocate a physical frame for the page
+            alloc_frame(page, 1, 1); // Kernel-mode, writable by default
+            page->present = 1;
+            page->rw = 1;   // Writable
+            page->user = 0; // User non-accessible
+        }else{ // For user page
+            // Allocate a physical frame for the page
+            alloc_frame(page, 0, 1); // User-mode, writable by default
+            page->present = 1;
+            page->rw = 1;   // Writable
+            page->user = 1; // User accessible
+        }
     }
     
     // Invalidate the TLB for this address

@@ -1,15 +1,14 @@
 
 
-#include "../driver/vga/vga_term.h"
+#include "../lib/stdio.h"
 #include "../bootloader/boot.h"
 #include "../bootloader/memory.h"
 #include "vmm.h"
 
 #include "kheap.h"
 
-
-uint64_t kheap_current;
-uint64_t kheap_max; // Tracks the current maximum allocated address
+extern uint64_t V_KMEM_LOW_BASE;
+extern uint64_t V_KMEM_UP_BASE;
 
 
 void *kheap_alloc(size_t size) {
@@ -17,24 +16,24 @@ void *kheap_alloc(size_t size) {
     size = (size + 0xFFF) & ~0xFFF;
 
     // Check if we have enough space in the heap
-    if ((kheap_current + size) > V_KMEM_UP_BASE) {
-        print("Out of memory\n");
+    if ((V_KMEM_LOW_BASE + size) > V_KMEM_UP_BASE) {
+        printf("Out of memory\n");
         return NULL; // Out of heap space
     }
 
     // Allocate virtual pages for the requested size
-    uint64_t va = kheap_current;
-    while (kheap_current < va + size) {
-        vm_alloc(kheap_current); // Use the previous vm_alloc
-        kheap_current += 0x1000; // Increment by page size (4 KiB)
+    uint64_t va = V_KMEM_LOW_BASE;
+    while (V_KMEM_LOW_BASE < va + size) {
+        vm_alloc(V_KMEM_LOW_BASE); // Use the previous vm_alloc
+        V_KMEM_LOW_BASE += 0x1000; // Increment by page size (4 KiB)
     }
 
     // Add 4KB padding between allocations to prevent overlapping
-    kheap_current += 0x1000;
+    V_KMEM_LOW_BASE += 0x1000;
 
     // Update the maximum allocated address
-    if (kheap_current > kheap_max) {
-        kheap_max = kheap_current;
+    if (V_KMEM_LOW_BASE > V_KMEM_UP_BASE) {
+        V_KMEM_UP_BASE = V_KMEM_LOW_BASE;
     }
 
     return (void *)va; // Return the start of the allocated region
@@ -59,21 +58,8 @@ void kheap_free(void *ptr, size_t size) {
     }
 }
 
-
-void init_kheap() {
-    kheap_current = V_KMEM_LOW_BASE;
-    kheap_max = V_KMEM_UP_BASE;
-
-    print("Successfully VMM initialized.\n");
-}
-
 void test_kheap(){
-    print("Start of kheap test...\n");
     uint64_t *ptr = (uint64_t *) kheap_alloc(25);
-
     *ptr = 0xDEADBEF;
-
-    print_hex(*ptr);
-    
-    print("Successfully tested kheap\n");
+    printf("Successfully tested kheap at address : %x\n", *ptr);
 }

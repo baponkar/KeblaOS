@@ -36,7 +36,8 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../mmu/kmalloc.h" // test_kmalloc
 #include "../mmu/umalloc.h" // test_umalloc
 #include "../mmu/vmm.h" // test_vmm
-#include "../mmu/kheap.h" // init_kheap, test_kheap
+#include "../mmu/kheap.h" // test_kheap
+#include "../mmu/uheap.h" // test_uheap
 #include "../driver/keyboard/keyboard.h" // initKeyboard
 #include "../x86_64/timer/tsc.h"         // time stamp counter
 #include "../x86_64/timer/rtc.h"        // RTC
@@ -46,10 +47,6 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../usr/shell.h"
 
 #include "kernel.h"
-
-#define KMEM_BASE 0x7EF50000 + 0x56A000 // After 5 MB kernel
-#define UHEAP_BASE 0x40000000 // 1 GB virtual address
-
 
 
 extern process_t *current_process;
@@ -81,7 +78,6 @@ void kmain(){
     // Memory management initialization
     init_pmm();
     init_paging();
-    init_kheap();
 
     // Enabling interrupt
     // init_bootstrap_cpu_interrupt();
@@ -138,8 +134,12 @@ void kmain(){
 
 
     // print_memory_map();
-    // test_umalloc();
+    test_kmalloc();
+    test_umalloc();
+    test_pmm();
 
+    test_kheap();
+    test_uheap();
     
 
     halt_kernel();

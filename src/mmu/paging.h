@@ -72,9 +72,6 @@ typedef struct pml4 { // pml4 structure is containing 512 pdpt directory entries
 } __attribute__((aligned(PAGE_SIZE))) pml4_t;
 
 
-// different pml4 directory pointer
-extern pml4_t *user_pml4; 
-extern pml4_t *kernel_pml4;
 extern pml4_t *current_pml4;
 
 extern uint64_t V_KMEM_UP_BASE;
