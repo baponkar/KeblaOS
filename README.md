@@ -20,15 +20,17 @@
 
 <p>Days elapsed since 9th June 2024: <span id="daysElapsed"></span></p>
 
-<script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script>
-  const startDate = dayjs('2024-06-09');
-  const today = dayjs();
-  const daysElapsed = today.diff(startDate, 'day');
+  const startDate = new Date('2024-06-09');
+  const currentDate = new Date();
+  const timeDifference = currentDate - startDate;
+  const daysElapsed = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+
   document.getElementById('daysElapsed').textContent = daysElapsed;
 </script>
 
 
+-----
 
 
 * Current Progress :
