@@ -102,9 +102,6 @@ void interrupt_install_handler(int int_no, void (*handler)(registers_t *r));
 void interrupt_uninstall_handler(int int_no);
 void int_set_gate(uint8_t index, uint64_t offset, uint16_t selector, uint8_t attr);
 
-void disable_interrupts();
-void enable_interrupts();
-
 void init_bootstrap_cpu_interrupt();
 void init_core_cpu_interrupt(uint64_t core_id);
 

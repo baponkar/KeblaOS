@@ -213,3 +213,5 @@ void start_secondary_cores() {
         printf("Successfully GDT and TSS enabled for CPU %d!\n", core);
     }
 }
+
+

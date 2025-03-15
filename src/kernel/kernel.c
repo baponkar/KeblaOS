@@ -18,7 +18,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../bootloader/ahci.h"
 #include "../bootloader/pci.h"
 #include "../bootloader/disk.h"
-#include "../bootloader/cpu.h"
+#include "../bootloader/cpu.h" // target_cpu_task, switch_to_core
 #include "../bootloader/trampoline.h"
 #include "../bootloader/memory.h"
 #include "../bootloader/firmware.h"
@@ -49,12 +49,6 @@ Reference   : https://wiki.osdev.org/Limine
 #include "kernel.h"
 
 
-extern process_t *current_process;
-__attribute__((section(".data"))) uint8_t core_id = 1;  // Dummy value for now
-
-void store_core_id() {
-    *(volatile uint8_t*)0x9000 = core_id;
-}
 
 void kmain(){
 
@@ -71,10 +65,9 @@ void kmain(){
     // init_gdt_bootstrap_cpu();
     init_all_gdt_tss();
     core_init(0);
-    start_secondary_cores();
+    // start_secondary_cores();
+    // start_secondary_cores1();
     
-
-
     // Memory management initialization
     init_pmm();
     init_paging();
@@ -82,10 +75,9 @@ void kmain(){
     // Enabling interrupt
     // init_bootstrap_cpu_interrupt();
     init_core_cpu_interrupt(0);
-    init_core_cpu_interrupt(1);
-    init_core_cpu_interrupt(2);
-    init_core_cpu_interrupt(3);
-    
+    // init_core_cpu_interrupt(1);
+    // init_core_cpu_interrupt(2);
+    // init_core_cpu_interrupt(3);
     
     init_pic_interrupt();
     init_apic_interrupt();
@@ -105,7 +97,7 @@ void kmain(){
     // init_hpet();
     init_pit_timer(100);    // Interrupt in 100 ms
     init_apic_timer(100);   // Interrupt in 100 ms
-    
+    start_hpet();
 
     // get_cpu_info();
     // print_cpu_info();
@@ -122,7 +114,7 @@ void kmain(){
 
     initKeyboard();
 
-    // init_processes();
+    init_processes();
     // print_all_threads_name(current_process);
 
     // if(has_fpu){
@@ -132,15 +124,17 @@ void kmain(){
     //     printf("Test float: flt = %f\n", flt);
     // }
 
-
     // print_memory_map();
-    test_kmalloc();
-    test_umalloc();
-    test_pmm();
+    // test_kmalloc();
+    // test_umalloc();
+    // test_pmm();
 
-    test_kheap();
-    test_uheap();
+    // test_kheap();
+    // test_uheap();
     
+    printf("Running on Bootstrap CPU.\n");
+    // switch_to_core(1); // Switch to CPU core with LAPIC ID 1
+    // switch_to_core(0); // Switch to CPU core with LAPIC ID 0
 
     halt_kernel();
 }

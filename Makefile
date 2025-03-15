@@ -81,9 +81,12 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/ahci.c -o $(BUILD_DIR)/ahci.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/pci.c -o $(BUILD_DIR)/pci.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/disk.c -o $(BUILD_DIR)/disk.o
-	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/cpu.c -o $(BUILD_DIR)/cpu.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/memory.c -o $(BUILD_DIR)/memory.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/firmware.c -o $(BUILD_DIR)/firmware.o
+
+# Symmetric Multi processor
+	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/cpu.c -o $(BUILD_DIR)/cpu.o
+	$(NASM) $(NASM_FLAG) $(BOOTLOADER_DIR)/cpuid.asm -o $(BUILD_DIR)/cpuid.o
 
 	
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/io/ports.c -o $(BUILD_DIR)/ports.o
@@ -199,6 +202,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/test_process.o \
 						$(BUILD_DIR)/disk.o \
 						$(BUILD_DIR)/cpu.o \
+						$(BUILD_DIR)/cpuid.o \
 						$(BUILD_DIR)/memory.o \
 						$(BUILD_DIR)/framebuffer.o \
 						$(BUILD_DIR)/firmware.o \
@@ -256,6 +260,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/test_process.o \
 						$(BUILD_DIR)/disk.o \
 						$(BUILD_DIR)/cpu.o \
+						$(BUILD_DIR)/cpuid.o \
 						$(BUILD_DIR)/memory.o \
 						$(BUILD_DIR)/framebuffer.o \
 						$(BUILD_DIR)/firmware.o \

@@ -33,14 +33,14 @@ uint64_t read_tsc() {
 
 
 void tsc_sleep(uint64_t microseconds) {
-    disable_interrupts();  // Prevent interruptions
+    asm volatile("cli");  // Prevent interruptions
     uint64_t start = read_tsc();
     
     // freq cycles in 1 s; 1 cycle = 1/freq s; x µs = x/1000000 s; no. of cycle in x µs = x*freq/1000000
     uint64_t cycles_to_wait = (microseconds * cpu_frequency_hz1) / 1000000; // Adjust based on CPU frequency
 
     while ((read_tsc() - start) < cycles_to_wait); // Wait in loop to perform all loops
-    enable_interrupts();
+    asm volatile("sti");
 }
 
 

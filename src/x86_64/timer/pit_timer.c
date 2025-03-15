@@ -37,7 +37,7 @@ uint16_t read_pit_count(void) {
 	uint16_t count = 0;
 	
 	// Disable interrupts
-	disable_interrupts();
+    asm volatile("cli");
 	
 	// al = channel in bits 6 and 7, remaining bits clear
 	outb(0x43, 0b0000000);
@@ -51,7 +51,7 @@ uint16_t read_pit_count(void) {
 
 void set_pit_count(unsigned count) {
 	// Disable interrupts
-    disable_interrupts();
+    asm volatile("cli");
 	
 	// Set low byte
 	outb(0x40,count & 0xFF);		    // Low byte of divisor
@@ -75,7 +75,7 @@ void pit_timerHandler(registers_t *regs) {
 
 
 void init_pit_timer(uint32_t interval_ms) {
-    disable_interrupts();
+    asm volatile("cli");
     interrupt_install_handler((PIT_TIMER_VECTOR - 32), &pit_timerHandler); // IRQ0 for PIT timer
 
     // Compute frequency and divisor dynamically
@@ -85,7 +85,7 @@ void init_pit_timer(uint32_t interval_ms) {
     outb(COMMAND_PORT, 0x36);  // Command port: 0x36 for repeating square wave mode
     set_pit_count(divisor);    // Set PIT divisor
 
-    enable_interrupts();
+    asm volatile("sti");
     
     printf("Initializing PIT with %d ms interval (divisor: %d, frequency: %d Hz)\n", interval_ms, divisor, frequency);
 }

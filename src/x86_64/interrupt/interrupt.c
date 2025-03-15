@@ -86,17 +86,6 @@ void interrupt_uninstall_handler(int int_no)
 }
 
 
-// Function to disable interrupts
-void disable_interrupts() {
-    asm volatile("cli"); // Clear the interrupt flag
-}
-
-
-// Function to enable interrupts
-void enable_interrupts() {
-    asm volatile("sti"); // Set the interrupt flag
-}
-
 
 void boot_int_set_gate(uint8_t index, uint64_t offset, uint16_t selector, uint8_t attr){
     boot_int_entries[index].offset_1 = (uint16_t) offset & 0xFFFF; // set lower 16 bit
@@ -179,7 +168,7 @@ void set_boot_descriptor_table(){
 
 
 void init_bootstrap_cpu_interrupt(){
-    disable_interrupts();
+    asm volatile("cli");
     boot_int_ptr.limit = (sizeof(int_entry_t) * 256) - 1;
     boot_int_ptr.base  = (uint64_t) &boot_int_entries;
     // for safety clearing memories
@@ -187,9 +176,11 @@ void init_bootstrap_cpu_interrupt(){
     idt_flush((uint64_t) &boot_int_ptr);
     set_boot_descriptor_table();
    
-    enable_interrupts();
+    asm volatile("sti");
     printf("Successfully Bootstrap Interrupt Initialized.\n");
 }
+
+
 
 #define MAX_CPU_COUNT 256           // Maximum CPU cores supported
 int_entry_t core_int_entries[MAX_CPU_COUNT][256];
@@ -280,7 +271,7 @@ void set_core_descriptor_table(uint64_t core_id){
 
 
 void init_core_cpu_interrupt(uint64_t core_id){
-    disable_interrupts();
+    asm volatile("cli");
     core_int_ptr[core_id].limit = (sizeof(int_entry_t) * 256) - 1;
     core_int_ptr[core_id].base  = (uint64_t) &core_int_entries[core_id];
     // for safety clearing memories
@@ -288,7 +279,7 @@ void init_core_cpu_interrupt(uint64_t core_id){
     idt_flush((uint64_t) &core_int_ptr[core_id]);
     set_core_descriptor_table(core_id);
    
-    enable_interrupts();
+    asm volatile("sti");
     printf("Successfully CPU %d Interrupt Initialized.\n", core_id);
 }
 
