@@ -13,7 +13,6 @@
 #include "pmm.h"
 
 
-// As limine put kernel into higher half so we set userspace at first usable space and set kernel space at second usable space
 // This file will set or free a 4KB physical Frame.
 // one row of bitmap can store information(free/use) of 8 * 4 KB = 32 Kb memory page(8 pages)
 // A bitset of frames - used or free.
@@ -100,8 +99,9 @@ void test_pmm(){
     printf("Frames Pointer Address : %x\n", (uint64_t) frames);
     printf("Total Frames : %d\n", nframes);
     printf("After frames allocation next free address pointer: %x\n", KMEM_LOW_BASE);
-    printf("Total Memory used for bitmap : %x\n", bitmap_mem_size);
-    printf(" [printf_size_with_units(bitmap_mem_size)]\n");
+    printf("Total Memory used for bitmap : ");
+    print_size_with_units(bitmap_mem_size);
+    printf("\n");
 }
 
 
