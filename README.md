@@ -9,6 +9,8 @@
 ![x86_32bit Badge](https://img.shields.io/badge/x86-32bit-maker?logo=intel&labelColor=white&color=blue)
 ![ASM Badge](https://img.shields.io/badge/ASM-Language-maker?logo=assembly&labelColor=white&color=blue)
 
+![GitHub repo age](https://img.shields.io/endpoint?url=https://github.com/baponkar/KeblaOS/time_elapsed.json)
+
 
 ------------------------------------------------------
 # Kebla OS
@@ -18,16 +20,7 @@
 
 #### Last Update : 15th March, 2025
 
-<p>Days elapsed since 9th June 2024: <span id="daysElapsed"></span></p>
-
-<script>
-  const startDate = new Date('2024-06-09');
-  const currentDate = new Date();
-  const timeDifference = currentDate - startDate;
-  const daysElapsed = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-
-  document.getElementById('daysElapsed').textContent = daysElapsed;
-</script>
+Days co
 
 
 -----
