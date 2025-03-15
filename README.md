@@ -16,7 +16,20 @@
 
 #### Start Date : 9 th June, 2024
 
-#### Last Update : 19th December, 2024
+#### Last Update : 15th March, 2025
+
+<p>Days elapsed since 9th June 2024: <span id="daysElapsed"></span></p>
+
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+<script>
+  const startDate = dayjs('2024-06-09');
+  const today = dayjs();
+  const daysElapsed = today.diff(startDate, 'day');
+  document.getElementById('daysElapsed').textContent = daysElapsed;
+</script>
+
+
+
 
 * Current Progress :
 - [x] Limine Bootloader
@@ -31,13 +44,16 @@
     * CMOS
     * RTC
 
-- [x] GDT initialization
-- [x] IDT initialization
+- [x] GDT initialization (Multi Core Support)
+- [x] IDT initialization (Multi Core Support)
+    * PIC
+    * APIC
 - [x] Timer
     * PIT
     * HPET
     * RTC
     * APIC
+    * TSC
 - [x] A basic Shell
 - [x] Driver :
     * VGA
@@ -48,10 +64,13 @@
     * Mouse Driver
 - [x] The Schedular and Process
 - [x] MM
+    * Kmalloc
     * PMM
     * 4 Level 4KB Paging 
     * VMM
     * KHEAP (Dynamic Kernel Heap allocation)
+    * umalloc
+    * UHEAP
 - [x] Standard Library initialization 
     * stdio
     * stdlib
