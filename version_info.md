@@ -6,7 +6,7 @@
 <table>
   <tr><td colspan="2" align="left"><em>Version - 0.12</em></td></tr>
   <tr><td><em>Architecture:</em></td><td><em>x86</em></td></tr>
-  <tr><td><em>64 Bit</em></td><td></td></tr>
+  <tr><td><em>Bit</em></td><td><em>64</em></td></tr>
   <tr><td><em>Build Date:</em></td><td><code>16.03.2024</code></td></tr>
 </table>
 
@@ -33,6 +33,7 @@
 
 - [x] CPU information and control
     * CPUID
+    * SMP
 
 - [x] GDT (Multi Core Support)
 - [x] TSS (Multi Core Support)
