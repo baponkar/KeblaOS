@@ -1,14 +1,89 @@
-# KeblaOS
+# 🖥️ KeblaOS
 
-![KeblaOS Icon](./src/img/KeblaOS_icon.bmp)
+![KeblaOS Icon](image/KeblaOS.png)
 
-## Version - 0.8
 
-## Architecture : x86_64
++-------------------------+
+|      **Version - 0.12** |
++-------------------------+
+| Architecture: x86       |
+| 64 Bit                  |
+| Build Date: 16.03.2024  |
++-------------------------+
 
-## Build Date : 08/12/2024
 
-## Description : This version just print some bootloader supplied information.
+
+## Features : This version have following features :
+
+- [x] Limine Bootloader
+    * Getting Various Boot Information
+    * Getting Firmware Information
+
+- [x] VGA Framebuffer Driver
+
+- [x] ACPI
+    * RSDT
+    * FADT
+    * MADT
+    * MCFG
+    * HPET
+
+- [x] AHCI
+
+- [x] CPU information and control
+    * CPUID
+
+- [x] GDT (Multi Core Support)
+- [x] TSS (Multi Core Support)
+
+- [x] Interrupt
+    * APIC (Multi Core Support)
+    * PIC (Multi Core Support)
+    * ISR
+    * IRQ
+
+- [x] PCI
+
+- [x] Memory Management
+    * Parsing Memory Info
+    * 4 Level Paging
+    * PMM
+    * Kmalloc
+    * VMM
+    * KHEAP
+    * Umalloc
+    * UHEAP
+
+- [x] Drivers
+    * Disk
+    * VGA FRAMEBUFFER
+    * I/O PORTS
+    * SERIAL
+    * Keyboard
+    * Speaker
+    * Mouse
+
+- [x] Timer
+    * TSC
+    * RTC
+    * PIT
+    * APIC
+    * HPET
+
+- [x] Multitasking
+    * Process
+    * Thread
+    * Scheduler
+    * Set CPU State by regisers
+
+- [x] Simple User Shell
+
+- [ ] Future Plans
+    * Multitasking by enabling all cores
+    * FAT32 File System
+    * Usermode
+    * System Call
+    * Nice VGA Driver with Graphics
 
 Screenshot 1
 ![screenshot 1](./screenshot/screenshot_01.png)
@@ -30,23 +105,7 @@ Screenshot 2
 - [x] [QEMU emulator](https://www.qemu.org/) version 6.2.0 (Debian 1:6.2+dfsg-2ubuntu6.24)
 - [x] [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) Ubuntu 22.04.4 LTS
 
-## Features : This version have following features :
 
-- [x] Limine Bootloader
-- [x] VGA Framebuffer Driver
-- [x] stdlib.c included in lib directory
-- [x] string.c includeed in lib directory
-- [x] Global Descriptor Table(GDT)
-- [x] Interrupt Descriptor Table(IDT)
-- [x] PIT Timer
-- [x] Shell
-- [x] Speaker Driver
-- [x] Keyboard Driver
-- [x] Physical Memory Manager(PMM)
-- [x] Kernel Heap(kheap)
-- [x] Paging
-- [x] Process
-- [x] Schedular
 
 
 
