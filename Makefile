@@ -12,6 +12,10 @@ DEBUG_DIR = debug
 BUILD_DIR = build
 ISO_DIR = iso_root
 BOOTLOADER_DIR = $(SRC_DIR)/bootloader
+CPU_DIR = $(SRC_DIR)/cpu
+PCI_DIR = $(SRC_DIR)/pci
+AHCI_DIR = $(SRC_DIR)/ahci
+DISK_DIR = $(SRC_DIR)/disk
 ACPI_DIR = $(SRC_DIR)/acpi
 KERNEL_DIR = $(SRC_DIR)/kernel
 UTIL_DIR = $(SRC_DIR)/util
@@ -70,27 +74,25 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(KERNEL_DIR)/kernel.c -o $(BUILD_DIR)/kernel.o
 	$(GCC) $(GCC_FLAG) -c $(UTIL_DIR)/util.c -o $(BUILD_DIR)/util.o
 
+	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/firmware.c -o $(BUILD_DIR)/firmware.o
 	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/boot.c -o $(BUILD_DIR)/boot.o
 
+# acpi
 	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/acpi.c -o $(BUILD_DIR)/acpi.o
 	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/rsdt.c -o $(BUILD_DIR)/rsdt.o
 	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/fadt.c -o $(BUILD_DIR)/fadt.o
 	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/madt.c -o $(BUILD_DIR)/madt.o
 	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/mcfg.c -o $(BUILD_DIR)/mcfg.o
 
-	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/ahci.c -o $(BUILD_DIR)/ahci.o
-	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/pci.c -o $(BUILD_DIR)/pci.o
-	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/disk.c -o $(BUILD_DIR)/disk.o
-	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/memory.c -o $(BUILD_DIR)/memory.o
-	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/firmware.c -o $(BUILD_DIR)/firmware.o
+# ahci
+	$(GCC) $(GCC_FLAG) -c $(AHCI_DIR)/ahci.c -o $(BUILD_DIR)/ahci.o
+
+# pci
+	$(GCC) $(GCC_FLAG) -c $(PCI_DIR)/pci.c -o $(BUILD_DIR)/pci.o
 
 # Symmetric Multi processor
-	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/cpu.c -o $(BUILD_DIR)/cpu.o
-	$(NASM) $(NASM_FLAG) $(BOOTLOADER_DIR)/cpuid.asm -o $(BUILD_DIR)/cpuid.o
-
-	
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/io/ports.c -o $(BUILD_DIR)/ports.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/io/serial.c -o $(BUILD_DIR)/serial.o
+	$(GCC) $(GCC_FLAG) -c $(CPU_DIR)/cpu.c -o $(BUILD_DIR)/cpu.o
+	$(NASM) $(NASM_FLAG) $(CPU_DIR)/cpuid.asm -o $(BUILD_DIR)/cpuid.o
 
 #VGA DRIVER
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/fonts/eng/eng_8x8.c -o $(BUILD_DIR)/eng_8x8.o
@@ -98,44 +100,44 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/framebuffer.c -o $(BUILD_DIR)/framebuffer.o
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/vga_term.c -o $(BUILD_DIR)/vga_term.o
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/vga_gfx.c -o $(BUILD_DIR)/vga_gfx.o
-
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/emoji/emoji.c -o $(BUILD_DIR)/emoji.o
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/image_data.c -o $(BUILD_DIR)/image_data.o
 
+# Driver
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/keyboard/keyboard.c -o $(BUILD_DIR)/keyboard.o
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/mouse/mouse.c -o $(BUILD_DIR)/mouse.o
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/io/ports.c -o $(BUILD_DIR)/ports.o
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/io/serial.c -o $(BUILD_DIR)/serial.o
 
+# Disk
+	$(GCC) $(GCC_FLAG) -c $(DISK_DIR)/disk.c -o $(BUILD_DIR)/disk.o
 
+# Library
 	$(GCC) $(GCC_FLAG) -c $(LIB_DIR)/string.c -o $(BUILD_DIR)/string.o
 	$(GCC) $(GCC_FLAG) -c $(LIB_DIR)/stdlib.c -o $(BUILD_DIR)/stdlib.o
 	$(GCC) $(GCC_FLAG) -c $(LIB_DIR)/stdio.c -o $(BUILD_DIR)/stdio.o
 
+# GDT
 	$(GCC) $(GCC_FLAG) -c $(GDT_DIR)/gdt.c -o $(BUILD_DIR)/gdt.o
 	$(NASM) $(NASM_FLAG) $(GDT_DIR)/gdt_load.asm -o $(BUILD_DIR)/gdt_load.o
 
+# Interrupt
 	$(GCC) $(GCC_FLAG) -c $(INT_DIR)/interrupt.c -o $(BUILD_DIR)/interrupt.o
 	$(NASM) $(NASM_FLAG) $(INT_DIR)/interrupt_flush.asm -o $(BUILD_DIR)/interrupt_flush.o
-
 	$(GCC) $(GCC_FLAG) -c $(INT_DIR)/pic.c -o $(BUILD_DIR)/pic.o
 	$(NASM) $(NASM_FLAG) $(INT_DIR)/isr.asm -o $(BUILD_DIR)/isr.o
 	$(NASM) $(NASM_FLAG) $(INT_DIR)/irq.asm -o $(BUILD_DIR)/irq.o
 	$(GCC) $(GCC_FLAG) -c $(INT_DIR)/apic.c -o $(BUILD_DIR)/apic.o
 
-
-
+# Timer
 	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/tsc.c -o $(BUILD_DIR)/tsc.o
 	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/pit_timer.c -o $(BUILD_DIR)/pit_timer.o
 	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/apic_timer.c -o $(BUILD_DIR)/apic_timer.o
 	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/hpet_timer.c -o $(BUILD_DIR)/hpet_timer.o
 	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/rtc.c -o $(BUILD_DIR)/rtc.o
 
-
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/keyboard/keyboard.c -o $(BUILD_DIR)/keyboard.o
-
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/mouse/mouse.c -o $(BUILD_DIR)/mouse.o
-
-	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/shell.c -o $(BUILD_DIR)/shell.o
-
-	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/user.c -o $(BUILD_DIR)/user.o
-
 #memory management
+	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/detect_memory.c -o $(BUILD_DIR)/detect_memory.o
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/kmalloc.c -o $(BUILD_DIR)/kmalloc.o
 	$(GCC) $(GCC_FLAG) -c $(MMU_DIR)/pmm.c -o $(BUILD_DIR)/pmm.o
 	$(NASM) $(NASM_FLAG) $(MMU_DIR)/load_paging.asm -o $(BUILD_DIR)/load_paging.o
@@ -153,6 +155,8 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/test_process.c -o $(BUILD_DIR)/test_process.o
 
 #	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fs.c -o $(BUILD_DIR)/fs.o
+	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/shell.c -o $(BUILD_DIR)/shell.o
+	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/user.c -o $(BUILD_DIR)/user.o
 
 
 # Linking object files into kernel binary
@@ -203,71 +207,71 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/disk.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/cpuid.o \
-						$(BUILD_DIR)/memory.o \
+						$(BUILD_DIR)/detect_memory.o \
 						$(BUILD_DIR)/framebuffer.o \
 						$(BUILD_DIR)/firmware.o \
 						$(BUILD_DIR)/eng_8x8.o \
 						$(BUILD_DIR)/eng_8x16.o \
 						$(BUILD_DIR)/vga_gfx.o \
 						$(BUILD_DIR)/serial.o \
-					
-
+						$(BUILD_DIR)/emoji.o
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
-						$(BUILD_DIR)/boot.o \
-						$(BUILD_DIR)/acpi.o \
-						$(BUILD_DIR)/rsdt.o \
-						$(BUILD_DIR)/fadt.o \
-						$(BUILD_DIR)/madt.o \
-						$(BUILD_DIR)/mcfg.o \
-						$(BUILD_DIR)/ahci.o \
-						$(BUILD_DIR)/pci.o \
-						$(BUILD_DIR)/kernel.o \
-						$(BUILD_DIR)/ports.o \
-						$(BUILD_DIR)/image_data.o \
-						$(BUILD_DIR)/string.o \
-						$(BUILD_DIR)/stdlib.o \
-						$(BUILD_DIR)/stdio.o \
-						$(BUILD_DIR)/vga_term.o \
-						$(BUILD_DIR)/gdt.o \
-						$(BUILD_DIR)/gdt_load.o \
-						$(BUILD_DIR)/util.o \
-						$(BUILD_DIR)/interrupt.o \
-						$(BUILD_DIR)/interrupt_flush.o \
-						$(BUILD_DIR)/tsc.o \
-						$(BUILD_DIR)/pic.o \
-						$(BUILD_DIR)/isr.o \
-						$(BUILD_DIR)/irq.o \
-						$(BUILD_DIR)/apic.o \
-						$(BUILD_DIR)/load_paging.o \
-						$(BUILD_DIR)/paging.o \
-						$(BUILD_DIR)/pmm.o \
-						$(BUILD_DIR)/vmm.o \
-						$(BUILD_DIR)/kmalloc.o \
-						$(BUILD_DIR)/umalloc.o \
-						$(BUILD_DIR)/uheap.o \
-						$(BUILD_DIR)/pit_timer.o \
-						$(BUILD_DIR)/apic_timer.o \
-						$(BUILD_DIR)/hpet_timer.o \
-						$(BUILD_DIR)/rtc.o \
-						$(BUILD_DIR)/keyboard.o \
-						$(BUILD_DIR)/shell.o \
-						$(BUILD_DIR)/user.o \
-						$(BUILD_DIR)/kheap.o \
-						$(BUILD_DIR)/process.o \
-						$(BUILD_DIR)/set_cpu_state.o \
-						$(BUILD_DIR)/thread.o \
-						$(BUILD_DIR)/test_process.o \
-						$(BUILD_DIR)/disk.o \
-						$(BUILD_DIR)/cpu.o \
-						$(BUILD_DIR)/cpuid.o \
-						$(BUILD_DIR)/memory.o \
-						$(BUILD_DIR)/framebuffer.o \
-						$(BUILD_DIR)/firmware.o \
-						$(BUILD_DIR)/eng_8x8.o \
-						$(BUILD_DIR)/eng_8x16.o \
-						$(BUILD_DIR)/vga_gfx.o \
-						$(BUILD_DIR)/serial.o \
+														$(BUILD_DIR)/boot.o \
+														$(BUILD_DIR)/acpi.o \
+														$(BUILD_DIR)/rsdt.o \
+														$(BUILD_DIR)/fadt.o \
+														$(BUILD_DIR)/madt.o \
+														$(BUILD_DIR)/mcfg.o \
+														$(BUILD_DIR)/ahci.o \
+														$(BUILD_DIR)/pci.o \
+														$(BUILD_DIR)/kernel.o \
+														$(BUILD_DIR)/ports.o \
+														$(BUILD_DIR)/image_data.o \
+														$(BUILD_DIR)/string.o \
+														$(BUILD_DIR)/stdlib.o \
+														$(BUILD_DIR)/stdio.o \
+														$(BUILD_DIR)/vga_term.o \
+														$(BUILD_DIR)/gdt.o \
+														$(BUILD_DIR)/gdt_load.o \
+														$(BUILD_DIR)/util.o \
+														$(BUILD_DIR)/interrupt.o \
+														$(BUILD_DIR)/interrupt_flush.o \
+														$(BUILD_DIR)/tsc.o \
+														$(BUILD_DIR)/pic.o \
+														$(BUILD_DIR)/isr.o \
+														$(BUILD_DIR)/irq.o \
+														$(BUILD_DIR)/apic.o \
+														$(BUILD_DIR)/load_paging.o \
+														$(BUILD_DIR)/paging.o \
+														$(BUILD_DIR)/pmm.o \
+														$(BUILD_DIR)/vmm.o \
+														$(BUILD_DIR)/kmalloc.o \
+														$(BUILD_DIR)/umalloc.o \
+														$(BUILD_DIR)/uheap.o \
+														$(BUILD_DIR)/pit_timer.o \
+														$(BUILD_DIR)/apic_timer.o \
+														$(BUILD_DIR)/hpet_timer.o \
+														$(BUILD_DIR)/rtc.o \
+														$(BUILD_DIR)/keyboard.o \
+														$(BUILD_DIR)/shell.o \
+														$(BUILD_DIR)/user.o \
+														$(BUILD_DIR)/kheap.o \
+														$(BUILD_DIR)/process.o \
+														$(BUILD_DIR)/set_cpu_state.o \
+														$(BUILD_DIR)/thread.o \
+														$(BUILD_DIR)/test_process.o \
+														$(BUILD_DIR)/disk.o \
+														$(BUILD_DIR)/cpu.o \
+														$(BUILD_DIR)/cpuid.o \
+														$(BUILD_DIR)/detect_memory.o \
+														$(BUILD_DIR)/framebuffer.o \
+														$(BUILD_DIR)/firmware.o \
+														$(BUILD_DIR)/eng_8x8.o \
+														$(BUILD_DIR)/eng_8x16.o \
+														$(BUILD_DIR)/vga_gfx.o \
+														$(BUILD_DIR)/serial.o \
+														$(BUILD_DIR)/emoji.o
 						
 
 
@@ -290,7 +294,7 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	cp $(SRC_DIR)/img/boot_loader_wallpaper.bmp  $(ISO_DIR)/boot/boot_loader_wallpaper.bmp
 	cp -v $(BUILD_DIR)/kernel.bin $(ISO_DIR)/boot/
 	mkdir -p $(ISO_DIR)/boot/limine
-	cp -v $(BOOTLOADER_DIR)/limine.conf $(SRC_DIR)/limine/limine-bios.sys $(SRC_DIR)/limine/limine-bios-cd.bin $(SRC_DIR)/limine/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
+	cp -v $(SRC_DIR)/limine.conf $(SRC_DIR)/limine/limine-bios.sys $(SRC_DIR)/limine/limine-bios-cd.bin $(SRC_DIR)/limine/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
 	mkdir -p $(ISO_DIR)/EFI/BOOT
 	cp -v $(SRC_DIR)/limine/BOOTX64.EFI $(ISO_DIR)/EFI/BOOT/
 	cp -v $(SRC_DIR)/limine/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/

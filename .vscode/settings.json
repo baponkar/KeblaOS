@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "string.h": "c",
-        "assert.h": "c"
+        "assert.h": "c",
+        "detect_memory.h": "c"
     }
 }

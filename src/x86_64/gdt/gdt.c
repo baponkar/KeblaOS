@@ -15,7 +15,7 @@
     https://wiki.osdev.org/Task_State_Segment
 
 */
-#include "../../bootloader/cpu.h"
+#include "../../cpu/cpu.h"
 #include "../../lib/stdio.h"
 #include "../../lib/string.h"
 #include "../../mmu/kmalloc.h"

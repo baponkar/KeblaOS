@@ -1,5 +1,6 @@
 #include "../io/ports.h"
-#include "../../x86_64/timer/pic_timer.h"
+#include "../../lib/stdio.h"
+#include "../../x86_64/timer/pit_timer.h"
 
 #include "speaker.h"
 
@@ -43,9 +44,9 @@ void beep() {
     // for (int i = 0; i < 100000; i++) {
     //     asm volatile("nop");
     // }
-    print("before\n");
-    delay(1);
-    print("after");
+    printf("before\n");
+    pit_sleep(10);
+    printf("after");
     // Stop the sound
     stop_sound();
 }

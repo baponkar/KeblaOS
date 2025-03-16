@@ -21,6 +21,9 @@
 #define RTC_REG_B       0x0B
 #define RTC_REG_C       0x0C
 
+volatile uint32_t rtc_ticks = 0;
+
+
 
 void rtc_enable() {
     outb(RTC_COMMAND_PORT, RTC_REG_B);  
@@ -55,11 +58,20 @@ void enable_rtc_irq() {
     outb(0xA1, inb(0xA1) & ~(1 << 8));  // Unmask IRQ 8 (RTC IRQ)
 }
 
+
+
 void rtc_interrupt_handler() {
+    // Acknowledge the interrupt
     outb(RTC_COMMAND_PORT, RTC_REG_C);
     inb(RTC_DATA_PORT);  // Read Register C to acknowledge the interrupt
 
-    // Your custom RTC tick logic (e.g., update time)
+    // Increment the tick count
+    rtc_ticks++;
+
+    // Print every 100 ticks (adjust as needed)
+    if (rtc_ticks % 100 == 0) {
+        printf("RTC Tick: %u\n", rtc_ticks);
+    }
 }
 
 void rtc_init() {

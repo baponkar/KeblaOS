@@ -22,7 +22,7 @@
 #include "../acpi/fadt.h"
 
 #include "../bootloader/boot.h"
-#include "../bootloader/memory.h"
+#include "../mmu/detect_memory.h"
 #include "../bootloader/firmware.h"
 
 
