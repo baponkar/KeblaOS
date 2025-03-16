@@ -1,6 +1,6 @@
 
 #include "../limine/limine.h"
-#include "../bootloader/memory.h"
+#include "../mmu/detect_memory.h"
 
 #include "kmalloc.h"
 #include  "../lib/stdio.h"

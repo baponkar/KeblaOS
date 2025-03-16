@@ -2,7 +2,7 @@
 
 #include "../lib/stdio.h"
 #include "../bootloader/boot.h"
-#include "../bootloader/memory.h"
+#include "../mmu/detect_memory.h"
 #include "vmm.h"
 
 #include "kheap.h"

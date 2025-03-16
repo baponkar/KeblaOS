@@ -15,7 +15,26 @@ https://wiki.osdev.org/TSC
 
 #include "tsc.h"
 
+volatile uint64_t tsc_ticks = 0;
+
 uint64_t cpu_frequency_hz1 = 0;  // Cached CPU frequency in Hz
+
+void tsc_tick_handler() {
+    static uint64_t last_tsc = 0;
+    uint64_t current_tsc = read_tsc();
+    
+    // Calculate elapsed ticks
+    uint64_t elapsed_tsc = current_tsc - last_tsc;
+
+    // Convert to milliseconds: elapsed_tsc / (cpu_frequency_hz1 / 1000)
+    uint64_t elapsed_ms = (elapsed_tsc * 1000) / cpu_frequency_hz1;
+
+    if (elapsed_ms >= 100) {  // Print every 100ms
+        tsc_ticks++;
+        printf("TSC Tick: %llu\n", tsc_ticks);
+        last_tsc = current_tsc;  // Update the last TSC checkpoint
+    }
+}
 
 
 static inline uint64_t rdmsr(uint32_t msr) {

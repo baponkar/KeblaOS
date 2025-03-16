@@ -15,12 +15,12 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../x86_64/interrupt/interrupt.h"
 #include "../x86_64/interrupt/apic.h"
 #include "../x86_64/interrupt/pic.h" // init_idt, test_interrupt
-#include "../bootloader/ahci.h"
-#include "../bootloader/pci.h"
-#include "../bootloader/disk.h"
-#include "../bootloader/cpu.h" // target_cpu_task, switch_to_core
+#include "../ahci/ahci.h"
+#include "../pci/pci.h"
+#include "../disk/disk.h"
+#include "../cpu/cpu.h" // target_cpu_task, switch_to_core
 #include "../bootloader/trampoline.h"
-#include "../bootloader/memory.h"
+#include "../mmu/detect_memory.h"
 #include "../bootloader/firmware.h"
 #include "../limine/limine.h" // bootloader info
 #include "../bootloader/boot.h" // bootloader info
@@ -58,6 +58,7 @@ void kmain(){
     vga_init();
 
     printf("%s - %s\n", OS_NAME, OS_VERSION);
+    
 
     init_acpi();
 
@@ -94,10 +95,9 @@ void kmain(){
     // Timer initialization
     init_tsc();
     rtc_init();
-    // init_hpet();
     init_pit_timer(100);    // Interrupt in 100 ms
     init_apic_timer(100);   // Interrupt in 100 ms
-    start_hpet();
+    // start_hpet();
 
     // get_cpu_info();
     // print_cpu_info();

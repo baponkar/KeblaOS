@@ -69,14 +69,16 @@ void hpet_irq_handler(registers_t *regs) {
     hpet_ticks++;
     apic_send_eoi(); // Acknowledge the interrupt
 
-    registers_t *new_regs = schedule(regs);
-    if(new_regs){
-        // printf("=>current thread: %s, rip: %x, rsp: %x\n", 
-        //     current_process->current_thread->name,  
-        //     current_process->current_thread->registers.iret_rip,
-        //     current_process->current_thread->registers.iret_rsp);
-        restore_cpu_state(new_regs);
-    }
+    printf("HPET Ticks: %d\n", hpet_ticks);
+
+    // registers_t *new_regs = schedule(regs);
+    // if(new_regs){
+    //     // printf("=>current thread: %s, rip: %x, rsp: %x\n", 
+    //     //     current_process->current_thread->name,  
+    //     //     current_process->current_thread->registers.iret_rip,
+    //     //     current_process->current_thread->registers.iret_rsp);
+    //     restore_cpu_state(new_regs);
+    // }
 }
 
 void route_hpet_interrupt() {

@@ -31,3 +31,7 @@ void move_cur_up();
 void move_cur_down();
 void move_cur_left();
 void move_cur_right();
+
+
+void draw_checkmark(int x, int y, uint32_t color);
+

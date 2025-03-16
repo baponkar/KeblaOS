@@ -38,6 +38,9 @@ uint64_t font_size = 1;
 extern unsigned char g_8x8_font[2048];
 extern unsigned char g_8x16_font[4096];
 
+// Emoji Data
+extern unsigned char checkmark[16];
+
 void vga_init(){
     get_fb_info();
 
@@ -325,5 +328,15 @@ void move_cur_right(){
     cur_x++;
 }
 
+
+void draw_checkmark(int x, int y, uint32_t color) {
+    for (int row = 0; row < 16; row++) {
+        for (int col = 0; col < 8; col++) {
+            if (checkmark[row] & (1 << (7 - col))) { // Check if bit is set
+                set_pixel(x + col, y + row, color);
+            }
+        }
+    }
+}
 
 

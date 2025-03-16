@@ -14,7 +14,7 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 */ 
 
 #include "../x86_64/interrupt/pic.h"
-#include "../bootloader/memory.h"
+#include "../mmu/detect_memory.h"
 #include "kmalloc.h"
 #include  "../lib/string.h"
 #include  "../lib/stdio.h"
