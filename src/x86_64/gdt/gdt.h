@@ -31,13 +31,13 @@ typedef struct gdtr gdtr_t;
 
 
 // Add TSS entry structure
-struct tss{ // 9*64 = 576 bit = 72 byte = 0x48
+struct tss{ // 104 bytes is the minimum size of a TSS
     uint32_t reserved0;
     uint64_t rsp0;  // Ring 0 Stack Pointer
     uint64_t rsp1;
     uint64_t rsp2;
     uint64_t reserved1;
-    uint64_t ist1;  // Interrupt Stack Table (optional)
+    uint64_t ist1;  // Interrupt Stack Entries
     uint64_t ist2;
     uint64_t ist3;
     uint64_t ist4;
