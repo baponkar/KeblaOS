@@ -3,13 +3,14 @@
 ![KeblaOS Icon](image/KeblaOS.png)
 
 
-+-------------------------+
-|      **Version - 0.12** |
-+-------------------------+
-| Architecture: x86       |
-| 64 Bit                  |
-| Build Date: 16.03.2024  |
-+-------------------------+
+<table>
+  <tr><td colspan="2" align="left"><em>Version - 0.12</em></td></tr>
+  <tr><td><em>Architecture:</em></td><td><em>x86</em></td></tr>
+  <tr><td><em>64 Bit</em></td><td></td></tr>
+  <tr><td><em>Build Date:</em></td><td><code>16.03.2024</code></td></tr>
+</table>
+
+----
 
 
 
