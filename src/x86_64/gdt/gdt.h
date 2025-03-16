@@ -60,6 +60,7 @@ typedef struct {
 
 void gdt_setup(gdt_entry_t gdt[], uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity);
 void gdt_setup_sysseg(gdt_entry_t gdt[], uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity);
+void load_gdt_tss(cpu_data_t *core);
 void start_bootstrap_gdt_tss();
 void init_gdt_tss(cpu_data_t *core);
 void init_all_gdt_tss();

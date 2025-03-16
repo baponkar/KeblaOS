@@ -44,11 +44,7 @@ void start_bootstrap_gdt_tss() {
         return;
     }
 
-    gdt_flush((gdtr_t *) &bootstrap.gdtr);
-    // printf("gdt flush completed.\n");
-
-    tss_flush(0x28);
-    // printf("tss flush completed.\n");
+    load_gdt_tss(&bootstrap);
 
     printf("Successfully started GDT and TSS for Bootstrap CPU.\n");
 }
@@ -106,6 +102,14 @@ void init_gdt_tss(cpu_data_t *core) {
 
 }
 
+void load_gdt_tss(cpu_data_t *core) {
+    // Load GDT
+    gdt_flush(&core->gdtr);
+
+    // Load TSS
+    tss_flush(0x28);  // Selector 0x28 (5th entry in GDT)
+}
+
 void init_all_gdt_tss() {
     int num_cores = detect_cores();  // Detect available CPU cores (e.g., via ACPI)
 
@@ -118,11 +122,7 @@ void core_init(int core) {
     // Get core-specific data
     cpu_data_t *data = &cpu_data[core];
 
-    // Load GDT
-    gdt_flush(&data->gdtr);
-
-    // Load TSS
-    tss_flush(0x28);  // Selector 0x28 (5th entry in GDT)
+    load_gdt_tss(data);
 
     // Set kernel stack in TSS
     // Michael Petch - this doesn't look right - bug???
