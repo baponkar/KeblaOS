@@ -12,7 +12,7 @@
 
 #define THREAD_NAME_MAX_LEN 64
 
-struct thread {                     // Allocated size 0x70
+struct thread {                     // Allocated size 312 byte
     size_t tid;                     // Thread ID
     status_t status;                // Thread status
     char name[THREAD_NAME_MAX_LEN]; // Thread name

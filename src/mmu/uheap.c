@@ -53,10 +53,11 @@ void uheap_free(void *ptr, size_t size) {
     // Free the pages corresponding to the memory region
     while (size > 0) {
         vm_free((void *)va); // Free the virtual page
-        va += 0x1000;        // Move to the next page
+        va += 0x1000;        // Move to the prev page
         size -= 0x1000;      // Reduce the remaining size
     }
 }
+
 
 void test_uheap(){
     uint64_t *ptr = (uint64_t *) uheap_alloc(25);

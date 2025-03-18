@@ -19,5 +19,4 @@ typedef struct hpet hpet_t;
 
 
 void start_hpet();
-
-
+void hpet_sleep(uint32_t ms);

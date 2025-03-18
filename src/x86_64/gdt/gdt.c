@@ -78,10 +78,10 @@ void init_gdt_tss(cpu_data_t *core) {
 
     // Initialize GDT entries (same as bootstrap)
     gdt_setup(core->gdt, 0, 0, 0x0, 0x0, 0x0);      // Null
-    gdt_setup(core->gdt, 1, 0, 0xFFFF, 0x9A, 0xA0); // Kernel Code
-    gdt_setup(core->gdt, 2, 0, 0xFFFF, 0x92, 0xA0); // Kernel Data
-    gdt_setup(core->gdt, 3, 0, 0xFFFF, 0xFA, 0xA0); // User Code
-    gdt_setup(core->gdt, 4, 0, 0xFFFF, 0xF2, 0xA0); // User Data
+    gdt_setup(core->gdt, 1, 0, 0xFFFF, 0x9A, 0xA0); // Kernel Code Selector 0x08
+    gdt_setup(core->gdt, 2, 0, 0xFFFF, 0x92, 0xA0); // Kernel Data Selector 0x10
+    gdt_setup(core->gdt, 3, 0, 0xFFFF, 0xFA, 0xA0); // User Code Selector   0x18
+    gdt_setup(core->gdt, 4, 0, 0xFFFF, 0xF2, 0xA0); // User Data Selector   0x20
 
     // Initialize TSS for this core
     memset(&core->tss, 0, sizeof(core->tss));

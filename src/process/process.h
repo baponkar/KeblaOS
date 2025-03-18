@@ -11,15 +11,15 @@
 
 #define NAME_MAX_LEN 64
 
-typedef enum {
+typedef enum { // 4 bytes
     READY,    // 0
     RUNNING,  // 1
     DEAD,     // 2
     SLEEPING  // 3
-} status_t; // sizeof(status1_t) = 4 bytes
+} status_t;
 
 
-typedef struct process {
+typedef struct process { // 112 byte
     size_t pid;                 // Process ID
     status_t status;            // Process status
     char name[NAME_MAX_LEN];    // Process name
@@ -37,7 +37,7 @@ extern size_t next_free_pid;        //Available free process id
 extern process_t *current_process;  // Current running process
 extern process_t *processes_list;   // List of all processes
 
-process_t* create_process(const char* name, void (*main_function)(void*), void* arg);
+process_t* create_process(const char* name);
 void add_process(process_t* proc);
 void remove_process(process_t* proc);
 void delete_process(process_t* proc);

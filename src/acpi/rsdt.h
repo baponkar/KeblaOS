@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "acpi.h"
@@ -9,6 +10,7 @@ struct rsdt{
     uint32_t entries[];   // Array of pointers to ACPI tables
 } __attribute__((packed));
 typedef struct rsdt rsdt_t;
+
 
 
 // Extended ACPI Header

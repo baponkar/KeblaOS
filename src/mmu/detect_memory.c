@@ -21,7 +21,7 @@ uint64_t KMEM_UP_BASE;
 uint64_t KMEM_LOW_BASE;
 uint64_t KMEM_LENGTH;
 
-uint64_t UMEM_LOW_BASE;
+uint64_t UMEM_LOW_BASE = 0x1000;
 uint64_t UMEM_UP_BASE;
 uint64_t UMEM_LENGTH;
 
@@ -256,7 +256,7 @@ void get_kernel_to_virtual_offset(){
         KMEM_LOW_BASE = V_KMEM_LOW_BASE - PHYSICAL_TO_VIRTUAL_OFFSET;
         KMEM_UP_BASE = V_KMEM_UP_BASE - PHYSICAL_TO_VIRTUAL_OFFSET;
 
-        V_UMEM_LOW_BASE = 0;
+        V_UMEM_LOW_BASE = 0x1000; // I want to start users space memory from 0x1000 instead of 0x0
         V_UMEM_UP_BASE = 0x00007FFFFFFFFFFF;
 
     }else{

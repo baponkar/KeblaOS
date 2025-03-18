@@ -85,7 +85,7 @@
     * FAT32 File System
     * Usermode
     * System Call
-    * Nice VGA Driver with Graphics
+    * Nice VGA Driver with GPU
 
 Screenshot 1
 ![screenshot 1](./screenshot/screenshot_01.png)

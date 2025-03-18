@@ -69,16 +69,19 @@ void hpet_irq_handler(registers_t *regs) {
     hpet_ticks++;
     apic_send_eoi(); // Acknowledge the interrupt
 
-    printf("HPET Ticks: %d\n", hpet_ticks);
+    // if(hpet_ticks % 20 == 0)
+    //     printf("HPET Ticks: %d\n", hpet_ticks);
 
-    // registers_t *new_regs = schedule(regs);
-    // if(new_regs){
-    //     // printf("=>current thread: %s, rip: %x, rsp: %x\n", 
-    //     //     current_process->current_thread->name,  
-    //     //     current_process->current_thread->registers.iret_rip,
-    //     //     current_process->current_thread->registers.iret_rsp);
-    //     restore_cpu_state(new_regs);
-    // }
+    if(current_process && current_process->current_thread){
+        registers_t *new_regs = schedule(regs);
+        if(new_regs){
+            // printf("=>current thread: %s, rip: %x, rsp: %x\n", 
+            //     current_process->current_thread->name,  
+            //     current_process->current_thread->registers.iret_rip,
+            //     current_process->current_thread->registers.iret_rsp);
+            restore_cpu_state(new_regs);
+        }
+    }
 }
 
 void route_hpet_interrupt() {
@@ -101,4 +104,39 @@ void start_hpet() {
     printf("HPET Timer Started\n");
 }
 
+
+void hpet_sleep(uint32_t ms) {
+    if (!hpet_addr) {
+        printf("HPET address not initialized!\n");
+        return;
+    }
+
+    // Retrieve the period and calculate frequency
+    uint64_t cap_reg = mmio_read((uint32_t)hpet + HPET_CAPABILITIES) | 
+                       ((uint64_t)mmio_read((uint32_t)hpet + HPET_CAPABILITIES + 4) << 32);
+    uint32_t period = (uint32_t)(cap_reg & 0xFFFFFFFF);
+
+    if (period == 0) {
+        printf("HPET period is invalid!\n");
+        return;
+    }
+
+    uint64_t freq = 1000000000000000ULL / period; // Convert to Hz
+    uint64_t ticks_per_ms = freq / 1000;
+
+    // Current HPET main counter value
+    uint64_t start_ticks = mmio_read((uint32_t)hpet + 0xF0) | 
+                           ((uint64_t)mmio_read((uint32_t)hpet + 0xF4) << 32);
+
+    uint64_t target_ticks = start_ticks + (ms * ticks_per_ms);
+
+    // Poll until the target tick count is reached
+    while (1) {
+        uint64_t current_ticks = mmio_read((uint32_t)hpet + 0xF0) | 
+                                 ((uint64_t)mmio_read((uint32_t)hpet + 0xF4) << 32);
+        if (current_ticks >= target_ticks) {
+            break;
+        }
+    }
+}
 
