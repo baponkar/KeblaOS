@@ -2,48 +2,57 @@
 #include "../lib/string.h"
 #include "../lib/stdio.h"
 #include "../mmu/kheap.h"
-
 #include "process.h"
 #include "types.h"
-
 #include "../x86_64/timer/apic_timer.h"
 
 #include "thread.h"
 
 
 #define THREAD_STACK_SIZE 0x4000 // 16 KB
-#define THREAD_STACK_GAP 0x2000
-#define KERNEL_SS  0x10
+
 #define KERNEL_CS  0x08
-#define FLAGS 0x202
+#define KERNEL_SS  0x10
+
+// Update these to include RPL=3 for user mode
+#define USER_CS    0x18 | 3
+#define USER_SS    0x20 | 3
+  
+#define FLAGS      0x202
+
 
 
 size_t next_free_tid = 0;
 
+
+
 void add_thread(thread_t* thread) {
-    if (!thread) return;
+    if (!thread || !thread->parent) return;
 
     process_t* parent = thread->parent;
-    if (!parent) return;
 
     if (parent->threads == NULL) {
+        // First thread in process
         parent->threads = thread;
+        thread->next = thread; // Circular reference to self
     } else {
-        for (thread_t* scan = parent->threads; scan != NULL; scan = scan->next) {
-            if (scan->next) continue;
-            scan->next = thread; // Assign next thread
-            break;
+        // Insert new thread into circular list
+        thread_t* last = parent->threads;
+        while (last->next != parent->threads) {
+            last = last->next;
         }
+        last->next = thread;
+        thread->next = parent->threads; // Close the circle
     }
-    thread->next = NULL;  // Ensure the last thread has next = NULL
     parent->current_thread = thread;
 }
 
 
 
 thread_t* create_thread(process_t* parent, const char* name, void (*function)(void*), void* arg) {
-    
+
     thread_t* thread = (thread_t*) kheap_alloc(sizeof(thread_t)); // Allocate memory for the thread
+
     if (!thread) return NULL;
     memset((void*)thread, 0, sizeof(thread_t)); // Initialize the thread to 0
 
@@ -58,11 +67,10 @@ thread_t* create_thread(process_t* parent, const char* name, void (*function)(vo
     thread->cpu_time = 0;
 
     // Allocate a stack for the thread
-    // void* stack = (void*) kheap_alloc(THREAD_STACK_SIZE);
-    void* stack = (void*) kheap_alloc(THREAD_STACK_SIZE + THREAD_STACK_GAP); // Add 4KB padding
+    void* stack = kheap_alloc(THREAD_STACK_SIZE);
+
     if (!stack) { // If stack allocation fails, free the thread
-        printf("Stack allocation failed!\n");
-        kheap_free(thread, sizeof(thread_t));
+        kheap_free((void*)thread, sizeof(thread_t));
         next_free_tid--; // Revert the TID counter if stack allocation fails
         return NULL;
     }
@@ -122,7 +130,7 @@ void delete_thread(thread_t* thread) {
     remove_thread(thread); // Remove the thread from the process's thread list
 
     // Free the thread's stack and registers
-    kheap_free((void*)(thread->registers.iret_rsp - THREAD_STACK_SIZE), (THREAD_STACK_SIZE +  THREAD_STACK_GAP) ); // Free the stack
+    kheap_free((void*)(thread->registers.iret_rsp - THREAD_STACK_SIZE), THREAD_STACK_SIZE ); // Free the stack
     kheap_free(thread, sizeof(thread_t)); // Free the thread
 }
 

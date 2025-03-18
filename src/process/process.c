@@ -17,7 +17,7 @@ https://wiki.osdev.org/Brendan%27s_Multi-tasking_Tutorial
 #include "../lib/string.h"
 #include "../lib/stdio.h"
 #include "../lib/string.h"
-#include "../mmu/kheap.h"
+#include "../mmu/uheap.h"
 #include "../util/util.h"
 #include "thread.h"
 #include "types.h"
@@ -31,13 +31,24 @@ process_t *current_process;         // Current running process
 process_t *processes_list = NULL;   // List of all processes
 
 
+void add_process(process_t* proc) {
+    if (!proc) return;
+
+    // Add to the head of the global process list
+    proc->next = processes_list;
+    processes_list = proc;
+}
 
 
-process_t* create_process(const char* name, void (*function)(void*), void* arg) {
+// Creating a new process with a null thread
+process_t* create_process(const char* name) {
     
-    process_t* proc = (process_t*) kheap_alloc(sizeof(process_t)); // Allocate memory for the process
-    if (!proc) return NULL; // Return NULL if memory allocation fails
-
+    process_t* proc = (process_t*) uheap_alloc(sizeof(process_t)); // Allocate memory in userspace for the process
+    if (!proc){
+        printf("Process Memory allocation Failed!\n");
+        return NULL; // Return NULL if memory allocation fails
+    } 
+    
     // Assign the next available PID
     proc->pid = next_free_pid++;
     proc->status = READY;
@@ -48,33 +59,16 @@ process_t* create_process(const char* name, void (*function)(void*), void* arg) 
     proc->current_thread = NULL;
     proc->cpu_time = 0;
 
-    // Create the main thread for the process
-    thread_t* init_thread = create_thread(proc, "Thread0", function, arg);
-    if (!init_thread) {
-        kheap_free(proc, sizeof(process_t)); // Free the process if thread creation fails
-        next_free_pid--; // Revert the PID counter if thread creation fails
-        return NULL;
-    }
-
     // Add the main thread to the process's thread list
-    proc->current_thread = init_thread;
-    proc->threads = init_thread;
+    proc->current_thread = NULL;
+    proc->threads = proc->current_thread;
 
     // Add the process to the global process list
     add_process(proc);
 
-    // printf("Created Process: %s (PID: %d)\n", proc->name, proc->pid);
+    printf("Created Process: %s (PID: %d)\n", proc->name, proc->pid);
 
     return proc;
-}
-
-
-void add_process(process_t* proc) {
-    if (!proc) return;
-
-    // Add to the head of the global process list
-    proc->next = processes_list;
-    processes_list = proc;
 }
 
 
@@ -116,64 +110,34 @@ void delete_process(process_t* proc) {
         proc->threads = thread->next;
         delete_thread(thread);
     }
-    
-    kheap_free(proc, sizeof(process_t));
 
+    uheap_free(proc, sizeof(process_t));
 }
 
 
 registers_t* schedule(registers_t* registers) {
     if (!current_process || !current_process->current_thread) return NULL;
 
-    // Save the current thread's register state
-    memcpy((void*)&current_process->current_thread->registers, registers, sizeof(registers_t));
-    if (memcmp((void*)&current_process->current_thread->registers, registers, sizeof(registers_t)) != 0) {
-        printf("Error: Register assignment failed!\n");
-        return NULL;
-    }
-
-    // Mark the current thread as READY
+    // Save current thread state
+    memcpy(&current_process->current_thread->registers, registers, sizeof(registers_t));
     current_process->current_thread->status = READY;
 
-    // Start from the next thread in the list
-    thread_t* start_thread = current_process->current_thread;
-    thread_t* next_thread = current_process->current_thread->next;
+    thread_t* current = current_process->current_thread;
+    thread_t* next = current->next;
 
-    // Look for the next READY thread in a round-robin manner
-    while (next_thread && next_thread->status != READY) {
-        next_thread = next_thread->next;
-        printf("while: next_thread = %x\n", next_thread);
-        break;
-    }
-    
-
-    // If no READY thread is found, start from the first thread
-    if (!next_thread) {
-        next_thread = current_process->threads;  // Start from the first thread
-        while (next_thread != start_thread && next_thread->status != READY) {
-            next_thread = next_thread->next;
-            printf("Test=>next_thread->name: %s\n", next_thread->name);
+    // Round-robin search for next READY thread
+    while (next != current) {
+        if (next->status == READY) {
             break;
         }
+        next = next->next;
     }
 
-    // If still no READY thread, keep running the same thread
-    if (!next_thread || next_thread == start_thread) {
-        printf("Last Thread\n");
-        current_process->current_thread->status = RUNNING;
-        return (registers_t*)&current_process->current_thread->registers;
-    }
+    // Update current thread and set status
+    current_process->current_thread = next;
+    next->status = RUNNING;
 
-    // printf("Current  %s, status: %d=>", current_process->current_thread->name, current_process->current_thread->status);
-
-    // Set the next thread as RUNNING
-    current_process->current_thread = next_thread;
-    current_process->current_thread->status = RUNNING;
-
-    // Debug print to verify the next thread
-    // printf("Switching to  %s, status: %d\n", current_process->current_thread->name, current_process->current_thread->status);
-
-    return (registers_t*)&current_process->current_thread->registers;
+    return &next->registers;
 }
 
 

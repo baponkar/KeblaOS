@@ -6,7 +6,7 @@ Description : KeblaOS is a x86 architecture based 64 bit Operating System. Curre
 Reference   : https://wiki.osdev.org/Limine
               https://github.com/limine-bootloader/limine-c-template
               https://wiki.osdev.org/Limine_Bare_Bones
-
+              https://wiki.osdev.org/SSE
 */
 
 #include "../process/process.h" 
@@ -48,7 +48,7 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "kernel.h"
 
-
+extern uint64_t V_UMEM_LOW_BASE;
 
 void kmain(){
 
@@ -59,82 +59,39 @@ void kmain(){
 
     printf("%s - %s\n", OS_NAME, OS_VERSION);
     
-
     init_acpi();
 
     // Enabling GDT
-    // init_gdt_bootstrap_cpu();
     init_all_gdt_tss();
     core_init(0);
-    // start_secondary_cores();
-    // start_secondary_cores1();
-    
-    // Memory management initialization
-    init_pmm();
-    init_paging();
-
-    // Enabling interrupt
-    // init_bootstrap_cpu_interrupt();
     init_core_cpu_interrupt(0);
-    // init_core_cpu_interrupt(1);
-    // init_core_cpu_interrupt(2);
-    // init_core_cpu_interrupt(3);
-    
+
     init_pic_interrupt();
     init_apic_interrupt();
 
-    // init_core_cpu_interrupt(core_id);
-
-    // lapic_send_ipi(1, 0x4500); // INIT IPI
-    // for (volatile int i = 0; i < 100000; i++);
-    // lapic_send_ipi(1, 0x4608); // SIPI with vector 0x08
-    // for (volatile int i = 0; i < 100000; i++);
-    // lapic_send_ipi(1, 0x4608); // Second SIPI
-
-
+    // Memory management initialization
+    init_pmm();
+    init_paging();
+    
     // Timer initialization
     init_tsc();
     rtc_init();
     init_pit_timer(100);    // Interrupt in 100 ms
     init_apic_timer(100);   // Interrupt in 100 ms
-    // start_hpet();
+    start_hpet();
 
-    // get_cpu_info();
-    // print_cpu_info();
-    // print_cpu_vendor();
-    // print_cpu_brand();
-    // printf("Logical Processor Count: %d\n", getLogicalProcessorCount());
-    
-    // detect_ahci();
-    // init_ahci( 0xFEBD5000);
     // pci_scan();
-    // get_disk_info();
-
-    // test_interrupt();
 
     initKeyboard();
 
-    init_processes();
-    // print_all_threads_name(current_process);
-
-    // if(has_fpu){
-    //     enable_fpu();
-
-    //     float flt = 23.67890f;
-    //     printf("Test float: flt = %f\n", flt);
-    // }
-
-    // print_memory_map();
-    // test_kmalloc();
-    // test_umalloc();
-    // test_pmm();
-
-    // test_kheap();
-    // test_uheap();
+    printf("-------------------------------------------------------------------------------\n");
     
-    printf("Running on Bootstrap CPU.\n");
-    // switch_to_core(1); // Switch to CPU core with LAPIC ID 1
-    // switch_to_core(0); // Switch to CPU core with LAPIC ID 0
+    // init_processes();
+
+    detect_ahci();
+    get_disk_info();
+    test_disk_write_read();
+
 
     halt_kernel();
 }

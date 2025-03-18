@@ -62,6 +62,8 @@ void *find_acpi_table() {
     return (void *)(uintptr_t)rsdp; // Use RSDT for ACPI 1.0
 }
 
+
+
 void validate_acpi_table(void *table_addr){
     rsdp_t *rsdp = (rsdp_t *) table_addr;
     if(rsdp){
@@ -87,10 +89,11 @@ void validate_acpi_table(void *table_addr){
 
 
 void parse_acpi_table(void *table_addr) {
+    
     rsdp_t *rsdp = (rsdp_t *) table_addr;
-    rsdt_t *rsdt = (rsdt_t *) rsdp->rsdt_address;
+    rsdt_t *rsdt = (rsdt_t *)(uintptr_t) rsdp->rsdt_address;
 
-    rsdp_ext_t *rsdp_ext = (rsdp->revision >= 2) ? (rsdp_ext_t *) table_addr : 0;;
+    rsdp_ext_t *rsdp_ext = (rsdp->revision >= 2) ? (rsdp_ext_t *) table_addr : 0;
     xsdt_t *xsdt = (rsdp->revision >= 2) ? (xsdt_t *)rsdp_ext->xsdt_address : 0;
 
     acpi_header_t header = (rsdp->revision >= 2) ? xsdt->header : rsdt->header;
@@ -98,8 +101,8 @@ void parse_acpi_table(void *table_addr) {
     int entry_size = (rsdp->revision >= 2) ? sizeof(uint64_t) : sizeof(uint32_t);
     int entry_count = (header.length - sizeof(acpi_header_t)) / entry_size;
 
-    uint32_t *entries_32 = (uint32_t *) rsdt->entries;
-    uint64_t *entries_64 = (uint64_t *) xsdt->entries;
+    uint32_t *entries_32 = (uint32_t *)(uintptr_t) rsdt->entries;
+    uint64_t *entries_64 = (uint64_t *)(uintptr_t) xsdt->entries;
     void *entries = (rsdp->revision >= 2) ? (void *)entries_64 : (void *)entries_32;
 
     for (int i = 0; i < entry_count; i++) {

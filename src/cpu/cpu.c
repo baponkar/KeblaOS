@@ -185,12 +185,22 @@ uint32_t get_cpu_base_frequency() {
 }
 
 
-void enable_fpu() {
+void enable_fpu_and_sse() {
     asm volatile (
-        "mov %%cr0, %%rax\n"         
-        "and $~(1 << 2), %%rax\n"     // Clear CR0.EM (bit 2) to enable FPU  
-        "or  $ (1 << 1), %%rax\n"     // Set CR0.MP (bit 1) for FPU emulation  
-        "mov %%rax, %%cr0\n"          
+        "mov %%cr0, %%rax\n"      
+        "and $-5, %%rax\n"        // Clear CR0.EM (bit 2) to enable FPU
+        "or  $2, %%rax\n"         // Set CR0.MP (bit 1) for proper FPU operation
+        "and $-9, %%rax\n"        // Clear CR0.TS (bit 3); -9 clears bit 3 (0xFFFFFFF7)
+        "mov %%rax, %%cr0\n"
+        :
+        :
+        : "rax"
+    );
+
+    asm volatile (
+        "mov %%cr4, %%rax\n"
+        "or  $0x600, %%rax\n"     // Set CR4.OSFXSR (bit 9) and CR4.OSXMMEXCPT (bit 10) to enable SSE
+        "mov %%rax, %%cr4\n"
         :
         :
         : "rax"
@@ -198,6 +208,8 @@ void enable_fpu() {
 
     asm volatile ("fninit");  // Initialize the FPU
 }
+
+
 
 
 bool has_fpu() {

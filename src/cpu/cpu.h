@@ -1,12 +1,13 @@
 #pragma once
 
+#include "../limine/limine.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 
 
 extern uint32_t is_cpuid_present(void);
-static inline void cpuid(uint32_t leaf, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
+
 void get_cpu_info();
 void print_cpu_info();
 int get_cpu_count();
@@ -20,7 +21,7 @@ int getLogicalProcessorCount();
 uint32_t get_cpu_base_frequency();
 
 
-void enable_fpu();
+void enable_fpu_and_sse();
 bool has_fpu();
 
 

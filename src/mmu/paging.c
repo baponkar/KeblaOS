@@ -66,6 +66,8 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
 
     uint64_t bit_no = free_frame_bit_no(); // idx is now the index of the first free frame.
 
+    printf("Free frame bit no: %d\n", bit_no);
+
     if (bit_no == (uint64_t)-1) {
         printf("No free frames!");
         halt_kernel();
@@ -77,6 +79,7 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
     page->rw = (is_writeable) ? 1 : 0;  // Should the page be writeable?
     page->user = (is_kernel) ? 0 : 1;   // Should the page be user-mode?
     page->frame = (is_kernel) ? (KMEM_LOW_BASE + (bit_no * FRAME_SIZE)) >> 12 : (UMEM_LOW_BASE + (bit_no * FRAME_SIZE)) >> 12; // Store physical base address
+    printf("page->frame:%x\n", page->frame );
     is_kernel ? (KMEM_LOW_BASE += FRAME_SIZE) : (UMEM_LOW_BASE += FRAME_SIZE);
 
 }

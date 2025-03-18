@@ -10,6 +10,8 @@
 #define SLP_EN (1 << 13)     // Bit 13: SLP_EN (Sleep Enable)
 #define S5_SLEEP_TYPA (5 << 10)  // Sleep type S5 (5) in bits 10-12
 
+extern void *fadt_addr; // defined in acpi.c
+
 void qemu_poweroff() {
     // Write to the PM1a_CNT register
     outw(PM1A_CNT_REG, S5_SLEEP_TYPA | SLP_EN); // QEMU-specific ACPI shutdown port
@@ -27,7 +29,7 @@ void qemu_reboot(){
 }
 
 
-extern void *fadt_addr;
+
 
 
 void parse_fadt(acpi_header_t *table){

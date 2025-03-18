@@ -29,7 +29,8 @@ void pci_write1(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, u
 #define PCI_CLASS_CODE_OFFSET 0x0B
 
 void pci_scan() {
-    for (uint8_t bus = 0; bus < 256; bus++) {
+    bool found = false;
+    for (uint8_t bus = 0; bus < 256 && !found; bus++) {
         for (uint8_t device = 0; device < 32; device++) {
             for (uint8_t function = 0; function < 8; function++) {
                 uint32_t vendor_device = pci_read1(bus, device, function, PCI_VENDOR_ID_OFFSET);
@@ -49,7 +50,10 @@ void pci_scan() {
                 if (class == 0x03) {
                     printf("GPU Found: Bus %d, Device %d, Function %d\n", bus, device, function);
                     printf("Vendor ID: %x, Device ID: %x\n", vendor_id, device_id);
+                    found = true;
+                    break;
                 }
+
             }
         }
     }

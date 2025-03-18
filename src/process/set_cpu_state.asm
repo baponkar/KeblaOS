@@ -46,12 +46,12 @@ section .data
 
 section .text
     global restore_cpu_state
-    extern printf   ; Declare printf as an external symbol
+    extern printf                   ; Declare printf in stdio.c
 
 restore_cpu_state:
     cli                             ; Disable interrupts
 
-    ; Optional: Restore segment registers if needed
+    ; Restore segment registers if needed
     mov rax, [rdi + SEG_REG_GS]  
     mov gs, ax            
     mov rax, [rdi + SEG_REG_FS]  
@@ -137,8 +137,8 @@ restore_cpu_state:
     and rsp, -16
 
     ; Prepare arguments for printf
-    lea rdi, [rip_zero_msg]  ; First argument: address of the format string
-    xor eax, eax             ; Clear EAX (no floating-point arguments)
+    lea rdi, [rip_zero_msg]         ; First argument: address of the format string
+    xor eax, eax                    ; Clear EAX (no floating-point arguments)
 
     ; Call printf
     call printf
