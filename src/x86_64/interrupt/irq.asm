@@ -74,7 +74,8 @@
 %endmacro
 
 
-
+; The first number will define irq function number like irq0, irq2 etc second is interrupt number 
+; This will push error code 0
 IRQ   0,    32
 IRQ   1,    33
 IRQ   2,    34
@@ -92,4 +93,6 @@ IRQ  13,    45
 IRQ  14,    46
 IRQ  15,    47
 
-IRQ  16,    48
+IRQ  16,    48      ; APIC Timer Interrupt
+IRQ  17,    49      ; HPET Timer Interrupt
+IRQ  18,    50 

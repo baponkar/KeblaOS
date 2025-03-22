@@ -2,6 +2,14 @@
     "files.associations": {
         "string.h": "c",
         "assert.h": "c",
-        "detect_memory.h": "c"
+        "detect_memory.h": "c",
+        "mcfg.h": "c",
+        "acpi.h": "c",
+        "*.gitignore": "c",
+        "fadt.h": "c",
+        "madt.h": "c",
+        "rsdt.h": "c",
+        "types.h": "c",
+        "process.h": "c"
     }
 }

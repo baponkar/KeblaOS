@@ -64,21 +64,27 @@ size of status_t  = 0x20
 
 
 extern volatile uint64_t apic_ticks;
-extern volatile uint64_t hpet_ticks;
 
 void thread0_func(void *arg) {
     int *var = (int*) arg;
     while(true){
         printf("==> Thread 0 is Running...\n");
-        hpet_sleep(100); // delay 100 milli seconds
+        apic_delay(100); // delay 100 milli seconds
     }
 }
 
 
 void thread1_func(void* arg) {
     while(true) {
-        printf("==> Thread 1 is Running...\n");
-        hpet_sleep(10); // delay 100 milli seconds
+        printf("### Thread 1 is Running...\n");
+        apic_delay(100); // delay 100 milli seconds
+    }
+}
+
+void thread2_func(void* arg) {
+    while(true) {
+        printf("### Thread 2 is Running...\n");
+        apic_delay(100); // delay 100 milli seconds
     }
 }
 
@@ -108,25 +114,31 @@ void init_processes() {
 
     process->status = READY;
 
-    thread_t* thread0 = create_thread(process, "Thread0", (void *)&thread0_func, NULL);
+    thread_t* thread0 = create_thread(process, "Thread0", (void *) &thread0_func, NULL);
     if (!thread0) {
         printf("Failed to get init thread\n");
         return;
     }
 
     // Create a thread with an argument
-    thread_t* thread1 = create_thread(process, "Thread1", (void *)&thread1_func, NULL);
+    thread_t* thread1 = create_thread(process, "Thread1", (void *) &thread1_func, NULL);
     if (!thread1) {
         printf("Failed to create Thread1\n");
         return;
     }
 
+      // Create a thread with an argument
+      thread_t* thread2 = create_thread(process, "Thread2", (void *) &thread2_func, NULL);
+      if (!thread1) {
+          printf("Failed to create Thread3\n");
+          return;
+      }
+
     // Set the current process
     current_process = process;
     processes_list = process;
 
-    current_process->threads = thread0;
     thread0->next = thread1;
-    thread1->next = thread0;
-
+    thread1->next = thread2;
+    thread2->next = thread0;
 }

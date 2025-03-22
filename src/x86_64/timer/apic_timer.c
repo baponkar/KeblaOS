@@ -15,17 +15,18 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/08_Timer
 #include "../../lib/string.h"
 #include "../../util/util.h"
 #include "../../lib/stdio.h"
-
 #include "tsc.h"
 #include "pit_timer.h"
+#include "../interrupt/apic.h"
 
 #include "apic_timer.h"
 
 
+#define APIC_TIMER_VECTOR  48
+
 #define MAX_APIC_TICKS  0xFFFFFFFFFFFFFFFF
 
 #define LAPIC_BASE 0xFEE00000
-#define APIC_TIMER_VECTOR  0x30  // 48: Interrupt vector for timer
 
 #define LAPIC_TPR                    (LAPIC_BASE + 0x80)   // Task Priority Register Offset
 #define APIC_REGISTER_TIMER_DIV      (LAPIC_BASE + 0x3E0)  // APIC Timer Divide Configuration Register
@@ -75,8 +76,6 @@ void calibrate_apic_timer_pit() {
 
     // Calculate APIC Timer ticks per millisecond
     apic_timer_ticks_per_ms = ( 0xFFFFFFFF - end_count) / 100;
-
-    printf("APIC Timer Frequency: %d ticks/ms\n", apic_timer_ticks_per_ms);
 }
 
 
@@ -107,25 +106,46 @@ void calibrate_apic_timer_tsc() {
 
 void apic_timer_handler(registers_t *regs) {
     if(apic_ticks >= MAX_APIC_TICKS) apic_ticks = 0;
+
     apic_ticks++;
 
-    if(apic_ticks % 30 == 0)
-        printf("APIC Tick_1: %d\n", apic_ticks);
-
     apic_send_eoi();
+
+    if(get_lapic_id() == 0 && apic_ticks % 100 == 0){
+        // printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
+    }else if(get_lapic_id() == 1 && apic_ticks % 250 == 0){
+        // printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
+    }else if(get_lapic_id() == 2 && apic_ticks % 300 == 0){
+        printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
+    }else if(get_lapic_id() == 3 && apic_ticks % 400 == 0){
+        printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
+    }
+
+    // if(current_process && current_process->current_thread){
+    //     registers_t *new_regs = schedule(regs);
+    //     if(new_regs){
+    //         // printf("=>current thread: %s, rip: %x, rsp: %x\n", 
+    //         //     current_process->current_thread->name,  
+    //         //     current_process->current_thread->registers.iret_rip,
+    //         //     current_process->current_thread->registers.iret_rsp);
+    //         restore_cpu_state(new_regs);
+    //     }
+    // }
 }
+
 
 
 void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large count
 
     apic_start_timer(0xFFFFFFFF);
-    calibrate_apic_timer_pit();
+    calibrate_apic_timer_tsc();
+    // calibrate_apic_timer_pit();
 
     uint32_t apic_count = apic_timer_ticks_per_ms * interval_ms;
     
     asm volatile("cli");
     // Set APIC Timer for periodic interrupts
-    mmio_write(APIC_REGISTER_LVT_TIMER, APIC_TIMER_VECTOR | APIC_LVT_TIMER_MODE_PERIODIC);   // Vector 32, Periodic Mode
+    mmio_write(APIC_REGISTER_LVT_TIMER, APIC_TIMER_VECTOR | APIC_LVT_TIMER_MODE_PERIODIC);   // Vector 48, Periodic Mode
     mmio_write(APIC_REGISTER_TIMER_DIV , 0x3);                          // Set divisor
     mmio_write(APIC_REGISTER_TIMER_INITCNT, apic_count);
 
@@ -136,6 +156,7 @@ void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large cou
 }
 
 
+
 void apic_delay(uint32_t milliseconds) {    
     uint64_t start_ticks = apic_ticks;
     uint64_t target_ticks = start_ticks + ((uint64_t) milliseconds * apic_timer_ticks_per_ms) / 1000; 
@@ -144,4 +165,5 @@ void apic_delay(uint32_t milliseconds) {
         asm volatile ("hlt");
     }
 }
+
 

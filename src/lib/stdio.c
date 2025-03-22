@@ -48,7 +48,7 @@ void print_float(double num, int precision) {
 
 
 void printf(const char* format, ...) {
-    acquire(&serial_lock);
+    // acquire(&serial_lock);
     va_list args;
     va_start(args, format);
 
@@ -85,7 +85,7 @@ void printf(const char* format, ...) {
     }
     
     va_end(args);
-    release(&serial_lock);
+    // release(&serial_lock);
 }
 
 

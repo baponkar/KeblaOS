@@ -32,131 +32,60 @@
 %define REG_IRET_RIP  8*21
 %define REG_IRET_CS   8*22
 %define REG_IRET_RFLAGS   8*23
-%define REG_IRET_RSP    8*24
+%define REG_IRET_RSP      8*24
 %define REG_IRET_SS 8*25
 
 
 .text
-global restore_cpu_state 
-
-
-section .data
-    rsp_zero_msg db "rsp is zero", 0x0A, 0x00  ; Message for RSP being zero
-    rip_zero_msg db "rip is zero", 0x0A, 0x00  ; Message for RIP being zero
-
-section .text
-    global restore_cpu_state
-    extern printf                   ; Declare printf in stdio.c
+global restore_cpu_state
 
 restore_cpu_state:
     cli                             ; Disable interrupts
 
-    ; Restore segment registers if needed
-    mov rax, [rdi + SEG_REG_GS]  
+    mov rcx, rdi                    ; Save registers_t pointer
+
+    ; Restore segment registers
+    mov rax, [rcx + SEG_REG_GS]  
     mov gs, ax            
-    mov rax, [rdi + SEG_REG_FS]  
+    mov rax, [rcx + SEG_REG_FS]  
     mov fs, ax            
-    mov rax, [rdi + SEG_REG_ES]  
+    mov rax, [rcx + SEG_REG_ES]  
     mov es, ax            
-    mov rax, [rdi + SEG_REG_DS]  
+    mov rax, [rcx + SEG_REG_DS]  
     mov ds, ax            
 
     ; Restore general-purpose registers 
-    mov rax, [rdi + GEN_REG_RAX]
-    mov rbx, [rdi + GEN_REG_RBX]
-    mov rcx, [rdi + GEN_REG_RCX]
-    mov rdx, [rdi + GEN_REG_RDX]
-    mov rbp, [rdi + GEN_REG_RBP]
-    ; mov rdi, [rdi + GEN_REG_RDI]  ; The rdi will store at last
-    mov rsi, [rdi + GEN_REG_RSI]
-    mov r8,  [rdi + GEN_REG_R8]
-    mov r9,  [rdi + GEN_REG_R9]
-    mov r10, [rdi + GEN_REG_R10]
-    mov r11, [rdi + GEN_REG_R11]
-    mov r12, [rdi + GEN_REG_R12]
-    mov r13, [rdi + GEN_REG_R13]
-    mov r14, [rdi + GEN_REG_R14]
-    mov r15, [rdi + GEN_REG_R15]
+    mov rax, [rcx + GEN_REG_RAX]
+    mov rbx, [rcx + GEN_REG_RBX]
+    ; mov rcx, [rcx + GEN_REG_RCX] ; The rcx will store at last
+    mov rdx, [rcx + GEN_REG_RDX]
+    mov rbp, [rcx + GEN_REG_RBP]
+    mov rdi, [rcx + GEN_REG_RDI]  
+    mov rsi, [rcx + GEN_REG_RSI]
+    mov r8,  [rcx + GEN_REG_R8 ]
+    mov r9,  [rcx + GEN_REG_R9 ]
+    mov r10, [rcx + GEN_REG_R10]
+    mov r11, [rcx + GEN_REG_R11]
+    mov r12, [rcx + GEN_REG_R12]
+    mov r13, [rcx + GEN_REG_R13]
+    mov r14, [rcx + GEN_REG_R14]
+    mov r15, [rcx + GEN_REG_R15]
 
-    ; Validate RSP before continuing
-    mov rax, [rdi + REG_IRET_RSP]
-    test rax, rax
-    jz .rsp_zero                    ; If RSP is zero, jump to debug section
+    ; Restore RSP from saved state
+    mov rsp, [rcx + REG_IRET_RSP]
 
-    ; Validate RIP before continuing
-    mov rax, [rdi + REG_IRET_RIP]
-    test rax, rax
-    jz .rip_zero                    ; If RIP is zero, jump to debug section
+    ; Push iretq frame (RIP, CS, RFLAGS)
+    push qword [rcx + REG_IRET_SS ]
+    push qword [rcx + REG_IRET_RSP]
+    push qword [rcx + REG_IRET_RFLAGS]
+    or   qword [rsp], 0x200  ; Enable interrupts
+    push qword [rcx + REG_IRET_CS]
+    push qword [rcx + REG_IRET_RIP]
 
-    ; Restore stack for iretq
-    mov rax, [rdi + REG_IRET_SS]   
-    push rax                        ; Storing iret_ss reg. value into stack by iretq 
+    mov rcx, [rcx + GEN_REG_RCX]    ; Ultimately set rcx registers
 
-    mov rax, [rdi + REG_IRET_RSP]   
-    push rax                
-
-    mov rax, [rdi + REG_IRET_RFLAGS]   
-    or rax, 0x200                   ; Ensure Interrupt Flag (IF) is set
-    push rax                        ; Storing iret_eflags reg. value into stack by iretq 
-
-    mov rax, [rdi + REG_IRET_CS]   
-    push rax                        ; Storing iret_cs reg. value into stack by iretq 
-
-    mov rax, [rdi + REG_IRET_RIP]   
-    push rax                        ; Storing iret_rip reg. value into stack by iretq 
-
-    mov rdi, [rdi + GEN_REG_RDI]    ; Ultimately set rdi registers
-
-    ; Align the stack to 16 bytes
-    and rsp, -16
-
-    sti                             ; Store interrupt 
+    ; sti                             ; Store interrupt 
 
     iretq                           ; Return from interrupt
-
-
-
-; Debug section for RSP being zero
-.rsp_zero:
-    ; Align the stack to 16 bytes
-    and rsp, -16
-
-    ; Prepare arguments for printf
-    lea rdi, [rsp_zero_msg]  ; First argument: address of the format string
-    xor eax, eax             ; Clear EAX (no floating-point arguments)
-
-    ; Call printf
-    call printf
-
-    ; Hang the system
-    jmp hang_debug
-
-; Debug section for RIP being zero
-.rip_zero:
-    ; Align the stack to 16 bytes
-    and rsp, -16
-
-    ; Prepare arguments for printf
-    lea rdi, [rip_zero_msg]         ; First argument: address of the format string
-    xor eax, eax                    ; Clear EAX (no floating-point arguments)
-
-    ; Call printf
-    call printf
-
-    ; Hang the system
-    jmp hang_debug
-
-
-
-; Hang debug section
-hang_debug:
-    cli                             ; Disable interrupts to prevent unwanted execution
-
-
-.hang_loop:
-    hlt                             ; Halt CPU to save power
-    jmp .hang_loop                  ; Infinite loop
-
-
 
     

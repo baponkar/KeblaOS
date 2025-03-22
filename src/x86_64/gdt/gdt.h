@@ -58,11 +58,7 @@ typedef struct {
     uint64_t kernel_stack;                // Kernel stack for Ring 0
 } cpu_data_t;
 
-void gdt_setup(gdt_entry_t gdt[], uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity);
-void gdt_setup_sysseg(gdt_entry_t gdt[], uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity);
-void load_gdt_tss(cpu_data_t *core);
-void start_bootstrap_gdt_tss();
-void init_gdt_tss(cpu_data_t *core);
-void init_all_gdt_tss();
-void core_init(int core);
-void start_secondary_cores();
+
+void init_core_gdt_tss(int core_id);
+void init_bootstrap_gdt_tss(int bootstrap_core_id);
+void init_application_core_gdt_tss(int start_core_id, int end_core_id);

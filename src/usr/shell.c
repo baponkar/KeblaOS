@@ -19,10 +19,10 @@
 #include "../driver/image_data.h"
 
 #include "../acpi/acpi.h"
-#include "../acpi/fadt.h"
+#include "../acpi/descriptor_table/fadt.h"
 
 #include "../bootloader/boot.h"
-#include "../mmu/detect_memory.h"
+#include "../memory/detect_memory.h"
 #include "../bootloader/firmware.h"
 
 

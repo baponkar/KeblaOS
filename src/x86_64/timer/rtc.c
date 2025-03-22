@@ -79,7 +79,7 @@ void rtc_init() {
     rtc_enable();           // Enable RTC periodic interrupt
     enable_rtc_irq();       // Enable IRQ 8 in PIC
 
-    printf("Successfully RTC initialized\n");
+    printf("RTC Timer initialized\n");
 }
 
 

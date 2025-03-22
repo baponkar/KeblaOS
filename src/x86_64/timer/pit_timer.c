@@ -17,7 +17,7 @@
 
 #define MAX_PIT_TICKS 0xFFFFFFFFFFFFFFFF
 
-#define PIT_TIMER_VECTOR 0x20   // 32
+#define PIT_TIMER_VECTOR  32 
 
 #define CHANEL0_DATA_PORT 0x40
 #define CHANEL1_DATA_PORT 0x41
@@ -66,9 +66,9 @@ void pit_timerHandler(registers_t *regs) {
     if(pit_ticks >= MAX_PIT_TICKS) pit_ticks = 0; // Reset pit_ticks value with zero
     pit_ticks++;
 
-    // if (pit_ticks % 10 == 0){   // Prints in every in 100 ms = 0.1 sec interval
-    //     printf("PIT Tick no : %d\n", pit_ticks);
-    // }
+    if (pit_ticks % 10 == 0){   // Prints in every in 100 ms = 0.1 sec interval
+        // printf("PIT Tick no : %d\n", pit_ticks);
+    }
 
     outb(0x20, 0x20); // Send End of Interrupt (EOI) to the PIC
 }
@@ -88,7 +88,7 @@ void init_pit_timer(uint32_t interval_ms) {
 
     asm volatile("sti");
     
-    printf("Initializing PIT with %d ms interval (divisor: %d, frequency: %d Hz)\n", interval_ms, divisor, frequency);
+    printf("PIT Timer initialized with %d ms interval (divisor: %d, frequency: %d Hz)\n", interval_ms, divisor, frequency);
 }
 
 

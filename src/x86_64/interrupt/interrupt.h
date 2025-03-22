@@ -31,8 +31,6 @@ struct int_ptr_struct
 typedef struct int_ptr_struct int_ptr_t;
 
 
-extern void idt_flush(uint64_t);
-
 extern void isr0();
 extern void isr1();
 extern void isr2();
@@ -66,8 +64,6 @@ extern void isr29();
 extern void isr30();
 extern void isr31();
 
-extern void isr128();
-extern void isr177();
 
 extern void irq0();
 extern void irq1();
@@ -86,24 +82,28 @@ extern void irq13();
 extern void irq14();
 extern void irq15();
 
-extern void irq16();
+extern void irq16();    // APIC Timer
+extern void irq17();    // HPET Timer
+extern void irq18();
 
 
 extern void interrupt_flush(uint64_t);
 extern int_entry_t int_entries[256];
 extern int_ptr_t int_ptr;
+
 extern char* exception_messages[];
 
 extern void (*interrupt_routines[224])(registers_t *);
 
 
-void disable_pic();
 void interrupt_install_handler(int int_no, void (*handler)(registers_t *r));
 void interrupt_uninstall_handler(int int_no);
-void int_set_gate(uint8_t index, uint64_t offset, uint16_t selector, uint8_t attr);
 
-void init_bootstrap_cpu_interrupt();
-void init_core_cpu_interrupt(uint64_t core_id);
+
+void init_core_interrupt(uint64_t core_id);
+void init_bootstrap_interrupt(int bootstrap_core_id);
+void init_application_core_interrupt(int start_core_id, int end_core_id);
+
 
 void test_interrupt();
 void gpf_handler(registers_t *regs);

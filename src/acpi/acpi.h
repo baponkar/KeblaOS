@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-
 #include "../bootloader/boot.h"
 
 typedef enum {
@@ -31,7 +30,6 @@ struct rsdp{
 typedef struct rsdp rsdp_t;
 
 
-
 // Extended RSDP
 struct rsdp_ext{
     rsdp_t first_part;     // First 20 bytes of ACPI 1.0 structure
@@ -40,6 +38,7 @@ struct rsdp_ext{
     uint8_t checksum;      // Checksum of entire structure
 } __attribute__((packed)) ;
 typedef struct rsdp_ext rsdp_ext_t;
+
 
 // ACPI (Advanced Configuration and Power Interface) Header
 struct acpi_header {
@@ -66,16 +65,9 @@ struct GenericAddressStructure
 typedef struct GenericAddressStructure GenericAddressStructure_t;
 
 
-extern void *fadt_addr;
-extern void *madt_addr;
-extern void *mcfg_addr;
-extern void *hpet_addr;
-
 void *find_acpi_table();
 void validate_acpi_table(void *table_addr);
 void parse_acpi_table(void *table_addr);
-
-
 int is_acpi_enabled();
 void acpi_enable();
 void init_acpi();

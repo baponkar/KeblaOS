@@ -1,7 +1,7 @@
 
 #include "../lib/string.h"
 #include "../lib/stdio.h"
-#include "../mmu/kheap.h"
+#include "../memory/kheap.h"
 #include "process.h"
 #include "types.h"
 #include "../x86_64/timer/apic_timer.h"
@@ -34,15 +34,17 @@ void add_thread(thread_t* thread) {
     if (parent->threads == NULL) {
         // First thread in process
         parent->threads = thread;
-        thread->next = thread; // Circular reference to self
+        parent->current_thread = thread;
     } else {
-        // Insert new thread into circular list
+        // Detect last thread
         thread_t* last = parent->threads;
-        while (last->next != parent->threads) {
+        while (last) {
+            if(!last->next){
+                break;
+            }
             last = last->next;
         }
         last->next = thread;
-        thread->next = parent->threads; // Close the circle
     }
     parent->current_thread = thread;
 }
