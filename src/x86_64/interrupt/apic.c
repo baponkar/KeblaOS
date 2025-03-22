@@ -4,15 +4,17 @@ Advanced Programmable Interrupt Controller
 Reference:  https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/07_APIC.md
             https://wiki.osdev.org/APIC_Timer
 */
-
+#include "../../cpu/cpu.h"
 #include "../../lib/stdio.h"
 #include "../../driver/io/ports.h"
-
+#include "../../acpi/descriptor_table/madt.h"
 
 #include "apic.h"
 
 
-uint32_t LAPIC_BASE = 0xFEE00000;   // lapic base in general 0xFEE00000 but system may changed
+
+
+
 #define APIC_SVR    0xF0            // Spurious Vector Register
 #define APIC_EOI    0xB0            // End of Interrupt (EOI)
 #define APIC_LVT    0x350           // Local Vector Table (LVT)
@@ -21,6 +23,9 @@ uint32_t LAPIC_BASE = 0xFEE00000;   // lapic base in general 0xFEE00000 but syst
 #define LAPIC_ICRHI (LAPIC_BASE + 0x310) // ICR High register
 #define LAPIC_ICRLO (LAPIC_BASE + 0x300) // ICR Low register
 
+uint32_t LAPIC_BASE = 0xFEE00000;   // lapic base in general 0xFEE00000 but system may changed
+uint32_t IOAPIC_BASE = 0xFEC00000;  // Example IOAPIC base address
+extern madt_t *madt_addr;           // To get IOAPIC base address
 
 // Write to a memory-mapped I/O address
 void mmio_write(uint32_t address, uint32_t value) {
@@ -34,8 +39,6 @@ uint32_t mmio_read(uint32_t address) {
 }
 
 
-
-
 int has_apic() {
     uint32_t eax, ebx, ecx, edx;
     asm volatile ("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(1));
@@ -46,6 +49,8 @@ int has_apic() {
 uint32_t get_lapic_id() {
     return mmio_read(LAPIC_BASE + LAPIC_ID_REGISTER) >> 24; // APIC ID is in bits 24-31
 }
+
+
 
 
 void lapic_send_ipi(uint8_t cpu_id, uint8_t vector) {
@@ -78,11 +83,18 @@ static inline void wrmsr(uint32_t msr, uint64_t value) {
 
 
 void enable_apic() {
-    uint64_t apic_base = rdmsr(0x1B) & 0xFFFFF000;  // IA32_APIC_BASE_MSR
-    if (!(rdmsr(0x1B) & (1 << 11))) {
-        wrmsr(0x1B, apic_base | (1 << 11));         // Enable APIC if disabled
+    LAPIC_BASE = rdmsr(0x1B) & 0xFFFFF000;  // Reading LAPIC_BASE
+
+    printf("LAPIC Base Address: %x\n", LAPIC_BASE);
+
+    if(madt_addr){
+        // IOAPIC_BASE = madt_addr->local_apic_address;
+        printf("IOAPIC Base Address: %x\n", IOAPIC_BASE);
     }
-    LAPIC_BASE = apic_base;
+
+    if (!(rdmsr(0x1B) & (1 << 11))) {       // Check if APIC is enabled
+        wrmsr(0x1B, LAPIC_BASE | (1 << 11)); // Enable APIC if disabled
+    }
 }
 
 
@@ -97,6 +109,20 @@ void enable_ioapic_mode() {
     outb(0x22, 0x70);
     outb(0x23, 0x01);
 }
+
+
+
+void ioapic_route_irq(uint8_t irq, uint8_t apic_id, uint8_t vector) {
+    // Calculate the redirection table register index offset
+    uint32_t index_low  = 0x10 + irq * 2; // Low dword index
+    uint32_t index_high = index_low + 1;   // High dword index
+
+    // Write to IOAPIC redirection table registers using the IOAPIC base address
+    mmio_write(IOAPIC_BASE + index_high * 4, (apic_id << 24));
+    mmio_write(IOAPIC_BASE + index_low * 4, vector);
+}
+
+
 
 
 void init_apic_interrupt(){

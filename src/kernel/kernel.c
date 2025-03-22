@@ -12,6 +12,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../process/process.h" 
 #include "../process/test_process.h"
 #include "../acpi/acpi.h" // init_acpi
+#include "../acpi/descriptor_table/mcfg.h"
 #include "../x86_64/interrupt/interrupt.h"
 #include "../x86_64/interrupt/apic.h"
 #include "../x86_64/interrupt/pic.h" // init_idt, test_interrupt
@@ -19,8 +20,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../pci/pci.h"
 #include "../disk/disk.h"
 #include "../cpu/cpu.h" // target_cpu_task, switch_to_core
-#include "../bootloader/trampoline.h"
-#include "../mmu/detect_memory.h"
+#include "../memory/detect_memory.h"
 #include "../bootloader/firmware.h"
 #include "../limine/limine.h" // bootloader info
 #include "../bootloader/boot.h" // bootloader info
@@ -31,13 +31,13 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../driver/image_data.h"
 #include "../driver/io/serial.h"
 #include "../x86_64/gdt/gdt.h" // init_gdt
-#include "../mmu/pmm.h" // init_pmm, test_pmm
-#include "../mmu/paging.h" // init_paging, test_paging
-#include "../mmu/kmalloc.h" // test_kmalloc
-#include "../mmu/umalloc.h" // test_umalloc
-#include "../mmu/vmm.h" // test_vmm
-#include "../mmu/kheap.h" // test_kheap
-#include "../mmu/uheap.h" // test_uheap
+#include "../memory/pmm.h" // init_pmm, test_pmm
+#include "../memory/paging.h" // init_paging, test_paging
+#include "../memory/kmalloc.h" // test_kmalloc
+#include "../memory/umalloc.h" // test_umalloc
+#include "../memory/vmm.h" // test_vmm
+#include "../memory/kheap.h" // test_kheap
+#include "../memory/uheap.h" // test_uheap
 #include "../driver/keyboard/keyboard.h" // initKeyboard
 #include "../x86_64/timer/tsc.h"         // time stamp counter
 #include "../x86_64/timer/rtc.h"        // RTC
@@ -57,41 +57,36 @@ void kmain(){
     get_memory_info();
     vga_init();
 
+    get_cpu_info();
+
     printf("%s - %s\n", OS_NAME, OS_VERSION);
     
-    init_acpi();
 
-    // Enabling GDT
-    init_all_gdt_tss();
-    core_init(0);
-    init_core_cpu_interrupt(0);
-
-    init_pic_interrupt();
-    init_apic_interrupt();
+    pic_irq_remap();
+    disable_pic();
+    start_bootstrap_cpu_core();    // Enabling GDT, TSS, Interrupt and APIC Timer for bootstrap core
 
     // Memory management initialization
     init_pmm();
     init_paging();
-    
-    // Timer initialization
-    init_tsc();
-    rtc_init();
-    init_pit_timer(100);    // Interrupt in 100 ms
-    init_apic_timer(100);   // Interrupt in 100 ms
-    start_hpet();
 
+    init_ap_stacks(1, 3); // Initialize stacks for other cores
+    start_secondary_cpu_cores(1, 3); // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
+    
+
+    printf("----------------------------------\n");
+
+    printf("Current CPU ID: %d\n", get_lapic_id());
+    // switch_to_core(0);
+    
+    init_processes();
+
+    // parse_mcfg();
     // pci_scan();
-
-    initKeyboard();
-
-    printf("-------------------------------------------------------------------------------\n");
     
-    // init_processes();
+    test_interrupt();
 
-    detect_ahci();
-    get_disk_info();
-    test_disk_write_read();
-
+    // printf("LAPIC ID: %d\n", get_lapic_id());
 
     halt_kernel();
 }

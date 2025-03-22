@@ -39,7 +39,7 @@
         
         mov rdi, rsp         ; Pass pointer to the `registers_t` structure
         cld                  ; Clear the direction flag
-        call isr_handler ; Call the interrupt handler
+        call isr_handler     ; Call the interrupt handler
 
         pop gs               ; Restore segment registers
         pop fs
@@ -62,6 +62,7 @@
         pop r13
         pop r14
         pop r15
+        
         add rsp, 16         ; Clean up interrupt no and dummy error code
 
         iretq               ; Return from the interrupt using IRETQ (iret values remain intact)
@@ -101,7 +102,7 @@
 
         mov rdi, rsp         ; Pass pointer to the `registers_t` structure
         cld                  ; Clear the direction flag
-        call isr_handler ; Call the interrupt handler
+        call isr_handler     ; Call the interrupt handler
 
         pop gs               ; Restore segment registers
         pop fs
@@ -167,8 +168,8 @@ ISR_NOERRCODE 30
 ISR_NOERRCODE 31
 
 
-ISR_NOERRCODE 128   ; System Call
-ISR_NOERRCODE 177   ; System Call
+ISR_NOERRCODE 48   ; APIC Timer 
+ISR_NOERRCODE 49   ; HPET Timer
 
 
 

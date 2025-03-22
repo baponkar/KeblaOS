@@ -5,9 +5,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "types.h"
-
-#include "../util/util.h"
+#include "types.h"          // for process_t and thread_t structures
+#include "../util/util.h"   // for registers_t
 
 #define NAME_MAX_LEN 64
 
@@ -41,5 +40,6 @@ process_t* create_process(const char* name);
 void add_process(process_t* proc);
 void remove_process(process_t* proc);
 void delete_process(process_t* proc);
+
 registers_t* schedule(registers_t* registers);
 

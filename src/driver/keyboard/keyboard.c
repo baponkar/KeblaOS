@@ -6,11 +6,9 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_K
 #include "../../x86_64/interrupt/pic.h"
 #include "../../x86_64/interrupt/apic.h"
 #include "../../x86_64/interrupt/interrupt.h"
-
 #include "../../lib/stdlib.h"
 #include "../../lib/string.h"
 #include "../../lib/stdio.h"
-
 #include "../../usr/shell.h"
 #include "../../driver/speaker/speaker.h"
 #include "../../driver/io/ports.h"
@@ -18,7 +16,7 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_K
 
 #include "keyboard.h"
 
-
+#define KEYBOARD_INT_VECTOR 33
 #define BUFFER_SIZE 128 // Max Size of Command Buffer
 char COMMAND_BUFFER[BUFFER_SIZE];   // Command string Container Buffer
 int BUFFER_INDEX = 0;   // Current Length of Command String Buffer
@@ -183,6 +181,7 @@ void key_ctrl(uint32_t scanCode, bool keyPress){
             }
             break;   
     }
+    apic_send_eoi();
 }
 
 
@@ -237,12 +236,11 @@ void keyboardHandler(registers_t *regs){
 void initKeyboard(){
     enableKeyboard();
     printf("Successfully KEYBOARD initialized.\n");
-
 }
 
 void enableKeyboard(){
     // apic_interrupt_install_handler(1, &keyboardHandler);
-    interrupt_install_handler(1, &keyboardHandler);
+    interrupt_install_handler(KEYBOARD_INT_VECTOR - 32, &keyboardHandler);
 }
 
 void disableKeyboard(){

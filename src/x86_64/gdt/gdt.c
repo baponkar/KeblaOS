@@ -18,41 +18,27 @@
 #include "../../cpu/cpu.h"
 #include "../../lib/stdio.h"
 #include "../../lib/string.h"
-#include "../../mmu/kmalloc.h"
+#include "../../memory/kmalloc.h"
 #include "../../lib/assert.h"
 #include "../interrupt/apic.h"
 
 #include "gdt.h"
 
-
+#define MAX_CORES 256
 #define STACK_SIZE 0x4000  // 16 KB
 
 extern void gdt_flush(gdtr_t *gdtr_instance);
 extern void tss_flush(uint16_t selector);
 
-#define MAX_CORES 256
-
 cpu_data_t cpu_data[MAX_CORES];  // Array indexed by CPU ID (APIC ID)
-cpu_data_t bootstrap;            // Bootstrap processor
 
-// Initialize GDT and TSS for Bootstrap CPU
-void start_bootstrap_gdt_tss() {
-    init_gdt_tss(&bootstrap);
 
-    if (!bootstrap.kernel_stack) {
-        printf("Error: Stack allocation failed\n");
-        return;
-    }
-
-    load_gdt_tss(&bootstrap);
-
-    printf("Successfully started GDT and TSS for Bootstrap CPU.\n");
-}
-
+// Detect the number of CPU cores available
 int detect_cores(){
     return get_cpu_count();
 }
 
+// Setup a GDT entry
 void gdt_setup(gdt_entry_t gdt[], uint8_t idx, uint64_t base, uint32_t limit, uint8_t access, uint8_t granularity) {
     gdt[idx].limit_low = limit & 0xFFFF;
     gdt[idx].base_low = base & 0xFFFF;
@@ -72,8 +58,18 @@ void gdt_setup_sysseg(gdt_entry_t gdt[], uint8_t idx, uint64_t base, uint32_t li
     gdt[idx + 1].reserved = 0;
 }
 
-void init_gdt_tss(cpu_data_t *core) {
+// Initialize GDT and TSS for a core
+void set_core_gdt_tss(int core_id) {
+    if(core_id >= MAX_CORES) {
+        printf("Invalid core ID %d\n", core_id);
+        return;
+    }
+    cpu_data_t *core = &cpu_data[core_id];
     uint64_t stack = kmalloc_a(STACK_SIZE, true);
+    if(stack == 0) {
+        printf("Failed to allocate kernel stack for CPU %d\n", core_id);
+        return;
+    }
     core->kernel_stack = (uint64_t)stack + STACK_SIZE;
 
     // Initialize GDT entries (same as bootstrap)
@@ -93,48 +89,38 @@ void init_gdt_tss(cpu_data_t *core) {
 
     core->gdtr.limit = (uint16_t) sizeof (core->gdt) - 1; // 7*16 - 1 = 111 bytes
     core->gdtr.base = (uint64_t) &core->gdt;
-
-#if 0
-    for (int i = 0; i < GDT_ENTRIES_COUNT; i++) {
-        printf("GDT Entry %d: %x\n", i, *(uint64_t*)&core->gdt[i]);
-    }
-#endif
-
 }
 
-void load_gdt_tss(cpu_data_t *core) {
-    // Load GDT
-    gdt_flush(&core->gdtr);
+
+// Load GDT and TSS for a core
+void load_core_gdt_tss(int core_id) {
+    cpu_data_t *core = &cpu_data[core_id];
+    gdt_flush(&core->gdtr); // Load GDT
 
     // Load TSS
     tss_flush(0x28);  // Selector 0x28 (5th entry in GDT)
 }
 
-void init_all_gdt_tss() {
-    int num_cores = detect_cores();  // Detect available CPU cores (e.g., via ACPI)
-
-    for (int core = 0; core < num_cores; core++)
-        init_gdt_tss(&cpu_data[core]);
+// Initialize GDT and TSS for a single core
+void init_core_gdt_tss(int core_id) {
+    set_core_gdt_tss(core_id);
+    load_core_gdt_tss(core_id);
 }
 
-
-void core_init(int core) {
-    // Get core-specific data
-    cpu_data_t *data = &cpu_data[core];
-
-    load_gdt_tss(data);
-
-    // Set kernel stack in TSS
-    // Michael Petch - this doesn't look right - bug???
-    asm volatile("mov %0, %%rsp\n" ::"r"(data->tss.rsp0));
-
-    printf("Successfully GDT and TSS enabled for CPU %d!\n", core);
+void init_bootstrap_gdt_tss(int bootstrap_core_id) {
+    set_core_gdt_tss(bootstrap_core_id);
+    load_core_gdt_tss(bootstrap_core_id);
 }
 
-void start_secondary_cores() {
-    int num_cores = detect_cores();
-    for (int core = 1; core < num_cores; core++) {
-        lapic_send_ipi(core, 0);  // Platform-specific IPI code
-        printf("Successfully GDT and TSS enabled for CPU %d!\n", core);
+// Initialize GDT and TSS for all cores
+void init_application_core_gdt_tss(int start_core_id, int end_core_id) {
+    for(int i = start_core_id; i <= end_core_id; i++) {
+        init_core_gdt_tss(i);
     }
 }
+
+
+
+
+
+

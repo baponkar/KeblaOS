@@ -59,6 +59,7 @@ void get_paging_mode_info(){
     }
 }
 
+
 void print_paging_mode_info(){
      if(paging_mode_request.response != NULL){
         printf("Limine Paging Mode : %d\n", LIMINE_PAGING_MODE);
@@ -124,6 +125,7 @@ void get_stack_info(){
         printf("No stack size found!\n");
     }
 }
+
 
 void print_stack_info(){
     if(stack_size_request.response != NULL){
