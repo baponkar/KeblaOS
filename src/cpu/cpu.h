@@ -5,16 +5,19 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-// Getting CPU information using CPUID instruction
-extern uint32_t is_cpuid_present(void);
-static inline void cpuid(uint32_t leaf, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
-int getLogicalProcessorCount();
-void get_cpu_vendor(char *vendor);
-void get_cpu_brand(char *brand);
-uint32_t get_cpu_base_frequency();
-uint32_t get_lapic_id_cpuid(void);
-bool has_fpu();
-void enable_fpu_and_sse();
+
+void init_cpu();
+void set_ap_stacks(int start_id, int end_id);
+
+// Getting SMP information using Limine Bootloader
+uint64_t get_revision();
+uint32_t get_flags();
+int get_cpu_count();
+int get_bsp_lapic_id();
+uint32_t get_lapic_id_by_limine(int core_id);
+struct limine_smp_info ** get_cpus();
+limine_goto_address get_goto_address(int core_id);
+uint64_t get_extra_argument(int core_id);
 
 
 // Getting CPU information using Limine Bootloader
@@ -26,7 +29,7 @@ void switch_to_core(uint32_t target_lapic_id);
 void start_bootstrap_cpu_core();
 void start_secondary_cpu_cores(int start_id, int end_id);
 
-void init_ap_stacks(int start_id, int end_id);
+void set_ap_stacks(int start_id, int end_id);
 
 // Debugging
 void print_cpu_vendor();

@@ -95,6 +95,8 @@ extern char* exception_messages[];
 
 extern void (*interrupt_routines[224])(registers_t *);
 
+void isr_handler(registers_t *regs);
+void irq_handler(registers_t *regs);
 
 void interrupt_install_handler(int int_no, void (*handler)(registers_t *r));
 void interrupt_uninstall_handler(int int_no);

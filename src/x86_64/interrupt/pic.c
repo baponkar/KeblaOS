@@ -10,7 +10,6 @@ https://stackoverflow.com/questions/79386685/how-does-stack-memory-will-be-use-t
 
 #include "interrupt.h"
 #include "../../driver/io/ports.h"
-#include "../../memory/paging.h"
 #include "../../lib/stdio.h"
 
 #include "pic.h"
@@ -29,63 +28,6 @@ https://stackoverflow.com/questions/79386685/how-does-stack-memory-will-be-use-t
 #define ICW_3_M 0x04
 #define ICW_3_S 0x02
 #define ICW_4 0x01
-
-void cpu_exception_handler(registers_t *regs){
-    printf("Received Interrupt : %d\n%s\nError Code : %d\nSystem Halted!\n", 
-        regs->int_no, exception_messages[regs->int_no], regs->err_code);
-    // debug_error_code(regs->err_code);
-    halt_kernel();
-}
-
-
-// This gets called from our ASM interrupt handler stub.
-void isr_handler(registers_t *regs)
-{
-    if (regs->int_no == 14) {
-        page_fault_handler(regs);
-        return;
-    }else if(regs->int_no == 13){
-        // print("General Protection Fault\n");
-        // debug_error_code(regs->err_code);
-        gpf_handler(regs);
-        return;
-    }else if(regs->int_no < 32){
-        cpu_exception_handler(regs);
-        return;
-    }else{
-        printf("Received Interrupt : %d\n", regs->int_no);
-        return;
-    }
-}
-
-
-
-void irq_handler(registers_t *regs)
-{
-    /* This is a blank function pointer */
-    void (*handler)(registers_t *r);
-    
-    /* Find out if we have a custom handler to run for this
-    *  IRQ, and then finally, run it */
-    handler = interrupt_routines[regs->int_no - 32];
-
-    if (handler)
-    {
-        handler(regs);
-    }
-
-    /* If the IDT entry that was invoked was greater than 40
-    *  (meaning IRQ8 - 15), then we need to send an EOI to
-    *  the slave controller */
-    if (regs->int_no >= 40)
-    {
-        outb(PIC2_COMMAND_PORT, PIC_EOI); /* slave */
-    }
-
-    /* In either case, we need to send an EOI to the master
-    *  interrupt controller too */
-    outb(PIC1_COMMAND_PORT, PIC_EOI); /* master */
-}
 
 
 void pic_irq_remap()
@@ -109,16 +51,16 @@ void pic_irq_remap()
 
 // Function to disable the PIC
 void disable_pic() {
-    outb(PIC1_COMMAND_PORT, ICW_1);
-    outb(PIC2_COMMAND_PORT, ICW_1);
-    outb(PIC1_DATA_PORT, ICW_2_M);
-    outb(PIC2_DATA_PORT, ICW_2_S);
-    outb(PIC1_DATA_PORT, ICW_3_M);
-    outb(PIC2_DATA_PORT, ICW_3_S);
-    outb(PIC1_DATA_PORT, ICW_4);
-    outb(PIC2_DATA_PORT, ICW_4);
-    outb(PIC1_DATA_PORT, 0xFF);
-    outb(PIC2_DATA_PORT, 0xFF);
+    outb(PIC1_COMMAND_PORT, ICW_1); // ICW1: Select 8086 mode
+    outb(PIC2_COMMAND_PORT, ICW_1); // ICW1: Select 8086 mode
+    outb(PIC1_DATA_PORT, ICW_2_M);  // ICW2: Master PIC vector offset
+    outb(PIC2_DATA_PORT, ICW_2_S);  // ICW2: Slave PIC vector offset
+    outb(PIC1_DATA_PORT, ICW_3_M);  // ICW3: Tell Master PIC that there is a slave PIC at IRQ2 (0000 0100)
+    outb(PIC2_DATA_PORT, ICW_3_S);  // ICW3: Tell Slave PIC its cascade identity (0000 0010)
+    outb(PIC1_DATA_PORT, ICW_4);    // ICW4: 8086 mode, normal EOI
+    outb(PIC2_DATA_PORT, ICW_4);    // ICW4: 8086 mode, normal EOI
+    outb(PIC1_DATA_PORT, 0xFF);     // Mask all interrupts
+    outb(PIC2_DATA_PORT, 0xFF);     // Mask all interrupts
 
     printf("PIC Disabled.\n");
 }

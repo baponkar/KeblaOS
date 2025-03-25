@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+// cpu state 
 struct registers { // Total 26*8 = 208 bytes, 16 bytes aligned
     // Segment registers
     uint64_t gs;            // Offset 8*0 bytes
@@ -46,3 +47,8 @@ void print_size_with_units(uint64_t size);
 uint64_t read_rip();
 uint64_t read_rsp();
 uint64_t read_rflags();
+
+void set_rsp(uint64_t rsp);
+void set_rip(uint64_t rip);
+void set_rflags(uint64_t flags);
+

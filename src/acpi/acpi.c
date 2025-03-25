@@ -51,25 +51,18 @@ hpet_t *hpet_addr;
 
 
 
-void *find_acpi_table() {
-    if (!rsdp_request.response || !rsdp_request.response->address) {
-        printf("ACPI is not available\n");
-        return NULL; // ACPI is not available
+void find_acpi_table_pointer(){
+    if(!rsdp_request.response || !rsdp_request.response->address){
+        printf("ACPI is not available!\n");
+        return;
     }
-
-    rsdp_t *rsdp = (rsdp_t *) rsdp_request.response->address;
-    
-    if (rsdp->revision >= 2) {
-        rsdp_ext_t *rsdp_ext = (rsdp_ext_t *)rsdp;
-        return (void *)(uintptr_t)rsdp_ext; // Use XSDT for 64-bit systems
+    rsdp = (rsdp_t *) rsdp_request.response->address;
+    if(rsdp->revision >= 2){
+        rsdp_ext = (rsdp_ext_t *) rsdp;
     }
-
-    return (void *)(uintptr_t)rsdp; // Use RSDT for ACPI 1.0
 }
 
-
-void validate_acpi_table(void *table_addr){
-    rsdp_t *rsdp = (rsdp_t *) table_addr;
+void validate_rsdp_table(rsdp_t *rsdp){
     if(rsdp){
         uint64_t acpi_version = (rsdp->revision >= 2) ? 2 : 1;
         if(!memcmp(rsdp->signature, "RSD PTR ", 8)){
@@ -92,38 +85,63 @@ void validate_acpi_table(void *table_addr){
 }
 
 
-void parse_acpi_table(void *table_addr) {
-    
-    rsdp_t *rsdp = (rsdp_t *) table_addr;
-    rsdt_addr = (rsdt_t *)(uintptr_t) rsdp->rsdt_address;
 
-    rsdp_ext_t *rsdp_ext = (rsdp->revision >= 2) ? (rsdp_ext_t *) table_addr : 0;
-    xsdt_addr = (rsdp->revision >= 2) ? (xsdt_t *)rsdp_ext->xsdt_address : 0;
+// parsing RSDT and XSDT tables to get MADT, MCFG, FADT and HPET tables
+void parse_rsdt_table(rsdp_t *rsdp){
+    if(rsdp->revision >= 2){
+        rsdp_ext_t *rsdp_ext = (rsdp_ext_t *) rsdp;
+        xsdt_addr = (xsdt_t *)(uintptr_t) rsdp_ext->xsdt_address;
 
-    acpi_header_t header = (rsdp->revision >= 2) ? xsdt_addr->header : rsdt_addr->header;
+        acpi_header_t header = xsdt_addr->header;
+        int entry_size = sizeof(uint64_t);
+        int entry_count = (header.length - sizeof(acpi_header_t)) / entry_size;
 
-    int entry_size = (rsdp->revision >= 2) ? sizeof(uint64_t) : sizeof(uint32_t);
-    int entry_count = (header.length - sizeof(acpi_header_t)) / entry_size;
+        uint64_t *entries_64 = (uint64_t *)(uintptr_t) xsdt_addr->entries;
+        void *entries = (void *) entries_64;
 
-    uint32_t *entries_32 = (uint32_t *)(uintptr_t) rsdt_addr->entries;
-    uint64_t *entries_64 = (uint64_t *)(uintptr_t) xsdt_addr->entries;
-    void *entries = (rsdp->revision >= 2) ? (void *)entries_64 : (void *)entries_32;
+        for (int i = 0; i < entry_count; i++)
+        {
+            acpi_header_t *entry = (acpi_header_t *)(uintptr_t) ((uint64_t *)entries)[i];
+            if(memcmp(entry->signature, "APIC", 4) == 0){
+                madt_addr = (madt_t *)(uintptr_t) entry;
+            }else if(memcmp(entry->signature, "MCFG", 4) == 0){
+                mcfg_addr = (mcfg_t *)(uintptr_t) entry;
+            }else if(memcmp(entry->signature, "FACP", 4) == 0){
+                fadt_addr = (fadt_t *)(uintptr_t) entry;
+            }else if(memcmp(entry->signature, "HPET", 4) == 0){
+                hpet_addr = (hpet_t *)(uintptr_t) entry;
+            }else{
+                continue;
+            }
+        }
+    }else{
+        rsdt_addr = (rsdt_t *)(uintptr_t) rsdp->rsdt_address;
+        acpi_header_t header = rsdt_addr->header;
+        int entry_size = sizeof(uint32_t);
+        int entry_count = (header.length - sizeof(acpi_header_t)) / entry_size;
 
-    for (int i = 0; i < entry_count; i++) {
-        acpi_header_t *entry = (acpi_header_t *)(uintptr_t)((rsdp->revision >= 2) ? ((uint64_t *)entries)[i] : ((uint32_t *)entries)[i]);
-        if (memcmp(entry->signature, "APIC", 4) == 0) {
-            madt_addr = (madt_t *)(uintptr_t) entry;
-        } else if (memcmp(entry->signature, "MCFG", 4) == 0) {
-            mcfg_addr = (mcfg_t *)(uintptr_t) entry;
-        }else if (memcmp(entry->signature, "FACP", 4)) {
-            fadt_addr = (fadt_t *)(uintptr_t) entry;
-        }else if(memcmp(entry->signature, "HPET", 4)){
-            hpet_addr = (hpet_t *)(uintptr_t) entry;
-        }else{
-            continue;
+        uint32_t *entries_32 = (uint32_t *)(uintptr_t) rsdt_addr->entries;
+        void *entries = (void *) entries_32;
+
+        for (int i = 0; i < entry_count; i++)
+        {
+            acpi_header_t *entry = (acpi_header_t *)(uintptr_t) ((uint32_t *)entries)[i];
+            if(memcmp(entry->signature, "APIC", 4) == 0){
+                madt_addr = (madt_t *)(uintptr_t) entry;
+            }else if(memcmp(entry->signature, "MCFG", 4) == 0){
+                mcfg_addr = (mcfg_t *)(uintptr_t) entry;
+            }else if(memcmp(entry->signature, "FACP", 4) == 0){
+                fadt_addr = (fadt_t *)(uintptr_t) entry;
+            }else if(memcmp(entry->signature, "HPET", 4) == 0){
+                hpet_addr = (hpet_t *)(uintptr_t) entry;
+            }else{
+                continue;
+            }
         }
     }
 }
+
+
 
 
 // Function to read ACPI enable status
@@ -137,8 +155,8 @@ int is_acpi_enabled() {
     uint32_t pm1a_control = (fadt->header.revision >= 2 && fadt->X_PM1aControlBlock.Address) ? \
                             (uint32_t)fadt->X_PM1aControlBlock.Address : fadt->PM1aControlBlock;
 
-    printf("FADT PM1a Control Block: %x\n", fadt->PM1aControlBlock);
-    printf("FADT X_PM1a Control Block: %x\n", fadt->X_PM1aControlBlock.Address);
+    // printf("FADT PM1a Control Block: %x\n", fadt->PM1aControlBlock);
+    // printf("FADT X_PM1a Control Block: %x\n", fadt->X_PM1aControlBlock.Address);
 
     if (!pm1a_control) {
         printf("PM1a Control Block not found!\n");
@@ -176,12 +194,11 @@ void acpi_enable() {
 
 
 void init_acpi(){
-    if(!is_acpi_enabled()){
-        acpi_enable();
-    }
-    void *rsdp_addr = find_acpi_table();
-    validate_acpi_table(rsdp_addr);
-    parse_acpi_table(rsdp_addr);
+    find_acpi_table_pointer();
+    validate_rsdp_table(rsdp);
+    parse_rsdt_table(rsdp);
+    is_acpi_enabled();
+    acpi_enable();
 }
 
 
