@@ -17,6 +17,7 @@
 #include "../x86_64/timer/tsc.h"
 #include "../x86_64/timer/apic_timer.h"
 #include "../x86_64/interrupt/apic.h"
+#include "../x86_64/interrupt/ioapic.h"
 #include "../memory/kmalloc.h"
 #include "../util/util.h"
 #include "../acpi/acpi.h"
@@ -35,145 +36,6 @@ static volatile struct limine_smp_request smp_request = {
 };
 
 
-
-extern uint32_t is_cpuid_present(void);
-
-
-// Getting CPU information using CPUID instruction
-
-static inline void cpuid(uint32_t leaf, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
-    __asm__ volatile ("cpuid" : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx) : "a"(leaf));
-}
-
-int getLogicalProcessorCount() {
-    uint32_t eax, ebx, ecx, edx;
-    cpuid(0x1, &eax, &ebx, &ecx, &edx);
-
-    return (ebx >> 16) & 0xFF;  // Bits 23:16 contain logical processor count
-}
-
-void get_cpu_vendor(char *vendor) {
-    int eax, ebx, ecx, edx;
-
-    // Input EAX = 0: Get Vendor ID
-    eax = 0;
-    __asm__ volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(eax) :);
-
-    // EBX, EDX, ECX contain the vendor ID string
-    ((int *)vendor)[0] = ebx;
-    ((int *)vendor)[1] = edx;
-    ((int *)vendor)[2] = ecx;
-    vendor[12] = '\0'; // Null-terminate the string
-
-    // Check specific feature bits
-    if (edx & (1 << 25)) {
-        printf("SSE supported\n");
-    }
-    if (ecx & (1 << 28)) {
-        printf("AVX supported\n");
-    }
-}
-
-void get_cpu_brand(char *brand) {
-    int eax, ebx, ecx, edx;
-
-    // Input EAX = 0x80000002: Get CPU Brand String (first part)
-    eax = 0x80000002;
-    __asm__ volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(eax):);
-    ((int *)brand)[0] = eax;
-    ((int *)brand)[1] = ebx;
-    ((int *)brand)[2] = ecx;
-    ((int *)brand)[3] = edx;
-
-    // Input EAX = 0x80000003: Get CPU Brand String (second part)
-    eax = 0x80000003;
-    __asm__ volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(eax) :);
-    ((int *)brand)[4] = eax;
-    ((int *)brand)[5] = ebx;
-    ((int *)brand)[6] = ecx;
-    ((int *)brand)[7] = edx;
-
-    // Input EAX = 0x80000004: Get CPU Brand String (third part)
-    eax = 0x80000004;
-    __asm__ volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(eax) :);
-    ((int *)brand)[8] = eax;
-    ((int *)brand)[9] = ebx;
-    ((int *)brand)[10] = ecx;
-    ((int *)brand)[11] = edx;
-
-    brand[48] = '\0'; // Null-terminate the string
-}
-
-
-uint32_t get_cpu_base_frequency() {
-    uint32_t max_cpuid_leaf, eax, ebx, ecx, edx;
-
-    // Get the maximum supported CPUID leaf
-    cpuid(0x0, &max_cpuid_leaf, &ebx, &ecx, &edx);
-
-    // Check if 0x16 is supported
-    if (max_cpuid_leaf < 0x16) {
-        return 0;  // CPUID 0x16 is not available
-    }
-
-    // Call CPUID 0x16
-    cpuid(0x16, &eax, &ebx, &ecx, &edx);
-
-    if (eax == 0) {
-        return 0;  // CPU does not report frequency
-    }
-
-    return eax * 1000000ULL;  // Convert MHz to Hz
-}
-
-
-uint32_t get_lapic_id_cpuid(void) {
-    uint32_t eax, ebx, ecx, edx;
-    __asm__ __volatile__(
-        "cpuid"
-        : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
-        : "a"(1)
-    );
-    // Extract LAPIC ID from EBX bits 24-31
-    return (ebx >> 24) & 0xFF;
-}
-
-
-bool has_fpu() {
-    uint32_t eax, ebx, ecx, edx;
-    cpuid(1,  &eax, &ebx, &ecx, &edx);
-    return (edx & (1 << 0));  // FPU is bit 0 of EDX
-}
-
-
-void enable_fpu_and_sse() {
-    asm volatile (
-        "mov %%cr0, %%rax\n"      
-        "and $-5, %%rax\n"        // Clear CR0.EM (bit 2) to enable FPU
-        "or  $2, %%rax\n"         // Set CR0.MP (bit 1) for proper FPU operation
-        "and $-9, %%rax\n"        // Clear CR0.TS (bit 3); -9 clears bit 3 (0xFFFFFFF7)
-        "mov %%rax, %%cr0\n"
-        :
-        :
-        : "rax"
-    );
-
-    asm volatile (
-        "mov %%cr4, %%rax\n"
-        "or  $0x600, %%rax\n"     // Set CR4.OSFXSR (bit 9) and CR4.OSXMMEXCPT (bit 10) to enable SSE
-        "mov %%rax, %%cr4\n"
-        :
-        :
-        : "rax"
-    );
-
-    asm volatile ("fninit");  // Initialize the FPU
-}
-
-
-
-// ---------------------------------------------- //
-
 // Define stack size and storage
 #define MAX_CORES 16
 #define STACK_SIZE 4096 * 4  // 16 KB per core
@@ -188,7 +50,8 @@ void init_cpu(){
     ap_stacks[0] = (uint8_t *) read_rsp();
 }
 
-void init_ap_stacks(int start_id, int end_id) {
+
+void set_ap_stacks(int start_id, int end_id) {
     for (int i = start_id; i < end_id; i++) {
         ap_stacks[i] = (uint8_t *) kmalloc_a(STACK_SIZE, 1);
         if (!ap_stacks[i]) {
@@ -199,11 +62,46 @@ void init_ap_stacks(int start_id, int end_id) {
 
 
 // Getting CPU information using Limine Bootloader
+uint64_t get_revision(){
+    if(smp_request.response != NULL)  return smp_request.response->revision;
+    return 0;
+}
+
+uint32_t get_flags(){
+    if(smp_request.response != NULL)  return smp_request.response->flags;
+    return 0;
+}
 
 int get_cpu_count(){
     if(smp_request.response != NULL)  return (int) smp_request.response->cpu_count;
     return 1; // Defult one processor count
 }
+
+int get_bsp_lapic_id(){
+    if(smp_request.response != NULL)  return (int) smp_request.response->bsp_lapic_id;
+    return 0; // Defult one processor count
+}
+
+uint32_t get_lapic_id_by_limine(int core_id){
+    if(smp_request.response != NULL)  return smp_request.response->cpus[core_id]->lapic_id;
+    return 0; // Defult one processor count
+}
+
+struct limine_smp_info ** get_cpus(){
+    if(smp_request.response != NULL)  return smp_request.response->cpus;
+    return NULL;
+}
+
+limine_goto_address get_goto_address(int core_id){
+    if(smp_request.response != NULL)  return smp_request.response->cpus[core_id]->goto_address;
+    return NULL;
+}
+
+uint64_t get_extra_argument(int core_id){
+    if(smp_request.response != NULL)  return smp_request.response->cpus[core_id]->extra_argument;
+    return 0;
+}
+
 
 
 void get_cpu_info(){
@@ -213,12 +111,15 @@ void get_cpu_info(){
     uint32_t flags = smp_request.response->flags;
     uint32_t bsp_lapic_id = smp_request.response->bsp_lapic_id;
     uint64_t cpu_count = smp_request.response->cpu_count;
+
     struct limine_smp_info ** cpus = smp_request.response->cpus;
 
     for(size_t i=0; i<(size_t) cpu_count; i++){
         uint32_t processor_id = cpus[i]->processor_id;
+
         uint32_t lapic_id = cpus[i]->lapic_id;
         uint64_t reserved = cpus[i]->reserved;
+
         limine_goto_address goto_address = cpus[i]->goto_address;
         uint64_t extra_argument = cpus[i]->extra_argument;
 
@@ -227,19 +128,17 @@ void get_cpu_info(){
 }
 
 
+
+
 void target_cpu_task(struct limine_smp_info *smp_info) {
-    printf("Now running on CPU with LAPIC ID: %d\n", get_lapic_id());
+    printf("Now running on CPU with LAPIC ID: %d\n", get_bsp_lapic_id());
 
     int core_id = (int) smp_info->lapic_id;
 
     uint8_t *stack_top = ap_stacks[core_id] + STACK_SIZE;
 
     // Set the stack pointer
-    asm volatile (
-        "mov %0, %%rsp\n"
-        :
-        : "r"(stack_top)
-    );
+    set_rsp((uint64_t) stack_top);
 
     init_acpi();
     
@@ -258,7 +157,10 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
     // Configure APIC timer for this core
     init_apic_timer(150); // 150 ms interval
 
-    ioapic_route_irq(1, core_id, 0x21);
+    // void ioapic_route_irq(uint8_t irq, uint8_t apic_id, uint8_t vector, uint32_t flags);
+    ioapic_route_irq(0, get_bsp_lapic_id(), 32, (0 << 8) | (1 << 15)); // Route IRQ 0 to current LAPIC ID with vector 32
+    ioapic_route_irq(1, 0, 0x21, (0 << 8) | (1 << 15)); // Route IRQ 1 to LAPIC ID 0 with vector 0x21
+
     initKeyboard();
 
     printf("CPU %d: APIC Timer initialized!\n", core_id);
@@ -290,9 +192,11 @@ void switch_to_core(uint32_t target_lapic_id) {
 
 
 void start_bootstrap_cpu_core() {
+    printf("Initializing Bootstrap CPU...\n");
     uint32_t bsp_lapic_id = smp_request.response->bsp_lapic_id;
     asm volatile("cli");
     init_acpi();
+    parse_madt(madt_addr);
 
     init_bootstrap_gdt_tss(bsp_lapic_id);
     init_bootstrap_interrupt(bsp_lapic_id);
@@ -303,7 +207,8 @@ void start_bootstrap_cpu_core() {
     
     init_apic_timer(100);
 
-    ioapic_route_irq(1, 0, 0x21); // Route IRQ 1 to LAPIC ID 0 with vector 0x20
+    ioapic_route_irq(0, get_bsp_lapic_id(), 32, (0 << 8) | (1 << 15)); // Route IRQ 0 to current LAPIC ID with vector 32
+    ioapic_route_irq(1, get_lapic_id(), 33, (0 << 8) | (1 << 15)); // Route IRQ 1 to current LAPIC ID with vector 33
     initKeyboard();
 
     asm volatile("sti");
@@ -316,11 +221,11 @@ void start_secondary_cpu_cores(int start_id, int end_id) {
     for (int core = start_id; core < smp_request.response->cpu_count; core++) {
         struct limine_smp_info *smp_info = smp_request.response->cpus[core];
 
-        // Set function to execute on the AP
-        smp_info->goto_address = (limine_goto_address) target_cpu_task;
-
         // passing sm_info as argument which will accept as input by target_cpu_task
         smp_info->extra_argument = (uint64_t)smp_info;
+
+        // Set function to execute on the AP
+        smp_info->goto_address = (limine_goto_address) target_cpu_task;
 
         // Short delay to let APs start (only for debugging)
         for (volatile int i = 0; i < 1000000; i++);
@@ -332,19 +237,6 @@ void start_secondary_cpu_cores(int start_id, int end_id) {
 
 
 // Debugging
-void print_cpu_vendor() {
-    char vendor[13];
-    get_cpu_vendor(vendor);
-    printf("CPU Vendor : %s\n", vendor);
-}
-
-void print_cpu_brand() {
-    char brand[49];
-    get_cpu_brand(brand);
-    printf("CPU Brand : %s\n", brand);
-}
-
-
 void print_cpu_info(){
     if(!smp_request.response) printf("No CPU info found!\n");
     

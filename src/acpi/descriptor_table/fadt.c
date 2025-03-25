@@ -19,7 +19,7 @@ void qemu_poweroff() {
     // If the system fails to power off, hang the CPU
     printf("ACPI Shutdown failed, halting system!\n");
     while (1) {
-        __asm__ volatile ("hlt");
+        asm volatile ("hlt");
     }
 }
 
@@ -62,7 +62,7 @@ void acpi_poweroff() {
     // If ACPI fails, use fallback methods
     printf("ACPI Shutdown failed, halting system!\n");
     while (1) {
-        __asm__ volatile ("hlt");
+        asm volatile ("hlt");
     }
 }
 

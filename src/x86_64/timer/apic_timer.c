@@ -49,16 +49,16 @@ volatile uint64_t apic_timer_ticks_per_ms = 0;
 
 void apic_start_timer(uint32_t initial_count) {
     // Ensure the Local APIC is enabled
-    mmio_write(LAPIC_TPR, 0x0); // Accept all interrupts
+    apic_write(LAPIC_TPR, 0x0); // Accept all interrupts
 
     // Set APIC timer to use divider 16
-    mmio_write(APIC_REGISTER_TIMER_DIV, 0x3);
+    apic_write(APIC_REGISTER_TIMER_DIV, 0x3);
     
     // Set APIC initial count to max
-    mmio_write(APIC_REGISTER_TIMER_INITCNT, initial_count);
+    apic_write(APIC_REGISTER_TIMER_INITCNT, initial_count);
 
     // Set APIC Timer Mode (Periodic Mode = 0x20000, One-shot = 0x0)
-    mmio_write(APIC_REGISTER_LVT_TIMER, APIC_TIMER_VECTOR | APIC_LVT_TIMER_MODE_ONESHOT);  // Vector 48, one-shot mode
+    apic_write(APIC_REGISTER_LVT_TIMER, APIC_TIMER_VECTOR | APIC_LVT_TIMER_MODE_ONESHOT);  // Vector 48, one-shot mode
 }
 
 
@@ -66,13 +66,13 @@ void apic_start_timer(uint32_t initial_count) {
 void calibrate_apic_timer_pit() {
 
     // Reset APIC timer to max count
-    mmio_write(APIC_REGISTER_TIMER_INITCNT, 0xFFFFFFFF);
+    apic_write(APIC_REGISTER_TIMER_INITCNT, 0xFFFFFFFF);
 
     // Measuring apic_timer_ticks_per_ms by pit
     pit_sleep(100);    // Wait for 10 PIT ticks (100 ms delay)
 
     // Read remaining APIC timer count
-    uint32_t end_count = mmio_read(APIC_REGISTER_TIMER_CURRCNT); 
+    uint32_t end_count = apic_read(APIC_REGISTER_TIMER_CURRCNT); 
 
     // Calculate APIC Timer ticks per millisecond
     apic_timer_ticks_per_ms = ( 0xFFFFFFFF - end_count) / 100;
@@ -82,13 +82,13 @@ void calibrate_apic_timer_pit() {
 void calibrate_apic_timer_tsc() {
 
     // Reset APIC timer to max count
-    mmio_write(APIC_REGISTER_TIMER_INITCNT, 0xFFFFFFFF);
+    apic_write(APIC_REGISTER_TIMER_INITCNT, 0xFFFFFFFF);
 
     // Measuring apic_timer_ticks_per_ms by pit
     tsc_sleep(100000);    // Wait for 100 ms
 
     // Read remaining APIC timer count
-    uint32_t end_count = mmio_read(APIC_REGISTER_TIMER_CURRCNT); 
+    uint32_t end_count = apic_read(APIC_REGISTER_TIMER_CURRCNT); 
 
     // Calculate elapsed APIC ticks
     uint32_t elapsed_apic_ticks = 0xFFFFFFFF - end_count;
@@ -112,9 +112,9 @@ void apic_timer_handler(registers_t *regs) {
     apic_send_eoi();
 
     if(get_lapic_id() == 0 && apic_ticks % 100 == 0){
-        // printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
+        printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
     }else if(get_lapic_id() == 1 && apic_ticks % 250 == 0){
-        // printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
+        printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
     }else if(get_lapic_id() == 2 && apic_ticks % 300 == 0){
         printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
     }else if(get_lapic_id() == 3 && apic_ticks % 400 == 0){
@@ -145,9 +145,9 @@ void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large cou
     
     asm volatile("cli");
     // Set APIC Timer for periodic interrupts
-    mmio_write(APIC_REGISTER_LVT_TIMER, APIC_TIMER_VECTOR | APIC_LVT_TIMER_MODE_PERIODIC);   // Vector 48, Periodic Mode
-    mmio_write(APIC_REGISTER_TIMER_DIV , 0x3);                          // Set divisor
-    mmio_write(APIC_REGISTER_TIMER_INITCNT, apic_count);
+    apic_write(APIC_REGISTER_LVT_TIMER, APIC_TIMER_VECTOR | APIC_LVT_TIMER_MODE_PERIODIC);   // Vector 48, Periodic Mode
+    apic_write(APIC_REGISTER_TIMER_DIV , 0x3);                          // Set divisor
+    apic_write(APIC_REGISTER_TIMER_INITCNT, apic_count);
 
     interrupt_install_handler((APIC_TIMER_VECTOR - 32), &apic_timer_handler);
     asm volatile("sti");

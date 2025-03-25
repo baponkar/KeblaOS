@@ -65,10 +65,11 @@ struct GenericAddressStructure
 typedef struct GenericAddressStructure GenericAddressStructure_t;
 
 
-void *find_acpi_table();
-void validate_acpi_table(void *table_addr);
-void parse_acpi_table(void *table_addr);
+void find_acpi_table_pointer();
+void validate_rsdp_table(rsdp_t *rsdp);
+void parse_rsdt_table(rsdp_t *rsdp);
 int is_acpi_enabled();
 void acpi_enable();
 void init_acpi();
+
 

@@ -85,7 +85,6 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/descriptor_table/mcfg.c -o $(BUILD_DIR)/mcfg.o
 	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/descriptor_table/rsdt.c -o $(BUILD_DIR)/rsdt.o
 	
-	
 
 # ahci
 	$(GCC) $(GCC_FLAG) -c $(AHCI_DIR)/ahci.c -o $(BUILD_DIR)/ahci.o
@@ -94,8 +93,9 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(PCI_DIR)/pci.c -o $(BUILD_DIR)/pci.o
 
 # Symmetric Multi processor
+	$(GCC) $(GCC_FLAG) -c $(CPU_DIR)/cpuid.c -o $(BUILD_DIR)/cpuid.o
 	$(GCC) $(GCC_FLAG) -c $(CPU_DIR)/cpu.c -o $(BUILD_DIR)/cpu.o
-	$(NASM) $(NASM_FLAG) $(CPU_DIR)/cpuid.asm -o $(BUILD_DIR)/cpuid.o
+	$(NASM) $(NASM_FLAG) $(CPU_DIR)/cpuid.asm -o $(BUILD_DIR)/cpuid_asm.o
 
 #VGA DRIVER
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/fonts/eng/eng_8x8.c -o $(BUILD_DIR)/eng_8x8.o
@@ -131,6 +131,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(NASM) $(NASM_FLAG) $(INT_DIR)/isr.asm -o $(BUILD_DIR)/isr.o
 	$(NASM) $(NASM_FLAG) $(INT_DIR)/irq.asm -o $(BUILD_DIR)/irq.o
 	$(GCC) $(GCC_FLAG) -c $(INT_DIR)/apic.c -o $(BUILD_DIR)/apic.o
+	$(GCC) $(GCC_FLAG) -c $(INT_DIR)/ioapic.c -o $(BUILD_DIR)/ioapic.o
 
 # Timer
 	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/tsc.c -o $(BUILD_DIR)/tsc.o
@@ -187,6 +188,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/isr.o \
 						$(BUILD_DIR)/irq.o \
 						$(BUILD_DIR)/apic.o \
+						$(BUILD_DIR)/ioapic.o \
 						$(BUILD_DIR)/load_paging.o \
 						$(BUILD_DIR)/paging.o \
 						$(BUILD_DIR)/pmm.o \
@@ -210,6 +212,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/disk.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/cpuid.o \
+						$(BUILD_DIR)/cpuid_asm.o \
 						$(BUILD_DIR)/detect_memory.o \
 						$(BUILD_DIR)/framebuffer.o \
 						$(BUILD_DIR)/firmware.o \
@@ -245,6 +248,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 														$(BUILD_DIR)/isr.o \
 														$(BUILD_DIR)/irq.o \
 														$(BUILD_DIR)/apic.o \
+														$(BUILD_DIR)/ioapic.o \
 														$(BUILD_DIR)/load_paging.o \
 														$(BUILD_DIR)/paging.o \
 														$(BUILD_DIR)/pmm.o \
@@ -267,6 +271,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 														$(BUILD_DIR)/disk.o \
 														$(BUILD_DIR)/cpu.o \
 														$(BUILD_DIR)/cpuid.o \
+														$(BUILD_DIR)/cpuid_asm.o \
 														$(BUILD_DIR)/detect_memory.o \
 														$(BUILD_DIR)/framebuffer.o \
 														$(BUILD_DIR)/firmware.o \

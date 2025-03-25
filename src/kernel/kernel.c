@@ -13,13 +13,16 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../process/test_process.h"
 #include "../acpi/acpi.h" // init_acpi
 #include "../acpi/descriptor_table/mcfg.h"
+#include "../acpi/descriptor_table/madt.h"
 #include "../x86_64/interrupt/interrupt.h"
 #include "../x86_64/interrupt/apic.h"
+#include "../x86_64/interrupt/ioapic.h"
 #include "../x86_64/interrupt/pic.h" // init_idt, test_interrupt
 #include "../ahci/ahci.h"
 #include "../pci/pci.h"
 #include "../disk/disk.h"
 #include "../cpu/cpu.h" // target_cpu_task, switch_to_core
+#include  "../cpu/cpuid.h" // get_cpu_count, get_cpu_info
 #include "../memory/detect_memory.h"
 #include "../bootloader/firmware.h"
 #include "../limine/limine.h" // bootloader info
@@ -48,7 +51,6 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "kernel.h"
 
-extern uint64_t V_UMEM_LOW_BASE;
 
 void kmain(){
 
@@ -61,32 +63,39 @@ void kmain(){
 
     printf("%s - %s\n", OS_NAME, OS_VERSION);
     
-
-    pic_irq_remap();
-    disable_pic();
-    start_bootstrap_cpu_core();    // Enabling GDT, TSS, Interrupt and APIC Timer for bootstrap core
+    if(has_apic()){
+        disable_pic();
+        start_bootstrap_cpu_core();    // Enabling GDT, TSS, Interrupt and APIC Timer for bootstrap core
+    }else{
+        pic_irq_remap();
+        init_bootstrap_gdt_tss(0);
+        init_pic_interrupt();
+        init_pit_timer();
+    }
+    
 
     // Memory management initialization
     init_pmm();
     init_paging();
 
-    init_ap_stacks(1, 3); // Initialize stacks for other cores
-    start_secondary_cpu_cores(1, 3); // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
-    
+    if(has_apic()){
+        set_ap_stacks(1, 3); // Initialize stacks for other cores
+        start_secondary_cpu_cores(1, 3); // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
+    }
 
     printf("----------------------------------\n");
 
-    printf("Current CPU ID: %d\n", get_lapic_id());
+    // printf("Current CPU ID: %d\n", get_lapic_id());
     // switch_to_core(0);
     
-    init_processes();
+    // init_processes();
 
     // parse_mcfg();
     // pci_scan();
     
-    test_interrupt();
+    // test_interrupt();
 
-    // printf("LAPIC ID: %d\n", get_lapic_id());
+    
 
     halt_kernel();
 }

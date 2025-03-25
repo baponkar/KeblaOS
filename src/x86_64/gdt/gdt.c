@@ -21,6 +21,7 @@
 #include "../../memory/kmalloc.h"
 #include "../../lib/assert.h"
 #include "../interrupt/apic.h"
+#include "../../util/util.h"
 
 #include "gdt.h"
 
@@ -64,12 +65,22 @@ void set_core_gdt_tss(int core_id) {
         printf("Invalid core ID %d\n", core_id);
         return;
     }
+
     cpu_data_t *core = &cpu_data[core_id];
-    uint64_t stack = kmalloc_a(STACK_SIZE, true);
+    uint64_t stack = 0;
+
+    if(core_id == 0){
+        stack = (uint64_t) read_rsp();
+    }else{
+        stack = kmalloc_a(STACK_SIZE, true);
+    }
+    
+    
     if(stack == 0) {
         printf("Failed to allocate kernel stack for CPU %d\n", core_id);
         return;
     }
+
     core->kernel_stack = (uint64_t)stack + STACK_SIZE;
 
     // Initialize GDT entries (same as bootstrap)

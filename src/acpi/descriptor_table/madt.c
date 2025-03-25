@@ -3,29 +3,62 @@
 
 #include "madt.h"
 
-extern madt_t *madt_addr;
+extern madt_t *madt_addr;       // Defined in acpi.c
+extern uint32_t ioapic_addr;    // Defined in ioapic.c
 
-void parse_madt() {
-    uint8_t *entry_ptr = (uint8_t *)(madt_addr + 1);
-    uint8_t *end_ptr = (uint8_t *)madt_addr + madt_addr->header.length;
 
-    while (entry_ptr < end_ptr) {
-        uint8_t type = entry_ptr[0];
-        uint8_t length = entry_ptr[1];
 
-        if (type == 0) { // Local APIC Entry
-            uint8_t apic_id = entry_ptr[2];
-            uint8_t cpu_flags = entry_ptr[3];
+void parse_madt(madt_t *madt) {
+    // printf("Parsing MADT...\n");
+    // printf("LAPIC Address: 0x%x\n", madt->local_apic_address);
+    
+    uint8_t *ptr = (uint8_t *)(madt + 1);  // Start after MADT header
+    uint8_t *end = (uint8_t *)madt + madt->header.length;
 
-            if (cpu_flags & 1) {
-                // Store detected APs for SMP
-                // printf("Application Processor found!\n");
+    while (ptr < end) {
+        madt_entry_t *entry = (madt_entry_t *)ptr;
+        
+        switch (entry->type) {
+            case 0x00: {  // Local APIC
+                // printf("Found Local APIC entry\n");
+                break;
             }
+            
+            case 0x01: {  // I/O APIC
+                madt_ioapic_t *ioapic = (madt_ioapic_t *)ptr;
+                ioapic_addr = ioapic->ioapic_addr;
+                // printf("Found I/O APIC: ID = %d, Address = %x, GSI Base = %d\n",
+                //        ioapic->ioapic_id, ioapic->ioapic_addr, ioapic->gsi_base);
+                break;
+            }
+            
+            case 0x02: {  // Interrupt Source Override
+                madt_iso_t *iso = (madt_iso_t *)ptr;
+                // printf("Found Interrupt Source Override: Bus Source = %d, IRQ Source = %d, GSI = %d, Flags = %x\n",
+                //        iso->bus_source, iso->irq_source, iso->gsi, iso->flags);
+                break;
+            }
+            
+            case 0x05: {  // Local APIC Address Override
+                madt_lapic_override_t *lapic_override = (madt_lapic_override_t *)ptr;
+                // printf("Found Local APIC Address Override: New LAPIC Address = %x\n",
+                //        lapic_override->lapic_addr);
+                break;
+            }
+            
+            default:
+                // printf("Unknown MADT entry type: %x\n", entry->type);
+                break;
         }
-
-        entry_ptr += length;
+        
+        ptr += entry->length;  // Move to next entry
     }
+
+    // printf("MADT parsing complete\n");
 }
+
+
+
 
 
 

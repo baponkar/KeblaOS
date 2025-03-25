@@ -40,7 +40,7 @@
 
 - [x] Interrupt
     * APIC (Multi Core Support)
-    * PIC (Multi Core Support)
+    * PIC
     * ISR
     * IRQ
 
