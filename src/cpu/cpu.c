@@ -10,16 +10,21 @@
 
 #include "../limine/limine.h"
 #include "../lib/stdio.h"
-#include "../driver/keyboard/keyboard.h"
-#include "../x86_64/interrupt/apic.h"
-#include "../x86_64/interrupt/interrupt.h"
+
 #include "../x86_64/gdt/gdt.h"
-#include "../x86_64/timer/tsc.h"
-#include "../x86_64/timer/apic_timer.h"
+
+#include "../x86_64/interrupt/interrupt.h"
 #include "../x86_64/interrupt/apic.h"
 #include "../x86_64/interrupt/ioapic.h"
+
+#include "../driver/keyboard/keyboard.h"
+
+#include "../x86_64/timer/tsc.h"
+#include "../x86_64/timer/apic_timer.h"
+
 #include "../memory/kmalloc.h"
 #include "../util/util.h"
+
 #include "../acpi/acpi.h"
 #include "../acpi/descriptor_table/madt.h"
 
@@ -39,29 +44,26 @@ static volatile struct limine_smp_request smp_request = {
 // Define stack size and storage
 #define MAX_CORES 16
 #define STACK_SIZE 4096 * 4  // 16 KB per core
-static uint8_t *ap_stacks[MAX_CORES];
-
-
-
-void init_cpu(){
-    get_cpu_info();
-    print_cpu_info();
-
-    ap_stacks[0] = (uint8_t *) read_rsp();
-}
-
-
-void set_ap_stacks(int start_id, int end_id) {
-    for (int i = start_id; i < end_id; i++) {
-        ap_stacks[i] = (uint8_t *) kmalloc_a(STACK_SIZE, 1);
-        if (!ap_stacks[i]) {
-            printf("Failed to allocate AP stack\n");
-        }
-    }
-}
+static uint8_t *ap_stacks[MAX_CORES];   // Stores stack for each AP core
 
 
 // Getting CPU information using Limine Bootloader
+struct limine_smp_info ** get_cpus(){
+    if(smp_request.response != NULL)  return smp_request.response->cpus;
+    return NULL;
+}
+
+limine_goto_address get_goto_address(int core_id){
+    if(smp_request.response != NULL)  return smp_request.response->cpus[core_id]->goto_address;
+    return NULL;
+}
+
+uint64_t get_extra_argument(int core_id){
+    if(smp_request.response != NULL)  return smp_request.response->cpus[core_id]->extra_argument;
+    return 0;
+}
+
+
 uint64_t get_revision(){
     if(smp_request.response != NULL)  return smp_request.response->revision;
     return 0;
@@ -79,7 +81,7 @@ int get_cpu_count(){
 
 int get_bsp_lapic_id(){
     if(smp_request.response != NULL)  return (int) smp_request.response->bsp_lapic_id;
-    return 0; // Defult one processor count
+    return 0; // Defult one bootstrap processor count
 }
 
 uint32_t get_lapic_id_by_limine(int core_id){
@@ -87,21 +89,15 @@ uint32_t get_lapic_id_by_limine(int core_id){
     return 0; // Defult one processor count
 }
 
-struct limine_smp_info ** get_cpus(){
-    if(smp_request.response != NULL)  return smp_request.response->cpus;
-    return NULL;
+// Allocate stack for each AP core
+void set_ap_stacks(int start_id, int end_id) {
+    for (int i = start_id; i < end_id; i++) {
+        ap_stacks[i] = (uint8_t *) kmalloc_a(STACK_SIZE, 1);
+        if (!ap_stacks[i]) {
+            printf("Failed to allocate AP stack\n");
+        }
+    }
 }
-
-limine_goto_address get_goto_address(int core_id){
-    if(smp_request.response != NULL)  return smp_request.response->cpus[core_id]->goto_address;
-    return NULL;
-}
-
-uint64_t get_extra_argument(int core_id){
-    if(smp_request.response != NULL)  return smp_request.response->cpus[core_id]->extra_argument;
-    return 0;
-}
-
 
 
 void get_cpu_info(){
@@ -131,8 +127,6 @@ void get_cpu_info(){
 
 
 void target_cpu_task(struct limine_smp_info *smp_info) {
-    printf("Now running on CPU with LAPIC ID: %d\n", get_bsp_lapic_id());
-
     int core_id = (int) smp_info->lapic_id;
 
     uint8_t *stack_top = ap_stacks[core_id] + STACK_SIZE;
@@ -158,7 +152,7 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
     init_apic_timer(150); // 150 ms interval
 
     // void ioapic_route_irq(uint8_t irq, uint8_t apic_id, uint8_t vector, uint32_t flags);
-    ioapic_route_irq(0, get_bsp_lapic_id(), 32, (0 << 8) | (1 << 15)); // Route IRQ 0 to current LAPIC ID with vector 32
+    // ioapic_route_irq(0, get_bsp_lapic_id(), 32, (0 << 8) | (1 << 15)); // Route IRQ 0 to current LAPIC ID with vector 32
     ioapic_route_irq(1, 0, 0x21, (0 << 8) | (1 << 15)); // Route IRQ 1 to LAPIC ID 0 with vector 0x21
 
     initKeyboard();
@@ -207,8 +201,8 @@ void start_bootstrap_cpu_core() {
     
     init_apic_timer(100);
 
-    ioapic_route_irq(0, get_bsp_lapic_id(), 32, (0 << 8) | (1 << 15)); // Route IRQ 0 to current LAPIC ID with vector 32
-    ioapic_route_irq(1, get_lapic_id(), 33, (0 << 8) | (1 << 15)); // Route IRQ 1 to current LAPIC ID with vector 33
+    // ioapic_route_irq(0, get_bsp_lapic_id(), 32, (0 << 8) | (1 << 15));  // Route IRQ 0 to current LAPIC ID with vector 32
+    ioapic_route_irq(1, get_lapic_id(), 33, (0 << 8) | (1 << 15));      // Route IRQ 1 to current LAPIC ID with vector 33
     initKeyboard();
 
     asm volatile("sti");
@@ -234,6 +228,13 @@ void start_secondary_cpu_cores(int start_id, int end_id) {
     }
 }
 
+
+void init_cpu(){
+    get_cpu_info();
+    print_cpu_info();
+
+    ap_stacks[0] = (uint8_t *) read_rsp();
+}
 
 
 // Debugging
