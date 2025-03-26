@@ -29,10 +29,17 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/08_Timer
 #define LAPIC_BASE 0xFEE00000
 
 #define LAPIC_TPR                    (LAPIC_BASE + 0x80)   // Task Priority Register Offset
-#define APIC_REGISTER_TIMER_DIV      (LAPIC_BASE + 0x3E0)  // APIC Timer Divide Configuration Register
-#define APIC_REGISTER_TIMER_INITCNT  (LAPIC_BASE + 0x380)  // APIC Timer Initial Count Register
-#define APIC_REGISTER_TIMER_CURRCNT  (LAPIC_BASE + 0x390)  // APIC Timer Current Count Register
-#define APIC_REGISTER_LVT_TIMER      (LAPIC_BASE + 0x320)  // APIC Local Vector Table (LVT) Timer Register
+//#define APIC_REGISTER_TIMER_DIV      (LAPIC_BASE + 0x3E0)  // APIC Timer Divide Configuration Register
+//#define APIC_REGISTER_TIMER_INITCNT  (LAPIC_BASE + 0x380)  // APIC Timer Initial Count Register
+//#define APIC_REGISTER_TIMER_CURRCNT  (LAPIC_BASE + 0x390)  // APIC Timer Current Count Register
+// #define APIC_REGISTER_LVT_TIMER      (LAPIC_BASE + 0x320)  // APIC Local Vector Table (LVT) Timer Register
+
+
+// apic_timer.c (revised)
+#define APIC_REGISTER_TIMER_DIV      0x3E0  // Offset for Timer Divide Register
+#define APIC_REGISTER_TIMER_INITCNT  0x380  // Offset for Initial Count Register
+#define APIC_REGISTER_TIMER_CURRCNT  0x390  // Offset for Current Count Register
+#define APIC_REGISTER_LVT_TIMER      0x320  // Offset for LVT Timer Register
 
 #define APIC_LVT_TIMER_MODE_PERIODIC (1 << 17)             // Periodic mode bit
 #define APIC_LVT_TIMER_MODE_ONESHOT  (0 << 0 )             // One shot mode
@@ -45,6 +52,7 @@ extern process_t *current_process;
 extern volatile uint64_t pit_ticks;
 volatile uint64_t apic_ticks = 0;                 // Cached CPU frequency in Hz
 volatile uint64_t apic_timer_ticks_per_ms = 0;
+
 
 
 void apic_start_timer(uint32_t initial_count) {
@@ -132,6 +140,7 @@ void apic_timer_handler(registers_t *regs) {
     //     }
     // }
 }
+
 
 
 

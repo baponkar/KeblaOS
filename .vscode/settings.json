@@ -10,6 +10,7 @@
         "madt.h": "c",
         "rsdt.h": "c",
         "types.h": "c",
-        "process.h": "c"
+        "process.h": "c",
+        "apic_timer.h": "c"
     }
 }

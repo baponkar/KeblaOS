@@ -30,7 +30,7 @@ Reference:  https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architect
 #define LAPIC_ICRLO (LAPIC_BASE + 0x300) // ICR Low register
 
 
-uint32_t LAPIC_BASE = 0xFEE00000;   // lapic base in general 0xFEE00000 but system may changed
+extern uint32_t LAPIC_BASE = 0xFEE00000;   // lapic base in general 0xFEE00000 but system may changed
 
 
 extern bool has_apic();             // Defined in cpuid.c
@@ -117,9 +117,13 @@ void apic_send_eoi() {
 void init_apic_interrupt(){
     asm volatile("cli");
 
+    LAPIC_BASE = get_lapic_base();
+
     enable_apic();
     // The spurious vector (lower 8 bits of SVR) determines what interrupt the LAPIC will send for spurious interrupts.
-    apic_write(LAPIC_BASE + APIC_SVR, apic_read(LAPIC_BASE + APIC_SVR) | 0x100);
+    // apic_write(LAPIC_BASE + APIC_SVR, apic_read(LAPIC_BASE + APIC_SVR) | 0x100);
+    // Correct: Use APIC_SVR (0xF0) as the offset
+    apic_write(APIC_SVR, apic_read(APIC_SVR) | 0x100); // Enable APIC and set spurious vector
     apic_send_eoi();
     enable_ioapic_mode();
 
