@@ -85,7 +85,7 @@ void kmain(){
     printf("--------------------------------------\n");
 
     // printf("Current CPU ID: %d\n", get_lapic_id());
-    switch_to_core(3);
+    // switch_to_core(3);
     
     // init_processes();
 

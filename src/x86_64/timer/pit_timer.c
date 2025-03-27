@@ -67,7 +67,7 @@ void pit_timerHandler(registers_t *regs) {
     pit_ticks++;
 
     if (pit_ticks % 10 == 0){   // Prints in every in 100 ms = 0.1 sec interval
-        // printf("PIT Tick no : %d\n", pit_ticks);
+        printf("PIT Tick no : %d\n", pit_ticks);
     }
 
     outb(0x20, 0x20); // Send End of Interrupt (EOI) to the PIC
