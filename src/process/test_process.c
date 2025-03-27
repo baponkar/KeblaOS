@@ -88,6 +88,29 @@ void thread2_func(void* arg) {
     }
 }
 
+void thread10_func(void *arg) {
+    int *var = (int*) arg;
+    while(true){
+        printf("===> Thread 10 is Running...\n");
+        apic_delay(100); // delay 100 milli seconds
+    }
+}
+
+
+void thread11_func(void* arg) {
+    while(true) {
+        printf("#### Thread 11 is Running...\n");
+        apic_delay(100); // delay 100 milli seconds
+    }
+}
+
+void thread12_func(void* arg) {
+    while(true) {
+        printf("#### Thread 12 is Running...\n");
+        apic_delay(100); // delay 100 milli seconds
+    }
+}
+
 
 void print_all_threads_name(process_t *p){
     thread_t * t = p->threads;
@@ -112,7 +135,14 @@ void init_processes() {
         return;
     }
 
+    process_t *process1 = create_process("process1");
+    if (!process) {
+        printf("Failed to create init process\n");
+        return;
+    }
+
     process->status = READY;
+    process1->status = READY;
 
     thread_t* thread0 = create_thread(process, "Thread0", (void *) &thread0_func, NULL);
     if (!thread0) {
@@ -127,18 +157,45 @@ void init_processes() {
         return;
     }
 
-      // Create a thread with an argument
-      thread_t* thread2 = create_thread(process, "Thread2", (void *) &thread2_func, NULL);
-      if (!thread1) {
-          printf("Failed to create Thread3\n");
-          return;
-      }
+    // Create a thread with an argument
+    thread_t* thread2 = create_thread(process, "Thread2", (void *) &thread2_func, NULL);
+    if (!thread1) {
+        printf("Failed to create Thread3\n");
+        return;
+    }
+
+    thread_t* thread10 = create_thread(process1, "Thread10", (void *) &thread10_func, NULL);
+    if (!thread0) {
+        printf("Failed to get init thread\n");
+        return;
+    }
+
+    // Create a thread with an argument
+    thread_t* thread11 = create_thread(process1, "Thread11", (void *) &thread11_func, NULL);
+    if (!thread1) {
+        printf("Failed to create Thread1\n");
+        return;
+    }
+
+    // Create a thread with an argument
+    thread_t* thread12 = create_thread(process1, "Thread12", (void *) &thread12_func, NULL);
+    if (!thread1) {
+        printf("Failed to create Thread3\n");
+        return;
+    }
 
     // Set the current process
     current_process = process;
     processes_list = process;
 
+    current_process->next = process1;
+    processes_list = process1;
+
     thread0->next = thread1;
     thread1->next = thread2;
     thread2->next = thread0;
+
+    thread10->next = thread11;
+    thread11->next = thread12;
+    thread12->next = thread10;
 }

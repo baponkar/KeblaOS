@@ -18,12 +18,26 @@ https://wiki.osdev.org/IOAPIC
 #define IOAPICID        0x00    // E/W
 #define IOAPICVER       0x01    // R/O
 #define IOAPICARB       0x02    // R/O
-#define IOAPICREDTBL    0x10    // R/W
+#define IOAPICREDTBL    0x10    // R/W IOAPIC Redirection Table
 
 // IOAPIC Redirection Entry Flags
 #define IOAPIC_FIXED        (0 << 8)    // Fixed delivery mode
+#define IOAPIC_LOWEST       (1 << 8)    // Lowest priority delivery mode
+#define IOAPIC_SMI          (2 << 8)    // System Management Interrupt
+#define IOAPIC_NMI          (4 << 8)    // Non-Maskable Interrupt
+#define IOAPIC_INIT         (5 << 8)    // INIT delivery mode
+#define IOAPIC_EXTINT       (7 << 8)    // External Interrupt (for legacy PIC)
+
 #define IOAPIC_LOW_ACTIVE   (1 << 13)   // Active low polarity
+#define IOAPIC_HIGH_ACTIVE  (0 << 13)   // Active high polarity (default)
+
+#define IOAPIC_EDGE_TRIG    (0 << 15)   // Edge-triggered mode (default)
 #define IOAPIC_LEVEL_TRIG   (1 << 15)   // Level-triggered mode
+
+#define IOAPIC_MASKED       (1 << 16)   // Interrupt masked (disabled)
+#define IOAPIC_UNMASKED     (0 << 16)   // Interrupt unmasked (enabled)
+
+
 
 
 // Global IOAPIC base address (set in madt.c)
@@ -52,6 +66,17 @@ void enable_ioapic_mode() {
     outb(0x23, 0x01);  // Set the IOAPIC indirect register value to 1
 }
 
+/*
+    Bit(s)	Field Name	        Description
+    0-7	    Vector	            Interrupt vector number (IDT entry)
+    8-10	Delivery Mode	    Specifies how the interrupt is delivered
+    11	    Destination Mode	0 = Physical, 1 = Logical
+    12	    Delivery Status	    0 = Idle, 1 = Send Pending (Read-Only)
+    13	    Polarity	        0 = High Active, 1 = Low Active
+    14	    Remote IRR	        0 = No interrupt pending, 1 = Interrupt waiting (Read-Only)
+    15	    Trigger Mode	    0 = Edge Triggered, 1 = Level Triggered
+    16	    Mask	            0 = Enabled, 1 = Disabled
+*/
 
 void ioapic_route_irq(uint8_t irq, uint8_t apic_id, uint8_t vector, uint32_t flags) {
     uint32_t reg_low  = IOAPICREDTBL + irq * 2;
@@ -64,5 +89,4 @@ void ioapic_route_irq(uint8_t irq, uint8_t apic_id, uint8_t vector, uint32_t fla
     uint32_t low = vector | flags;
     ioapic_write_reg(reg_low, low);
 }
-
 

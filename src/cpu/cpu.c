@@ -100,32 +100,6 @@ void set_ap_stacks(int start_id, int end_id) {
 }
 
 
-void get_cpu_info(){
-    if(!smp_request.response) printf("No CPU info found!\n");
-
-    uint64_t revision = smp_request.response->revision;
-    uint32_t flags = smp_request.response->flags;
-    uint32_t bsp_lapic_id = smp_request.response->bsp_lapic_id;
-    uint64_t cpu_count = smp_request.response->cpu_count;
-
-    struct limine_smp_info ** cpus = smp_request.response->cpus;
-
-    for(size_t i=0; i<(size_t) cpu_count; i++){
-        uint32_t processor_id = cpus[i]->processor_id;
-
-        uint32_t lapic_id = cpus[i]->lapic_id;
-        uint64_t reserved = cpus[i]->reserved;
-
-        limine_goto_address goto_address = cpus[i]->goto_address;
-        uint64_t extra_argument = cpus[i]->extra_argument;
-
-        // printf("LAPIC ID: %d\n", lapic_id);
-    }
-}
-
-
-
-
 void target_cpu_task(struct limine_smp_info *smp_info) {
     int core_id = (int) smp_info->lapic_id;
 
@@ -134,7 +108,7 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
     // Set the stack pointer
     set_rsp((uint64_t) stack_top);
 
-    init_acpi();
+    // init_acpi(); // Alreadt ACPI Initialized in bootstrap core
     
     // Initialize GDT and TSS for this core
     init_core_gdt_tss(core_id);
@@ -149,15 +123,54 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
     init_apic_interrupt();
 
     // Configure APIC timer for this core
-    init_apic_timer(150); // 150 ms interval
-
-    // void ioapic_route_irq(uint8_t irq, uint8_t apic_id, uint8_t vector, uint32_t flags);
-    // ioapic_route_irq(0, get_bsp_lapic_id(), 32, (0 << 8) | (1 << 15)); // Route IRQ 0 to current LAPIC ID with vector 32
-    ioapic_route_irq(1, 0, 0x21, (0 << 8) | (1 << 15)); // Route IRQ 1 to LAPIC ID 0 with vector 0x21
-
-    initKeyboard();
+    // init_apic_timer(150); // 150 ms interval
+    switch (core_id)
+    {
+    case 1:
+        init_apic_timer(120); // 100 ms interval
+        break;
+    case 2:
+        init_apic_timer(130); // 130 ms interval
+        break;
+    case 3:
+        init_apic_timer(140); // 140 ms interval
+        break;
+    default:
+        init_apic_timer(100); // 100 ms interval
+        break;
+    }
 
     printf("CPU %d: APIC Timer initialized!\n", core_id);
+
+    // Route IRQs to the current core
+    uint32_t lapic_flags = (0 << 8) | (0 << 13) | (0 << 15);
+
+
+    if(core_id == 1){
+        ioapic_route_irq(1, get_lapic_id(), 33, lapic_flags);      // Route IRQ 1 to current LAPIC ID with vector 33
+        ioapic_route_irq(2, get_lapic_id(), 34, lapic_flags);      // Route IRQ 2 to current LAPIC ID with vector 34
+        ioapic_route_irq(3, get_lapic_id(), 35, lapic_flags);      // Route IRQ 3 to current LAPIC ID with vector 35
+        ioapic_route_irq(4, get_lapic_id(), 36, lapic_flags);      // Route IRQ 4 to current LAPIC ID with vector 36
+        ioapic_route_irq(5, get_lapic_id(), 37, lapic_flags);      // Route IRQ 5 to current LAPIC ID with vector 37
+        ioapic_route_irq(6, get_lapic_id(), 38, lapic_flags);      // Route IRQ 6 to current LAPIC ID with vector 38
+    }else if(core_id == 2){
+        ioapic_route_irq(7, get_lapic_id(), 39, lapic_flags);      // Route IRQ 7 to current LAPIC ID with vector 39
+        ioapic_route_irq(8, get_lapic_id(), 40, lapic_flags);      // Route IRQ 8 to current LAPIC ID with vector 40
+        ioapic_route_irq(9, get_lapic_id(), 41, lapic_flags);      // Route IRQ 9 to current LAPIC ID with vector 41
+        ioapic_route_irq(10, get_lapic_id(), 42, lapic_flags);     // Route IRQ 10 to current LAPIC ID with vector 42
+        ioapic_route_irq(11, get_lapic_id(), 43, lapic_flags);     // Route IRQ 11 to current LAPIC ID with vector 43
+        ioapic_route_irq(12, get_lapic_id(), 44, lapic_flags);     // Route IRQ 12 to current LAPIC ID with vector 44
+    }else {
+        ioapic_route_irq(13, get_lapic_id(), 45, lapic_flags);     // Route IRQ 13 to current LAPIC ID with vector 45
+        ioapic_route_irq(14, get_lapic_id(), 46, lapic_flags);     // Route IRQ 14 to current LAPIC ID with vector 46
+        ioapic_route_irq(15, get_lapic_id(), 47, lapic_flags);     // Route IRQ 15 to current LAPIC ID with vector 47
+        ioapic_route_irq(16, get_lapic_id(), 48, lapic_flags);     // Route IRQ 16 to current LAPIC ID with vector 48
+        ioapic_route_irq(17, get_lapic_id(), 49, lapic_flags);     // Route IRQ 17 to current LAPIC ID with vector 49
+        ioapic_route_irq(18, get_lapic_id(), 50, lapic_flags);     // Route IRQ 18 to current LAPIC ID with vector 50
+
+        initKeyboard();
+    }
+    
 
     // Enable interrupts for this core
     asm volatile("sti");
@@ -180,30 +193,46 @@ void switch_to_core(uint32_t target_lapic_id) {
             break;
         }
     }
-    printf("Successfully Switched  into CPU %d\n", target_lapic_id);
+    printf("Successfully Switched  into CPU %d.\n", target_lapic_id);
 }
 
 
 
 void start_bootstrap_cpu_core() {
-    printf("Initializing Bootstrap CPU...\n");
-    uint32_t bsp_lapic_id = smp_request.response->bsp_lapic_id;
+    uint32_t bsp_lapic_id = get_bsp_lapic_id();
     asm volatile("cli");
     init_acpi();
     parse_madt(madt_addr);
 
     init_bootstrap_gdt_tss(bsp_lapic_id);
     init_bootstrap_interrupt(bsp_lapic_id);
-
     init_tsc();
-
     init_apic_interrupt();
     
     init_apic_timer(100);
 
-    // ioapic_route_irq(0, get_bsp_lapic_id(), 32, (0 << 8) | (1 << 15));  // Route IRQ 0 to current LAPIC ID with vector 32
-    ioapic_route_irq(1, get_lapic_id(), 33, (0 << 8) | (1 << 15));      // Route IRQ 1 to current LAPIC ID with vector 33
-    initKeyboard();
+    // Route IRQs to the bootstrap core
+    // uint32_t bsp_flags = (0 << 8) | (0 << 13) | (0 << 15);
+    // ioapic_route_irq(1, bsp_lapic_id, 33, bsp_flags);      // Route IRQ 1 to current LAPIC ID with vector 33
+    // ioapic_route_irq(2, bsp_lapic_id, 34, bsp_flags);      // Route IRQ 2 to current LAPIC ID with vector 34
+    // ioapic_route_irq(3, bsp_lapic_id, 35, bsp_flags);      // Route IRQ 3 to current LAPIC ID with vector 35
+    // ioapic_route_irq(4, bsp_lapic_id, 36, bsp_flags);      // Route IRQ 4 to current LAPIC ID with vector 36
+    // ioapic_route_irq(5, bsp_lapic_id, 37, bsp_flags);      // Route IRQ 5 to current LAPIC ID with vector 37
+    // ioapic_route_irq(6, bsp_lapic_id, 38, bsp_flags);      // Route IRQ 6 to current LAPIC ID with vector 38
+    // ioapic_route_irq(7, bsp_lapic_id, 39, bsp_flags);      // Route IRQ 7 to current LAPIC ID with vector 39
+    // ioapic_route_irq(8, bsp_lapic_id, 40, bsp_flags);      // Route IRQ 8 to current LAPIC ID with vector 40
+    // ioapic_route_irq(9, bsp_lapic_id, 41, bsp_flags);      // Route IRQ 9 to current LAPIC ID with vector 41
+    // ioapic_route_irq(10, bsp_lapic_id, 42, bsp_flags);     // Route IRQ 10 to current LAPIC ID with vector 42
+    // ioapic_route_irq(11, bsp_lapic_id, 43, bsp_flags);     // Route IRQ 11 to current LAPIC ID with vector 43
+    // ioapic_route_irq(12, bsp_lapic_id, 44, bsp_flags);     // Route IRQ 12 to current LAPIC ID with vector 44
+    // ioapic_route_irq(13, bsp_lapic_id, 45, bsp_flags);     // Route IRQ 13 to current LAPIC ID with vector 45
+    // ioapic_route_irq(14, bsp_lapic_id, 46, bsp_flags);     // Route IRQ 14 to current LAPIC ID with vector 46
+    // ioapic_route_irq(15, bsp_lapic_id, 47, bsp_flags);     // Route IRQ 15 to current LAPIC ID with vector 47
+    // ioapic_route_irq(16, bsp_lapic_id, 48, bsp_flags);     // Route IRQ 16 to current LAPIC ID with vector 48
+    // ioapic_route_irq(17, bsp_lapic_id, 49, bsp_flags);     // Route IRQ 17 to current LAPIC ID with vector 49
+    // ioapic_route_irq(18, bsp_lapic_id, 50, bsp_flags);     // Route IRQ 18 to current LAPIC ID with vector 50
+
+    // initKeyboard();
 
     asm volatile("sti");
     printf("Bootstrap CPU initialized...\n\n");
@@ -223,19 +252,45 @@ void start_secondary_cpu_cores(int start_id, int end_id) {
 
         // Short delay to let APs start (only for debugging)
         for (volatile int i = 0; i < 1000000; i++);
-
-        printf("Initializing CPU %d (LAPIC ID %d)...\n\n", core, smp_info->lapic_id);
     }
 }
 
 
-void init_cpu(){
-    get_cpu_info();
-    print_cpu_info();
+// Initializing all CPU cores
+void init_all_cpu_cores() {
+    if (smp_request.response == NULL) return;
 
-    ap_stacks[0] = (uint8_t *) read_rsp();
+    // Initialize the bootstrap core
+    start_bootstrap_cpu_core();
+
+    // Initialize the application cores
+    start_secondary_cpu_cores(1, smp_request.response->cpu_count);
 }
 
+
+
+void get_cpu_info(){
+    if(!smp_request.response) printf("No CPU info found!\n");
+
+    uint64_t revision = smp_request.response->revision;
+    uint32_t flags = smp_request.response->flags;
+    uint32_t bsp_lapic_id = smp_request.response->bsp_lapic_id;
+    uint64_t cpu_count = smp_request.response->cpu_count;
+
+    struct limine_smp_info ** cpus = smp_request.response->cpus;
+
+    for(size_t i=0; i<(size_t) cpu_count; i++){
+        uint32_t processor_id = cpus[i]->processor_id;
+
+        uint32_t lapic_id = cpus[i]->lapic_id;
+        uint64_t reserved = cpus[i]->reserved;
+
+        limine_goto_address goto_address = cpus[i]->goto_address;
+        uint64_t extra_argument = cpus[i]->extra_argument;
+
+        // printf("LAPIC ID: %d\n", lapic_id);
+    }
+}
 
 // Debugging
 void print_cpu_info(){

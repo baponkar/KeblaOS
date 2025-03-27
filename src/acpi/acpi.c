@@ -38,6 +38,7 @@ static volatile struct limine_rsdp_request rsdp_request = {
     .revision = 0
 };
 
+
 rsdp_t *rsdp;
 rsdp_ext_t *rsdp_ext;
 

@@ -24,6 +24,8 @@ The Interrupt Request (IRQ) is the function that is called when an hardware inte
 
 #define MAX_CPU_COUNT 256           // Maximum CPU cores supported
 
+#define GET_IRQ(INT_VECTOR) (INT_VECTOR - 32)   // Get IRQ from Interrupt Vector
+
 extern bool has_apic();
 extern void idt_flush(uint64_t);
 extern void load_tss(uint64_t);
@@ -205,22 +207,22 @@ void set_core_descriptor_table(uint64_t core_id){
     core_int_set_gate(core_id, 30, (uint64_t)&isr30 , 0x8, 0x8E);    // Reserved
     core_int_set_gate(core_id, 31, (uint64_t)&isr31 , 0x8, 0x8E);    // Reserved
 
-    core_int_set_gate(core_id, 32, (uint64_t)&irq0, 0x08, 0x8E);  // Timer Interrupt, IRQ0
-    core_int_set_gate(core_id, 33, (uint64_t)&irq1, 0x08, 0x8E);  // Keyboard Interrupt, IRQ1
-    core_int_set_gate(core_id, 34, (uint64_t)&irq2, 0x08, 0x8E);  // Cascade (for PIC chaining), IRQ2
-    core_int_set_gate(core_id, 35, (uint64_t)&irq3, 0x08, 0x8E);  // COM2 (Serial Port 2), IRQ3
-    core_int_set_gate(core_id, 36, (uint64_t)&irq4, 0x08, 0x8E);  // COM1 (Serial Port 1), IRQ4
-    core_int_set_gate(core_id, 37, (uint64_t)&irq5, 0x08, 0x8E);  // LPT2 (Parallel Port 2) or Sound Card, IRQ5
-    core_int_set_gate(core_id, 38, (uint64_t)&irq6, 0x08, 0x8E);  // Floppy Disk Controller, IRQ6
-    core_int_set_gate(core_id, 39, (uint64_t)&irq7, 0x08, 0x8E);  // LPT1 (Parallel Port 1) / Spurious IRQ, IRQ7
-    core_int_set_gate(core_id, 40, (uint64_t)&irq8, 0x08, 0x8E);  // Real-Time Clock (RTC), IRQ8
-    core_int_set_gate(core_id, 41, (uint64_t)&irq9, 0x08, 0x8E);  // ACPI / General system use, IRQ9
-    core_int_set_gate(core_id, 42, (uint64_t)&irq10, 0x08, 0x8E); // Available (often used for SCSI or NIC), IRQ10
-    core_int_set_gate(core_id, 43, (uint64_t)&irq11, 0x08, 0x8E); // Available (often used for PCI devices), IRQ11
-    core_int_set_gate(core_id, 44, (uint64_t)&irq12, 0x08, 0x8E); // PS/2 Mouse, IRQ12
-    core_int_set_gate(core_id, 45, (uint64_t)&irq13, 0x08, 0x8E); // FPU / Floating-Point Unit (Coprocessor), IRQ13
-    core_int_set_gate(core_id, 46, (uint64_t)&irq14, 0x08, 0x8E); // Primary ATA Hard Disk Controller, IRQ14
-    core_int_set_gate(core_id, 47, (uint64_t)&irq15, 0x08, 0x8E); // Secondary ATA Hard Disk Controller, IRQ15
+    core_int_set_gate(core_id, 32, (uint64_t)&irq0, 0x08, 0x8E);    // Timer Interrupt, IRQ0
+    core_int_set_gate(core_id, 33, (uint64_t)&irq1, 0x08, 0x8E);    // Keyboard Interrupt, IRQ1
+    core_int_set_gate(core_id, 34, (uint64_t)&irq2, 0x08, 0x8E);    // Cascade (for PIC chaining), IRQ2
+    core_int_set_gate(core_id, 35, (uint64_t)&irq3, 0x08, 0x8E);    // COM2 (Serial Port 2), IRQ3
+    core_int_set_gate(core_id, 36, (uint64_t)&irq4, 0x08, 0x8E);    // COM1 (Serial Port 1), IRQ4
+    core_int_set_gate(core_id, 37, (uint64_t)&irq5, 0x08, 0x8E);    // LPT2 (Parallel Port 2) or Sound Card, IRQ5
+    core_int_set_gate(core_id, 38, (uint64_t)&irq6, 0x08, 0x8E);    // Floppy Disk Controller, IRQ6
+    core_int_set_gate(core_id, 39, (uint64_t)&irq7, 0x08, 0x8E);    // LPT1 (Parallel Port 1) / Spurious IRQ, IRQ7
+    core_int_set_gate(core_id, 40, (uint64_t)&irq8, 0x08, 0x8E);    // Real-Time Clock (RTC), IRQ8
+    core_int_set_gate(core_id, 41, (uint64_t)&irq9, 0x08, 0x8E);    // ACPI / General system use, IRQ9
+    core_int_set_gate(core_id, 42, (uint64_t)&irq10, 0x08, 0x8E);   // Available (often used for SCSI or NIC), IRQ10
+    core_int_set_gate(core_id, 43, (uint64_t)&irq11, 0x08, 0x8E);   // Available (often used for PCI devices), IRQ11
+    core_int_set_gate(core_id, 44, (uint64_t)&irq12, 0x08, 0x8E);   // PS/2 Mouse, IRQ12
+    core_int_set_gate(core_id, 45, (uint64_t)&irq13, 0x08, 0x8E);   // FPU / Floating-Point Unit (Coprocessor), IRQ13
+    core_int_set_gate(core_id, 46, (uint64_t)&irq14, 0x08, 0x8E);   // Primary ATA Hard Disk Controller, IRQ14
+    core_int_set_gate(core_id, 47, (uint64_t)&irq15, 0x08, 0x8E);   // Secondary ATA Hard Disk Controller, IRQ15
 
     core_int_set_gate(core_id, 48, (uint64_t)&irq16, 0x08, 0x8E);   // APIC Timer, IRQ16
     core_int_set_gate(core_id, 49, (uint64_t)&irq17, 0x08, 0x8E);   // HPET Timer, IRQ17
@@ -264,7 +266,7 @@ void init_application_core_interrupt(int start_core_id, int end_core_id){
 }
 
 
-
+// Testing Interrupts and Debugging
 void test_interrupt() {
     // printf("Testing Interrupts\n");
     // asm volatile ("div %b0" :: "a"(0)); // Int no 0
@@ -279,7 +281,6 @@ void test_interrupt() {
     // asm volatile ("int $0x22");  // Interrupt Request, int no: 34
     // asm volatile ("int $0x30");     // Interrupt Request, int no: 48
 }
-
 
 void gpf_handler(registers_t *regs){
     printf("recieved interrupt: %d\n", regs->int_no);
@@ -298,8 +299,6 @@ void gpf_handler(registers_t *regs){
     printf("System Halted!\n");
     halt_kernel();   
 }
-
-
 
 void debug_error_code(int err_code) {
     // Print the raw error code in decimal and hexadecimal

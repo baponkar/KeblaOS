@@ -26,16 +26,8 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/08_Timer
 
 #define MAX_APIC_TICKS  0xFFFFFFFFFFFFFFFF
 
-#define LAPIC_BASE 0xFEE00000
+#define LAPIC_TPR                    0x80   // Task Priority Register Offset
 
-#define LAPIC_TPR                    (LAPIC_BASE + 0x80)   // Task Priority Register Offset
-//#define APIC_REGISTER_TIMER_DIV      (LAPIC_BASE + 0x3E0)  // APIC Timer Divide Configuration Register
-//#define APIC_REGISTER_TIMER_INITCNT  (LAPIC_BASE + 0x380)  // APIC Timer Initial Count Register
-//#define APIC_REGISTER_TIMER_CURRCNT  (LAPIC_BASE + 0x390)  // APIC Timer Current Count Register
-// #define APIC_REGISTER_LVT_TIMER      (LAPIC_BASE + 0x320)  // APIC Local Vector Table (LVT) Timer Register
-
-
-// apic_timer.c (revised)
 #define APIC_REGISTER_TIMER_DIV      0x3E0  // Offset for Timer Divide Register
 #define APIC_REGISTER_TIMER_INITCNT  0x380  // Offset for Initial Count Register
 #define APIC_REGISTER_TIMER_CURRCNT  0x390  // Offset for Current Count Register
@@ -87,6 +79,7 @@ void calibrate_apic_timer_pit() {
 }
 
 
+
 void calibrate_apic_timer_tsc() {
 
     // Reset APIC timer to max count
@@ -107,7 +100,7 @@ void calibrate_apic_timer_tsc() {
     // Calculate APIC Timer ticks per millisecond
     apic_timer_ticks_per_ms = apic_timer_frequency / 1000;
 
-    printf("APIC Timer Frequency: %d ticks/ms\n", apic_timer_ticks_per_ms);
+    // printf("APIC Timer Frequency: %d ticks/ms\n", apic_timer_ticks_per_ms);
 }
 
 
@@ -119,17 +112,36 @@ void apic_timer_handler(registers_t *regs) {
 
     apic_send_eoi();
 
-    if(get_lapic_id() == 0 && apic_ticks % 100 == 0){
-        printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
-    }else if(get_lapic_id() == 1 && apic_ticks % 250 == 0){
-        printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
-    }else if(get_lapic_id() == 2 && apic_ticks % 300 == 0){
-        printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
-    }else if(get_lapic_id() == 3 && apic_ticks % 400 == 0){
-        printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
-    }
+    
+    // if(apic_ticks % 100 != 0 && apic_ticks % 120 != 0 && apic_ticks % 130 != 0 && apic_ticks % 140 != 0)
+    //     printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
 
-    // if(current_process && current_process->current_thread){
+    // if(get_lapic_id() == 0 && apic_ticks % 100 == 0){
+    //     printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
+    // }else if(get_lapic_id() == 1 && apic_ticks % 120 == 0){
+    //     printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
+    // }else if(get_lapic_id() == 2 && apic_ticks % 130 == 0){
+    //     printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
+    // }else if(get_lapic_id() == 3 && apic_ticks % 140 == 0){
+    //     printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
+    // }
+
+    // if(apic_ticks % 2 && get_lapic_id() == 0 && current_process && current_process->current_thread){
+    //     registers_t *new_regs = schedule(regs);
+    //     if(new_regs){
+    //         // printf("=>current thread: %s, rip: %x, rsp: %x\n", 
+    //         //     current_process->current_thread->name,  
+    //         //     current_process->current_thread->registers.iret_rip,
+    //         //     current_process->current_thread->registers.iret_rsp);
+    //         restore_cpu_state(new_regs);
+    //     }
+    // }
+
+    // if(apic_ticks % 2 && get_lapic_id() == 1 && current_process->next && current_process->next->current_thread){
+    //     // printf("=>current thread: %s, rip: %x, rsp: %x\n", 
+    //     //     current_process->current_thread->name,  
+    //     //     current_process->current_thread->registers.iret_rip,
+    //     //     current_process->current_thread->registers.iret_rsp);
     //     registers_t *new_regs = schedule(regs);
     //     if(new_regs){
     //         // printf("=>current thread: %s, rip: %x, rsp: %x\n", 
@@ -161,7 +173,7 @@ void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large cou
     interrupt_install_handler((APIC_TIMER_VECTOR - 32), &apic_timer_handler);
     asm volatile("sti");
 
-    printf("APIC Timer initialized with %d ms interval.\n", interval_ms);
+    printf("APIC Timer initialized with %d ms interval in CPU: %d.\n", interval_ms, get_lapic_id());
 }
 
 
