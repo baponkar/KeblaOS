@@ -126,16 +126,16 @@ void apic_timer_handler(registers_t *regs) {
     //     printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
     // }
 
-    // if(apic_ticks % 2 && get_lapic_id() == 0 && current_process && current_process->current_thread){
-    //     registers_t *new_regs = schedule(regs);
-    //     if(new_regs){
-    //         // printf("=>current thread: %s, rip: %x, rsp: %x\n", 
-    //         //     current_process->current_thread->name,  
-    //         //     current_process->current_thread->registers.iret_rip,
-    //         //     current_process->current_thread->registers.iret_rsp);
-    //         restore_cpu_state(new_regs);
-    //     }
-    // }
+    if(get_lapic_id() == 0 && current_process && current_process->current_thread){
+        registers_t *new_regs = schedule(regs);
+        if(new_regs){
+            // printf("=>current thread: %s, rip: %x, rsp: %x\n", 
+            //     current_process->current_thread->name,  
+            //     current_process->current_thread->registers.iret_rip,
+            //     current_process->current_thread->registers.iret_rsp);
+            restore_cpu_state(new_regs);
+        }
+    }
 
     // if(apic_ticks % 2 && get_lapic_id() == 1 && current_process->next && current_process->next->current_thread){
     //     // printf("=>current thread: %s, rip: %x, rsp: %x\n", 

@@ -80,23 +80,23 @@ void cpu_exception_handler(registers_t *regs){
 // This gets called from our ASM interrupt handler stub.
 void isr_handler(registers_t *regs)
 {
-    // if (regs->int_no == 14) {
-    //     page_fault_handler(regs);
-    //     return;
-    // }else if(regs->int_no == 13){
-    //     // print("General Protection Fault\n");
-    //     // debug_error_code(regs->err_code);
-    //     gpf_handler(regs);
-    //     return;
-    // }else if(regs->int_no < 32){
-    //     cpu_exception_handler(regs);
-    //     return;
-    // }else{
-    //     printf("Received Interrupt : %d\n", regs->int_no);
-    //     return;
-    // }
+    if (regs->int_no == 14) {
+        page_fault_handler(regs);
+        return;
+    }else if(regs->int_no == 13){
+        // print("General Protection Fault\n");
+        // debug_error_code(regs->err_code);
+        gpf_handler(regs);
+        return;
+    }else if(regs->int_no < 32){
+        cpu_exception_handler(regs);
+        return;
+    }else{
+        printf("Received Interrupt : %d\n", regs->int_no);
+        return;
+    }
 
-    cpu_exception_handler(regs);
+    // cpu_exception_handler(regs);
 }
 
 
