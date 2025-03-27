@@ -28,6 +28,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../limine/limine.h"           // bootloader info
 #include "../bootloader/boot.h"         // bootloader info
 #include "../lib/stdio.h"               // printf
+#include "../lib/string.h"
 #include "../util/util.h"               // registers_t , halt_kernel
 #include "../driver/vga/framebuffer.h"
 #include "../driver/vga/vga_term.h"     // vga_init, print_bootloader_info, print_memory_map, display_image
@@ -51,6 +52,7 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "kernel.h"
 
+extern ahci_controller_t ahci_ctrl;
 
 void kmain(){
 
@@ -90,9 +92,55 @@ void kmain(){
     // init_processes();
 
     // parse_mcfg();
-    // pci_scan();
+
+    tsc_sleep(1000);
+    pci_scan();
+    ahci_init();
+
+    if (ahci_ctrl.abar != 0) {
+        char *buffer = (char *) kheap_alloc(512);
+        memset(buffer, 0, sizeof(buffer));
+
+        if (ahci_read(0, 1, (void *) buffer) == 0) { 
+            printf("Disk Read Successful!\n");
+        
+            // Check MBR signature (last 2 bytes of sector)
+            if (buffer[510] == 0x55 && buffer[511] == 0xAA) {
+                printf("Valid MBR Signature found!\n");
+            } else {
+                printf("No MBR found. Disk may be empty or unformatted.\n");
+            }
+        } else {
+            printf("AHCI Read Failed!\n");
+        }
+
+        char *write_buffer = (char *)kheap_alloc(512);
+        memset(write_buffer, 'A', sizeof(write_buffer));  // Fill buffer with 'A'
+
+        if (ahci_write(1, 1, write_buffer) == 0) {
+            printf("AHCI Write Successful at LBA 1!\n");
+        } else {
+            printf("AHCI Write Failed!\n");
+        }
+
+        char *read_buffer = (char *) kheap_alloc(512);
+        memset(read_buffer, 0, sizeof(read_buffer));
+
+        if (ahci_read(1, 1, read_buffer) == 0) {
+            printf("Verifying write at LBA 1...\n");
+            if (memcmp(write_buffer, read_buffer, 512) == 0) {
+                printf("Write Verification Successful! Data matches.\n");
+            } else {
+                printf("Write Verification Failed! Data does not match.\n");
+            }
+        } else {
+            printf("Failed to read back written data.\n");
+        }
+    }
     
     // test_interrupt();
+
+
 
     halt_kernel();
 }

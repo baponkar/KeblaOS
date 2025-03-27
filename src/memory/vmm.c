@@ -3,6 +3,7 @@
     https://github.com/dreamportdev/Osdev-Notes/blob/master/04_Memory_Management/04_Virtual_Memory_Manager.md
 */
 
+#include "detect_memory.h"
 #include "../lib/stdio.h"
 #include "paging.h"
 
@@ -83,6 +84,10 @@ void vm_free(uint64_t *ptr) {
     asm volatile("invlpg (%0)" ::"r"(va) : "memory");
 }
 
+
+uint64_t phys_to_vir(uint64_t phys){
+    return phys;
+}
 
 
 
