@@ -28,7 +28,7 @@ bool press;             // Press down, or released
 bool shift = false;     // Shift Key pressed or not
 bool capsLock = false;  // Caps Lock Key pressed or not
 
-
+int entered_keys = 0;
 
 
 const uint32_t lowercase[128] = {
@@ -111,6 +111,7 @@ void key_ctrl(uint32_t scanCode, bool keyPress){
             break;
         case ENTER:  // Enter Key Manage
             // handel_enter_key(keyPress);
+            entered_keys = 0; 
             break;
         case CTRL:      // CTRL
             break;
@@ -176,6 +177,7 @@ void key_ctrl(uint32_t scanCode, bool keyPress){
             break;
         default:
             if(keyPress == true){
+                entered_keys++; // to track how many keys pressed
                 putchar(scanCodeToChar(scanCode));
             }
             break;   
@@ -202,8 +204,9 @@ void handel_caps_lock_key(bool keyPressed){
 }
 
 void handel_backspace_key(bool keyPressed){
-    if(keyPressed == true){
+    if(keyPressed == true && entered_keys > 0){
         backspace_manage();
+        entered_keys--;
     }
 }
 

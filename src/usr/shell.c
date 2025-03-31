@@ -57,7 +57,7 @@ void shell_prompt() {
 }
 
 void execute_command(char* command) {
-    printf("\nKeblaOS>> ");
+    printf("\n");
     if (strcmp(command, "help") == 0) {
         printf("Available commands: help, clear, reboot, poweroff ...\n");
     } else if (strcmp(command, "clear") == 0) {
@@ -77,8 +77,9 @@ void execute_command(char* command) {
         //qemu_poweroff();
         acpi_reboot();
     }else {
-        printf("!Unknown command: %s\n", command);
-        printf("Type 'help'\n");
+        color_print("!Unknown command: ", COLOR_RED);
+        color_print(command, COLOR_OLIVE);
+        color_print("\nType 'help'\n", COLOR_OLIVE);
     }
 }
 

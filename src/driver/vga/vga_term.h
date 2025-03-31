@@ -36,3 +36,7 @@ void move_cur_right();
 void draw_checkmark(int x, int y, uint32_t color);
 
 void color_print(const char* text, uint32_t color);
+void toggle_cursor();
+void draw_cursor();
+
+
