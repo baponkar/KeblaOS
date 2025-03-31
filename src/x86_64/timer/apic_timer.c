@@ -103,7 +103,7 @@ void calibrate_apic_timer_tsc() {
     // printf("APIC Timer Frequency: %d ticks/ms\n", apic_timer_ticks_per_ms);
 }
 
-
+#include "../../driver/vga/vga_term.h"
 
 void apic_timer_handler(registers_t *regs) {
     if(apic_ticks >= MAX_APIC_TICKS) apic_ticks = 0;
@@ -111,6 +111,11 @@ void apic_timer_handler(registers_t *regs) {
     apic_ticks++;
 
     apic_send_eoi();
+
+    if(apic_ticks % 100 == 0){
+        // toggle_cursor();
+        // draw_cursor();
+    }
 
     // if(apic_ticks % 100 != 0 && apic_ticks % 120 != 0 && apic_ticks % 130 != 0 && apic_ticks % 140 != 0)
         // printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
@@ -125,17 +130,17 @@ void apic_timer_handler(registers_t *regs) {
     //     printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
     // }
 
-    if(get_lapic_id() == 0 && current_process && current_process->current_thread){
-        registers_t *new_regs = schedule(regs);
+    // if(get_lapic_id() == 0 && current_process && current_process->current_thread){
+    //     registers_t *new_regs = schedule(regs);
         
-        if(new_regs){
-            printf("=>current thread: %s, rip: %x, rsp: %x\n", 
-                current_process->current_thread->name,  
-                current_process->current_thread->registers.iret_rip,
-                current_process->current_thread->registers.iret_rsp);
-            restore_cpu_state(new_regs);
-        }
-    }
+    //     if(new_regs){
+    //         printf("=>current thread: %s, rip: %x, rsp: %x\n", 
+    //             current_process->current_thread->name,  
+    //             current_process->current_thread->registers.iret_rip,
+    //             current_process->current_thread->registers.iret_rsp);
+    //         restore_cpu_state(new_regs);
+    //     }
+    // }
 
     // if(apic_ticks % 2 && get_lapic_id() == 1 && current_process->next && current_process->next->current_thread){
     //     // printf("=>current thread: %s, rip: %x, rsp: %x\n", 

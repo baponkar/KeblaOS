@@ -84,10 +84,10 @@ void kmain(){
     init_pmm();
     init_paging();
 
-    // if(has_apic()){
-    //     set_ap_stacks(1, 3);                // Initialize stacks for other cores
-    //     start_secondary_cpu_cores(1, 3);    // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
-    // }
+    if(has_apic()){
+        set_ap_stacks(1, 3);                // Initialize stacks for other cores
+        start_secondary_cpu_cores(1, 3);    // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
+    }
 
     printf("--------------------------------------\n");
 

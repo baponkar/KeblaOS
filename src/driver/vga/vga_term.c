@@ -376,3 +376,44 @@ void color_print(const char* text, uint32_t color) {
         color_putchar(ch, color);
     }
 }
+
+// Global variables to track cursor state and previous position.
+volatile bool cursor_visible = true;
+int prev_cursor_x = -1;
+int prev_cursor_y = -1;
+
+// Dummy fill_rect function; replace with your actual implementation.
+void fill_rect(int x, int y, int width, int height, uint32_t color) {
+    // Draw a rectangle at (x, y) with given width and height.
+    // This should set all pixels in that area to 'color'.
+    for (int row = y; row < y + height && row < fb_height; row++) {
+        for (int col = x; col < x + width && col < fb_width; col++) {
+            set_pixel(col, row, color);
+        }
+    }
+}
+
+void draw_cursor() {
+    // Before drawing the new cursor, clear the previous cursor area.
+    if (prev_cursor_x != -1 && prev_cursor_y != -1) {
+        // Clear the previous cursor area by redrawing the background.
+        fill_rect(prev_cursor_x, prev_cursor_y, font_width / 2, font_height, back_color);
+    }
+    
+    if (cursor_visible) {
+        // Draw the cursor as a vertical bar at the current cursor position.
+        fill_rect(cur_x, cur_y, font_width / 2, font_height, text_color);
+    }
+    
+    // Save the current cursor position for next time.
+    prev_cursor_x = cur_x;
+    prev_cursor_y = cur_y;
+}
+
+// This function is called periodically (e.g., via a timer interrupt) to toggle the cursor.
+void toggle_cursor() {
+    // Toggle the visibility flag.
+    cursor_visible = !cursor_visible;
+    // Update the cursor drawing.
+    draw_cursor();
+}
