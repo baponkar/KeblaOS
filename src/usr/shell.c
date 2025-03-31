@@ -1,144 +1,126 @@
+/*
+ 
+*/
+#include "../driver/vga/vga_term.h"
 
-
-#include "../driver/vga/vga_term.h"  // Assuming you have a VGA text driver.
-#include "../driver/io/ports.h"
-#include "../lib/string.h"    // Assuming you have string manipulation functions.
 #include "../lib/stdio.h"
+#include "../lib/string.h"
 
-#include "../driver/keyboard/keyboard.h"  // Assuming you have keyboard input handling.
-#include "../x86_64/gdt/gdt.h"
-#include "../util/util.h"
+#include "ring_buffer.h"  // Include your ring buffer header
 
-#include "../x86_64/interrupt/pic.h"
-#include "../x86_64/interrupt/apic.h"
-#include "../x86_64/interrupt/interrupt.h"
-#include "../kernel/kernel.h"
-
-#include "../x86_64/timer/rtc.h"
-
-#include "../driver/image_data.h"
-
-#include "../acpi/acpi.h"
-#include "../acpi/descriptor_table/fadt.h"
-
-#include "../bootloader/boot.h"
-#include "../memory/detect_memory.h"
-#include "../bootloader/firmware.h"
-
-
+#include "../process/process.h"
+#include "../process/thread.h"
 
 #include "shell.h"
 
+#define BUFFER_SIZE 256       // For the complete command
+#define KEYBOARD_BUF_SIZE 128 // Ring buffer capacity for keystrokes
+
+// Global ring buffer to store keystrokes from the keyboard driver
+ring_buffer_t* keyboard_buffer;
 
 
-bool shell_running = false;  // Global flag to manage shell state
+// Modified read_command that reads from the ring buffer.
+void read_command(char *command, size_t bufsize) {
+    size_t index = 0;
+    uint8_t ch;
 
-void shell_prompt() {
-    print("KeblaOS>> ");
+    // Loop until we either fill the command buffer or encounter Enter
+    while (index < bufsize - 1) {
+        // Wait for a character to be available
+        while (is_ring_buffer_empty(keyboard_buffer)) {
+            // Optionally, you could yield the CPU or sleep here
+        }
+        // Pop a character from the ring buffer.
+        if (ring_buffer_pop(keyboard_buffer, &ch) == 0) {
+            // For this example, we assume Enter sends a newline ('\n')
+            if (ch == '\n' || ch == '\r') {
+                break;
+            }
+            command[index++] = ch;
+        }
+    }
+    command[index] = '\0';
 }
 
+// Rest of your shell.c implementation remains largely the same.
 
+void shell_prompt() {
+    printf("KeblaOS>> ");
+}
 
 void execute_command(char* command) {
-    
+    printf("\nKeblaOS>> ");
     if (strcmp(command, "help") == 0) {
-        print("Available commands: [ help, clear, reboot, poweroff, bootinfo, time, uptime, regvalue, checkgdt, features, testint, logo, image, memmap,  exit, kermod, rsdp, firmware, stack, limine, pagingmod, phystoviroff, smp, hhdm ]\n");
+        printf("Available commands: help, clear, reboot, poweroff, bootinfo, time, uptime, ...\n");
     } else if (strcmp(command, "clear") == 0) {
-        clear_screen();  // Clear the screen using your VGA driver
-    } else if (strcmp(command, "reboot") == 0) {
-        print("Rebooting...\n");
-        // qemu_reboot();
-        acpi_reboot();
-    } else if (strcmp(command, "poweroff") == 0){
-        print("Shutting Down!\n");
-        //qemu_poweroff();
-        acpi_poweroff();
-    } else if(strcmp(command, "bootinfo") == 0){
-        print_bootloader_info();
-    } else if (strcmp(command, "time") == 0){
-        print_current_time();
-        // printing current time
-    } else if (strcmp(command, "uptime") == 0){
-        print("Up time : \n");
-        // printing the time run this os
-    }else if (strcmp(command, "regvalue") == 0){
-        // print_registers();
-    }else if (strcmp(command, "features") == 0){
-        print_features();
-    }else if (strcmp(command, "testint") == 0){
-        // print("Test Interrupts\n");
-        test_interrupt();
-    }else if (strcmp(command, "exit") == 0) {
-        print("Exiting shell...\n");
-        shell_running = false;
-    }else if(strcmp(command, "logo") == 0){
-        // clear_screen();
-        // display_image(100, 300, (const uint64_t*) KeblaOS_icon_320x200x32, KEBLAOS_ICON_320X200X32_WIDTH,KEBLAOS_ICON_320X200X32_HEIGHT);
-    }else if(strcmp(command, "image") == 0){
+        // Implement clear_screen() as needed.
         clear_screen();
-        // display_image(0, 0, (const uint64_t*) girl_6352783_640, GIRL_6352783_640_WIDTH, GIRL_6352783_640_HEIGHT);
-    }else if(strcmp(command, "") == 0){
-        print("type 'help'\n");
-    }else if(strcmp(command, "memmap") == 0){
-        print_memory_map();
-    }else if(strcmp(command, "kermod") == 0){
-        print_kernel_modules_info();
-    }else if(strcmp(command, "firmware") == 0){
-        print_firmware_info();
-    }else if(strcmp(command, "stack") == 0){
-        print_stack_info();
-    }else if(strcmp(command, "limine") == 0){
-        print_limine_info();
-    }else if(strcmp(command, "pagingmod") == 0){
-        print_paging_mode_info();
-    }else if(strcmp(command, "phystoviroff") == 0){
-        print_kernel_to_virtual_offset();
-    }else if(strcmp(command, "hhdm") == 0){
-        print_hhdm_info();
-    }else{
-        print("!Unknown command: ");
-        print(command);
-        print("\n");
-        print("type 'help'\n");
+    }
+    // ... handle other commands
+    else if (strcmp(command, "exit") == 0) {
+        printf("Exiting shell...\n");
+        // Set global flag to stop shell loop
+    } else {
+        printf("!Unknown command: %s\n", command);
+        printf("Type 'help'\n");
     }
 }
 
-
-void run_shell(bool is_shell_running) {
+void run_shell() {
     char input[BUFFER_SIZE];
+    bool shell_running = true;
 
-    while (is_shell_running) {
-        shell_prompt();  // Display shell prompt
-        read_command(input);  // Function to read user input (can be implemented based on your keyboard handler)
-        execute_command(input);  // Process the input command
+    while (shell_running) {
+        shell_prompt();
+        read_command(input, BUFFER_SIZE);
+        execute_command(input);
     }
 }
 
 void shell_main() {
-    shell_running = true;
-    run_shell(shell_running);
+    if (!keyboard_buffer) {
+        printf("Failed to initialize keyboard buffer!\n");
+        return;
+    }
     
-    // If shell exits, we should halt or restart it.
+    run_shell();
+
+    // Cleanup on shell exit
+    ring_buffer_free(keyboard_buffer, KEYBOARD_BUF_SIZE);
     while (1) {
         asm volatile("hlt");
     }
 }
 
-
-
-
-void print_features(){
-    print("KeblaOS-0.11\n");
-    print("Architecture : x86_64.\n");
-    print("1. Limine Bootloading.\n");
-    print("2. GDT initialization.\n");
-    print("3. VGA Graphics Driver.\n");
-    print("4. IDT initialization.\n");
-    print("5. Keyboard driver initialization.\n");
-    print("6. PIT Timer initialization.\n");
-    print("7. Basic User Shell\n");
-    print("8. Memory Management Unit(Kheap, PMM, 4 Level Paging)\n");
-    print("7. Standard Libraries : math.h, stddef.h, stdint.h, stdio.h, stdlib.h, string.h\n");
+void _start(){
+    keyboard_buffer = ring_buffer_init(KEYBOARD_BUF_SIZE);
 }
 
+// In shell.c or another appropriate file
 
+// Function to create and start the shell process and thread.
+void start_shell() {
+    // Initialize the keyboard ring buffer before starting shell operations.
+    keyboard_buffer = ring_buffer_init(KEYBOARD_BUF_SIZE);
+
+    // Create a new process for the shell.
+    process_t* shell_process = create_process("Shell Process");
+    if (!shell_process) {
+        printf("Failed to create shell process!\n");
+        return;
+    }
+
+    // Create a new thread within the shell process, with shell_main as its entry.
+    thread_t* shell_thread = create_thread(shell_process, "Shell Thread", &shell_main, NULL);
+    if (!shell_thread) {
+        printf("Failed to create shell thread!\n");
+        return;
+    }
+
+    thread_t* shell_thread_1 = create_thread(shell_process, "Shell Thread", &shell_main, NULL);
+
+    shell_thread->next = shell_thread_1;
+
+    printf("Shell started successfully.\n");
+}

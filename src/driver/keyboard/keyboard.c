@@ -9,17 +9,18 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_K
 #include "../../lib/stdlib.h"
 #include "../../lib/string.h"
 #include "../../lib/stdio.h"
-#include "../../usr/shell.h"
+#include "../../usr/ring_buffer.h"
 #include "../../driver/speaker/speaker.h"
 #include "../../driver/io/ports.h"
 #include "../../driver/vga/vga_term.h"
 
 #include "keyboard.h"
 
+#define KEYBOARD_BUF_SIZE 128 // Ring buffer capacity for keystrokes
 #define KEYBOARD_INT_VECTOR 33
-#define BUFFER_SIZE 128 // Max Size of Command Buffer
-char COMMAND_BUFFER[BUFFER_SIZE];   // Command string Container Buffer
-int BUFFER_INDEX = 0;   // Current Length of Command String Buffer
+
+extern ring_buffer_t* keyboard_buffer;
+
 
 uint32_t scanCode;      // What key is pressed
 bool press;             // Press down, or released
@@ -109,7 +110,7 @@ void key_ctrl(uint32_t scanCode, bool keyPress){
             // beep();
             break;
         case ENTER:  // Enter Key Manage
-            handel_enter_key(keyPress);
+            // handel_enter_key(keyPress);
             break;
         case CTRL:      // CTRL
             break;
@@ -162,7 +163,7 @@ void key_ctrl(uint32_t scanCode, bool keyPress){
             break;
         case RIGHT:
             if(keyPress == true){
-                move_cur_right(BUFFER_INDEX + 2);
+                move_cur_right(get_cursor_pos_x() + 2);
             }
             break;
         case DOWN:
@@ -176,8 +177,6 @@ void key_ctrl(uint32_t scanCode, bool keyPress){
         default:
             if(keyPress == true){
                 putchar(scanCodeToChar(scanCode));
-                COMMAND_BUFFER[BUFFER_INDEX] = scanCodeToChar(scanCode);
-                BUFFER_INDEX++;
             }
             break;   
     }
@@ -188,9 +187,6 @@ void key_ctrl(uint32_t scanCode, bool keyPress){
 void handel_enter_key(bool keyPressed){
     if(keyPressed == false){
         create_newline();
-        execute_command(COMMAND_BUFFER);
-        clear_buffer(COMMAND_BUFFER, BUFFER_SIZE);
-        BUFFER_INDEX = 0;
     }
 }
 
@@ -206,10 +202,8 @@ void handel_caps_lock_key(bool keyPressed){
 }
 
 void handel_backspace_key(bool keyPressed){
-    if(keyPressed == true && BUFFER_INDEX > 0){
+    if(keyPressed == true){
         backspace_manage();
-        BUFFER_INDEX--;
-        COMMAND_BUFFER[BUFFER_INDEX] = '\0';
     }
 }
 
@@ -218,10 +212,6 @@ void handel_del_key(bool keyPressed){
     if(keyPressed == true){
         //del_manage();   // updating screen
         cur_pos_col = get_cursor_pos_x() - 2; // 2 for cursor size
-        for(int i=cur_pos_col; i<BUFFER_INDEX; i++){
-            COMMAND_BUFFER[i] = COMMAND_BUFFER[i+1]; // Shifting left 
-        }
-        BUFFER_INDEX--;
     }
 }
 
@@ -230,6 +220,9 @@ void keyboardHandler(registers_t *regs){
     scanCode =  getScanCode();  // What key is pressed
     press = getKeyState();      // Manage Key Pressed or Released by changing bool variable press
     key_ctrl(scanCode,  press);
+    
+    if(press)
+        ring_buffer_push(keyboard_buffer, scanCodeToChar(scanCode));
 }
 
 
@@ -248,17 +241,6 @@ void disableKeyboard(){
 }
 
 
-void read_command(char* input) {
-    BUFFER_INDEX = 0;  // Start fresh
-    while (true) {
-        // The keyboard handler should populate COMMAND_BUFFER based on key presses
-        if (COMMAND_BUFFER[BUFFER_INDEX] == '\n') {
-            // When Enter is pressed, break the loop
-            input[BUFFER_INDEX] = '\0';  // Null-terminate the input
-            break;
-        }
-    }
-}
 
 
 

@@ -6,7 +6,13 @@
 | Credits :                                                                                          |
 | 1. https://web.archive.org/web/20160412174753/http://www.jamesmolloy.co.uk/tutorial_html/index.html|
 | 2. http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial                         |
+| 3. https://wiki.osdev.org/Port_IO                                                                  |
 |____________________________________________________________________________________________________|
+
+               
+                          
+Byte( 8 Bit)---> Word( 16 Byte)---> Double Word( 32 Bit)-----> Quad Word( 64 Bit)
+
 */
 
 #include "ports.h"

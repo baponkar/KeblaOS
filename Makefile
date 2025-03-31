@@ -158,9 +158,12 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/thread.c -o $(BUILD_DIR)/thread.o
 	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/test_process.c -o $(BUILD_DIR)/test_process.o
 
-#	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fs.c -o $(BUILD_DIR)/fs.o
+	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fs.c -o $(BUILD_DIR)/fs.o
+
+#user shell
 	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/shell.c -o $(BUILD_DIR)/shell.o
-	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/user.c -o $(BUILD_DIR)/user.o
+	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/ring_buffer.c -o $(BUILD_DIR)/ring_buffer.o
+#	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/user.c -o $(BUILD_DIR)/user.o
 
 
 # Linking object files into kernel binary
@@ -203,13 +206,14 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/rtc.o \
 						$(BUILD_DIR)/keyboard.o  \
 						$(BUILD_DIR)/shell.o \
-						$(BUILD_DIR)/user.o \
+						$(BUILD_DIR)/ring_buffer.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/process.o \
 						$(BUILD_DIR)/set_cpu_state.o \
 						$(BUILD_DIR)/thread.o \
 						$(BUILD_DIR)/test_process.o \
 						$(BUILD_DIR)/disk.o \
+						$(BUILD_DIR)/fs.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/cpuid.o \
 						$(BUILD_DIR)/cpuid_asm.o \
@@ -262,13 +266,14 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 														$(BUILD_DIR)/rtc.o \
 														$(BUILD_DIR)/keyboard.o \
 														$(BUILD_DIR)/shell.o \
-														$(BUILD_DIR)/user.o \
+														$(BUILD_DIR)/ring_buffer.o \
 														$(BUILD_DIR)/kheap.o \
 														$(BUILD_DIR)/process.o \
 														$(BUILD_DIR)/set_cpu_state.o \
 														$(BUILD_DIR)/thread.o \
 														$(BUILD_DIR)/test_process.o \
 														$(BUILD_DIR)/disk.o \
+														$(BUILD_DIR)/fs.o \
 														$(BUILD_DIR)/cpu.o \
 														$(BUILD_DIR)/cpuid.o \
 														$(BUILD_DIR)/cpuid_asm.o \

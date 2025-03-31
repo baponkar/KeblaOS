@@ -32,10 +32,6 @@ thread1.registers.rsp = 0xA700 + 0x4000 = 0xE700 ; rsp = 0x10000
 
 V_UMEM_LOW_BASE : 0x11000
 
-*/
-
-/*
-
 size of process_t = 0x380
 size of thread_t  = 0x9C0
 size of status_t  = 0x20
@@ -68,30 +64,33 @@ extern volatile uint64_t apic_ticks;
 void thread0_func(void *arg) {
     int *var = (int*) arg;
     while(true){
-        printf("==> Thread 0 is Running...\n");
+        printf("===> Thread 0 is Start...\n");
         apic_delay(100); // delay 100 milli seconds
+        printf("===> Thread 0 is End...\n");
     }
 }
 
 
 void thread1_func(void* arg) {
     while(true) {
-        printf("### Thread 1 is Running...\n");
+        printf("===> Thread 1 is Start...\n");
         apic_delay(100); // delay 100 milli seconds
+        printf("===> Thread 1 is End...\n");
     }
 }
 
 void thread2_func(void* arg) {
     while(true) {
-        printf("### Thread 2 is Running...\n");
+        printf("===> Thread 2 is Start...\n");
         apic_delay(100); // delay 100 milli seconds
+        printf("===> Thread 2 is End...\n");
     }
 }
 
 void thread10_func(void *arg) {
     int *var = (int*) arg;
     while(true){
-        printf("===> Thread 10 is Running...\n");
+        printf("#### Thread 10 is Running...\n");
         apic_delay(100); // delay 100 milli seconds
     }
 }
@@ -193,7 +192,6 @@ void init_processes() {
 
     thread0->next = thread1;
     thread1->next = thread2;
-    thread2->next = thread0;
 
     thread10->next = thread11;
     thread11->next = thread12;

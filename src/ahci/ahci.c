@@ -1,10 +1,38 @@
-
 /*
-AHCI (Advance Host Controller Interface)
-AHCI (Advance Host Controller Interface) is developed by Intel to facilitate handling SATA devices. 
+
+AHCI  : Advance Host Controller Interface - is developed by Intel to facilitate handling SATA devices. 
+
+ATA   : Advanced Technology Attachment
+ATAPI : Advanced Technology Attachment Packet Interface (Serial) - Used for most modern optical drives.
+ATAPI : Advanced Technology Attachment Packet Interface (Parallel) - Commonly used for optical drives.
+
+PCI  : Peripheral Component Interconnect
+PATA : Parallel Advanced Technology Attachment
+SATA : Serial Advanced Technology Attachment
+HBA  :  Host Base Address
+FIS  : Frame Information Structure
+GHCR : Global Host Control Register
+PRD  : Physical Region Descriptor
+PRDT : Physical Region Descriptor Table
+DMA  : Direct Memory Access - DMA is a technology that allows data to be transferred directly 
+       between system memory (RAM) and a device (e.g., a SATA hard drive or SSD) 
+       without involving the CPU for every byte of data. This significantly improves 
+       performance by reducing CPU overhead.
+PIO  : Programmed Input/Output
+BIST : Built-In Self-Test
+IDE  : Integrated Drive Electronics - IDE registers are used for communication between the CPU and storage devices.
+LBA  : Logical Block Addressing - LBA is a method used to specify the location of data blocks on a storage device 
+       such as a hard disk or SSD.
+NCQ  : Native Command Queuing.
+
+
+
+
+
 
 References:
     https://wiki.osdev.org/AHCI
+    https://wiki.osdev.org/SATA
 */
 
 #include "../lib/stdio.h"
@@ -16,20 +44,16 @@ References:
 
 #include "ahci.h"
 
-
-
-
-
-#define HBA_GHC_AHCI_ENABLE (1 << 31)
-#define HBA_PORT_CMD_ST     (1 << 0)
-#define HBA_PORT_CMD_FRE    (1 << 4)
-#define HBA_PORT_CMD_CR     (1 << 15)
+#define HBA_GHC_AHCI_ENABLE (1 << 31)   // 0x80000000 
+#define HBA_PORT_CMD_ST     (1 << 0)    // 0x1
+#define HBA_PORT_CMD_FRE    (1 << 4)    // 0x10
+#define HBA_PORT_CMD_CR     (1 << 15)   // 0x8000
 
 #define ATA_CMD_READ_DMA_EX 0x25
 #define ATA_CMD_WRITE_DMA_EX 0x35
 
 
-ahci_controller_t ahci_ctrl = {0};
+ahci_controller_t ahci_ctrl;
 
 
 void ahci_init() {
@@ -107,11 +131,12 @@ int ahci_read(uint64_t lba, uint32_t count, void *buffer) {
     fis->countl = count & 0xFF;
     fis->counth = (count >> 8) & 0xFF;
 
-    // Setup PRDT
-    cmdtbl->prdt[0] = (uint32_t)(uintptr_t)buffer; // Data buffer (low)
-    cmdtbl->prdt[1] = (uint32_t)((uintptr_t)buffer >> 32); // High
-    cmdtbl->prdt[2] = 0; // Reserved
-    cmdtbl->prdt[3] = (count * 512) | (1 << 31); // Byte count and interrupt
+    // Setup PRDT entry using hba_prdt_entry structure
+    cmdtbl->prdt[0].dba = (uint32_t)(uintptr_t)buffer;
+    cmdtbl->prdt[0].dbau = (uint32_t)((uintptr_t)buffer >> 32);
+    cmdtbl->prdt[0].dbc = (count * 512) - 1; // 512 bytes per sector, minus one
+    cmdtbl->prdt[0].rsvd = 0;
+    cmdtbl->prdt[0].i = 1; // Interrupt on completion
 
     // Issue command
     port->ci = 1; // Use command slot 0
@@ -121,42 +146,55 @@ int ahci_read(uint64_t lba, uint32_t count, void *buffer) {
     return 0;
 }
 
-int ahci_write(uint64_t lba, uint32_t count, void *buffer){
-	if (!ahci_ctrl.initialized) return -1;
-	hba_mem *hba = (hba_mem*)ahci_ctrl.abar;
-	struct hba_port *port = &hba->ports[0]; // Assuming port 0
+int ahci_write(uint64_t lba, uint32_t count, void *buffer) {
+    if (!ahci_ctrl.initialized) return -1;
+    hba_mem *hba = (hba_mem*)ahci_ctrl.abar;
+    hba_port_t *port = &hba->ports[0]; // Using port 0
 
-	// Prepare command header
-	volatile hba_cmd_header *cmdheader; // Access command list
-	cmdheader->cfl = (uint8_t) sizeof(h2d_fis)/4;  // Size in DWORDS
-	cmdheader->w = 1;                   // Write
-	cmdheader->prdtl = 1;               // 1 PRDT entry
+    // Initialize command header pointer from the port's command list base.
+    volatile hba_cmd_header *cmdheader = (volatile hba_cmd_header *)(uintptr_t)port->clb;
+    
+    // Prepare command header for slot 0
+    cmdheader[0].cfl = sizeof(h2d_fis) / 4;  // FIS length in DWORDS
+    cmdheader[0].w = 1;                      // Write operation
+    cmdheader[0].prdtl = 1;                  // One PRDT entry
 
-	// Setup command table
-	hba_cmd_table *cmdtbl = (hba_cmd_table *) kmalloc_a(sizeof(hba_cmd_table), 1);
-	memset(cmdtbl, 0, sizeof(hba_cmd_table));
-	h2d_fis *fis = (h2d_fis*)&cmdtbl->cfis;
-	fis->fis_type = 0x27;               // H2D FIS
-	fis->pm_port = 0x80;                // Command
-	fis->command = ATA_CMD_WRITE_DMA_EX;
-	fis->lba0 = lba;
-	fis->lba1 = lba >> 8;
-	fis->lba2 = lba >> 16;
-	fis->device = 0x40;                 // LBA mode
-	fis->lba3 = lba >> 24;
-	fis->lba4 = lba >> 32;
-	fis->lba5 = lba >> 40;
-	fis->countl = count & 0xFF;
-	fis->counth = (count >> 8) & 0xFF;
+    // Allocate and clear a command table for this slot
+    hba_cmd_table *cmdtbl = (hba_cmd_table *) kmalloc_a(sizeof(hba_cmd_table), 1);
+    memset(cmdtbl, 0, sizeof(hba_cmd_table));
 
-	// Setup PRDT
-	cmdtbl->prdt[0] = (uint32_t)(uintptr_t)buffer; // Data buffer (low)
-	cmdtbl->prdt[1] = (uint32_t)((uintptr_t)buffer >> 32); // High
-	cmdtbl->prdt[2] = 0; // Reserved
-	cmdtbl->prdt[3] = (count * 512) | (1 << 31); // Byte count and interrupt
+    // Setup Host-to-Device FIS in the command table
+    h2d_fis *fis = (h2d_fis *)&cmdtbl->cfis;
+    fis->fis_type = 0x27;                  // H2D FIS
+    fis->pm_port = 0x80;                   // Command (bit 7 set)
+    fis->command = ATA_CMD_WRITE_DMA_EX;
+    fis->lba0 = lba;
+    fis->lba1 = lba >> 8;
+    fis->lba2 = lba >> 16;
+    fis->device = 0x40;                    // LBA mode
+    fis->lba3 = lba >> 24;
+    fis->lba4 = lba >> 32;
+    fis->lba5 = lba >> 40;
+    fis->countl = count & 0xFF;
+    fis->counth = (count >> 8) & 0xFF;
 
-	// Issue command
-	port->ci = 1; // Use command slot 0
-	while (port->ci & 1); // Wait for completion
+    // Setup PRDT entry using hba_prdt_entry structure
+    cmdtbl->prdt[0].dba = (uint32_t)(uintptr_t)buffer;
+    cmdtbl->prdt[0].dbau = (uint32_t)((uintptr_t)buffer >> 32);
+    cmdtbl->prdt[0].dbc = (count * 512) - 1; // (Transfer size in bytes) - 1
+    cmdtbl->prdt[0].rsvd = 0;
+    cmdtbl->prdt[0].i = 1; // Interrupt on completion
+
+    // Link the command table to the command header (slot 0)
+    cmdheader[0].ctba = (uint32_t)(uintptr_t)cmdtbl;
+    cmdheader[0].ctbau = (uint32_t)((uintptr_t)cmdtbl >> 32);
+
+    // Issue command by setting the command issue bit for slot 0
+    port->ci = 1; // Using command slot 0
+    // Wait for command to complete (consider adding a timeout)
+    while (port->ci & 1);
+
+    return 0;
 }
+
 

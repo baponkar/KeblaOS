@@ -1,7 +1,11 @@
+/*
+
+*/
 
 #include <stdint.h>
 
 
+// Represents an AHCI controller on the PCI bus.
 struct ahci_controller {
     uint8_t bus;
     uint8_t device;
@@ -11,7 +15,7 @@ struct ahci_controller {
 };
 typedef struct ahci_controller ahci_controller_t;
 
-
+// HBA : Host Base Address
 struct hba_port {
 	uint32_t clb;    // Command list base (low)
 	uint32_t clbu;   // Command list base (high)
@@ -35,6 +39,7 @@ struct hba_port {
 };
 typedef struct hba_port hba_port_t;
 
+
 typedef volatile struct hba_mem {
     uint32_t cap;        // Host capabilities
     uint32_t ghc;        // Global host control
@@ -54,7 +59,7 @@ typedef volatile struct hba_mem {
 } hba_mem;
 
 
-
+// FIS : Frame Information Structure
 typedef struct {
     uint8_t fis_type;    // FIS_TYPE_H2D
     uint8_t pm_port;     // Port multiplier
@@ -74,13 +79,26 @@ typedef struct {
     uint8_t control;
 } h2d_fis;
 
+// PRDT : Physical Region Descriptor Table
+typedef struct {
+    uint32_t dba;      // Data Base Address (low 32 bits)
+    uint32_t dbau;     // Data Base Address (high 32 bits)
+    // dbc is a 22-bit field that holds the byte count (set to actual byte count minus one)
+    // followed by a 9-bit reserved field and a 1-bit flag (interrupt on completion)
+    uint32_t dbc : 22; // Byte count, 0-based (set to transfer size in bytes minus 1)
+    uint32_t rsvd : 9; // Reserved, must be zero
+    uint32_t i : 1;    // Interrupt on completion flag
+} __attribute__((packed)) hba_prdt_entry;
 
+
+// 
 typedef struct {
     h2d_fis cfis;       // Command FIS
     uint8_t atapi[16];  // ATAPI (unused)
     uint8_t reserved[48];
-    uint32_t prdt[4];   // PRD Table (simplified)
+    hba_prdt_entry prdt[1]; // PRDT entries – you can allocate more if needed
 } hba_cmd_table;
+
 
 typedef struct {
     uint16_t cfl:5;   // Command FIS length in DWORDS, typically 5 (20 bytes)
@@ -98,6 +116,8 @@ typedef struct {
     uint32_t ctbau;   // Command table descriptor base address (high)
     uint32_t rsvd1[4]; // Reserved
 } hba_cmd_header;
+
+
 
 
 int ahci_read(uint64_t lba, uint32_t count, void *buffer);

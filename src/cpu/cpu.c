@@ -20,6 +20,7 @@
 #include "../driver/keyboard/keyboard.h"
 
 #include "../x86_64/timer/tsc.h"
+#include "../x86_64/timer/pit_timer.h"
 #include "../x86_64/timer/apic_timer.h"
 
 #include "../memory/kmalloc.h"
@@ -147,7 +148,7 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
 
 
     if(core_id == 1){
-        ioapic_route_irq(1, get_lapic_id(), 33, lapic_flags);      // Route IRQ 1 to current LAPIC ID with vector 33
+        // ioapic_route_irq(1, get_lapic_id(), 33, lapic_flags);      // Route IRQ 1 to current LAPIC ID with vector 33
         ioapic_route_irq(2, get_lapic_id(), 34, lapic_flags);      // Route IRQ 2 to current LAPIC ID with vector 34
         ioapic_route_irq(3, get_lapic_id(), 35, lapic_flags);      // Route IRQ 3 to current LAPIC ID with vector 35
         ioapic_route_irq(4, get_lapic_id(), 36, lapic_flags);      // Route IRQ 4 to current LAPIC ID with vector 36
@@ -212,8 +213,9 @@ void start_bootstrap_cpu_core() {
     init_apic_timer(100);
 
     // Route IRQs to the bootstrap core
-    // uint32_t bsp_flags = (0 << 8) | (0 << 13) | (0 << 15);
-    // ioapic_route_irq(1, bsp_lapic_id, 33, bsp_flags);      // Route IRQ 1 to current LAPIC ID with vector 33
+    uint32_t bsp_flags = (0 << 8) | (0 << 13) | (0 << 15);
+    // ioapic_route_irq(0, bsp_lapic_id, 32, bsp_flags);      // Route IRQ 1 to current LAPIC ID with vector 33
+    ioapic_route_irq(1, bsp_lapic_id, 33, bsp_flags);      // Route IRQ 1 to current LAPIC ID with vector 33
     // ioapic_route_irq(2, bsp_lapic_id, 34, bsp_flags);      // Route IRQ 2 to current LAPIC ID with vector 34
     // ioapic_route_irq(3, bsp_lapic_id, 35, bsp_flags);      // Route IRQ 3 to current LAPIC ID with vector 35
     // ioapic_route_irq(4, bsp_lapic_id, 36, bsp_flags);      // Route IRQ 4 to current LAPIC ID with vector 36
@@ -232,7 +234,8 @@ void start_bootstrap_cpu_core() {
     // ioapic_route_irq(17, bsp_lapic_id, 49, bsp_flags);     // Route IRQ 17 to current LAPIC ID with vector 49
     // ioapic_route_irq(18, bsp_lapic_id, 50, bsp_flags);     // Route IRQ 18 to current LAPIC ID with vector 50
 
-    // initKeyboard();
+    // init_pit_timer();
+    initKeyboard();
 
     asm volatile("sti");
     printf("Bootstrap CPU initialized...\n\n");

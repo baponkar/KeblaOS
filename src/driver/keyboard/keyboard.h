@@ -132,7 +132,6 @@ void handel_caps_lock_key(bool keyPressed);
 void handel_backspace_key(bool keyPressed);
 void handel_del_key(bool keyPressed);
 
-void read_command(char* input);
 bool is_printable(char ch);
 
 

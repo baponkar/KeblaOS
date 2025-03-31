@@ -11,3 +11,9 @@
 void init_processes();
 
 void print_all_threads_name(process_t *p);
+
+
+
+
+
+

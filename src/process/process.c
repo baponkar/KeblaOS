@@ -111,28 +111,39 @@ void delete_process(process_t* proc) {
 
 
 registers_t* schedule(registers_t* registers) {
+    void *prev_registers = (void *)(uintptr_t)registers;
     if (!current_process || !current_process->current_thread) return NULL;
 
-    // Save current thread state
-    memcpy(&current_process->current_thread->registers, registers, sizeof(registers_t));
+    __asm__ volatile("cli");   // Clearing Interrupt
+    // printf("Starting mem copy\n");
+    memcpy((void *)&current_process->current_thread->registers, (void *)prev_registers, sizeof(registers_t)); // Save current thread state
+    // printf("mem copy Ended\n");
+    // __asm__ volatile("sti");   // Starting Interrupt
+    
+
     current_process->current_thread->status = READY;
 
     thread_t* current_thread = current_process->current_thread;
     thread_t* next_thread = current_thread->next;
 
+    if(!next_thread) next_thread = current_process->threads;
+
     // Round-robin search for next READY thread
-    while (next_thread != current_thread) {
-        if (next_thread->status == READY) {
-            break;
-        }
-        next_thread = next_thread->next;
-    }
+    // while (next_thread != current_thread) {
+    //     if (next_thread->status == READY){
+    //         break;
+    //     }
+    //     next_thread = next_thread->next;
+    // }
+  
+    // printf("Next:%s\n", next_thread->name);
 
     // Update current thread and set status
     next_thread->status = RUNNING;
     current_process->current_thread = next_thread;
-    
-    return &next_thread->registers;
+
+    // __asm__ volatile("sti");   // Starting Interrupt
+    return (registers_t *)(uintptr_t) &current_process->current_thread->registers;
 }
 
 

@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <stdint.h>
@@ -5,16 +6,11 @@
 #include <stddef.h>
 
 
-
-
-#define BUFFER_SIZE 256
-
+void read_command(char *command, size_t bufsize);
 void shell_prompt();
 void execute_command(char* command);
-void shell();
-void run_shell(bool is_shell_running);
-void print_features();
-
-
+void run_shell();
 void shell_main();
 
+void _start();
+void start_shell();
