@@ -221,7 +221,7 @@ void keyboardHandler(registers_t *regs){
     press = getKeyState();      // Manage Key Pressed or Released by changing bool variable press
     key_ctrl(scanCode,  press);
     
-    if(press)
+    if(press && keyboard_buffer)
         ring_buffer_push(keyboard_buffer, scanCodeToChar(scanCode));
 }
 

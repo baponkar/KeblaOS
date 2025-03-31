@@ -51,6 +51,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../usr/shell.h"
 #include "../usr/ring_buffer.h"
 #include "../file_system/fs.h"
+#include "../driver/vga/color.h"
 
 #include "kernel.h"
 
@@ -90,11 +91,10 @@ void kmain(){
 
     printf("--------------------------------------\n");
 
-    // start_shell();
+    start_shell();
 
-    _start();
 
-    run_shell();
+    // shell_main();
 
     // printf("Current CPU ID: %d\n", get_lapic_id());
     // switch_to_core(3);
