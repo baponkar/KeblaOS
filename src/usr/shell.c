@@ -1,12 +1,19 @@
 /*
  
 */
-#include "../driver/vga/vga_term.h"
+
+#include "../util/util.h"   // registers_t structure
+
+
+#include "../driver/vga/color.h"
+#include "../driver/vga/vga_term.h" // clear_screen , color_print
 
 #include "../lib/stdio.h"
 #include "../lib/string.h"
 
 #include "ring_buffer.h"  // Include your ring buffer header
+
+#include "../acpi/descriptor_table/fadt.h" // for acpi_poweroff and acpi_reboot
 
 #include "../process/process.h"
 #include "../process/thread.h"
@@ -46,13 +53,13 @@ void read_command(char *command, size_t bufsize) {
 // Rest of your shell.c implementation remains largely the same.
 
 void shell_prompt() {
-    printf("KeblaOS>> ");
+    color_print("KeblaOS>> ", COLOR_LIME);
 }
 
 void execute_command(char* command) {
     printf("\nKeblaOS>> ");
     if (strcmp(command, "help") == 0) {
-        printf("Available commands: help, clear, reboot, poweroff, bootinfo, time, uptime, ...\n");
+        printf("Available commands: help, clear, reboot, poweroff ...\n");
     } else if (strcmp(command, "clear") == 0) {
         // Implement clear_screen() as needed.
         clear_screen();
@@ -61,7 +68,15 @@ void execute_command(char* command) {
     else if (strcmp(command, "exit") == 0) {
         printf("Exiting shell...\n");
         // Set global flag to stop shell loop
-    } else {
+    }else if(strcmp(command, "poweroff") == 0){
+        printf("Powering Off!\n");
+        //qemu_poweroff();
+        acpi_poweroff();
+    }else if(strcmp(command, "reboot") == 0){
+        printf("Rebooting...\n");
+        //qemu_poweroff();
+        acpi_reboot();
+    }else {
         printf("!Unknown command: %s\n", command);
         printf("Type 'help'\n");
     }
@@ -79,6 +94,9 @@ void run_shell() {
 }
 
 void shell_main() {
+    // Initialize the keyboard ring buffer before starting shell operations.
+    keyboard_buffer = ring_buffer_init(KEYBOARD_BUF_SIZE);
+
     if (!keyboard_buffer) {
         printf("Failed to initialize keyboard buffer!\n");
         return;
@@ -93,16 +111,9 @@ void shell_main() {
     }
 }
 
-void _start(){
-    keyboard_buffer = ring_buffer_init(KEYBOARD_BUF_SIZE);
-}
-
-// In shell.c or another appropriate file
-
+extern void restore_cpu_state(registers_t* registers);
 // Function to create and start the shell process and thread.
 void start_shell() {
-    // Initialize the keyboard ring buffer before starting shell operations.
-    keyboard_buffer = ring_buffer_init(KEYBOARD_BUF_SIZE);
 
     // Create a new process for the shell.
     process_t* shell_process = create_process("Shell Process");
@@ -118,9 +129,7 @@ void start_shell() {
         return;
     }
 
-    thread_t* shell_thread_1 = create_thread(shell_process, "Shell Thread", &shell_main, NULL);
-
-    shell_thread->next = shell_thread_1;
+    restore_cpu_state((registers_t *)(uintptr_t)&shell_thread->registers);
 
     printf("Shell started successfully.\n");
 }

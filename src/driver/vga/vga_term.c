@@ -341,3 +341,38 @@ void draw_checkmark(int x, int y, uint32_t color) {
 }
 
 
+
+
+void color_putchar(unsigned char c, uint32_t color){
+    serial_putchar(c);
+    if (c == '\t'){
+        // Handle a tab by increasing the cur's X, but only to a point
+        // where it is divisible by 4*DEFAULT_FONT_WIDTH.
+        cur_x = (cur_x + 4) & ~( 4  - 1);
+        update_cur_pos();
+    }else if( c == '\r'){
+        // Handel carriage return
+        cur_x = 0;
+        update_cur_pos();
+    }else if(c == '\n'){
+        // Handel newline
+        create_newline();
+        update_cur_pos();
+    }else if(c == '\b'){
+        backspace_manage();
+    }else if(c == '\0'){
+        // Do nothing for end of string otherwise it unnecessary increase column number
+    }else{ 
+        draw_char(cur_x, cur_y, c, color);
+        cur_x += 1;
+        update_cur_pos();
+    }
+}
+
+
+void color_print(const char* text, uint32_t color) {
+    while (*text) {
+        char ch = *text++;
+        color_putchar(ch, color);
+    }
+}
