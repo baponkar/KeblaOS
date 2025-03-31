@@ -37,12 +37,12 @@
 
 
 .text
-global restore_cpu_state
+global restore_cpu_state            ; use extern void restore_cpu_state(registers_t* registers); in c file
 
 restore_cpu_state:
     cli                             ; Disable interrupts
 
-    mov rcx, rdi                    ; Save registers_t pointer
+    mov rcx, rdi                    ; Save registers_t pointer in rcx
 
     ; Restore segment registers
     mov rax, [rcx + SEG_REG_GS]  
@@ -84,8 +84,10 @@ restore_cpu_state:
 
     mov rcx, [rcx + GEN_REG_RCX]    ; Ultimately set rcx registers
 
-    ; sti                             ; Store interrupt 
+    sti                             ; Store interrupt 
 
     iretq                           ; Return from interrupt
+    
 
+    
     

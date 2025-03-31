@@ -49,10 +49,14 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../x86_64/timer/apic_timer.h"  // apic timer
 #include "../x86_64/timer/hpet_timer.h"  // hpet timer
 #include "../usr/shell.h"
+#include "../usr/ring_buffer.h"
+#include "../file_system/fs.h"
 
 #include "kernel.h"
 
 extern ahci_controller_t ahci_ctrl;
+
+extern process_t *current_process;
 
 void kmain(){
 
@@ -79,12 +83,18 @@ void kmain(){
     init_pmm();
     init_paging();
 
-    if(has_apic()){
-        set_ap_stacks(1, 3);                // Initialize stacks for other cores
-        start_secondary_cpu_cores(1, 3);    // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
-    }
+    // if(has_apic()){
+    //     set_ap_stacks(1, 3);                // Initialize stacks for other cores
+    //     start_secondary_cpu_cores(1, 3);    // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
+    // }
 
     printf("--------------------------------------\n");
+
+    // start_shell();
+
+    _start();
+
+    run_shell();
 
     // printf("Current CPU ID: %d\n", get_lapic_id());
     // switch_to_core(3);
@@ -93,54 +103,59 @@ void kmain(){
 
     // parse_mcfg();
 
-    tsc_sleep(1000);
-    pci_scan();
-    ahci_init();
+    // tsc_sleep(1000);
+    // pci_scan();
+    // ahci_init();
 
-    if (ahci_ctrl.abar != 0) {
-        char *buffer = (char *) kheap_alloc(512);
-        memset(buffer, 0, sizeof(buffer));
+    // if (ahci_ctrl.abar != 0) {
+    //     char *buffer = (char *) kheap_alloc(512);
+    //     memset(buffer, 0, 512);
 
-        if (ahci_read(0, 1, (void *) buffer) == 0) { 
-            printf("Disk Read Successful!\n");
+    //     if (ahci_read(0, 1, (void *) buffer) == 0) { 
+    //         printf("Disk Read Successful!\n");
         
-            // Check MBR signature (last 2 bytes of sector)
-            if (buffer[510] == 0x55 && buffer[511] == 0xAA) {
-                printf("Valid MBR Signature found!\n");
-            } else {
-                printf("No MBR found. Disk may be empty or unformatted.\n");
-            }
-        } else {
-            printf("AHCI Read Failed!\n");
-        }
+    //         // Check MBR signature (last 2 bytes of sector)
+    //         if (buffer[510] == 0x55 && buffer[511] == 0xAA) {
+    //             printf("Valid MBR Signature found!\n");
+    //         } else {
+    //             printf("No MBR found. Disk may be empty or unformatted.\n");
+    //         }
+    //     } else {
+    //         printf("AHCI Read Failed!\n");
+    //     }
 
-        char *write_buffer = (char *)kheap_alloc(512);
-        memset(write_buffer, 'A', sizeof(write_buffer));  // Fill buffer with 'A'
+    //     char *write_buffer = (char *)kheap_alloc(512);
+    //     memset(write_buffer, 'B', 512);  // Fill buffer with 'A'
 
-        if (ahci_write(1, 1, write_buffer) == 0) {
-            printf("AHCI Write Successful at LBA 1!\n");
-        } else {
-            printf("AHCI Write Failed!\n");
-        }
+    //     if (ahci_write(1, 1, write_buffer) == 0) {
+    //         printf("AHCI Write Successful at LBA 1!\n");
+    //     } else {
+    //         printf("AHCI Write Failed!\n");
+    //     }
 
-        char *read_buffer = (char *) kheap_alloc(512);
-        memset(read_buffer, 0, sizeof(read_buffer));
+    //     char *read_buffer = (char *) kheap_alloc(512);
+    //     memset(read_buffer, 0, 512);
 
-        if (ahci_read(1, 1, read_buffer) == 0) {
-            printf("Verifying write at LBA 1...\n");
-            if (memcmp(write_buffer, read_buffer, 512) == 0) {
-                printf("Write Verification Successful! Data matches.\n");
-            } else {
-                printf("Write Verification Failed! Data does not match.\n");
-            }
-        } else {
-            printf("Failed to read back written data.\n");
-        }
-    }
+    //     if (ahci_read(1, 1, read_buffer) == 0) {
+    //         printf("Verifying write at LBA 1...\n");
+    //         if (memcmp(write_buffer, read_buffer, 512) == 0) {
+    //             printf("Write Verification Successful! Data matches. %x\n", *write_buffer);
+    //         } else {
+    //             printf("Write Verification Failed! Data does not match.%x != %x\n", *write_buffer, (uint64_t) 'A');
+    //         }
+    //     } else {
+    //         printf("Failed to read back written data.\n");
+    //     }
+    // }
+
+    // Assume your AHCI system has been initialized elsewhere.
+    // if (fat16_init() != 0) {
+    //     printf("FAT16 initialization failed.\n");
+    // }
+    
+    // fat16_list_root_dir();
     
     // test_interrupt();
-
-
 
     halt_kernel();
 }

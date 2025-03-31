@@ -1,98 +1,101 @@
 
-#include "../mmu/vmm.h"
+#include "../memory/kheap.h"
 #include "../bootloader/boot.h"
 #include "../lib/string.h"
 #include "../lib/stdio.h"
+#include  "../ahci/ahci.h"
 
 #include "fs.h"
 
 
 
+// Helper: Read one 512-byte sector from disk using AHCI.
+int disk_read_sector(uint32_t sector, void *buffer) {
+    // Our AHCI driver expects LBA addressing.
+    return ahci_read(sector, 1, buffer);
+}
 
-void disk_read_sector(uint32_t sector, void* buffer);
-void disk_write_sector(uint32_t sector, const void* buffer);
+// Global variables to store FAT16 parameters.
+static FAT16_BootSector bootSector;
+static uint32_t rootDirSector;
+static uint32_t rootDirSectors;
 
-
-
-// Read Boot Sector
-int fat32_read_boot_sector(fat32_fs_t* fs, uint32_t lba) {
-    fat32_boot_sector_t* boot_sector = (fat32_boot_sector_t*)vm_alloc(512);
-    if (!boot_sector) return -1;
-
-    disk_read_sector(lba, boot_sector);
-
-    // Validate boot sector
-    if (boot_sector->boot_signature != 0x29) {
-        vm_free(boot_sector);
+int fat16_init() {
+    // Read boot sector (sector 0)
+    if (disk_read_sector(0, (void *)&bootSector) != 0) {
+        printf("FAT16: Failed to read boot sector\n");
         return -1;
     }
 
-    memcpy(&fs->boot_sector, boot_sector, sizeof(fat32_boot_sector_t));
-    vm_free(boot_sector);
+    // Verify boot sector signature.
+    if (bootSector.bootSectorSignature != 0xAA55) {
+        printf("FAT16: Invalid boot sector signature: %x\n", bootSector.bootSectorSignature);
+        return -1;
+    }
 
-    // Calculate important offsets
-    fs->fat_start_sector = lba + fs->boot_sector.reserved_sectors;
-    fs->sectors_per_fat = fs->boot_sector.sectors_per_fat_32;
-    fs->data_start_sector = fs->fat_start_sector + (fs->boot_sector.num_fats * fs->sectors_per_fat);
-    fs->root_dir_sector = fs->data_start_sector + ((fs->boot_sector.root_cluster - 2) * fs->boot_sector.sectors_per_cluster);
-    fs->total_clusters = fs->boot_sector.total_sectors_32 / fs->boot_sector.sectors_per_cluster;
+    // Calculate root directory size (in sectors)
+    rootDirSectors = ((bootSector.rootEntryCount * 32) +
+                      (bootSector.bytesPerSector - 1)) / bootSector.bytesPerSector;
+
+    // The root directory starts after the reserved sectors and the FAT area.
+    // First FAT starts immediately after reserved sectors.
+    // Total sectors used by FAT area = numFATs * FATSize16.
+    rootDirSector = bootSector.reservedSectors + (bootSector.numFATs * bootSector.FATSize16);
+
+    printf("FAT16: Boot sector loaded successfully.\n");
+    printf("FAT16: Bytes/Sector: %d, Sectors/Cluster: %d\n",
+           bootSector.bytesPerSector, bootSector.sectorsPerCluster);
+    printf("FAT16: Root directory starts at sector: %d (spanning %d sectors)\n",
+           rootDirSector, rootDirSectors);
 
     return 0;
 }
 
-// Read FAT Entry
-uint32_t fat32_read_fat_entry(fat32_fs_t* fs, uint32_t cluster) {
-    uint32_t fat_sector = fs->fat_start_sector + (cluster * 4 / fs->boot_sector.bytes_per_sector);
-    uint32_t fat_offset = (cluster * 4) % fs->boot_sector.bytes_per_sector;
 
-    uint8_t* fat_buffer = (uint8_t*)vm_alloc(512);
-    if (!fat_buffer) return 0;
 
-    disk_read_sector(fat_sector, fat_buffer);
-    uint32_t fat_entry = *(uint32_t*)(fat_buffer + fat_offset) & 0x0FFFFFFF;
+void fat16_list_root_dir() {
+    uint32_t totalEntries = bootSector.rootEntryCount;
+    uint32_t bufSize = bootSector.bytesPerSector * rootDirSectors;
+    char *buffer = kheap_alloc(bufSize);
+    if (!buffer) {
+        printf("FAT16: Memory allocation failed for root directory\n");
+        return;
+    }
+    memset(buffer, 0, bufSize);
 
-    vm_free(fat_buffer);
-    return fat_entry;
-}
-
-// Read File Data
-int fat32_read_file(fat32_fs_t* fs, uint32_t start_cluster, void* buffer, size_t size) {
-    uint32_t current_cluster = start_cluster;
-    uint8_t* data_buffer = (uint8_t*)buffer;
-    size_t bytes_read = 0;
-
-    while (current_cluster < 0x0FFFFFF8 && bytes_read < size) {
-        uint32_t sector = fs->data_start_sector + (current_cluster - 2) * fs->boot_sector.sectors_per_cluster;
-        for (uint32_t i = 0; i < fs->boot_sector.sectors_per_cluster && bytes_read < size; i++) {
-            disk_read_sector(sector + i, data_buffer + bytes_read);
-            bytes_read += fs->boot_sector.bytes_per_sector;
+    // Read all sectors of the root directory.
+    for (uint32_t i = 0; i < rootDirSectors; i++) {
+        if (disk_read_sector(rootDirSector + i, buffer + i * bootSector.bytesPerSector) != 0) {
+            printf("FAT16: Failed to read root directory sector %d\n", rootDirSector + i);
+            kheap_free(buffer, bufSize);
+            return;
         }
-        current_cluster = fat32_read_fat_entry(fs, current_cluster);
     }
 
-    return bytes_read;
-}
+    FAT16_DirEntry *entries = (FAT16_DirEntry *)buffer;
+    for (uint32_t i = 0; i < totalEntries; i++) {
+        // 0x00 indicates no more entries.
+        if (entries[i].name[0] == 0x00)
+            break;
+        // 0xE5 indicates a deleted entry.
+        if ((uint8_t)entries[i].name[0] == 0xE5)
+            continue;
+        // Skip volume labels.
+        if (entries[i].attr & 0x08)
+            continue;
 
-// Main Function (Example Usage)
-int main() {
-    fat32_fs_t fs;
-    if (fat32_read_boot_sector(&fs, 0) != 0) {
-        printf("Failed to read boot sector\n");
-        return -1;
+        char name[12];
+        memcpy(name, entries[i].name, 11);
+        name[11] = '\0';
+        // Trim trailing spaces.
+        for (int j = 10; j >= 0; j--) {
+            if (name[j] == ' ')
+                name[j] = '\0';
+            else
+                break;
+        }
+        printf("FAT16: File: %s, Size: %d bytes, First Cluster: %d\n",
+               name, entries[i].fileSize, entries[i].fstClusLO);
     }
-
-    uint8_t* file_buffer = (uint8_t*)vm_alloc(1024);
-    if (!file_buffer) {
-        printf("Failed to allocate memory\n");
-        return -1;
-    }
-
-    // Assume we know the starting cluster of a file
-    uint32_t start_cluster = 2; // Example: Root directory
-    fat32_read_file(&fs, start_cluster, file_buffer, 1024);
-
-    // Process file data...
-
-    vm_free(file_buffer);
-    return 0;
+    kheap_free(buffer, bufSize);
 }

@@ -26,16 +26,16 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/08_Timer
 
 #define MAX_APIC_TICKS  0xFFFFFFFFFFFFFFFF
 
-#define LAPIC_TPR                    0x80   // Task Priority Register Offset
+#define LAPIC_TPR                    0x80       // Task Priority Register Offset
 
-#define APIC_REGISTER_TIMER_DIV      0x3E0  // Offset for Timer Divide Register
-#define APIC_REGISTER_TIMER_INITCNT  0x380  // Offset for Initial Count Register
-#define APIC_REGISTER_TIMER_CURRCNT  0x390  // Offset for Current Count Register
-#define APIC_REGISTER_LVT_TIMER      0x320  // Offset for LVT Timer Register
+#define APIC_REGISTER_TIMER_DIV      0x3E0      // Offset for Timer Divide Register
+#define APIC_REGISTER_TIMER_INITCNT  0x380      // Offset for Initial Count Register
+#define APIC_REGISTER_TIMER_CURRCNT  0x390      // Offset for Current Count Register
+#define APIC_REGISTER_LVT_TIMER      0x320      // Offset for LVT Timer Register
 
-#define APIC_LVT_TIMER_MODE_PERIODIC (1 << 17)             // Periodic mode bit
-#define APIC_LVT_TIMER_MODE_ONESHOT  (0 << 0 )             // One shot mode
-#define APIC_LVT_INT_MASKED          (1 << 16)             // Mask interrupt
+#define APIC_LVT_TIMER_MODE_PERIODIC (1 << 17)  // Periodic mode bit
+#define APIC_LVT_TIMER_MODE_ONESHOT  (0 << 0 )  // One shot mode
+#define APIC_LVT_INT_MASKED          (1 << 16)  // Mask interrupt
 
 
 extern void restore_cpu_state(registers_t* registers);
@@ -112,9 +112,8 @@ void apic_timer_handler(registers_t *regs) {
 
     apic_send_eoi();
 
-    
     // if(apic_ticks % 100 != 0 && apic_ticks % 120 != 0 && apic_ticks % 130 != 0 && apic_ticks % 140 != 0)
-    //     printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
+        // printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
 
     // if(get_lapic_id() == 0 && apic_ticks % 100 == 0){
     //     printf("CPU %d : APIC Tick: %d\n", get_lapic_id(), apic_ticks);
@@ -128,11 +127,12 @@ void apic_timer_handler(registers_t *regs) {
 
     if(get_lapic_id() == 0 && current_process && current_process->current_thread){
         registers_t *new_regs = schedule(regs);
+        
         if(new_regs){
-            // printf("=>current thread: %s, rip: %x, rsp: %x\n", 
-            //     current_process->current_thread->name,  
-            //     current_process->current_thread->registers.iret_rip,
-            //     current_process->current_thread->registers.iret_rsp);
+            printf("=>current thread: %s, rip: %x, rsp: %x\n", 
+                current_process->current_thread->name,  
+                current_process->current_thread->registers.iret_rip,
+                current_process->current_thread->registers.iret_rsp);
             restore_cpu_state(new_regs);
         }
     }
@@ -186,5 +186,14 @@ void apic_delay(uint32_t milliseconds) {
         asm volatile ("hlt");
     }
 }
+
+
+
+
+
+
+
+
+
 
 
