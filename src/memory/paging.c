@@ -118,25 +118,25 @@ void init_paging()
     current_pml4 = (pml4_t *) get_cr3_addr();
 
     // Updating lower half pages
-    for (uint64_t addr = LOW_HALF_START; addr < 100*0x100000; addr += PAGE_SIZE) {
-        page_t *page = get_page(addr, 1, current_pml4);
-        if (!page) {
-            // Handle error: Failed to get the page entry
-            continue;
-        }
+    // for (uint64_t addr = LOW_HALF_START; addr < LOW_HALF_END; addr += PAGE_SIZE) {
+    //     page_t *page = get_page(addr, 1, current_pml4);
+    //     if (!page) {
+    //         // Handle error: Failed to get the page entry
+    //         continue;
+    //     }
 
-        // Allocate a frame if not already allocated
-        if (!page->frame) {
-            alloc_frame(page, 0, 1); // Allocate a frame with user-level access
-        }
+    //     // Allocate a frame if not already allocated
+    //     if (!page->frame) {
+    //         alloc_frame(page, 0, 1); // Allocate a frame with user-level access
+    //     }
 
-        // Set the User flag (0x4 in x86_64) to allow user-level access
-        page->present = 1;  // Ensure the page is present
-        page->rw = 1;       // Allow read/write access
-        page->user = 1;     // Set user-accessible bit
-    }
+    //     // Set the User flag (0x4 in x86_64) to allow user-level access
+    //     page->present = 1;  // Ensure the page is present
+    //     page->rw = 1;       // Allow read/write access
+    //     page->user = 1;     // Set user-accessible bit
+    // }
 
-    // // Invalidate the TLB for the changes to take effect
+    // Invalidate the TLB for the changes to take effect
     // asm volatile("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "rax");
     flush_tlb_all();
     

@@ -167,6 +167,10 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(NASM) $(NASM_FLAG) $(USR_DIR)/switch_to_user.asm -o $(BUILD_DIR)/switch_to_user_asm.o
 #	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/user.c -o $(BUILD_DIR)/user.o
 
+#system call
+	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/syscall.c -o $(BUILD_DIR)/syscall.o
+	$(NASM) $(NASM_FLAG) $(USR_DIR)/syscall.asm -o $(BUILD_DIR)/syscall_asm.o
+
 
 # Linking object files into kernel binary
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
@@ -211,6 +215,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/ring_buffer.o \
 						$(BUILD_DIR)/switch_to_user.o \
 						$(BUILD_DIR)/switch_to_user_asm.o \
+						$(BUILD_DIR)/syscall.o \
+						$(BUILD_DIR)/syscall_asm.o \
 						$(BUILD_DIR)/kheap.o \
 						$(BUILD_DIR)/process.o \
 						$(BUILD_DIR)/set_cpu_state.o \
@@ -273,6 +279,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 														$(BUILD_DIR)/ring_buffer.o \
 														$(BUILD_DIR)/switch_to_user.o \
 														$(BUILD_DIR)/switch_to_user_asm.o \
+														$(BUILD_DIR)/syscall.o \
+														$(BUILD_DIR)/syscall_asm.o \
 														$(BUILD_DIR)/kheap.o \
 														$(BUILD_DIR)/process.o \
 														$(BUILD_DIR)/set_cpu_state.o \

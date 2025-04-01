@@ -39,6 +39,7 @@ References:
 #include "../lib/string.h"
 #include "../driver/io/ports.h"
 #include "../memory/kmalloc.h"
+#include "../memory/vmm.h"
 #include "../memory/kheap.h"
 #include "../disk/disk.h"
 
@@ -53,11 +54,11 @@ References:
 #define ATA_CMD_WRITE_DMA_EX 0x35
 
 
-ahci_controller_t ahci_ctrl;
+ahci_controller_t sata_disk;
 
 
 void ahci_init() {
-    hba_mem *hba = (hba_mem*)(ahci_ctrl.abar);
+    hba_mem *hba = (hba_mem*)(sata_disk.abar);
     
     // Enable AHCI in GHC
     hba->ghc |= HBA_GHC_AHCI_ENABLE;
@@ -71,7 +72,7 @@ void ahci_init() {
             uint32_t ssts = port->ssts;
             if ((ssts & 0xF) == 3) { // Device detected
                 ahci_port_init(port);
-                ahci_ctrl.initialized = true;
+                sata_disk.initialized = true;
                 return;
             }
         }
@@ -87,14 +88,14 @@ void ahci_port_init(struct hba_port *port) {
 
     // Allocate command list and FIS
     // Assuming aligned allocation functions exist
-    void *cmd_list = (void *)kmalloc_a(1024, 1); // 32 entries * 32 bytes
+    void *cmd_list = (void *) kmalloc_a(1024, 1); // 32 entries * 32 bytes
     void *fis = (void *) kmalloc_a(256, 1);
 
     // Set command list and FIS base
-    port->clb = (uint32_t)(uintptr_t)cmd_list;
-    port->clbu = (uint32_t)((uintptr_t)cmd_list >> 32);
-    port->fb = (uint32_t)(uintptr_t)fis;
-    port->fbu = (uint32_t)((uintptr_t)fis >> 32);
+    port->clb = (uint32_t)(uintptr_t) vir_to_phys((uint64_t)cmd_list);
+    port->clbu = (uint32_t)((uintptr_t) vir_to_phys((uint64_t)cmd_list) >> 32);
+    port->fb = (uint32_t)(uintptr_t) vir_to_phys((uint64_t)fis);
+    port->fbu = (uint32_t)((uintptr_t) vir_to_phys((uint64_t)fis) >> 32);
 
     // Enable FIS and start engine
     port->cmd |= HBA_PORT_CMD_FRE;
@@ -104,27 +105,27 @@ void ahci_port_init(struct hba_port *port) {
 
 
 int ahci_read(uint64_t lba, uint32_t count, void *buffer) {
-    if (!ahci_ctrl.initialized) return -1;
-    hba_mem *hba = (hba_mem*)ahci_ctrl.abar;
+    if (!sata_disk.initialized) return -1;
+    hba_mem *hba = (hba_mem*)sata_disk.abar;
     struct hba_port *port = &hba->ports[0]; // Assuming port 0
 
     // Prepare command header
-    volatile hba_cmd_header *cmdheader;// Access command list
-    cmdheader->cfl = sizeof(h2d_fis)/4;  // Size in DWORDS
-    cmdheader->w = 0;                   // Read
-    cmdheader->prdtl = 1;               // 1 PRDT entry
+    volatile hba_cmd_header *cmdheader = (volatile hba_cmd_header *)(uintptr_t)port->clb;;     // Access command list
+    cmdheader->cfl = sizeof(h2d_fis)/4;     // Size in DWORDS
+    cmdheader->w = 0;                       // Read
+    cmdheader->prdtl = 1;                   // 1 PRDT entry
 
     // Setup command table
-    hba_cmd_table *cmdtbl = (hba_cmd_table *)kheap_alloc(sizeof(hba_cmd_table));
+    hba_cmd_table *cmdtbl = (hba_cmd_table *) kheap_alloc(sizeof(hba_cmd_table));
     memset(cmdtbl, 0, sizeof(hba_cmd_table));
-    h2d_fis *fis = (h2d_fis*)&cmdtbl->cfis;
-    fis->fis_type = 0x27;               // H2D FIS
-    fis->pm_port = 0x80;                // Command
+    h2d_fis *fis = (h2d_fis*) &cmdtbl->cfis;
+    fis->fis_type = 0x27;                   // H2D FIS
+    fis->pm_port = 0x80;                    // Command
     fis->command = ATA_CMD_READ_DMA_EX;
     fis->lba0 = lba;
     fis->lba1 = lba >> 8;
     fis->lba2 = lba >> 16;
-    fis->device = 0x40;                 // LBA mode
+    fis->device = 0x40;                     // LBA mode
     fis->lba3 = lba >> 24;
     fis->lba4 = lba >> 32;
     fis->lba5 = lba >> 40;
@@ -132,11 +133,12 @@ int ahci_read(uint64_t lba, uint32_t count, void *buffer) {
     fis->counth = (count >> 8) & 0xFF;
 
     // Setup PRDT entry using hba_prdt_entry structure
-    cmdtbl->prdt[0].dba = (uint32_t)(uintptr_t)buffer;
-    cmdtbl->prdt[0].dbau = (uint32_t)((uintptr_t)buffer >> 32);
+    cmdtbl->prdt[0].dba = (uint32_t)(uintptr_t)vir_to_phys((uint64_t)buffer);
+    cmdtbl->prdt[0].dbau = (uint32_t)(((uintptr_t)vir_to_phys((uint64_t)buffer)) >> 32);
+
     cmdtbl->prdt[0].dbc = (count * 512) - 1; // 512 bytes per sector, minus one
     cmdtbl->prdt[0].rsvd = 0;
-    cmdtbl->prdt[0].i = 1; // Interrupt on completion
+    cmdtbl->prdt[0].i = 1;                   // Interrupt on completion
 
     // Issue command
     port->ci = 1; // Use command slot 0
@@ -146,9 +148,10 @@ int ahci_read(uint64_t lba, uint32_t count, void *buffer) {
     return 0;
 }
 
+
 int ahci_write(uint64_t lba, uint32_t count, void *buffer) {
-    if (!ahci_ctrl.initialized) return -1;
-    hba_mem *hba = (hba_mem*)ahci_ctrl.abar;
+    if (!sata_disk.initialized) return -1;
+    hba_mem *hba = (hba_mem*)sata_disk.abar;
     hba_port_t *port = &hba->ports[0]; // Using port 0
 
     // Initialize command header pointer from the port's command list base.
@@ -179,15 +182,16 @@ int ahci_write(uint64_t lba, uint32_t count, void *buffer) {
     fis->counth = (count >> 8) & 0xFF;
 
     // Setup PRDT entry using hba_prdt_entry structure
-    cmdtbl->prdt[0].dba = (uint32_t)(uintptr_t)buffer;
-    cmdtbl->prdt[0].dbau = (uint32_t)((uintptr_t)buffer >> 32);
+    cmdtbl->prdt[0].dba = (uint32_t)(uint64_t)vir_to_phys((uint64_t)buffer);
+    cmdtbl->prdt[0].dbau = (uint32_t)(vir_to_phys((uint64_t)buffer) >> 32);
     cmdtbl->prdt[0].dbc = (count * 512) - 1; // (Transfer size in bytes) - 1
     cmdtbl->prdt[0].rsvd = 0;
     cmdtbl->prdt[0].i = 1; // Interrupt on completion
 
     // Link the command table to the command header (slot 0)
-    cmdheader[0].ctba = (uint32_t)(uintptr_t)cmdtbl;
-    cmdheader[0].ctbau = (uint32_t)((uintptr_t)cmdtbl >> 32);
+    uint64_t phys_cmdtbl = vir_to_phys((uint64_t)cmdtbl);
+    cmdheader[0].ctba = (uint32_t)phys_cmdtbl;
+    cmdheader[0].ctbau = (uint32_t)(phys_cmdtbl >> 32);
 
     // Issue command by setting the command issue bit for slot 0
     port->ci = 1; // Using command slot 0

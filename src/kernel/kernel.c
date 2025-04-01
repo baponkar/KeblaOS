@@ -51,12 +51,13 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../usr/shell.h"
 #include "../usr/ring_buffer.h"
 #include "../usr/switch_to_user.h"
+#include "../usr/syscall.h"
 #include "../file_system/fs.h"
 #include "../driver/vga/color.h"
 
 #include "kernel.h"
 
-
+extern ahci_controller_t sata_disk;
 
 
 void kmain(){
@@ -93,73 +94,55 @@ void kmain(){
 
     // start_shell();
 
+    pci_scan();
+    ahci_init();
 
-    init_user_mode();
+    if (sata_disk.abar != 0) {
 
-    check_usermode();
+        char *buffer = (char *) kmalloc_a(512, 1);
+        memset(buffer, 0, 512); // Clearing buffer
 
-    // shell_main();
-
-    // printf("Current CPU ID: %d\n", get_lapic_id());
-    // switch_to_core(3);
-    
-    // init_processes();
-
-    // parse_mcfg();
-
-    // tsc_sleep(1000);
-    // pci_scan();
-    // ahci_init();
-
-    // if (ahci_ctrl.abar != 0) {
-    //     char *buffer = (char *) kheap_alloc(512);
-    //     memset(buffer, 0, 512);
-
-    //     if (ahci_read(0, 1, (void *) buffer) == 0) { 
-    //         printf("Disk Read Successful!\n");
+        if (ahci_read(0, 1, (void *)buffer) == 0) { 
+            printf("Disk Read Successful!\n");
         
-    //         // Check MBR signature (last 2 bytes of sector)
-    //         if (buffer[510] == 0x55 && buffer[511] == 0xAA) {
-    //             printf("Valid MBR Signature found!\n");
-    //         } else {
-    //             printf("No MBR found. Disk may be empty or unformatted.\n");
-    //         }
-    //     } else {
-    //         printf("AHCI Read Failed!\n");
-    //     }
+            // Check MBR signature (last 2 bytes of sector)
+            if (buffer[510] == 0x55 && buffer[511] == 0xAA) {
+                printf("Valid MBR Signature found!\n");
+            } else {
+                printf("No MBR found. Disk may be empty or unformatted.\n");
+            }
+        } else {
+            printf("AHCI Read Failed!\n");
+        }
 
-    //     char *write_buffer = (char *)kheap_alloc(512);
-    //     memset(write_buffer, 'B', 512);  // Fill buffer with 'A'
+        char *write_buffer = (char *) kmalloc_a(512, 1);
+        memset(write_buffer, 'A', 512);  // Fill buffer with 'A'
 
-    //     if (ahci_write(1, 1, write_buffer) == 0) {
-    //         printf("AHCI Write Successful at LBA 1!\n");
-    //     } else {
-    //         printf("AHCI Write Failed!\n");
-    //     }
+        if (ahci_write(1, 1, write_buffer) == 0) {
+            printf("AHCI Write Successful at LBA 1!\n");
+        } else {
+            printf("AHCI Write Failed!\n");
+        }
 
-    //     char *read_buffer = (char *) kheap_alloc(512);
-    //     memset(read_buffer, 0, 512);
+        char *read_buffer = (char *) kmalloc_a(512, 1);
+        memset(read_buffer, 0, 512);
 
-    //     if (ahci_read(1, 1, read_buffer) == 0) {
-    //         printf("Verifying write at LBA 1...\n");
-    //         if (memcmp(write_buffer, read_buffer, 512) == 0) {
-    //             printf("Write Verification Successful! Data matches. %x\n", *write_buffer);
-    //         } else {
-    //             printf("Write Verification Failed! Data does not match.%x != %x\n", *write_buffer, (uint64_t) 'A');
-    //         }
-    //     } else {
-    //         printf("Failed to read back written data.\n");
-    //     }
-    // }
+        if (ahci_read(1, 1, read_buffer) == 0) {
+            if (memcmp(write_buffer, read_buffer, 512) == 0) {
+                printf("Write Verification Successful! Data matches. %x\n", *write_buffer);
+            } else {
+                printf("Write Verification Failed! Data does not match.\n");
+            }
+        } else {
+            printf("Failed to read back written data.\n");
+        }
+        printf("Write_buffer[%d]: %x\n", 1,  write_buffer[1]);
+        printf("Read_buffer[%d]: %x\n", 1, read_buffer[1]);
+    }
 
-    // Assume your AHCI system has been initialized elsewhere.
-    // if (fat16_init() != 0) {
-    //     printf("FAT16 initialization failed.\n");
-    // }
-    
-    // fat16_list_root_dir();
-    
-    // test_interrupt();
+    uint64_t test_va = (uint64_t) kheap_alloc(0x4000);
+    uint64_t test_pa = vir_to_phys(test_va);
+    printf("VA: %x => PA: %x\n", test_va, test_pa);
 
     halt_kernel();
 }

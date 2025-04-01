@@ -10,7 +10,7 @@
     Developer Name : Bapon Kar
 */
 
-
+#include "../ahci/ahci.h"
 #include "../driver/io/ports.h"
 #include "../lib/stdio.h"
 #include "../x86_64/timer/apic_timer.h"
@@ -30,6 +30,8 @@
 pci_device_type_t hdd[MAX_DRIVE_COUNT]; // AHCI SATA HDD
 pci_device_type_t ssd[MAX_DRIVE_COUNT];
 pci_device_type_t usbd[MAX_DRIVE_COUNT];
+
+extern ahci_controller_t sata_disk;
 
 
 /*
@@ -89,7 +91,7 @@ void pci_scan() {
                             printf("  - Type: Storage Controller\n");
                             switch (subclass) {
                                 case PCI_SUBCLASS_SERIAL_ATA:  
-                                    printf("    - Subtype: ATA (AHCI) Controller\n");
+                                    printf("    - Subtype: SATA (AHCI) Controller\n");
                                     uint32_t bar_low = pci_read(bus, device, function, 0x24);
                                     printf("    - ABAR: %x\n", bar_low);
                                     uint32_t bar_high = 0;
@@ -97,10 +99,10 @@ void pci_scan() {
                                     if (bar_type == 0x4) {
                                         bar_high = pci_read(bus, device, function, 0x28);
                                     }
-                                    // ahci_ctrl.abar = ((uint64_t)bar_high << 32) | (bar_low & ~0xFULL);
-                                    // ahci_ctrl.bus = bus;
-                                    // ahci_ctrl.device = device;
-                                    // ahci_ctrl.function = function;
+                                    sata_disk.abar = ((uint64_t)bar_high << 32) | (bar_low & ~0xFULL);
+                                    sata_disk.bus = bus;
+                                    sata_disk.device = device;
+                                    sata_disk.function = function;
                                     break;
                                 case PCI_SUBCLASS_SCSI: 
                                     printf("    - Subtype: NVMe Controller\n"); 

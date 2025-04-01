@@ -5,6 +5,7 @@
 #include "../util/util.h"
 #include  "../lib/stdio.h"
 #include  "../lib/string.h"
+#include "shell.h"
 
 #include "switch_to_user.h"
 
