@@ -50,14 +50,14 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../x86_64/timer/hpet_timer.h"  // hpet timer
 #include "../usr/shell.h"
 #include "../usr/ring_buffer.h"
+#include "../usr/switch_to_user.h"
 #include "../file_system/fs.h"
 #include "../driver/vga/color.h"
 
 #include "kernel.h"
 
-extern ahci_controller_t ahci_ctrl;
 
-extern process_t *current_process;
+
 
 void kmain(){
 
@@ -84,15 +84,19 @@ void kmain(){
     init_pmm();
     init_paging();
 
-    if(has_apic()){
-        set_ap_stacks(1, 3);                // Initialize stacks for other cores
-        start_secondary_cpu_cores(1, 3);    // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
-    }
+    // if(has_apic()){
+    //     set_ap_stacks(1, 3);                // Initialize stacks for other cores
+    //     start_secondary_cpu_cores(1, 3);    // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
+    // }
 
     printf("--------------------------------------\n");
 
-    start_shell();
+    // start_shell();
 
+
+    init_user_mode();
+
+    check_usermode();
 
     // shell_main();
 

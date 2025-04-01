@@ -27,8 +27,8 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 #define LOW_HALF_END   0x7FFFFFFFFFFFFFFFULL
 // #define LOW_HALF_END    0x0000000000800000  // For testing purpose
 
-#define UPPER_HALF_START 0xFFFF800000000000
-#define UPPER_HALF_END   0xFFFFFFFFFFFFFFFF
+#define UPPER_HALF_START 0xFFFF800000000000ULL
+#define UPPER_HALF_END   0xFFFFFFFFFFFFFFFFULL
 
 extern void enable_paging(uint64_t pml4_address); // present in load_paging.asm
 extern void disable_paging();   //  present in load_paging.asm
@@ -74,7 +74,6 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
     page->rw = (is_writeable) ? 1 : 0;  // Should the page be writeable?
     page->user = (is_kernel) ? 0 : 1;   // Should the page be user-mode?
     page->frame = (is_kernel) ? (KMEM_LOW_BASE + (bit_no * FRAME_SIZE)) >> 12 : (UMEM_LOW_BASE + (bit_no * FRAME_SIZE)) >> 12; // Store physical base address
-    printf("page->frame:%x\n", page->frame );
     is_kernel ? (KMEM_LOW_BASE += FRAME_SIZE) : (UMEM_LOW_BASE += FRAME_SIZE);
 
 }
@@ -119,27 +118,27 @@ void init_paging()
     current_pml4 = (pml4_t *) get_cr3_addr();
 
     // Updating lower half pages
-    // for (uint64_t addr = LOW_HALF_START; addr < LOW_HALF_END; addr += PAGE_SIZE) {
-    //     page_t *page = get_page(addr, 1, current_pml4);
-    //     if (!page) {
-    //         // Handle error: Failed to get the page entry
-    //         continue;
-    //     }
+    for (uint64_t addr = LOW_HALF_START; addr < 100*0x100000; addr += PAGE_SIZE) {
+        page_t *page = get_page(addr, 1, current_pml4);
+        if (!page) {
+            // Handle error: Failed to get the page entry
+            continue;
+        }
 
-    //     // Allocate a frame if not already allocated
-    //     if (!page->frame) {
-    //         alloc_frame(page, 0, 1); // Allocate a frame with user-level access
-    //     }
+        // Allocate a frame if not already allocated
+        if (!page->frame) {
+            alloc_frame(page, 0, 1); // Allocate a frame with user-level access
+        }
 
-    //     // Set the User flag (0x4 in x86_64) to allow user-level access
-    //     page->present = 1;  // Ensure the page is present
-    //     page->rw = 1;       // Allow read/write access
-    //     page->user = 1;     // Set user-accessible bit
-    // }
+        // Set the User flag (0x4 in x86_64) to allow user-level access
+        page->present = 1;  // Ensure the page is present
+        page->rw = 1;       // Allow read/write access
+        page->user = 1;     // Set user-accessible bit
+    }
 
     // // Invalidate the TLB for the changes to take effect
-    // // asm volatile("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "rax");
-    // flush_tlb_all();
+    // asm volatile("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "rax");
+    flush_tlb_all();
     
     printf("Successfully Paging initialized.\n");
 }

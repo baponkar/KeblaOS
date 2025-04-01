@@ -89,7 +89,7 @@ void get_memory_map(){
         KMEM_LOW_BASE = KMEM_UP_BASE - KMEM_LENGTH;
 
         // Placing upper physical memory for user space although Lower half  virtual address would be use for user
-        UMEM_LOW_BASE = entries[entry_ids[3]]->base;
+        // UMEM_LOW_BASE = entries[entry_ids[3]]->base;
         UMEM_LENGTH = entries[entry_ids[3]]->length;
         UMEM_UP_BASE = UMEM_LOW_BASE + UMEM_LENGTH;
     }else{

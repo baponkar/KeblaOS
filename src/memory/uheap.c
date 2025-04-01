@@ -24,7 +24,7 @@ void *uheap_alloc(size_t size) {
     // Allocate virtual pages for the requested size
     uint64_t va = V_UMEM_LOW_BASE;
     while (V_UMEM_LOW_BASE < va + size) {
-        vm_alloc(V_UMEM_LOW_BASE); // Use the previous vm_alloc
+        vm_alloc(V_UMEM_LOW_BASE); // Use the vm_alloc from vmm.c
         V_UMEM_LOW_BASE += 0x1000; // Increment by page size (4 KiB)
     }
 

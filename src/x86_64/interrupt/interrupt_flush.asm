@@ -9,6 +9,3 @@ idt_flush:
     ret
 
 
-load_tss:
-    ltr [rdi]      ; Load Task Register with the selector
-    ret            ; Return to caller
