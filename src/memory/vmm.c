@@ -12,8 +12,8 @@
 #define LOW_HALF_START 0x0000000000000000ULL
 #define LOW_HALF_END   0x7FFFFFFFFFFFFFFFULL
 
-#define UPPER_HALF_START 0xFFFF800000000000
-#define UPPER_HALF_END   0xFFFFFFFFFFFFFFFF
+#define UPPER_HALF_START 0xFFFF800000000000ULL
+#define UPPER_HALF_END   0xFFFFFFFFFFFFFFFFULL
 
 extern uint64_t V_KMEM_LOW_BASE;
 extern uint64_t V_KMEM_UP_BASE;
@@ -25,8 +25,7 @@ extern pml4_t *current_pml4;
 
 
 // Allocate a virtual page at the specified virtual address
-void vm_alloc(uint64_t va) {
-    
+void vm_alloc(uint64_t va) {    
     page_t *page = get_page(va, 1, current_pml4); // if not present then create the page
 
     if (!page) {
@@ -36,7 +35,7 @@ void vm_alloc(uint64_t va) {
     }
   
     if (page->present){
-        if(va > V_UMEM_UP_BASE){ // For kernel page
+        if(va > V_UMEM_UP_BASE && va >= V_KMEM_LOW_BASE){ // For kernel page
             // Allocate a physical frame for the page
             alloc_frame(page, 1, 1); // Kernel-mode, writable by default
             page->present = 1;
