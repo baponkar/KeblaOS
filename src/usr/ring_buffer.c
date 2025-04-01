@@ -7,7 +7,7 @@ https://en.wikipedia.org/wiki/Circular_buffer
 https://embedjournal.com/implementing-circular-buffer-embedded-c/
 */
 
-#include "../memory/uheap.h"
+#include "../memory/kheap.h"
 #include "../lib/stdio.h"
 
 #include "ring_buffer.h"
@@ -17,11 +17,11 @@ https://embedjournal.com/implementing-circular-buffer-embedded-c/
 
 // Initialize the ring buffer with given capacity.
 ring_buffer_t* ring_buffer_init(size_t capacity) {
-    ring_buffer_t* rb = uheap_alloc(sizeof(ring_buffer_t));
+    ring_buffer_t* rb = kheap_alloc(sizeof(ring_buffer_t));
     if (!rb) return NULL;
-    rb->buffer = uheap_alloc(capacity * sizeof(uint8_t));
+    rb->buffer = kheap_alloc(capacity * sizeof(uint8_t));
     if (!rb->buffer) {
-        uheap_free((void *)rb,sizeof(ring_buffer_t));
+        kheap_free((void *)rb,sizeof(ring_buffer_t));
         return NULL;
     }
     rb->max = capacity;
@@ -34,8 +34,8 @@ ring_buffer_t* ring_buffer_init(size_t capacity) {
 // Free the allocated ring buffer.
 void ring_buffer_free(ring_buffer_t* rb, size_t capacity) {
     if (rb) {
-        uheap_free(rb->buffer, capacity * sizeof(uint8_t));
-        uheap_free((void *)rb, sizeof(ring_buffer_t));
+        kheap_free(rb->buffer, capacity * sizeof(uint8_t));
+        kheap_free((void *)rb, sizeof(ring_buffer_t));
     }
 }
 

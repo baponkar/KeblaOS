@@ -21,6 +21,8 @@ extern uint64_t V_KMEM_UP_BASE;
 extern uint64_t V_UMEM_LOW_BASE;
 extern uint64_t V_UMEM_UP_BASE;
 
+extern uint64_t PHYSICAL_TO_VIRTUAL_OFFSET;
+
 extern pml4_t *current_pml4;
 
 
@@ -85,7 +87,11 @@ void vm_free(uint64_t *ptr) {
 
 
 uint64_t phys_to_vir(uint64_t phys){
-    return phys;
+    return phys + PHYSICAL_TO_VIRTUAL_OFFSET;
+}
+
+uint64_t vir_to_phys(uint64_t va){
+    return va - PHYSICAL_TO_VIRTUAL_OFFSET;
 }
 
 

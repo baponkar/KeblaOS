@@ -3,6 +3,8 @@
 */
 
 #include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 
 // Represents an AHCI controller on the PCI bus.
@@ -40,6 +42,7 @@ struct hba_port {
 typedef struct hba_port hba_port_t;
 
 
+// HBA Memory
 typedef volatile struct hba_mem {
     uint32_t cap;        // Host capabilities
     uint32_t ghc;        // Global host control
@@ -79,6 +82,8 @@ typedef struct {
     uint8_t control;
 } h2d_fis;
 
+
+
 // PRDT : Physical Region Descriptor Table
 typedef struct {
     uint32_t dba;      // Data Base Address (low 32 bits)
@@ -91,7 +96,8 @@ typedef struct {
 } __attribute__((packed)) hba_prdt_entry;
 
 
-// 
+
+// HBA Command Table
 typedef struct {
     h2d_fis cfis;       // Command FIS
     uint8_t atapi[16];  // ATAPI (unused)
@@ -100,6 +106,7 @@ typedef struct {
 } hba_cmd_table;
 
 
+// HBA Command Header
 typedef struct {
     uint16_t cfl:5;   // Command FIS length in DWORDS, typically 5 (20 bytes)
     uint16_t a:1;     // ATAPI
