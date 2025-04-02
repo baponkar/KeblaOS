@@ -57,6 +57,7 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "kernel.h"
 
+
 extern ahci_controller_t sata_disk;
 
 
@@ -73,7 +74,7 @@ void kmain(){
     
     if(has_apic()){
         disable_pic();
-        start_bootstrap_cpu_core();         // Enabling GDT, TSS, Interrupt and APIC Timer for bootstrap core
+        start_bootstrap_cpu_core();             // Enabling GDT, TSS, Interrupt and APIC Timer for bootstrap core
     }else{
         pic_irq_remap();
         init_bootstrap_gdt_tss(0);
@@ -86,8 +87,8 @@ void kmain(){
     init_paging();
 
     // if(has_apic()){
-    //     set_ap_stacks(1, 3);                // Initialize stacks for other cores
-    //     start_secondary_cpu_cores(1, 3);    // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
+    //     set_ap_stacks(1, 3);                 // Initialize stacks for other cores
+    //     start_secondary_cpu_cores(1, 3);     // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
     // }
 
     printf("--------------------------------------\n");
@@ -102,7 +103,7 @@ void kmain(){
         char *buffer = (char *) kmalloc_a(512, 1);
         memset(buffer, 0, 512); // Clearing buffer
 
-        if (ahci_read(0, 1, (void *)buffer) == 0) { 
+        if(ahci_read(0, 1, (void *)buffer) == 0) { 
             printf("Disk Read Successful!\n");
         
             // Check MBR signature (last 2 bytes of sector)
@@ -118,7 +119,7 @@ void kmain(){
         char *write_buffer = (char *) kmalloc_a(512, 1);
         memset(write_buffer, 'A', 512);  // Fill buffer with 'A'
 
-        if (ahci_write(1, 1, write_buffer) == 0) {
+        if(ahci_write(1, 1, write_buffer) == 0) {
             printf("AHCI Write Successful at LBA 1!\n");
         } else {
             printf("AHCI Write Failed!\n");
@@ -136,13 +137,7 @@ void kmain(){
         } else {
             printf("Failed to read back written data.\n");
         }
-        printf("Write_buffer[%d]: %x\n", 1,  write_buffer[1]);
-        printf("Read_buffer[%d]: %x\n", 1, read_buffer[1]);
     }
-
-    uint64_t test_va = (uint64_t) kheap_alloc(0x4000);
-    uint64_t test_pa = vir_to_phys(test_va);
-    printf("VA: %x => PA: %x\n", test_va, test_pa);
 
     halt_kernel();
 }

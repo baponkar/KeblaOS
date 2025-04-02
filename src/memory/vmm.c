@@ -85,11 +85,12 @@ void vm_free(uint64_t *ptr) {
     asm volatile("invlpg (%0)" ::"r"(va) : "memory");
 }
 
-
+// converting physical to virtual address
 uint64_t phys_to_vir(uint64_t phys){
     return phys + PHYSICAL_TO_VIRTUAL_OFFSET;
 }
 
+// converting virtual to physical address
 uint64_t vir_to_phys(uint64_t va){
     return va - PHYSICAL_TO_VIRTUAL_OFFSET;
 }

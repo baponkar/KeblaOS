@@ -158,7 +158,6 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/thread.c -o $(BUILD_DIR)/thread.o
 	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/test_process.c -o $(BUILD_DIR)/test_process.o
 
-	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fs.c -o $(BUILD_DIR)/fs.o
 
 #user shell
 	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/shell.c -o $(BUILD_DIR)/shell.o
@@ -171,6 +170,8 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/syscall.c -o $(BUILD_DIR)/syscall.o
 	$(NASM) $(NASM_FLAG) $(USR_DIR)/syscall.asm -o $(BUILD_DIR)/syscall_asm.o
 
+#file system
+	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fs.c -o $(BUILD_DIR)/fs.o
 
 # Linking object files into kernel binary
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
@@ -234,7 +235,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/eng_8x16.o \
 						$(BUILD_DIR)/vga_gfx.o \
 						$(BUILD_DIR)/serial.o \
-						$(BUILD_DIR)/emoji.o
+						$(BUILD_DIR)/emoji.o 
+
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
 														$(BUILD_DIR)/boot.o \
@@ -354,7 +356,17 @@ run:
 	# qemu-system-x86_64 -hda $(BUILD_DIR)/disk.img -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 -smp cores=2,threads=2,sockets=1,maxcpus=4 -bios /usr/share/OVMF/OVMF_CODE.fd  -rtc base=utc,clock=host
 
 	# BIOS Boot
-	qemu-system-x86_64 -machine q35 -hda $(BUILD_DIR)/disk.img -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial stdio -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 -smp cores=4,threads=1,sockets=1,maxcpus=4 -rtc base=utc,clock=host
+	qemu-system-x86_64 \
+		-machine q35 \
+		-m 4096 \
+		-smp cores=4,threads=1,sockets=1,maxcpus=4 \
+		-hda $(BUILD_DIR)/disk.img \
+		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
+		-serial stdio \
+		-d guest_errors,int,cpu_reset \
+		-D $(DEBUG_DIR)/qemu.log \
+		-vga std
+
 
 
 
