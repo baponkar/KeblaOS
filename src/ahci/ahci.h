@@ -12,7 +12,7 @@ struct ahci_controller {
     uint8_t bus;
     uint8_t device;
     uint8_t function;
-    uint64_t abar;
+    uint64_t abar;      // AHCI Base Address Registe
     bool initialized;
 };
 typedef struct ahci_controller ahci_controller_t;
