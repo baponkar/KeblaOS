@@ -21,6 +21,7 @@
     * Getting Firmware Information
 
 - [x] VGA Framebuffer Driver
+    * Additional functions
 
 - [x] ACPI
     * RSDT
@@ -30,6 +31,7 @@
     * HPET
 
 - [x] AHCI
+    * AHCI SATA Disk Driver
 
 - [x] CPU information and control
     * CPUID
@@ -78,7 +80,7 @@
     * Scheduler
     * Set CPU State by regisers
 
-- [x] Simple User Shell
+- [x] Simple Interactive Kernel Shell (kshell)
 
 - [ ] Future Plans
     * Multitasking by enabling all cores
@@ -88,10 +90,16 @@
     * Nice VGA Driver with GPU
 
 Screenshot 1
-![screenshot 1](./screenshot/screenshot_01.png)
+![screenshot 1](./screenshot/keblaos_screenshot_1.png)
 
 Screenshot 2
-![screenshot 2](./screenshot/keblaOS_0.7.gif)
+![screenshot 2](./screenshot/keblaos_screenshot_2.png)
+
+Screenshot 3
+![screenshot 1](./screenshot/keblaos_screenshot_3.png)
+
+Screenshot 4
+![screenshot 2](./screenshot/keblaos_screenshot_4.png)
 
 ## Used Tools Version :
 - [x] [Limine Bootloader](https://github.com/limine-bootloader/limine) - 8.6.0
