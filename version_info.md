@@ -7,7 +7,7 @@
   <tr><td colspan="2" align="left"><em>Version - 0.13</em></td></tr>
   <tr><td><em>Architecture:</em></td><td><em>x86</em></td></tr>
   <tr><td><em>Bit</em></td><td><em>64</em></td></tr>
-  <tr><td><em>Build Date:</em></td><td><code>16.03.2024</code></td></tr>
+  <tr><td><em>Build Date:</em></td><td><code>06.04.2024</code></td></tr>
 </table>
 
 ----
@@ -81,10 +81,16 @@
     * Set CPU State by regisers
 
 - [x] Simple Interactive Kernel Shell (kshell)
+    * Calculator
+    * Steam Locomotive animation
+
+- [x] Multitasking
+    * Multitasking by enabling all cores
+
+- [x] Filesystem
+    * FAT32 File System
 
 - [ ] Future Plans
-    * Multitasking by enabling all cores
-    * FAT32 File System
     * Usermode
     * System Call
     * Nice VGA Driver with GPU
