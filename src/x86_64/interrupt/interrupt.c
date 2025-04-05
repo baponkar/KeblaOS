@@ -247,21 +247,21 @@ void init_core_interrupt(uint64_t core_id){
     idt_flush((uint64_t) &core_int_ptr[core_id]);
    
     asm volatile("sti");
-    printf("Successfully CPU %d Interrupt Initialized.\n", core_id);
+    printf("[Info] Successfully CPU %d Interrupt Initialized.\n", core_id);
 }
 
 
 void init_bootstrap_interrupt(int bootstrap_core_id){
     init_core_interrupt(bootstrap_core_id);
     
-    printf("Successfully Bootstrap CPU %d Interrupt Initialized.\n", bootstrap_core_id);
+    printf("[Info] Successfully Bootstrap CPU %d Interrupt Initialized.\n", bootstrap_core_id);
 }
 
 
 void init_application_core_interrupt(int start_core_id, int end_core_id){
     for (int core_id = start_core_id; core_id <= end_core_id; core_id++) {
         init_core_interrupt(core_id);
-        printf("Successfully Application CPU %d Interrupt Initialized.\n", core_id);
+        printf("[Info] Successfully Application CPU %d Interrupt Initialized.\n", core_id);
     }
 }
 

@@ -18,6 +18,7 @@ uint64_t kmalloc(uint64_t sz)       // vanilla (normal).
     if(KMEM_LOW_BASE >= KMEM_UP_BASE) return 0;
     uint64_t tmp = (uint64_t) KMEM_LOW_BASE; // memory allocate in current placement address
     KMEM_LOW_BASE += sz;    // increase the placement address for next memory allocation
+
     return tmp;
 }
 
@@ -83,6 +84,44 @@ uint64_t kmalloc_ap(uint64_t sz, int align, uint64_t *phys)  // page aligned and
     return tmp;
 }
 
+bool check_mem_alloc(void *ptr, uint64_t size){
+
+    uintptr_t addr = (uintptr_t) ptr;
+    if (addr == NULL) {
+        // printf("Null pointer\n");
+        return 0;
+    }
+
+    if ((addr & (size - 1)) == 0) {
+        // printf("%x pointer is %d-byte aligned.\n", (uint64_t) ptr, (int) size);
+        return 1;
+    } 
+    // Buffer is not properly aligned.
+    uint64_t alignment = 1; // Start with 1-byte alignment
+
+    // Count trailing zeros
+    while ((addr & 1) == 0) {
+        alignment *= 2;
+        addr >>= 1;
+    }
+    // printf("%x pointer is not %d-byte aligned.\n", (uint64_t) ptr, (int) size);
+    // printf("Pointer %x is aligned to %d bytes.\n", (uint64_t) ptr, alignment);  
+    return 0;  
+}
+
+uint64_t kmalloc_aligned(uint64_t sz, uint64_t alignment) {
+    if (KMEM_LOW_BASE >= KMEM_UP_BASE) return 0;
+
+    // Align the KMEM_LOW_BASE if necessary.
+    if (KMEM_LOW_BASE & (alignment - 1)) {
+        KMEM_LOW_BASE = (KMEM_LOW_BASE + alignment - 1) & ~(alignment - 1);
+    }
+    
+    uint64_t tmp = KMEM_LOW_BASE;
+    KMEM_LOW_BASE += sz;
+    
+    return tmp;
+}
 
 void test_kmalloc(){
     printf("Test of kmalloc\n");

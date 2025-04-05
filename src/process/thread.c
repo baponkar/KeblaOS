@@ -88,51 +88,54 @@ thread_t* create_thread(process_t* parent, const char* name, void (*function)(vo
 
     add_thread(thread);                                 // Add the thread to the parent process's thread list
 
-    printf("Created Thread: %s (TID: %d) at %x | rip : %x | rsp : %x\n", 
-        thread->name, 
-        thread->tid, 
-        (uint64_t)thread, 
-        thread->registers.iret_rip, 
-        thread->registers.iret_rsp);
+    // printf("Created Thread: %s (TID: %d) at %x | rip : %x | rsp : %x\n", 
+    //     thread->name, 
+    //     thread->tid, 
+    //     (uint64_t)thread, 
+    //     thread->registers.iret_rip, 
+    //     thread->registers.iret_rsp);
 
     return thread;
 }
 
 
 
-
+// Remove the thread from the process's thread list
 void remove_thread(thread_t* thread) {
     if (!thread) return;
 
-    // Remove the thread from the process's thread list
     process_t* parent = thread->parent;
     if (!parent) return;
 
-    thread_t* prev = NULL;
-    thread_t* current = parent->threads;
-    while (current) {
-        if (current == thread) {
-            if (prev) {
-                prev->next = current->next;
-            } else {
-                parent->threads = current->next;
-            }
+    while (true) {
+        if (parent->threads == thread) {
+            parent->threads = thread->next; // Remove from head of list
             break;
+        } else {
+            thread_t* current = parent->threads;
+            while (current && current->next) {
+                if (current->next == thread) {
+                    current->next = thread->next; // Remove from middle or end of list
+                    break;
+                }
+                current = current->next;
+            }
         }
-        prev = current;
-        current = current->next;
     }
+    thread->next = NULL; // Clear the next pointer of the removed thread
+    thread->parent = NULL; // Clear the parent pointer   
 }
 
 
 
 void delete_thread(thread_t* thread) {
     if (!thread) return;
-
+    printf("Deleting Thread: %s (TID: %d)\n", thread->name, thread->tid);
     remove_thread(thread); // Remove the thread from the process's thread list
 
     // Free the thread's stack and registers
     kheap_free((void*)(thread->registers.iret_rsp - THREAD_STACK_SIZE), THREAD_STACK_SIZE ); // Free the stack
     kheap_free(thread, sizeof(thread_t)); // Free the thread
+    printf("Thread Deleted: %s (TID: %d)\n", thread->name, thread->tid);
 }
 

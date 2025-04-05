@@ -88,7 +88,7 @@ uint64_t get_cpu_freq_msr() {
 void init_tsc(){
     cpu_frequency_hz1 = get_cpu_freq_msr();
 
-    printf("TSC Timer initialized with CPU Frequency %d Hz\n", cpu_frequency_hz1);
+    printf("[Info] TSC Timer initialized with CPU Frequency %d Hz\n", cpu_frequency_hz1);
 }
 
 

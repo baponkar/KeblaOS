@@ -21,7 +21,7 @@ extern uint64_t V_KMEM_UP_BASE;
 extern uint64_t V_UMEM_LOW_BASE;
 extern uint64_t V_UMEM_UP_BASE;
 
-extern uint64_t PHYSICAL_TO_VIRTUAL_OFFSET;
+extern uint64_t PHYSICAL_TO_VIRTUAL_OFFSET; // 0xFFFFFFFF010CA000
 
 extern pml4_t *current_pml4;
 
@@ -93,6 +93,20 @@ uint64_t phys_to_vir(uint64_t phys){
 // converting virtual to physical address
 uint64_t vir_to_phys(uint64_t va){
     return va - PHYSICAL_TO_VIRTUAL_OFFSET;
+}
+
+bool is_phys_addr(uint64_t addr){
+    if(addr < PHYSICAL_TO_VIRTUAL_OFFSET){
+        return true;
+    }
+    return false;
+}
+
+bool is_virt_addr(uint64_t addr){
+    if(addr < PHYSICAL_TO_VIRTUAL_OFFSET){
+        return false;
+    }
+    return true;
 }
 
 

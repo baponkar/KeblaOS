@@ -61,7 +61,7 @@ process_t* create_process(const char* name) {
     // Add the process to the global process list
     add_process(proc);
 
-    printf("Created Process: %s (PID: %d)\n", proc->name, proc->pid);
+    // printf("Created Process: %s (PID: %d)\n", proc->name, proc->pid);
 
     return proc;
 }
@@ -86,7 +86,6 @@ void remove_process(process_t* proc) {
         prev = current;
         current = current->next;
     }
-
 }
 
 
@@ -100,12 +99,12 @@ void delete_process(process_t* proc) {
     while (true)
     {
         thread_t* thread = proc->threads;
-        if (!thread) break;
-
+        if (!thread) break; // No more threads to delete
         proc->threads = thread->next;
         delete_thread(thread);
     }
 
+    printf("Deleting Process: %s (PID: %d)\n", proc->name, proc->pid);
     kheap_free(proc, sizeof(process_t));
 }
 
@@ -148,7 +147,27 @@ registers_t* schedule(registers_t* registers) {
 
 
 
+void print_process_list() {
+    process_t* current = processes_list;
+    printf("Current Running Process:\n");
+    while (current) {
+        printf("PID: %d, Name: %s, Status: %d\n", current->pid, current->name, current->status);
+        current = current->next;
+    }
+}
 
 
+process_t* get_process_by_pid(size_t pid) {
+    process_t* current = processes_list;
+    while (current) {
+        if (current->pid == pid) {
+            return current;
+        }
+        current = current->next;
+    }
+    return NULL; // Not found
+}
 
-
+process_t * get_current_process() {
+    return processes_list; // Return the current process
+}

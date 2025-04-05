@@ -38,7 +38,7 @@ volatile uint64_t hpet_ticks = 0;
 void init_hpet() {
     uint32_t *hpet = (uint32_t *) hpet_addr;
     if (!hpet_addr) {
-        printf("HPET address not initialized!\n");
+        printf("[Info] HPET address not initialized!\n");
         return;
     }
 
@@ -47,7 +47,7 @@ void init_hpet() {
                    ((uint64_t)ioapic_read((uint32_t)hpet + HPET_CAPABILITIES + 4) << 32);
     uint32_t period = (uint32_t)(cap_reg && 0xFFFFFFFF); // Extract lower 32 bits
     if (period == 0) {
-        printf("HPET period is invalid!\n");
+        printf("[Info] HPET period is invalid!\n");
         return;
     }
 
@@ -75,19 +75,19 @@ void hpet_irq_handler(registers_t *regs) {
 
 void hpet_init() {
     if (!has_apic()) {
-        printf("APIC not supported!\n");
+        printf("[Info] APIC not supported!\n");
         return;
     }
     
     init_hpet();           // Configure HPET
     enable_ioapic_mode();
     interrupt_install_handler(HPET_VECTOR - 32, hpet_irq_handler); // Install handler for vector 48
-    printf("HPET Timer Started\n");
+    printf("[Info] HPET Timer Started\n");
 }
 
 void hpet_sleep(uint32_t ms) {
     if (!hpet_addr) {
-        printf("HPET address not initialized!\n");
+        printf("[Info] HPET address not initialized!\n");
         return;
     }
 
@@ -98,7 +98,7 @@ void hpet_sleep(uint32_t ms) {
     uint32_t period = (uint32_t)(cap_reg >> 32);
 
     if (period == 0) {
-        printf("HPET period is invalid!\n");
+        printf("[Info] HPET period is invalid!\n");
         return;
     }
 

@@ -103,7 +103,7 @@ void calibrate_apic_timer_tsc() {
     // printf("APIC Timer Frequency: %d ticks/ms\n", apic_timer_ticks_per_ms);
 }
 
-#include "../../driver/vga/vga_term.h"
+
 
 void apic_timer_handler(registers_t *regs) {
     if(apic_ticks >= MAX_APIC_TICKS) apic_ticks = 0;
@@ -178,7 +178,7 @@ void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large cou
     interrupt_install_handler((APIC_TIMER_VECTOR - 32), &apic_timer_handler);
     asm volatile("sti");
 
-    printf("APIC Timer initialized with %d ms interval in CPU: %d.\n", interval_ms, get_lapic_id());
+    printf("[Info] APIC Timer initialized with %d ms interval in CPU: %d.\n", interval_ms, get_lapic_id());
 }
 
 

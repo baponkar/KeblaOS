@@ -62,7 +62,7 @@ void disable_pic() {
     outb(PIC1_DATA_PORT, 0xFF);     // Mask all interrupts
     outb(PIC2_DATA_PORT, 0xFF);     // Mask all interrupts
 
-    printf("PIC Disabled.\n");
+    printf("[Info] PIC Disabled.\n");
 }
 
 
@@ -72,7 +72,7 @@ void init_pic_interrupt(){
     pic_irq_remap();
    
     asm volatile("sti");
-    printf("Successfully PIC Initialized.\n");
+    printf("[Info] Successfully PIC Initialized.\n");
 }
 
 

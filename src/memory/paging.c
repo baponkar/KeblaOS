@@ -140,7 +140,7 @@ void init_paging()
     // asm volatile("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "rax");
     flush_tlb_all();
     
-    printf("Successfully Paging initialized.\n");
+    printf("[Info] Successfully Paging initialized.\n");
 }
 
 

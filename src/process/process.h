@@ -43,3 +43,6 @@ void delete_process(process_t* proc);
 
 registers_t* schedule(registers_t* registers);
 
+process_t* get_process_by_pid(size_t pid);
+process_t * get_current_process();
+void print_process_list();

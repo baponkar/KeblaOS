@@ -9,7 +9,7 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_K
 #include "../../lib/stdlib.h"
 #include "../../lib/string.h"
 #include "../../lib/stdio.h"
-#include "../../usr/ring_buffer.h"
+#include "../../kshell/ring_buffer.h"
 #include "../../driver/speaker/speaker.h"
 #include "../../driver/io/ports.h"
 #include "../../driver/vga/vga_term.h"
@@ -231,7 +231,7 @@ void keyboardHandler(registers_t *regs){
 
 void initKeyboard(){
     enableKeyboard();
-    printf("Successfully KEYBOARD initialized.\n");
+    printf("[Info] Successfully KEYBOARD initialized.\n");
 }
 
 void enableKeyboard(){

@@ -1,3 +1,5 @@
+// https://notisrac.github.io/FileToCArray/
+
 #pragma once 
 #include <stdint.h>
 
@@ -18,3 +20,7 @@ extern uint64_t happy_diwali[];
 #define KEBLAOS_LOGO_BLACK_AND_WHITE_HEIGHT 400
 #define KEBLAOS_LOGO_BLACK_AND_WHITE_WIDTH 400
 extern uint64_t keblaos_logo_black_and_white[];
+
+#define KEBLAOS_HEIGHT 400
+#define KEBLAOS_WIDTH 400
+extern uint64_t KeblaOS[];

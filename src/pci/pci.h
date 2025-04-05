@@ -14,7 +14,15 @@ struct pci_device_type{
 };
 typedef struct pci_device_type pci_device_type_t ;
 
-
+// Represents an AHCI controller on the PCI bus.
+struct ahci_controller {
+    uint8_t bus;
+    uint8_t device;
+    uint8_t function;
+    uint64_t abar;      // AHCI Base Address Registe
+    bool initialized;
+};
+typedef struct ahci_controller ahci_controller_t;
 
 typedef enum {
     PCI_CLASS_UNCLASSIFIED = 0x0,

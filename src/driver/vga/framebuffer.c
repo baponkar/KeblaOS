@@ -88,3 +88,12 @@ void get_fb_info(){
     fb_modes = framebuffer0->modes;
 }
 
+uint64_t get_fb_width(){
+    return fb_width;
+}
+uint64_t get_fb_height(){
+    return fb_height;
+}
+uint64_t get_fb_pitch(){
+    return fb_pitch;
+}

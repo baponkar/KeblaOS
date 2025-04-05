@@ -8,7 +8,8 @@ Reference   : https://wiki.osdev.org/Limine
               https://wiki.osdev.org/Limine_Bare_Bones
               https://wiki.osdev.org/SSE
 */
-
+#include "../driver/vga/vga_gfx.h"
+#include "../driver/vga/framebuffer.h"
 #include "../process/process.h" 
 #include "../process/test_process.h"
 #include "../acpi/acpi.h"               // init_acpi
@@ -48,10 +49,12 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../x86_64/timer/pit_timer.h"   // init_timer
 #include "../x86_64/timer/apic_timer.h"  // apic timer
 #include "../x86_64/timer/hpet_timer.h"  // hpet timer
-#include "../usr/shell.h"
-#include "../usr/ring_buffer.h"
-#include "../usr/switch_to_user.h"
-#include "../usr/syscall.h"
+#include "../kshell/kshell.h"
+#include "../kshell/ring_buffer.h"
+
+#include "../syscall/switch_to_user.h"
+#include "../syscall/syscall.h"
+
 #include "../file_system/fs.h"
 #include "../driver/vga/color.h"
 
@@ -86,58 +89,47 @@ void kmain(){
     init_pmm();
     init_paging();
 
-    // if(has_apic()){
-    //     set_ap_stacks(1, 3);                 // Initialize stacks for other cores
-    //     start_secondary_cpu_cores(1, 3);     // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
+    if(has_apic()){
+        set_ap_stacks(1, 3);                 // Initialize stacks for other cores
+        start_secondary_cpu_cores(1, 3);     // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
+    }
+
+    if(has_fpu()){
+        enable_fpu_and_sse();
+    }
+
+    pci_scan();
+    printf("sata bus:%d, device: %d, function: %d, abar: %x, initialized: %d\n", 
+        sata_disk.bus, sata_disk.device, sata_disk.function, sata_disk.abar, sata_disk.initialized);
+    
+    // Test AHCI drivers for a successful read
+    // HBA_MEM_T* host = (HBA_MEM_T*) sata_disk.abar;
+    // probePort(host);
+
+    // uint16_t* s = (uint16_t*)(uintptr_t)kmalloc(0x8000);
+    // if (ahci_read(&host->ports[0], 2, 0, 1, s))
+    // {
+    //    printf("\nFile successfully read!\n", 25);
     // }
+
+    // ahci_test(host);
+
 
     printf("--------------------------------------\n");
 
-    // start_shell();
 
-    pci_scan();
-    ahci_init();
+    apic_delay(1000);
+    clear_screen();
+    load_image_with_animation(
+        (get_fb_width() - KEBLAOS_WIDTH) / 2,
+        (get_fb_height() - KEBLAOS_HEIGHT) / 2,  
+        KeblaOS, 
+        KEBLAOS_WIDTH, 
+        KEBLAOS_HEIGHT
+    );
+    
 
-    if (sata_disk.abar != 0) {
-
-        char *buffer = (char *) kmalloc_a(512, 1);
-        memset(buffer, 0, 512); // Clearing buffer
-
-        if(ahci_read(0, 1, (void *)buffer) == 0) { 
-            printf("Disk Read Successful!\n");
-        
-            // Check MBR signature (last 2 bytes of sector)
-            if (buffer[510] == 0x55 && buffer[511] == 0xAA) {
-                printf("Valid MBR Signature found!\n");
-            } else {
-                printf("No MBR found. Disk may be empty or unformatted.\n");
-            }
-        } else {
-            printf("AHCI Read Failed!\n");
-        }
-
-        char *write_buffer = (char *) kmalloc_a(512, 1);
-        memset(write_buffer, 'A', 512);  // Fill buffer with 'A'
-
-        if(ahci_write(1, 1, write_buffer) == 0) {
-            printf("AHCI Write Successful at LBA 1!\n");
-        } else {
-            printf("AHCI Write Failed!\n");
-        }
-
-        char *read_buffer = (char *) kmalloc_a(512, 1);
-        memset(read_buffer, 0, 512);
-
-        if (ahci_read(1, 1, read_buffer) == 0) {
-            if (memcmp(write_buffer, read_buffer, 512) == 0) {
-                printf("Write Verification Successful! Data matches. %x\n", *write_buffer);
-            } else {
-                printf("Write Verification Failed! Data does not match.\n");
-            }
-        } else {
-            printf("Failed to read back written data.\n");
-        }
-    }
+    start_kshell();
 
     halt_kernel();
 }

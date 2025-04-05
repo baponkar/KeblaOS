@@ -39,6 +39,7 @@ void get_bios_disk_info(void) {
     }
     printf("SMBIOS info found!\n");
 }
+
 void get_uefi_disk_info(void) {
     if (efi_system_table_request.response == NULL) {
         printf("UEFI firmware type not detected!\n");
@@ -50,6 +51,8 @@ void get_uefi_disk_info(void) {
     else
         printf("UEFI System Table not found!\n");
 }
+
+
 // Get disk info based on the system firmware type (a system variable)
 void get_disk_info(void) {
     if (FIRMWARE_TYPE == NULL) {

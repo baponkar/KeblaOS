@@ -1,12 +1,19 @@
 /*
 
 */
+
 #include "color.h"
 #include "framebuffer.h"
 #include "vga_settings.h"
 #include "vga_term.h"
 
 #include "../../lib/stdlib.h"
+#include "../../lib/math.h"
+#include "../../lib/stdio.h"
+#include "../../lib/stdlib.h"
+
+
+#include "../../x86_64/timer/apic_timer.h"
 
 #include "vga_gfx.h"
 
@@ -204,3 +211,127 @@ void display_image( int x, int y, const uint64_t* image_data, int img_width, int
         }
     }
 }
+
+
+void animation_demo() {
+    cls_color(0x000000); // Clear screen to black
+
+    int center_x = 400, center_y = 300; // screen center (assuming 800x600 resolution)
+    int radius = 10;
+    int growing = 1;
+
+    int rect_x = 0;
+    int rect_y = 500;
+    int rect_width = 80;
+    int rect_height = 40;
+
+    uint64_t colors[] = {0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00}; // red, green, blue, yellow
+    int color_index = 0;
+    
+    for (int frame = 0; frame < 500; frame++) {
+        // Clear the screen
+        cls_color(0x000000);
+
+        // 1. Draw a growing and shrinking circle at center
+        fill_circle(center_x, center_y, radius, colors[color_index]);
+
+        if (growing) {
+            radius += 2;
+            if (radius >= 80) {
+                growing = 0;
+                color_index = (color_index + 1) % 4;
+            }
+        } else {
+            radius -= 2;
+            if (radius <= 10) {
+                growing = 1;
+                color_index = (color_index + 1) % 4;
+            }
+        }
+
+        // 2. Draw a moving rectangle horizontally
+        fill_rectangle(rect_x, rect_y, rect_width, rect_height, 0x00FFFF); // Cyan rectangle
+        rect_x += 5;
+        if (rect_x > 800) rect_x = -rect_width; // Wrap around when off screen
+
+        // 3. Draw a bouncing line
+        int line_y = (frame % 600);
+        draw_line(0, line_y, 800, 600 - line_y, 0xFF00FF); // Pink line
+
+        // 4. Small spinning triangle around center
+        int angle = frame % 360;
+        int x1 = center_x + 50 * cos(angle * 3.1415 / 180);
+        int y1 = center_y + 50 * sin(angle * 3.1415 / 180);
+        int x2 = center_x + 50 * cos((angle + 120) * 3.1415 / 180);
+        int y2 = center_y + 50 * sin((angle + 120) * 3.1415 / 180);
+        int x3 = center_x + 50 * cos((angle + 240) * 3.1415 / 180);
+        int y3 = center_y + 50 * sin((angle + 240) * 3.1415 / 180);
+        fill_triangle(x1, y1, x2, y2, x3, y3, 0xFFFFFF); // White triangle
+
+        // Short delay between frames
+        apic_delay(16); // ~16 milliseconds for ~60 FPS
+    }
+}
+
+
+void flower_bloom_animation(int center_x, int center_y) {
+    int max_radius = 100; // Maximum size of flower
+    int petals = 12;      // Number of petals
+    uint64_t petal_color = 0xFFFF00FF; // Pinkish
+    uint64_t center_color = 0xFFFFFF00; // Yellow
+    uint64_t background_color = 0xFF000000; // Black background
+
+    cls_color(background_color); // Clear screen first
+
+    for (int r = 0; r <= max_radius; r += 2) { // Slowly grow
+        cls_color(background_color); // Clear screen each frame
+
+        // Draw petals
+        for (int i = 0; i < petals; i++) {
+            double angle_deg = (360.0 / petals) * i;
+            double angle_rad = to_radians(angle_deg);
+
+            int petal_center_x = center_x + (int)(r * 0.5 * cos(angle_rad));
+            int petal_center_y = center_y + (int)(r * 0.5 * sin(angle_rad));
+
+            fill_circle(petal_center_x, petal_center_y, r / 4, petal_color);
+        }
+
+        // Draw flower center
+        fill_circle(center_x, center_y, r / 6, center_color);
+
+        apic_delay(50); // Small delay
+    }
+
+    // After bloom complete, hold final image
+    apic_delay(1000);
+}
+
+
+void load_image_with_animation(int x, int y, const uint64_t* image_data, int img_width, int img_height) {
+    clear_screen(); // Clear screen first
+    int bar_width = 10; // Width of the loading bar (pixels)
+
+    cls_color(0xFF000000); // Clear screen to black first
+
+    for (int offset = 0; offset <= img_width; offset += bar_width) {
+        // Draw only part of the image (from left to right)
+        for (int i = 0; i < img_height; i++) {
+            for (int j = 0; j < offset && j < img_width; j++) {
+                uint64_t color = image_data[i * img_width + j];
+                fill_rectangle(x + j, y + i, 1, 1, color);
+            }
+        }
+
+        apic_delay(300); // Small delay to make the loading visible
+    }
+
+    // After animation is complete, show the full image cleanly
+    display_image(x, y, image_data, img_width, img_height);
+    apic_delay(2500); // Hold the image for a moment before clearing
+    
+    clear_screen(); // Clear screen again
+}
+
+
+
