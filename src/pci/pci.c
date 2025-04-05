@@ -31,7 +31,7 @@
 #define BIST_HEADER_LATENCY_CACHE_LINE_OFFSET 0xC
 
 
-extern ahci_controller_t sata_disk;
+ahci_controller_t sata_disk;
 ahci_controller_t network_controller;
 
 
@@ -75,7 +75,7 @@ int detect_sata_disk(uint8_t bus, uint8_t device, uint8_t function,
                 sata_disk.device = device;
                 sata_disk.function = function;
                 sata_disk.abar = ((uint64_t)bar_high << 32) | ((uint64_t)bar_low & ~0xFULL);
-                sata_disk.initialized = true;
+                sata_disk.initialized = false; // This sata drive will initialized by ahci
 
                 return 1;
             }
@@ -191,7 +191,6 @@ void pci_scan() {
 
         // Check if the device exists
         if (device_id == 0xFFFF | vendor_id == 0xFFFF) {
-            // printf("Skipping bus: %d - device: %d - function: %d\n",bus, device, function );
             continue; // Invalid device
         }
         
@@ -215,15 +214,13 @@ void pci_scan() {
         uint8_t cache_line_size = (_bist >> 0) & 0xFF;  // lower 8 bit
 
         // printf("bus: %d - device: %d - function: %d\n",bus, device, function );
-        printf("Header Type: %x => Device ID: %x, Vendor ID: %x, class: %x, subclass: %x, prog_if: %x\n",
-            header_type, device_id, vendor_id, class, subclass, prog_if);
+        /*printf("Header Type: %x => Device ID: %x, Vendor ID: %x, class: %x, subclass: %x, prog_if: %x\n",
+            header_type, device_id, vendor_id, class, subclass, prog_if);*/
 
         // Detecting SATA Disk and storing into sata_disks array
         int found_sata = detect_sata_disk(bus, device, function, class, subclass, prog_if, revision);
-
         // Detecting Network Controller
         int found_network = detect_network_controller(bus, device, function, class, subclass, prog_if, revision);
-
         // Detecting Wireless controller
         int found_wireless = detect_wireless_controller(bus, device, function, class, subclass, prog_if, revision);
     }

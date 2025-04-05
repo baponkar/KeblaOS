@@ -88,7 +88,7 @@ void init_pit_timer(uint32_t interval_ms) {
 
     asm volatile("sti");
     
-    printf("PIT Timer initialized with %d ms interval (divisor: %d, frequency: %d Hz)\n", interval_ms, divisor, frequency);
+    printf("[Info] PIT Timer initialized with %d ms interval (divisor: %d, frequency: %d Hz)\n", interval_ms, divisor, frequency);
 }
 
 

@@ -110,7 +110,7 @@ void init_apic_interrupt(){
 
     asm volatile("sti");
 
-    printf("Successfully APIC Interrupt enabled in CPU: %d.\n", get_lapic_id());
+    printf("[Info] Successfully APIC Interrupt enabled in CPU: %d.\n", get_lapic_id());
 }
 
 

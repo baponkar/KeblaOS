@@ -19,7 +19,9 @@ extern uint64_t fb_size;
 
 void get_fb_info();
 
-
+uint64_t get_fb_width();
+uint64_t get_fb_height();
+uint64_t get_fb_pitch();
 
 
 

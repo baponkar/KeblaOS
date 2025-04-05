@@ -26,7 +26,8 @@ GDT_DIR = $(SRC_DIR)/x86_64/gdt
 INT_DIR = $(SRC_DIR)/x86_64/interrupt
 TIMER_DIR = $(SRC_DIR)/x86_64/timer
 MEMORY_DIR = $(SRC_DIR)/memory
-USR_DIR = $(SRC_DIR)/usr
+SYSCALL_DIR = $(SRC_DIR)/syscall
+KSHELL_DIR = $(SRC_DIR)/kshell
 PS_DIR = $(SRC_DIR)/process
 FS_DIR = $(SRC_DIR)/file_system
 
@@ -119,6 +120,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(LIB_DIR)/string.c -o $(BUILD_DIR)/string.o
 	$(GCC) $(GCC_FLAG) -c $(LIB_DIR)/stdlib.c -o $(BUILD_DIR)/stdlib.o
 	$(GCC) $(GCC_FLAG) -c $(LIB_DIR)/stdio.c -o $(BUILD_DIR)/stdio.o
+	$(GCC) $(GCC_FLAG) -c $(LIB_DIR)/math.c -o $(BUILD_DIR)/math.o
 
 # GDT
 	$(GCC) $(GCC_FLAG) -c $(GDT_DIR)/gdt.c -o $(BUILD_DIR)/gdt.o
@@ -159,19 +161,20 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/test_process.c -o $(BUILD_DIR)/test_process.o
 
 
-#user shell
-	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/shell.c -o $(BUILD_DIR)/shell.o
-	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/ring_buffer.c -o $(BUILD_DIR)/ring_buffer.o
-	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/switch_to_user.c -o $(BUILD_DIR)/switch_to_user.o
-	$(NASM) $(NASM_FLAG) $(USR_DIR)/switch_to_user.asm -o $(BUILD_DIR)/switch_to_user_asm.o
-#	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/user.c -o $(BUILD_DIR)/user.o
+#kernel shell
+	$(GCC) $(GCC_FLAG) -c $(KSHELL_DIR)/kshell.c -o $(BUILD_DIR)/kshell.o
+	$(GCC) $(GCC_FLAG) -c $(KSHELL_DIR)/ring_buffer.c -o $(BUILD_DIR)/ring_buffer.o
+	$(GCC) $(GCC_FLAG) -c $(KSHELL_DIR)/kshell_helper.c -o $(BUILD_DIR)/kshell_helper.o
+	$(GCC) $(GCC_FLAG) -c $(KSHELL_DIR)/calculator.c -o $(BUILD_DIR)/calculator.o
 
-#system call
-	$(GCC) $(GCC_FLAG) -c $(USR_DIR)/syscall.c -o $(BUILD_DIR)/syscall.o
-	$(NASM) $(NASM_FLAG) $(USR_DIR)/syscall.asm -o $(BUILD_DIR)/syscall_asm.o
+#syscall
+	$(GCC) $(GCC_FLAG) -c $(SYSCALL_DIR)/switch_to_user.c -o $(BUILD_DIR)/switch_to_user.o
+	$(NASM) $(NASM_FLAG) $(SYSCALL_DIR)/switch_to_user.asm -o $(BUILD_DIR)/switch_to_user_asm.o
+	$(GCC) $(GCC_FLAG) -c $(SYSCALL_DIR)/syscall.c -o $(BUILD_DIR)/syscall.o
+	$(NASM) $(NASM_FLAG) $(SYSCALL_DIR)/syscall.asm -o $(BUILD_DIR)/syscall_asm.o
 
 #file system
-	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fs.c -o $(BUILD_DIR)/fs.o
+#	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fs.c -o $(BUILD_DIR)/fs.o
 
 # Linking object files into kernel binary
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
@@ -188,6 +191,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/string.o \
 						$(BUILD_DIR)/stdlib.o \
 						$(BUILD_DIR)/stdio.o \
+						$(BUILD_DIR)/math.o \
 						$(BUILD_DIR)/vga_term.o \
 						$(BUILD_DIR)/gdt.o \
 						$(BUILD_DIR)/gdt_load.o \
@@ -212,8 +216,10 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/hpet_timer.o \
 						$(BUILD_DIR)/rtc.o \
 						$(BUILD_DIR)/keyboard.o  \
-						$(BUILD_DIR)/shell.o \
+						$(BUILD_DIR)/kshell.o \
+						$(BUILD_DIR)/kshell_helper.o \
 						$(BUILD_DIR)/ring_buffer.o \
+						$(BUILD_DIR)/calculator.o \
 						$(BUILD_DIR)/switch_to_user.o \
 						$(BUILD_DIR)/switch_to_user_asm.o \
 						$(BUILD_DIR)/syscall.o \
@@ -224,7 +230,6 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/thread.o \
 						$(BUILD_DIR)/test_process.o \
 						$(BUILD_DIR)/disk.o \
-						$(BUILD_DIR)/fs.o \
 						$(BUILD_DIR)/cpu.o \
 						$(BUILD_DIR)/cpuid.o \
 						$(BUILD_DIR)/cpuid_asm.o \
@@ -253,6 +258,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 														$(BUILD_DIR)/string.o \
 														$(BUILD_DIR)/stdlib.o \
 														$(BUILD_DIR)/stdio.o \
+														$(BUILD_DIR)/math.o \
 														$(BUILD_DIR)/vga_term.o \
 														$(BUILD_DIR)/gdt.o \
 														$(BUILD_DIR)/gdt_load.o \
@@ -277,8 +283,10 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 														$(BUILD_DIR)/hpet_timer.o \
 														$(BUILD_DIR)/rtc.o \
 														$(BUILD_DIR)/keyboard.o \
-														$(BUILD_DIR)/shell.o \
+														$(BUILD_DIR)/kshell.o \
+														$(BUILD_DIR)/kshell_helper.o \
 														$(BUILD_DIR)/ring_buffer.o \
+														$(BUILD_DIR)/calculator.o \
 														$(BUILD_DIR)/switch_to_user.o \
 														$(BUILD_DIR)/switch_to_user_asm.o \
 														$(BUILD_DIR)/syscall.o \
@@ -289,7 +297,6 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 														$(BUILD_DIR)/thread.o \
 														$(BUILD_DIR)/test_process.o \
 														$(BUILD_DIR)/disk.o \
-														$(BUILD_DIR)/fs.o \
 														$(BUILD_DIR)/cpu.o \
 														$(BUILD_DIR)/cpuid.o \
 														$(BUILD_DIR)/cpuid_asm.o \

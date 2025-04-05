@@ -2,55 +2,58 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
+
+#include  "../ahci/ahci.h"
+
+#define FS_MAGIC 0x46534653 // 'FSFS'
+#define BLOCK_SIZE 512
+#define INODE_COUNT 1024
+#define DIRECT_BLOCKS 12
+#define INDIRECT_BLOCKS (BLOCK_SIZE / sizeof(uint32_t))
+
+typedef struct __attribute__((packed)) {
+    uint32_t magic;
+    uint32_t version;
+    uint32_t block_size;
+    uint32_t total_blocks;
+    uint32_t inode_count;
+    uint32_t inode_table_start;
+    uint32_t inode_table_blocks;
+    uint32_t bitmap_start;
+    uint32_t bitmap_blocks;
+    uint32_t data_start;
+} Superblock;
+
+typedef struct __attribute__((packed)) {
+    uint32_t mode;
+    uint32_t size;
+    uint32_t blocks[DIRECT_BLOCKS];
+    uint32_t indirect_block;
+} Inode;
+
+typedef struct __attribute__((packed)) {
+    char name[28];
+    uint32_t inode_num;
+} DirEntry;
+
+// Function prototypes
+bool format_fs(HBA_PORT_T *port);
+bool fs_init(HBA_PORT_T *port);
+bool read_superblock(HBA_PORT_T *port, Superblock *sb);
+bool write_superblock(HBA_PORT_T *port, Superblock *sb);
+uint32_t allocate_block(HBA_PORT_T *port);
+bool free_block(HBA_PORT_T *port, uint32_t block);
+bool get_inode(HBA_PORT_T *port, uint32_t inode_num, Inode *inode);
+bool put_inode(HBA_PORT_T *port, uint32_t inode_num, Inode *inode);
+
+int read_file(HBA_PORT_T *port, uint32_t inode_num, uint8_t *buf, uint32_t size, uint32_t offset);
+int write_file(HBA_PORT_T *port, uint32_t inode_num, uint8_t *buf, uint32_t size, uint32_t offset);
+bool create_file(HBA_PORT_T *port, uint32_t parent_inode, const char *name, uint32_t *new_inode);
+
+bool list_directory(HBA_PORT_T *port, uint32_t inode_num);
 
 
-typedef struct {
-    uint8_t  jump[3];
-    uint8_t  oemName[8];
-    uint16_t bytesPerSector;
-    uint8_t  sectorsPerCluster;
-    uint16_t reservedSectors;
-    uint8_t  numFATs;
-    uint16_t rootEntryCount;
-    uint16_t totalSectors16;
-    uint8_t  media;
-    uint16_t FATSize16;
-    uint16_t sectorsPerTrack;
-    uint16_t numHeads;
-    uint32_t hiddenSectors;
-    uint32_t totalSectors32;
-    // Extended Boot Record
-    uint8_t  driveNumber;
-    uint8_t  reserved1;
-    uint8_t  bootSignature;
-    uint32_t volumeID;
-    uint8_t  volumeLabel[11];
-    uint8_t  fileSystemType[8];
-    uint8_t  bootCode[448];
-    uint16_t bootSectorSignature; // Should be 0xAA55
-} FAT16_BootSector;
-
-typedef struct {
-    uint8_t  name[11];     // 8.3 filename
-    uint8_t  attr;         // File attributes
-    uint8_t  ntRes;        // Reserved
-    uint8_t  crtTimeTenth; // Creation time (tenths of a second)
-    uint16_t crtTime;      // Creation time
-    uint16_t crtDate;      // Creation date
-    uint16_t lstAccDate;   // Last access date
-    uint16_t fstClusHI;    // High word of first cluster (unused in FAT16)
-    uint16_t wrtTime;      // Last write time
-    uint16_t wrtDate;      // Last write date
-    uint16_t fstClusLO;    // First cluster (low word)
-    uint32_t fileSize;     // File size in bytes
-} FAT16_DirEntry;
-
-
-/// Initialize the FAT16 filesystem.
-int fat16_init();
-
-/// List files in the FAT16 root directory.
-void fat16_list_root_dir();
-
+void ahci_test(HBA_MEM_T *abar);
 
 

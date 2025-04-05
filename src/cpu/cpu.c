@@ -141,7 +141,7 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
         break;
     }
 
-    printf("CPU %d: APIC Timer initialized!\n", core_id);
+    printf("[Info] CPU %d: APIC Timer initialized!\n", core_id);
 
     // Route IRQs to the current core
     uint32_t lapic_flags = (0 << 8) | (0 << 13) | (0 << 15);
@@ -194,7 +194,7 @@ void switch_to_core(uint32_t target_lapic_id) {
             break;
         }
     }
-    printf("Successfully Switched  into CPU %d.\n", target_lapic_id);
+    printf("[Info] Successfully Switched  into CPU %d.\n", target_lapic_id);
 }
 
 
@@ -238,7 +238,7 @@ void start_bootstrap_cpu_core() {
     initKeyboard();
 
     asm volatile("sti");
-    printf("Bootstrap CPU initialized...\n\n");
+    printf("[Info] Bootstrap CPU initialized...\n");
 }
 
 
@@ -273,7 +273,7 @@ void init_all_cpu_cores() {
 
 
 void get_cpu_info(){
-    if(!smp_request.response) printf("No CPU info found!\n");
+    if(!smp_request.response) printf("[Info] No CPU info found!\n");
 
     uint64_t revision = smp_request.response->revision;
     uint32_t flags = smp_request.response->flags;
@@ -297,7 +297,7 @@ void get_cpu_info(){
 
 // Debugging
 void print_cpu_info(){
-    if(!smp_request.response) printf("No CPU info found!\n");
+    if(!smp_request.response) printf("[Info] No CPU info found!\n");
     
     uint64_t revision = smp_request.response->revision;
     uint32_t flags = smp_request.response->flags;
@@ -305,7 +305,7 @@ void print_cpu_info(){
     uint64_t cpu_count = smp_request.response->cpu_count;
     struct limine_smp_info ** cpus = smp_request.response->cpus;
 
-    printf("CPU info : \nRevision : %d, Flags : %d, BSP LAPIC ID : %d, CPU count : %d\n", revision, flags, bsp_lapic_id, cpu_count);
+    printf("[Info] CPU info : \nRevision : %d, Flags : %d, BSP LAPIC ID : %d, CPU count : %d\n", revision, flags, bsp_lapic_id, cpu_count);
 
     for(size_t i=0; i<(size_t) cpu_count; i++){
         uint32_t processor_id = cpus[i]->processor_id;
@@ -314,7 +314,7 @@ void print_cpu_info(){
         limine_goto_address goto_address = cpus[i]->goto_address;
         uint64_t extra_argument = cpus[i]->extra_argument;
 
-        printf("Processor ID : %d, LAPIC ID : %d, Reserved : %x, Extra argument : %x\n", processor_id,lapic_id, reserved, extra_argument );
+        printf("[Info] Processor ID : %d, LAPIC ID : %d, Reserved : %x, Extra argument : %x\n", processor_id,lapic_id, reserved, extra_argument );
     }
 }
 

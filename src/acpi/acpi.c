@@ -73,15 +73,15 @@ void validate_rsdp_table(rsdp_t *rsdp){
                 sum += ptr[i];
             }
             if((sum % 256) == 0){
-                printf("ACPI %d.0 is signature and checksum validated\n", acpi_version);
+                printf("[Info] ACPI %d.0 is signature and checksum validated\n", acpi_version);
             }else{
-                printf("ACPI %d.0 is not checksum validated\n", acpi_version);
+                printf("[Info] ACPI %d.0 is not checksum validated\n", acpi_version);
             }
         }else{
-            printf("ACPI %d.0 is not signature validated\n", acpi_version);
+            printf("[Info] ACPI %d.0 is not signature validated\n", acpi_version);
         }
     }else{
-        printf("ACPI Table not found\n");
+        printf("[Info] ACPI Table not found\n");
     }
 }
 
@@ -149,7 +149,7 @@ void parse_rsdt_table(rsdp_t *rsdp){
 int is_acpi_enabled() {
     fadt_t *fadt = (fadt_t *)fadt_addr;
     if (!fadt) {
-        printf("FADT not found! ACPI status unknown.\n");
+        printf("[Info] FADT not found! ACPI status unknown.\n");
         return -1;
     }
 
@@ -160,17 +160,17 @@ int is_acpi_enabled() {
     // printf("FADT X_PM1a Control Block: %x\n", fadt->X_PM1aControlBlock.Address);
 
     if (!pm1a_control) {
-        printf("PM1a Control Block not found!\n");
+        printf("[Info] PM1a Control Block not found!\n");
         return -1;
     }
 
     uint16_t acpi_status = inw(pm1a_control); // Read PM1a Control Block register
 
     if (acpi_status & 1) { // Check SCI_EN (Bit 0)
-        printf("ACPI is ENABLED.\n");
+        printf("[Info] ACPI is ENABLED.\n");
         return 1;
     } else {
-        printf("ACPI is DISABLED.\n");
+        printf("[Info] ACPI is DISABLED.\n");
         return 0;
     }
 }
@@ -179,7 +179,7 @@ int is_acpi_enabled() {
 void acpi_enable() {
     fadt_t *fadt = (fadt_t *) fadt_addr;
     if (!fadt) {
-        printf("FADT not found, ACPI cannot be enabled!\n");
+        printf("[Info] FADT not found, ACPI cannot be enabled!\n");
         return;
     }
 
@@ -189,7 +189,7 @@ void acpi_enable() {
 
         // Wait a bit for ACPI mode to activate
         for (volatile int i = 0; i < 100000; i++);
-        printf("Succesfully ACPI Mode enable\n");
+        printf("[Info] Succesfully ACPI Mode enable\n");
     }
 }
 
