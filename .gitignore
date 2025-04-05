@@ -6,5 +6,6 @@ objdump.txt
 serial_output.log
 qemu.log 
 
+lvgl/*
 
 
