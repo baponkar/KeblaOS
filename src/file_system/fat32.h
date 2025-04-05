@@ -57,6 +57,21 @@ typedef struct {
     uint32_t root_dir_first_cluster;
 } fat32_info_t;
 
+typedef struct {
+    char name[11];
+    uint8_t attr;
+    uint8_t reserved;
+    uint8_t crtTimeTenth;
+    uint16_t crtTime;
+    uint16_t crtDate;
+    uint16_t lstAccDate;
+    uint16_t fstClusHI;
+    uint16_t wrtTime;
+    uint16_t wrtDate;
+    uint16_t fstClusLO;
+    uint32_t fileSize;
+} __attribute__((packed)) DIR_ENTRY;
+
 extern fat32_info_t fat32_info;
 
 bool fat32_init(HBA_PORT_T* port);
@@ -84,6 +99,16 @@ uint32_t fat32_get_file_attributes(const char* filename);
 uint32_t fat32_get_file_first_cluster(const char* filename);
 uint32_t fat32_get_file_first_sector(const char* filename);
 uint32_t fat32_get_file_first_offset(const char* filename); 
+uint32_t fat32_allocate_cluster();
+void fat32_set_cluster(uint32_t cluster, uint32_t value);
+uint32_t fat32_get_file_size(const char* filename);
 
 
 void fat32_run_tests(HBA_PORT_T* global_port);
+
+bool fat32_create_directory(const char* name);
+bool fat32_find_free_entry(uint32_t cluster, DIR_ENTRY* entry);
+bool fat32_write_directory_entry(uint32_t cluster, DIR_ENTRY* entry);
+bool fat32_init_directory_cluster(uint32_t cluster, uint32_t parent_cluster);
+bool fat32_delete_directory(uint32_t cluster);
+bool fat32_delete_directory_entry(uint32_t cluster, const char* name);

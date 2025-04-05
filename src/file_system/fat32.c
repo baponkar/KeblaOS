@@ -14,20 +14,7 @@ static HBA_PORT_T* fat32_port; // Save port globally
 #define ATTR_DIRECTORY 0x10
 #define ATTR_ARCHIVE   0x20
 
-typedef struct {
-    char name[11];
-    uint8_t attr;
-    uint8_t reserved;
-    uint8_t crtTimeTenth;
-    uint16_t crtTime;
-    uint16_t crtDate;
-    uint16_t lstAccDate;
-    uint16_t fstClusHI;
-    uint16_t wrtTime;
-    uint16_t wrtDate;
-    uint16_t fstClusLO;
-    uint32_t fileSize;
-} __attribute__((packed)) DIR_ENTRY;
+
 
 bool fat32_init(HBA_PORT_T* port) {
     uint8_t sector[512];
@@ -258,7 +245,37 @@ uint32_t fat32_root_entry_count() {
 uint32_t fat32_media() {
     return fat32_bpb.media;
 }
+uint32_t fat32_allocate_cluster() {
+    uint8_t sector[512];
+    for (uint32_t i = 2; i < 0x0FFFFFF6; i++) {
+        uint32_t fat_offset = i * 4;
+        uint32_t fat_sector = fat32_info.fat_start_sector + (fat_offset / fat32_info.bytes_per_sector);
+        uint32_t entry_offset = fat_offset % fat32_info.bytes_per_sector;
 
+        ahci_read(fat32_port, fat_sector, 0, 1, (uint16_t*)sector);
+        uint32_t value = *(uint32_t*)&sector[entry_offset] & 0x0FFFFFFF;
+
+        if (value == 0) {
+            // Found free
+            return i;
+        }
+    }
+    return 0;
+}
+uint32_t fat32_get_file_size(const char* filename) {
+    uint8_t sector[512];
+    uint32_t root_sector = fat32_cluster_to_sector(fat32_info.root_dir_first_cluster);
+    ahci_read(fat32_port, root_sector, 0, 1, (uint16_t*)sector);
+
+    DIR_ENTRY* entries = (DIR_ENTRY*)sector;
+
+    for (int i = 0; i < 512 / sizeof(DIR_ENTRY); i++) {
+        if (strncmp(entries[i].name, filename, 11) == 0) {
+            return entries[i].fileSize;
+        }
+    }
+    return 0;
+}
 
 
 
@@ -311,3 +328,129 @@ void fat32_run_tests(HBA_PORT_T* global_port) {
     printf("All FAT32 tests passed!\n");
 }
 
+
+bool fat32_create_directory(const char* name) {
+    // uint32_t parent_cluster = fat32_root_cluster; // Assuming root directory for simplicity
+    uint32_t parent_cluster = fat32_info.root_dir_first_cluster; // Root directory cluster
+    
+    // Step 1: Find free entry in parent
+    DIR_ENTRY entry;
+    if (!fat32_find_free_entry(parent_cluster, &entry)) {
+        return false;
+    }
+
+    // Step 2: Allocate a cluster for new directory
+    uint32_t new_dir_cluster = fat32_allocate_cluster();
+    if (new_dir_cluster == 0) {
+        return false;
+    }
+
+    // Step 3: Fill entry
+    memset(&entry, 0, sizeof(entry));
+    strncpy(entry.name, name, 11);
+    entry.attr = ATTR_DIRECTORY;
+    entry.fstClusHI = (new_dir_cluster >> 16) & 0xFFFF;
+    entry.fstClusLO = new_dir_cluster & 0xFFFF;
+    entry.fileSize = 0;
+    
+    fat32_write_directory_entry(parent_cluster, &entry);
+
+    // Step 4: Write "." and ".." inside new directory
+    fat32_init_directory_cluster(new_dir_cluster, parent_cluster);
+
+    return true;
+}
+bool fat32_find_free_entry(uint32_t cluster, DIR_ENTRY* entry) {
+    uint8_t buffer[512];
+    uint32_t sector = fat32_cluster_to_sector(cluster);
+    ahci_read(fat32_port, sector, 0, 1, (uint16_t*)buffer);
+
+    DIR_ENTRY* entries = (DIR_ENTRY*)buffer;
+    for (int i = 0; i < 512 / sizeof(DIR_ENTRY); i++) {
+        if (entries[i].name[0] == 0x00 || entries[i].name[0] == 0xE5) {
+            *entry = entries[i];
+            return true;
+        }
+    }
+    return false;
+}
+bool fat32_write_directory_entry(uint32_t cluster, DIR_ENTRY* entry) {
+    uint8_t buffer[512];
+    uint32_t sector = fat32_cluster_to_sector(cluster);
+    ahci_read(fat32_port, sector, 0, 1, (uint16_t*)buffer);
+
+    DIR_ENTRY* entries = (DIR_ENTRY*)buffer;
+    for (int i = 0; i < 512 / sizeof(DIR_ENTRY); i++) {
+        if (entries[i].name[0] == 0x00 || entries[i].name[0] == 0xE5) {
+            entries[i] = *entry;
+            ahci_write(fat32_port, sector, 0, 1, (uint16_t*)buffer);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool fat32_init_directory_cluster(uint32_t cluster, uint32_t parent_cluster) {
+    uint8_t buffer[512];
+    uint32_t sector = fat32_cluster_to_sector(cluster);
+    memset(buffer, 0, sizeof(buffer));
+    ahci_write(fat32_port, sector, 0, 1, (uint16_t*)buffer);
+
+    // Write "." and ".." entries
+    DIR_ENTRY dot_entry = {0};
+    DIR_ENTRY dotdot_entry = {0};
+
+    strncpy(dot_entry.name, ".", 11);
+    dot_entry.attr = ATTR_DIRECTORY;
+    dot_entry.fstClusHI = (cluster >> 16) & 0xFFFF;
+    dot_entry.fstClusLO = cluster & 0xFFFF;
+    dot_entry.fileSize = 0;
+
+    strncpy(dotdot_entry.name, "..", 11);
+    dotdot_entry.attr = ATTR_DIRECTORY;
+    dotdot_entry.fstClusHI = (parent_cluster >> 16) & 0xFFFF;
+    dotdot_entry.fstClusLO = parent_cluster & 0xFFFF;
+    dotdot_entry.fileSize = 0;
+
+    memcpy(buffer, &dot_entry, sizeof(DIR_ENTRY));
+    memcpy(buffer + sizeof(DIR_ENTRY), &dotdot_entry, sizeof(DIR_ENTRY));
+    
+    ahci_write(fat32_port, sector, 0, 1, (uint16_t*)buffer);
+
+    return true;
+}
+
+bool fat32_delete_directory(uint32_t cluster) {
+    uint8_t buffer[512];
+    uint32_t sector = fat32_cluster_to_sector(cluster);
+    ahci_read(fat32_port, sector, 0, 1, (uint16_t*)buffer);
+
+    DIR_ENTRY* entries = (DIR_ENTRY*)buffer;
+    for (int i = 0; i < 512 / sizeof(DIR_ENTRY); i++) {
+        if (entries[i].name[0] == 0x00) break; // End of directory
+        if (entries[i].attr == ATTR_DIRECTORY) {
+            fat32_delete_directory(entries[i].fstClusLO | (entries[i].fstClusHI << 16));
+        }
+    }
+
+    // Mark the directory as deleted
+    memset(buffer, 0, sizeof(buffer));
+    ahci_write(fat32_port, sector, 0, 1, (uint16_t*)buffer);
+
+    return true;
+}
+bool fat32_delete_directory_entry(uint32_t cluster, const char* name) {
+    uint8_t buffer[512];
+    uint32_t sector = fat32_cluster_to_sector(cluster);
+    ahci_read(fat32_port, sector, 0, 1, (uint16_t*)buffer);
+
+    DIR_ENTRY* entries = (DIR_ENTRY*)buffer;
+    for (int i = 0; i < 512 / sizeof(DIR_ENTRY); i++) {
+        if (strncmp(entries[i].name, name, 11) == 0) {
+            entries[i].name[0] = 0xE5; // Mark as deleted
+            ahci_write(fat32_port, sector, 0, 1, (uint16_t*)buffer);
+            return true;
+        }
+    }
+    return false;
+}
