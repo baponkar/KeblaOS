@@ -21,3 +21,5 @@ void display_image( int x, int y, const uint64_t* image_data, int img_width, int
 void animation_demo();
 void flower_bloom_animation(int center_x, int center_y);
 void load_image_with_animation(int x, int y, const uint64_t* image_data, int img_width, int img_height);
+
+

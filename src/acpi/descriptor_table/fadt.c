@@ -17,7 +17,7 @@ void qemu_poweroff() {
     outw(PM1A_CNT_REG, S5_SLEEP_TYPA | SLP_EN); // QEMU-specific ACPI shutdown port
 
     // If the system fails to power off, hang the CPU
-    printf("ACPI Shutdown failed, halting system!\n");
+    printf("[Info] ACPI Shutdown failed, halting system!\n");
     while (1) {
         asm volatile ("hlt");
     }
@@ -36,7 +36,7 @@ void parse_fadt(){
 void acpi_poweroff() {
     fadt_t *fadt = (fadt_t *) fadt_addr;
     if (!fadt) {
-        printf("FADT not found, ACPI shutdown unavailable!\n");
+        printf("[Info] FADT not found, ACPI shutdown unavailable!\n");
         return;
     }
 
@@ -49,18 +49,18 @@ void acpi_poweroff() {
     uint32_t pm1b_control = (fadt->header.revision >= 2 && fadt->X_PM1bControlBlock.Address) ? (uint32_t)fadt->X_PM1bControlBlock.Address : fadt->PM1bControlBlock;
 
     if (!pm1a_control) {
-        printf("PM1a Control Block not found!\n");
+        printf("[Info] PM1a Control Block not found!\n");
         return;
     }
 
-    printf("Sending ACPI shutdown command: outw(%x, %x)\n", pm1a_control, S5_SLEEP_TYPA | SLP_EN);
+    printf("[Info] Sending ACPI shutdown command: outw(%x, %x)\n", pm1a_control, S5_SLEEP_TYPA | SLP_EN);
 
     // Shutdown by setting SLP_EN (bit 13) with S5 sleep type (bits 10-12)
     outw(pm1a_control, S5_SLEEP_TYPA | SLP_EN);
     if(pm1b_control) outw(pm1b_control, S5_SLEEP_TYPA | SLP_EN);
 
     // If ACPI fails, use fallback methods
-    printf("ACPI Shutdown failed, halting system!\n");
+    printf("[Info] ACPI Shutdown failed, halting system!\n");
     while (1) {
         asm volatile ("hlt");
     }

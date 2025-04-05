@@ -33,7 +33,7 @@ FS_DIR = $(SRC_DIR)/file_system
 
 
 OS_NAME = KeblaOS
-OS_VERSION = 0.12
+OS_VERSION = 0.13
 
 HOST_HOME = /home/baponkar
 
@@ -166,6 +166,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(KSHELL_DIR)/ring_buffer.c -o $(BUILD_DIR)/ring_buffer.o
 	$(GCC) $(GCC_FLAG) -c $(KSHELL_DIR)/kshell_helper.c -o $(BUILD_DIR)/kshell_helper.o
 	$(GCC) $(GCC_FLAG) -c $(KSHELL_DIR)/calculator.c -o $(BUILD_DIR)/calculator.o
+	$(GCC) $(GCC_FLAG) -c $(KSHELL_DIR)/sl.c -o $(BUILD_DIR)/sl.o
 
 #syscall
 	$(GCC) $(GCC_FLAG) -c $(SYSCALL_DIR)/switch_to_user.c -o $(BUILD_DIR)/switch_to_user.o
@@ -174,7 +175,8 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(NASM) $(NASM_FLAG) $(SYSCALL_DIR)/syscall.asm -o $(BUILD_DIR)/syscall_asm.o
 
 #file system
-#	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fs.c -o $(BUILD_DIR)/fs.o
+	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fat32.c -o $(BUILD_DIR)/fat32.o
+	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fs.c -o $(BUILD_DIR)/fs.o
 
 # Linking object files into kernel binary
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
@@ -220,6 +222,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/kshell_helper.o \
 						$(BUILD_DIR)/ring_buffer.o \
 						$(BUILD_DIR)/calculator.o \
+						$(BUILD_DIR)/sl.o \
 						$(BUILD_DIR)/switch_to_user.o \
 						$(BUILD_DIR)/switch_to_user_asm.o \
 						$(BUILD_DIR)/syscall.o \
@@ -240,7 +243,9 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 						$(BUILD_DIR)/eng_8x16.o \
 						$(BUILD_DIR)/vga_gfx.o \
 						$(BUILD_DIR)/serial.o \
-						$(BUILD_DIR)/emoji.o 
+						$(BUILD_DIR)/emoji.o \
+						$(BUILD_DIR)/fat32.o \
+						$(BUILD_DIR)/fs.o
 
 
 	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
@@ -287,6 +292,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 														$(BUILD_DIR)/kshell_helper.o \
 														$(BUILD_DIR)/ring_buffer.o \
 														$(BUILD_DIR)/calculator.o \
+														$(BUILD_DIR)/sl.o \
 														$(BUILD_DIR)/switch_to_user.o \
 														$(BUILD_DIR)/switch_to_user_asm.o \
 														$(BUILD_DIR)/syscall.o \
@@ -307,7 +313,9 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 														$(BUILD_DIR)/eng_8x16.o \
 														$(BUILD_DIR)/vga_gfx.o \
 														$(BUILD_DIR)/serial.o \
-														$(BUILD_DIR)/emoji.o
+														$(BUILD_DIR)/emoji.o \
+														$(BUILD_DIR)/fat32.o \
+														$(BUILD_DIR)/fs.o
 						
 
 

@@ -6,20 +6,13 @@
 #include <stddef.h>
 
 
-// PCI Device Type
-struct pci_device_type{
-    uint8_t class_code;
-    uint8_t sub_class_code;
-    uint8_t prog_if_reg;
-};
-typedef struct pci_device_type pci_device_type_t ;
 
 // Represents an AHCI controller on the PCI bus.
 struct ahci_controller {
     uint8_t bus;
     uint8_t device;
     uint8_t function;
-    uint64_t abar;      // AHCI Base Address Registe
+    uint64_t abar;      // AHCI Base Address Register
     bool initialized;
 };
 typedef struct ahci_controller ahci_controller_t;

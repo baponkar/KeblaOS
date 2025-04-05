@@ -4,7 +4,7 @@
 
 
 <table>
-  <tr><td colspan="2" align="left"><em>Version - 0.12</em></td></tr>
+  <tr><td colspan="2" align="left"><em>Version - 0.13</em></td></tr>
   <tr><td><em>Architecture:</em></td><td><em>x86</em></td></tr>
   <tr><td><em>Bit</em></td><td><em>64</em></td></tr>
   <tr><td><em>Build Date:</em></td><td><code>16.03.2024</code></td></tr>

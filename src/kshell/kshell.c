@@ -23,6 +23,7 @@
 #include "../process/thread.h"
 
 #include "calculator.h"
+#include "sl.h" // For locomotive animation
 
 #include "kshell.h"
 
@@ -68,21 +69,22 @@ void execute_command(char* command) {
     if(strcmp(command, "") == 0) {
         return; // Ignore empty commands
     }else if (strcmp(command, "help") == 0) {
-        printf("Available commands:\n help, clear, reboot, poweroff, calc, features, time, meminfo, pwd, ps, pkill...\n");
+        printf("Available commands:\n help, clear, reboot, poweroff, calc, sl, features, time, meminfo, pwd, ps, pkill...\n");
     }else if (strcmp(command, "clear") == 0) {
         clear_screen();
     }else if (strcmp(command, "exit") == 0) {
         printf("Exiting shell...\n");
     }else if(strcmp(command, "poweroff") == 0){
-        printf("Powering Off!\n");
         //qemu_poweroff();
         acpi_poweroff();
     }else if(strcmp(command, "reboot") == 0){
-        printf("Rebooting...\n");
         // qemu_reboot();
         acpi_reboot();
     }else if(strcmp(command, "calc") == 0){
         start_calculator();
+    }else if(strcmp(command, "sl") == 0){
+        // Start locomotive animation
+        sl_animation();
     }else if(strcmp(command, "features") == 0){
         print_os_features();
     }else if(strcmp(command, "time") == 0){

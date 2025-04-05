@@ -77,10 +77,56 @@ int detect_sata_disk(uint8_t bus, uint8_t device, uint8_t function,
                 sata_disk.abar = ((uint64_t)bar_high << 32) | ((uint64_t)bar_low & ~0xFULL);
                 sata_disk.initialized = false; // This sata drive will initialized by ahci
 
+                printf("[Info] Detected SATA Disk at %d:%d.%d - ", bus, device, function);
+                printf(" Class: %x, Subclass: %x, Prog IF: %x, Revision: %x\n",
+                       class, subclass, prog_if, revision);
                 return 1;
             }
         }
+
+        if(subclass == PCI_SUBCLASS_ATA) {
+            // Setting abar
+            uint32_t bar_low = pci_read(bus, device, function, 0x24); // Read BAR5 low 32 bits
+            uint32_t bar_high = 0;  
+            if ((bar_low & 0x7) == 0x4) {                            // Check if it's a 64-bit BAR
+                bar_high = pci_read(bus, device, function, 0x28);    // Read BAR5 high 32 bits
+            }
+
+            // Adding found disk into sata_disks array
+            sata_disk.bus = bus;
+            sata_disk.device = device;
+            sata_disk.function = function;
+            sata_disk.abar = ((uint64_t)bar_high << 32) | ((uint64_t)bar_low & ~0xFULL);
+            sata_disk.initialized = false; // This sata drive will initialized by ahci
+
+            printf("[Info] Detected ATA Disk at %d:%d.%d - ", bus, device, function);
+            printf(" Class: %x, Subclass: %x, Prog IF: %x, Revision: %x\n",
+                   class, subclass, prog_if, revision);
+            return 1;
+        }
+
+        if(subclass == PCI_SUBCLASS_IDE){
+            // Setting abar
+            uint32_t bar_low = pci_read(bus, device, function, 0x24); // Read BAR5 low 32 bits
+            uint32_t bar_high = 0;  
+            if ((bar_low & 0x7) == 0x4) {                            // Check if it's a 64-bit BAR
+                bar_high = pci_read(bus, device, function, 0x28);    // Read BAR5 high 32 bits
+            }
+
+            // Adding found disk into sata_disks array
+            sata_disk.bus = bus;
+            sata_disk.device = device;
+            sata_disk.function = function;
+            sata_disk.abar = ((uint64_t)bar_high << 32) | ((uint64_t)bar_low & ~0xFULL);
+            sata_disk.initialized = false; // This sata drive will initialized by ahci
+
+            printf("[Info] Detected IDE Disk at %d:%d.%d - ", bus, device, function);
+            printf(" Class: %x, Subclass: %x, Prog IF: %x, Revision: %x\n",
+                   class, subclass, prog_if, revision);
+            return 1;
+        }
     }
+    // Not a SATA disk
     return 0;
 }
 
@@ -90,37 +136,37 @@ int detect_network_controller(uint8_t bus, uint8_t device, uint8_t function,
     uint8_t class, uint8_t subclass, uint8_t prog_if, uint8_t revision) {
 
     if (class == PCI_CLASS_NETWORK_CONTROLLER) {
-        printf("Detected Network Controller at %x:%x.%x - ", bus, device, function);
+        printf("[Info] Detected Network Controller at %d:%d.%d - ", bus, device, function);
 
         switch (subclass) {
             case PCI_SUBCLASS_ETHERNET:
-                printf("Ethernet Controller\n");
+                printf(" Ethernet Controller\n");
                 // Initialize Ethernet driver here
                 break;
             case PCI_SUBCLASS_TOKEN_RING:
-                printf("Token Ring Controller\n");
+                printf(" Token Ring Controller\n");
                 break;
             case PCI_SUBCLASS_FDDI:
-                printf("FDDI Controller\n");
+                printf(" FDDI Controller\n");
                 break;
             case PCI_SUBCLASS_ATM:
-                printf("ATM Controller\n");
+                printf(" ATM Controller\n");
                 break;
             case PCI_SUBCLASS_ISDN:
-                printf("ISDN Controller\n");
+                printf(" ISDN Controller\n");
                 break;
             case PCI_SUBCLASS_WORLD_FIP:
-                printf("World Fip Controller\n");
+                printf(" World Fip Controller\n");
 
                 break;
             case PCI_SUBCLASS_PIC_MG:
-                printf("pic fib Controller\n");
+                printf(" PIC fib Controller\n");
                 break;
             case PCI_SUBCLASS_FABRIC:
-                printf("fabric  Controller\n");
+                printf(" Fabric  Controller\n");
                 break;
             default:
-                printf("Unknown Network Controller (Subclass: %x, Prog IF: %x, Revision: %x)\n",
+                printf(" Unknown Network Controller (Subclass: %x, Prog IF: %x, Revision: %x)\n",
                        subclass, prog_if, revision);
                 break;
         }
@@ -135,39 +181,39 @@ int detect_wireless_controller(uint8_t bus, uint8_t device, uint8_t function,
     uint8_t class, uint8_t subclass, uint8_t prog_if, uint8_t revision) {
 
     if (class == PCI_CLASS_WIRELESS_CONTROLLER) {
-        printf("Detected Wireless Network Controller at %x:%x.%x - ", bus, device, function);
+        printf("Detected Wireless Network Controller at %d:%d.%d - ", bus, device, function);
     
         switch (subclass) {
             case PCI_SUBCLASS_IRDA:
-                printf("IRDA Wireless found\n");
+                printf(" IRDA Wireless found\n");
                 break;
     
             case PCI_SUBCLASS_IR:
-                printf("Infrared (IR) Wireless found\n");
+                printf(" Infrared (IR) Wireless found\n");
                 break;
     
             case PCI_SUBCLASS_RF:
-                printf("Radio Frequency (RF) Wireless found\n");
+                printf(" Radio Frequency (RF) Wireless found\n");
                 break;
     
             case PCI_SUBCLASS_BLUETOOTH:
-                printf("Bluetooth Wireless found\n");
+                printf(" Bluetooth Wireless found\n");
                 break;
     
             case PCI_SUBCLASS_BROADBAND:
-                printf("Broadband Wireless found\n");
+                printf(" Broadband Wireless found\n");
                 break;
     
             case PCI_SUBCLASS_ETHERNET_802_1_a:
-                printf("Ethernet 802.1a Wireless found\n");
+                printf(" Ethernet 802.1a Wireless found\n");
                 break;
     
             case PCI_SUBCLASS_ETHERNET_802_1_b:
-                printf("Ethernet 802.1b Wireless found\n");
+                printf(" Ethernet 802.1b Wireless found\n");
                 break;
     
             default:
-                printf("Unknown Wireless Network Controller (Subclass: %x, Prog IF: %x, Revision: %x)\n",
+                printf(" Unknown Wireless Network Controller (Subclass: %x, Prog IF: %x, Revision: %x)\n",
                         subclass, prog_if, revision);
                 break;
         }

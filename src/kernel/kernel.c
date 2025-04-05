@@ -56,12 +56,14 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../syscall/syscall.h"
 
 #include "../file_system/fs.h"
+#include "../file_system/fat32.h"       // fat32_init
 #include "../driver/vga/color.h"
 
 #include "kernel.h"
 
 
-extern ahci_controller_t sata_disk;
+extern ahci_controller_t sata_disk;         // Detecting by pci scan
+extern ahci_controller_t network_controller; // Detecting by pci scan
 
 
 void kmain(){
@@ -73,7 +75,7 @@ void kmain(){
 
     get_cpu_info();
 
-    printf("%s - %s\n", OS_NAME, OS_VERSION);
+    printf("[Info] %s - %s\n", OS_NAME, OS_VERSION);
     
     if(has_apic()){
         disable_pic();
@@ -99,26 +101,21 @@ void kmain(){
     }
 
     pci_scan();
-    printf("sata bus:%d, device: %d, function: %d, abar: %x, initialized: %d\n", 
-        sata_disk.bus, sata_disk.device, sata_disk.function, sata_disk.abar, sata_disk.initialized);
     
     // Test AHCI drivers for a successful read
-    // HBA_MEM_T* host = (HBA_MEM_T*) sata_disk.abar;
-    // probePort(host);
+    HBA_MEM_T* host = (HBA_MEM_T*) sata_disk.abar;
+    probePort(host);
 
-    // uint16_t* s = (uint16_t*)(uintptr_t)kmalloc(0x8000);
-    // if (ahci_read(&host->ports[0], 2, 0, 1, s))
-    // {
-    //    printf("\nFile successfully read!\n", 25);
-    // }
+    test_ahci(sata_disk);
 
-    // ahci_test(host);
+    fat32_init((HBA_PORT_T *)&host->ports[0]);
+    fat32_read_root_dir();
+    fat32_run_tests((HBA_PORT_T *)&host->ports[0]);
 
 
-    printf("--------------------------------------\n");
+    draw_horizontal_line(get_cursor_pos_x(), get_cursor_pos_y(), get_fb_width(), COLOR_WHITE);
 
-
-    apic_delay(1000);
+    apic_delay(2000);   // Delay for 2 seconds to show boot messages
     clear_screen();
     load_image_with_animation(
         (get_fb_width() - KEBLAOS_WIDTH) / 2,
