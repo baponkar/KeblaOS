@@ -41,7 +41,7 @@
 - **Standard Library**:
   - stdio, stdlib, math, string, assert
 
-![Latest Screenshot](./screenshot/latest_screenshot.png)
+![Latest Screenshot](./screenshot/keblaos_screenshot_2.png)
 
 ------------------------------------------------------
 
