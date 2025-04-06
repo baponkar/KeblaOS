@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../limine/limine.h"
+#include "../../limine/limine.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>

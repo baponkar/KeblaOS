@@ -8,7 +8,7 @@
 
 #include <cpuid.h>
 
-#include "../limine/limine.h"
+#include "../../limine/limine.h"
 #include "../lib/stdio.h"
 
 #include "../x86_64/gdt/gdt.h"

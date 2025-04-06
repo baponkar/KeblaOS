@@ -328,7 +328,7 @@ void load_image_with_animation(int x, int y, const uint64_t* image_data, int img
 
     // After animation is complete, show the full image cleanly
     display_image(x, y, image_data, img_width, img_height);
-    apic_delay(2500); // Hold the image for a moment before clearing
+    apic_delay(1000); // Hold the image for a moment before clearing
     
     clear_screen(); // Clear screen again
 }

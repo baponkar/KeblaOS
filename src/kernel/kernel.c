@@ -10,6 +10,7 @@ Reference   : https://wiki.osdev.org/Limine
 */
 #include "../driver/vga/vga_gfx.h"
 #include "../driver/vga/framebuffer.h"
+#include "../driver/vga/my_lvgl.h"
 #include "../process/process.h" 
 #include "../process/test_process.h"
 #include "../acpi/acpi.h"               // init_acpi
@@ -26,7 +27,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include  "../cpu/cpuid.h"              // get_cpu_count, get_cpu_info
 #include "../memory/detect_memory.h"
 #include "../bootloader/firmware.h"
-#include "../limine/limine.h"           // bootloader info
+#include "../../limine/limine.h"           // bootloader info
 #include "../bootloader/boot.h"         // bootloader info
 #include "../lib/stdio.h"               // printf
 #include "../lib/string.h"
@@ -62,8 +63,8 @@ Reference   : https://wiki.osdev.org/Limine
 #include "kernel.h"
 
 
-extern ahci_controller_t sata_disk;         // Detecting by pci scan
-extern ahci_controller_t network_controller; // Detecting by pci scan
+extern ahci_controller_t sata_disk;             // Detecting by pci scan
+extern ahci_controller_t network_controller;    // Detecting by pci scan
 
 
 void kmain(){
@@ -115,7 +116,7 @@ void kmain(){
 
     draw_horizontal_line(get_cursor_pos_x(), get_cursor_pos_y(), get_fb_width(), COLOR_WHITE);
 
-    apic_delay(2000);   // Delay for 2 seconds to show boot messages
+    apic_delay(1000);   // Delay for 2 seconds to show boot messages
     clear_screen();
     load_image_with_animation(
         (get_fb_width() - KEBLAOS_WIDTH) / 2,

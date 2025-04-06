@@ -1,5 +1,5 @@
 #include "../lib/stdio.h"
-#include "../limine/limine.h"
+#include "../../limine/limine.h"
 #include "../lib/string.h"
 #include "../bootloader/boot.h"
 #include "../driver/io/ports.h"

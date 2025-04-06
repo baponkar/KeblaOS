@@ -13,7 +13,7 @@ Reference: https://github.com/limine-bootloader/limine/blob/v8.x/PROTOCOL.md#ker
 */
 
 #include "../lib/string.h"      // memcpy
-#include "../limine/limine.h"   // bootloader info
+#include "../../limine/limine.h"   // bootloader info
 #include "../lib/stdio.h"      // print
 #include "../util/util.h"       //  print_size_with_units
 #include "firmware.h"

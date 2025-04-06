@@ -8,4 +8,3 @@ idt_flush:
     lidt [rdi]              ; Load the IDT pointer
     ret
 
-

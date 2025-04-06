@@ -6,11 +6,13 @@
 # Author : Bapon Kar
 # Repository url : https://github.com/baponkar/KeblaOS
 
+LIMINE_DIR = limine
 
 SRC_DIR = src
 DEBUG_DIR = debug
 BUILD_DIR = build
 ISO_DIR = iso_root
+
 BOOTLOADER_DIR = $(SRC_DIR)/bootloader
 CPU_DIR = $(SRC_DIR)/cpu
 PCI_DIR = $(SRC_DIR)/pci
@@ -36,6 +38,7 @@ OS_NAME = KeblaOS
 OS_VERSION = 0.13
 
 HOST_HOME = /home/baponkar
+
 
 # GCC Compiler
 GCC = /usr/local/x86_64-elf/bin/x86_64-elf-gcc
@@ -66,8 +69,13 @@ NASM = nasm
 NASM_FLAG = -g -Wall -f elf64
 OBJDUMP = /usr/local/x86_64-elf/bin/x86_64-elf-objdump
 
+
+
+
 # Default target
 default: build
+
+
 
 # Building kernel.o
 $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
@@ -106,6 +114,7 @@ $(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/vga_gfx.c -o $(BUILD_DIR)/vga_gfx.o
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/emoji/emoji.c -o $(BUILD_DIR)/emoji.o
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/image_data.c -o $(BUILD_DIR)/image_data.o
+	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/my_lvgl.c -o $(BUILD_DIR)/my_lvgl.o
 
 # Driver
 	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/keyboard/keyboard.c -o $(BUILD_DIR)/keyboard.o
@@ -315,7 +324,7 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
 														$(BUILD_DIR)/serial.o \
 														$(BUILD_DIR)/emoji.o \
 														$(BUILD_DIR)/fat32.o \
-														$(BUILD_DIR)/fs.o
+														$(BUILD_DIR)/fs.o 
 						
 
 
@@ -338,17 +347,20 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	cp $(SRC_DIR)/img/boot_loader_wallpaper.bmp  $(ISO_DIR)/boot/boot_loader_wallpaper.bmp
 	cp -v $(BUILD_DIR)/kernel.bin $(ISO_DIR)/boot/
 	mkdir -p $(ISO_DIR)/boot/limine
-	cp -v $(SRC_DIR)/limine.conf $(SRC_DIR)/limine/limine-bios.sys $(SRC_DIR)/limine/limine-bios-cd.bin $(SRC_DIR)/limine/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
+	cp -v $(SRC_DIR)/limine.conf $(LIMINE_DIR)/limine-bios.sys $(LIMINE_DIR)/limine-bios-cd.bin $(LIMINE_DIR)/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
 	mkdir -p $(ISO_DIR)/EFI/BOOT
-	cp -v $(SRC_DIR)/limine/BOOTX64.EFI $(ISO_DIR)/EFI/BOOT/
-	cp -v $(SRC_DIR)/limine/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
+	cp -v $(LIMINE_DIR)/BOOTX64.EFI $(ISO_DIR)/EFI/BOOT/
+	cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
 
 	# Creating initrd.cpio module for bootloader. These files can be used for various purposes,
 	cp -v $(SRC_DIR)/initrd/initrd.cpio $(ISO_DIR)/boot/initrd.cpio
 
+	# Creating disk image file which will be used to create ISO image
+	dd if=/dev/zero of=$(BUILD_DIR)/disk.img bs=1M count=512
+
 	# Creating KeblaOS-0.11-image.iso file by using xorriso.
 	xorriso -as mkisofs -b boot/limine/limine-bios-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine/limine-uefi-cd.bin -efi-boot-part --efi-boot-image --protective-msdos-label $(ISO_DIR) -o $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
-	$(SRC_DIR)/limine/limine bios-install $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
+	$(LIMINE_DIR)/limine bios-install $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
 
 	# automatically clean up all object files from build directory.
 	make clean

@@ -22,4 +22,3 @@ is_cpuid_present:
     ret
 
 
-

@@ -1,5 +1,5 @@
 
-#include "../limine/limine.h"   // bootloader info
+#include "../../limine/limine.h"   // bootloader info
 #include "../driver/vga/vga_term.h"
 #include "../util/util.h" 
 
