@@ -6,6 +6,7 @@ objdump.txt
 serial_output.log
 qemu.log 
 
+lvgl-9.2.2/*
 **/*.o
 **/*bin
 **/*.swp
