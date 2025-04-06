@@ -1,0 +1,35 @@
+[33mcommit 06fbbb5f4be16da3264c375a22d9d9154894d63f[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m)[m
+Author: Bapon Kar <baponkar600@gmail.com>
+Date:   Sun Apr 6 16:20:08 2025 +0530
+
+    remove disk.img
+
+[33mcommit b43862c81ac985bcfbcf649a7002caac830f0b11[m
+Author: Bapon Kar <baponkar600@gmail.com>
+Date:   Sun Apr 6 16:08:09 2025 +0530
+
+    Update Makefile with reposition of limine and lvgl directory
+
+[33mcommit 20478fe0ab46cf812d682b0be92f314dd6839e16[m
+Author: Bapon Kar <baponkar600@gmail.com>
+Date:   Sun Apr 6 01:26:55 2025 +0530
+
+    update in fat32
+
+[33mcommit 09b261238783dce3d3d03eb70efc1ab11726bbe8[m
+Author: Bapon Kar <baponkar600@gmail.com>
+Date:   Sun Apr 6 01:02:11 2025 +0530
+
+    file system implemented
+
+[33mcommit ccc929f56236cb4df51ff57da5fbee0f8cfa2042[m[33m ([m[1;33mtag: v0.12[m[33m)[m
+Author: Bapon Kar <baponkar600@gmail.com>
+Date:   Sat Apr 5 19:18:43 2025 +0530
+
+    kshell updated
+
+[33mcommit 47f0d1fc3ed82bd69468d8bbc72edd1b09b50d02[m
+Author: Bapon Kar <baponkar600@gmail.com>
+Date:   Sun Mar 23 04:37:08 2025 +0530
+
+    smp initialized
