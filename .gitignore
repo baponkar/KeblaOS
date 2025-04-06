@@ -2,6 +2,7 @@ build/*.o
 build/*.log
 build/*.iso
 build/*.bin
+build/disk.img
 objdump.txt
 serial_output.log
 qemu.log 
