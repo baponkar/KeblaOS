@@ -6,6 +6,10 @@
 /*********************
  *      INCLUDES
  *********************/
+
+ 
+ 
+
 #include "lv_scale_private.h"
 #include "../../core/lv_obj_private.h"
 #include "../../core/lv_obj_class_private.h"
@@ -15,6 +19,8 @@
 #include "../../misc/lv_assert.h"
 #include "../../misc/lv_math.h"
 #include "../../draw/lv_draw_arc.h"
+
+#include "lv_scale.h"
 
 /*********************
  *      DEFINES
@@ -26,6 +32,8 @@
 #define LV_SCALE_DEFAULT_ROTATION       ((int32_t) 135U)
 #define LV_SCALE_TICK_IDX_DEFAULT_ID    ((uint32_t) 255U)
 #define LV_SCALE_DEFAULT_LABEL_GAP      ((uint32_t) 15U)
+
+
 
 /**********************
  *      TYPEDEFS
@@ -631,7 +639,7 @@ static void scale_draw_label(lv_obj_t * obj, lv_event_t * event, lv_draw_label_d
         scale_build_custom_label_text(obj, label_dsc, major_tick_idx);
     }
     else { /* Add label with mapped values */
-        lv_snprintf(text_buffer, sizeof(text_buffer), "%" LV_PRId32, tick_value);
+        lv_snprintf(text_buffer, sizeof(text_buffer), "%LV_PRId32", tick_value);
         label_dsc->text = text_buffer;
         label_dsc->text_local = 1;
     }

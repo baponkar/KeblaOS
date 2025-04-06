@@ -6,33 +6,15 @@
 # Author : Bapon Kar
 # Repository url : https://github.com/baponkar/KeblaOS
 
+START_TIME := $(shell date +%s)
+
 LIMINE_DIR = limine
+LVGL_DIR = lvgl-9.2.2
 
-SRC_DIR = src
-DEBUG_DIR = debug
-BUILD_DIR = build
+SRC_DIR = kernel
 ISO_DIR = iso_root
-
-BOOTLOADER_DIR = $(SRC_DIR)/bootloader
-CPU_DIR = $(SRC_DIR)/cpu
-PCI_DIR = $(SRC_DIR)/pci
-AHCI_DIR = $(SRC_DIR)/ahci
-DISK_DIR = $(SRC_DIR)/disk
-ACPI_DIR = $(SRC_DIR)/acpi
-KERNEL_DIR = $(SRC_DIR)/kernel
-UTIL_DIR = $(SRC_DIR)/util
-DRIVER_DIR = $(SRC_DIR)/driver
-LIB_DIR = $(SRC_DIR)/lib
-X86_64_DIR = $(SRC_DIR)/x86_64
-GDT_DIR = $(SRC_DIR)/x86_64/gdt
-INT_DIR = $(SRC_DIR)/x86_64/interrupt
-TIMER_DIR = $(SRC_DIR)/x86_64/timer
-MEMORY_DIR = $(SRC_DIR)/memory
-SYSCALL_DIR = $(SRC_DIR)/syscall
-KSHELL_DIR = $(SRC_DIR)/kshell
-PS_DIR = $(SRC_DIR)/process
-FS_DIR = $(SRC_DIR)/file_system
-
+BUILD_DIR = build
+DEBUG_DIR = debug
 
 OS_NAME = KeblaOS
 OS_VERSION = 0.13
@@ -59,7 +41,7 @@ GCC_FLAG = -g -Wall \
 	-msse \
 	-msse2
 
-# My local machine path of the following tools
+
 # Linker
 LD = /usr/local/x86_64-elf/bin/x86_64-elf-ld
 LD_FLAG = -m elf_x86_64 -nostdlib -static -z max-page-size=0x1000
@@ -71,265 +53,60 @@ OBJDUMP = /usr/local/x86_64-elf/bin/x86_64-elf-objdump
 
 
 
+# Find all .c files inside $(LVGL_DIR)/src recursively
+LVGL_SRC_FILES := $(shell find $(LVGL_DIR)/src -name '*.c')
 
-# Default target
-default: build
+# Create corresponding .o file paths inside $(BUILD_DIR)
+LVGL_OBJ_FILES := $(patsubst $(LVGL_DIR)/src/%.c, $(BUILD_DIR)/lvgl/%.o, $(LVGL_SRC_FILES))
 
+# Compile rule for all .o files found from LVGL src directory
+lvgl: $(LVGL_OBJ_FILES)
 
-
-# Building kernel.o
-$(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c
-
-	$(GCC) $(GCC_FLAG) -c $(KERNEL_DIR)/kernel.c -o $(BUILD_DIR)/kernel.o
-	$(GCC) $(GCC_FLAG) -c $(UTIL_DIR)/util.c -o $(BUILD_DIR)/util.o
-
-	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/firmware.c -o $(BUILD_DIR)/firmware.o
-	$(GCC) $(GCC_FLAG) -c $(BOOTLOADER_DIR)/boot.c -o $(BUILD_DIR)/boot.o
-
-# acpi
-	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/acpi.c -o $(BUILD_DIR)/acpi.o
-	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/descriptor_table/fadt.c -o $(BUILD_DIR)/fadt.o
-	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/descriptor_table/hpet.c -o $(BUILD_DIR)/hpet.o
-	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/descriptor_table/madt.c -o $(BUILD_DIR)/madt.o
-	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/descriptor_table/mcfg.c -o $(BUILD_DIR)/mcfg.o
-	$(GCC) $(GCC_FLAG) -c $(ACPI_DIR)/descriptor_table/rsdt.c -o $(BUILD_DIR)/rsdt.o
-	
-
-# ahci
-	$(GCC) $(GCC_FLAG) -c $(AHCI_DIR)/ahci.c -o $(BUILD_DIR)/ahci.o
-
-# pci
-	$(GCC) $(GCC_FLAG) -c $(PCI_DIR)/pci.c -o $(BUILD_DIR)/pci.o
-
-# Symmetric Multi processor
-	$(GCC) $(GCC_FLAG) -c $(CPU_DIR)/cpuid.c -o $(BUILD_DIR)/cpuid.o
-	$(GCC) $(GCC_FLAG) -c $(CPU_DIR)/cpu.c -o $(BUILD_DIR)/cpu.o
-	$(NASM) $(NASM_FLAG) $(CPU_DIR)/cpuid.asm -o $(BUILD_DIR)/cpuid_asm.o
-
-#VGA DRIVER
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/fonts/eng/eng_8x8.c -o $(BUILD_DIR)/eng_8x8.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/fonts/eng/eng_8x16.c -o $(BUILD_DIR)/eng_8x16.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/framebuffer.c -o $(BUILD_DIR)/framebuffer.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/vga_term.c -o $(BUILD_DIR)/vga_term.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/vga_gfx.c -o $(BUILD_DIR)/vga_gfx.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/emoji/emoji.c -o $(BUILD_DIR)/emoji.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/image_data.c -o $(BUILD_DIR)/image_data.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/vga/my_lvgl.c -o $(BUILD_DIR)/my_lvgl.o
-
-# Driver
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/keyboard/keyboard.c -o $(BUILD_DIR)/keyboard.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/mouse/mouse.c -o $(BUILD_DIR)/mouse.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/io/ports.c -o $(BUILD_DIR)/ports.o
-	$(GCC) $(GCC_FLAG) -c $(DRIVER_DIR)/io/serial.c -o $(BUILD_DIR)/serial.o
-
-# Disk
-	$(GCC) $(GCC_FLAG) -c $(DISK_DIR)/disk.c -o $(BUILD_DIR)/disk.o
-
-# Library
-	$(GCC) $(GCC_FLAG) -c $(LIB_DIR)/string.c -o $(BUILD_DIR)/string.o
-	$(GCC) $(GCC_FLAG) -c $(LIB_DIR)/stdlib.c -o $(BUILD_DIR)/stdlib.o
-	$(GCC) $(GCC_FLAG) -c $(LIB_DIR)/stdio.c -o $(BUILD_DIR)/stdio.o
-	$(GCC) $(GCC_FLAG) -c $(LIB_DIR)/math.c -o $(BUILD_DIR)/math.o
-
-# GDT
-	$(GCC) $(GCC_FLAG) -c $(GDT_DIR)/gdt.c -o $(BUILD_DIR)/gdt.o
-	$(NASM) $(NASM_FLAG) $(GDT_DIR)/gdt_load.asm -o $(BUILD_DIR)/gdt_load.o
-
-# Interrupt
-	$(GCC) $(GCC_FLAG) -c $(INT_DIR)/interrupt.c -o $(BUILD_DIR)/interrupt.o
-	$(NASM) $(NASM_FLAG) $(INT_DIR)/interrupt_flush.asm -o $(BUILD_DIR)/interrupt_flush.o
-	$(GCC) $(GCC_FLAG) -c $(INT_DIR)/pic.c -o $(BUILD_DIR)/pic.o
-	$(NASM) $(NASM_FLAG) $(INT_DIR)/isr.asm -o $(BUILD_DIR)/isr.o
-	$(NASM) $(NASM_FLAG) $(INT_DIR)/irq.asm -o $(BUILD_DIR)/irq.o
-	$(GCC) $(GCC_FLAG) -c $(INT_DIR)/apic.c -o $(BUILD_DIR)/apic.o
-	$(GCC) $(GCC_FLAG) -c $(INT_DIR)/ioapic.c -o $(BUILD_DIR)/ioapic.o
-
-# Timer
-	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/tsc.c -o $(BUILD_DIR)/tsc.o
-	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/pit_timer.c -o $(BUILD_DIR)/pit_timer.o
-	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/apic_timer.c -o $(BUILD_DIR)/apic_timer.o
-	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/hpet_timer.c -o $(BUILD_DIR)/hpet_timer.o
-	$(GCC) $(GCC_FLAG) -c $(TIMER_DIR)/rtc.c -o $(BUILD_DIR)/rtc.o
-
-#memory management
-	$(GCC) $(GCC_FLAG) -c $(MEMORY_DIR)/detect_memory.c -o $(BUILD_DIR)/detect_memory.o
-	$(GCC) $(GCC_FLAG) -c $(MEMORY_DIR)/kmalloc.c -o $(BUILD_DIR)/kmalloc.o
-	$(GCC) $(GCC_FLAG) -c $(MEMORY_DIR)/pmm.c -o $(BUILD_DIR)/pmm.o
-	$(NASM) $(NASM_FLAG) $(MEMORY_DIR)/load_paging.asm -o $(BUILD_DIR)/load_paging.o
-	$(GCC) $(GCC_FLAG) -c $(MEMORY_DIR)/paging.c -o $(BUILD_DIR)/paging.o
-	$(GCC) $(GCC_FLAG) -c $(MEMORY_DIR)/vmm.c -o $(BUILD_DIR)/vmm.o
-	$(GCC) $(GCC_FLAG) -c $(MEMORY_DIR)/kheap.c -o $(BUILD_DIR)/kheap.o
-
-	$(GCC) $(GCC_FLAG) -c $(MEMORY_DIR)/umalloc.c -o $(BUILD_DIR)/umalloc.o
-	$(GCC) $(GCC_FLAG) -c $(MEMORY_DIR)/uheap.c -o $(BUILD_DIR)/uheap.o
-
-#process management
-	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/process.c -o $(BUILD_DIR)/process.o
-	$(NASM) $(NASM_FLAG) $(PS_DIR)/set_cpu_state.asm -o $(BUILD_DIR)/set_cpu_state.o
-	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/thread.c -o $(BUILD_DIR)/thread.o
-	$(GCC) $(GCC_FLAG) -c $(PS_DIR)/test_process.c -o $(BUILD_DIR)/test_process.o
+# Rule to compile each .c file to .o for LVGL
+$(BUILD_DIR)/lvgl/%.o: $(LVGL_DIR)/src/%.c
+	@mkdir -p $(dir $@)
+	$(GCC) $(GCC_FLAG) -c $< -o $@
 
 
-#kernel shell
-	$(GCC) $(GCC_FLAG) -c $(KSHELL_DIR)/kshell.c -o $(BUILD_DIR)/kshell.o
-	$(GCC) $(GCC_FLAG) -c $(KSHELL_DIR)/ring_buffer.c -o $(BUILD_DIR)/ring_buffer.o
-	$(GCC) $(GCC_FLAG) -c $(KSHELL_DIR)/kshell_helper.c -o $(BUILD_DIR)/kshell_helper.o
-	$(GCC) $(GCC_FLAG) -c $(KSHELL_DIR)/calculator.c -o $(BUILD_DIR)/calculator.o
-	$(GCC) $(GCC_FLAG) -c $(KSHELL_DIR)/sl.c -o $(BUILD_DIR)/sl.o
+# Find all .c files inside of src directory recursively
+KERNEL_SRC_FILES := $(shell find $(SRC_DIR) -name '*.c')
 
-#syscall
-	$(GCC) $(GCC_FLAG) -c $(SYSCALL_DIR)/switch_to_user.c -o $(BUILD_DIR)/switch_to_user.o
-	$(NASM) $(NASM_FLAG) $(SYSCALL_DIR)/switch_to_user.asm -o $(BUILD_DIR)/switch_to_user_asm.o
-	$(GCC) $(GCC_FLAG) -c $(SYSCALL_DIR)/syscall.c -o $(BUILD_DIR)/syscall.o
-	$(NASM) $(NASM_FLAG) $(SYSCALL_DIR)/syscall.asm -o $(BUILD_DIR)/syscall_asm.o
+# Create corresponding .o file paths inside $(BUILD_DIR)
+KERNEL_OBJ_FILES := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(KERNEL_SRC_FILES))
 
-#file system
-	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fat32.c -o $(BUILD_DIR)/fat32.o
-	$(GCC) $(GCC_FLAG) -c $(FS_DIR)/fs.c -o $(BUILD_DIR)/fs.o
+# Find all .c files inside of src directory recursively
+KERNEL_SRC_ASM_FILES := $(shell find $(SRC_DIR) -name '*.asm')
 
-# Linking object files into kernel binary
-$(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.o \
-						$(BUILD_DIR)/boot.o \
-						$(BUILD_DIR)/acpi.o \
-						$(BUILD_DIR)/rsdt.o \
-						$(BUILD_DIR)/fadt.o \
-						$(BUILD_DIR)/madt.o \
-						$(BUILD_DIR)/mcfg.o \
-						$(BUILD_DIR)/ahci.o \
-						$(BUILD_DIR)/pci.o \
-						$(BUILD_DIR)/ports.o \
-						$(BUILD_DIR)/image_data.o \
-						$(BUILD_DIR)/string.o \
-						$(BUILD_DIR)/stdlib.o \
-						$(BUILD_DIR)/stdio.o \
-						$(BUILD_DIR)/math.o \
-						$(BUILD_DIR)/vga_term.o \
-						$(BUILD_DIR)/gdt.o \
-						$(BUILD_DIR)/gdt_load.o \
-						$(BUILD_DIR)/util.o \
-						$(BUILD_DIR)/interrupt.o \
-						$(BUILD_DIR)/interrupt_flush.o \
-						$(BUILD_DIR)/pic.o \
-						$(BUILD_DIR)/isr.o \
-						$(BUILD_DIR)/irq.o \
-						$(BUILD_DIR)/apic.o \
-						$(BUILD_DIR)/ioapic.o \
-						$(BUILD_DIR)/load_paging.o \
-						$(BUILD_DIR)/paging.o \
-						$(BUILD_DIR)/pmm.o \
-						$(BUILD_DIR)/vmm.o \
-						$(BUILD_DIR)/kmalloc.o \
-						$(BUILD_DIR)/umalloc.o \
-						$(BUILD_DIR)/uheap.o \
-						$(BUILD_DIR)/tsc.o \
-						$(BUILD_DIR)/pit_timer.o \
-						$(BUILD_DIR)/apic_timer.o \
-						$(BUILD_DIR)/hpet_timer.o \
-						$(BUILD_DIR)/rtc.o \
-						$(BUILD_DIR)/keyboard.o  \
-						$(BUILD_DIR)/kshell.o \
-						$(BUILD_DIR)/kshell_helper.o \
-						$(BUILD_DIR)/ring_buffer.o \
-						$(BUILD_DIR)/calculator.o \
-						$(BUILD_DIR)/sl.o \
-						$(BUILD_DIR)/switch_to_user.o \
-						$(BUILD_DIR)/switch_to_user_asm.o \
-						$(BUILD_DIR)/syscall.o \
-						$(BUILD_DIR)/syscall_asm.o \
-						$(BUILD_DIR)/kheap.o \
-						$(BUILD_DIR)/process.o \
-						$(BUILD_DIR)/set_cpu_state.o \
-						$(BUILD_DIR)/thread.o \
-						$(BUILD_DIR)/test_process.o \
-						$(BUILD_DIR)/disk.o \
-						$(BUILD_DIR)/cpu.o \
-						$(BUILD_DIR)/cpuid.o \
-						$(BUILD_DIR)/cpuid_asm.o \
-						$(BUILD_DIR)/detect_memory.o \
-						$(BUILD_DIR)/framebuffer.o \
-						$(BUILD_DIR)/firmware.o \
-						$(BUILD_DIR)/eng_8x8.o \
-						$(BUILD_DIR)/eng_8x16.o \
-						$(BUILD_DIR)/vga_gfx.o \
-						$(BUILD_DIR)/serial.o \
-						$(BUILD_DIR)/emoji.o \
-						$(BUILD_DIR)/fat32.o \
-						$(BUILD_DIR)/fs.o
+# Create corresponding .o file paths inside $(BUILD_DIR)
+KERNEL_OBJ_ASM_FILES := $(patsubst $(SRC_DIR)/%.asm, $(BUILD_DIR)/%.o, $(KERNEL_SRC_ASM_FILES))
 
+# Compile rule for all .o files found from kernel src directory
+kernel: $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES)
+	@echo "Compiling kernel..."
 
-	$(LD) $(LD_FLAG) -T $(SRC_DIR)/linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin \
-														$(BUILD_DIR)/boot.o \
-														$(BUILD_DIR)/acpi.o \
-														$(BUILD_DIR)/rsdt.o \
-														$(BUILD_DIR)/fadt.o \
-														$(BUILD_DIR)/madt.o \
-														$(BUILD_DIR)/mcfg.o \
-														$(BUILD_DIR)/ahci.o \
-														$(BUILD_DIR)/pci.o \
-														$(BUILD_DIR)/kernel.o \
-														$(BUILD_DIR)/ports.o \
-														$(BUILD_DIR)/image_data.o \
-														$(BUILD_DIR)/string.o \
-														$(BUILD_DIR)/stdlib.o \
-														$(BUILD_DIR)/stdio.o \
-														$(BUILD_DIR)/math.o \
-														$(BUILD_DIR)/vga_term.o \
-														$(BUILD_DIR)/gdt.o \
-														$(BUILD_DIR)/gdt_load.o \
-														$(BUILD_DIR)/util.o \
-														$(BUILD_DIR)/interrupt.o \
-														$(BUILD_DIR)/interrupt_flush.o \
-														$(BUILD_DIR)/tsc.o \
-														$(BUILD_DIR)/pic.o \
-														$(BUILD_DIR)/isr.o \
-														$(BUILD_DIR)/irq.o \
-														$(BUILD_DIR)/apic.o \
-														$(BUILD_DIR)/ioapic.o \
-														$(BUILD_DIR)/load_paging.o \
-														$(BUILD_DIR)/paging.o \
-														$(BUILD_DIR)/pmm.o \
-														$(BUILD_DIR)/vmm.o \
-														$(BUILD_DIR)/kmalloc.o \
-														$(BUILD_DIR)/umalloc.o \
-														$(BUILD_DIR)/uheap.o \
-														$(BUILD_DIR)/pit_timer.o \
-														$(BUILD_DIR)/apic_timer.o \
-														$(BUILD_DIR)/hpet_timer.o \
-														$(BUILD_DIR)/rtc.o \
-														$(BUILD_DIR)/keyboard.o \
-														$(BUILD_DIR)/kshell.o \
-														$(BUILD_DIR)/kshell_helper.o \
-														$(BUILD_DIR)/ring_buffer.o \
-														$(BUILD_DIR)/calculator.o \
-														$(BUILD_DIR)/sl.o \
-														$(BUILD_DIR)/switch_to_user.o \
-														$(BUILD_DIR)/switch_to_user_asm.o \
-														$(BUILD_DIR)/syscall.o \
-														$(BUILD_DIR)/syscall_asm.o \
-														$(BUILD_DIR)/kheap.o \
-														$(BUILD_DIR)/process.o \
-														$(BUILD_DIR)/set_cpu_state.o \
-														$(BUILD_DIR)/thread.o \
-														$(BUILD_DIR)/test_process.o \
-														$(BUILD_DIR)/disk.o \
-														$(BUILD_DIR)/cpu.o \
-														$(BUILD_DIR)/cpuid.o \
-														$(BUILD_DIR)/cpuid_asm.o \
-														$(BUILD_DIR)/detect_memory.o \
-														$(BUILD_DIR)/framebuffer.o \
-														$(BUILD_DIR)/firmware.o \
-														$(BUILD_DIR)/eng_8x8.o \
-														$(BUILD_DIR)/eng_8x16.o \
-														$(BUILD_DIR)/vga_gfx.o \
-														$(BUILD_DIR)/serial.o \
-														$(BUILD_DIR)/emoji.o \
-														$(BUILD_DIR)/fat32.o \
-														$(BUILD_DIR)/fs.o 
-						
+# Rule to compile each .c file to .o
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
+	$(GCC) $(GCC_FLAG) -c $< -o $@
 
+# Rule to compile each .asm file to .o
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.asm
+	@mkdir -p $(dir $@)
+	$(NASM) $(NASM_FLAG) $< -o $@
+
+linking: $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES) $(LVGL_OBJ_FILES)
+	@echo "Linking kernel..."
+	$(LD) $(LD_FLAG) -T linker-x86_64.ld -o $(BUILD_DIR)/kernel.bin $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES) $(LVGL_OBJ_FILES)
+
+$(BUILD_DIR)/kernel.bin: $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES) $(LVGL_OBJ_FILES)
+	@echo "Linking kernel..."
+	$(LD) $(LD_FLAG) -T linker-x86_64.ld -o $@ $^
+	@echo "Kernel linked successfully."
 
 #$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin
 #	$(OBJDUMP) -DxS $< >$@
+
+build_image: $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso 
 
 # Creating ISO image
 $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBUG_DIR)/objdump.txt
@@ -347,7 +124,7 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	cp $(SRC_DIR)/img/boot_loader_wallpaper.bmp  $(ISO_DIR)/boot/boot_loader_wallpaper.bmp
 	cp -v $(BUILD_DIR)/kernel.bin $(ISO_DIR)/boot/
 	mkdir -p $(ISO_DIR)/boot/limine
-	cp -v $(SRC_DIR)/limine.conf $(LIMINE_DIR)/limine-bios.sys $(LIMINE_DIR)/limine-bios-cd.bin $(LIMINE_DIR)/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
+	cp -v limine.conf $(LIMINE_DIR)/limine-bios.sys $(LIMINE_DIR)/limine-bios-cd.bin $(LIMINE_DIR)/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
 	mkdir -p $(ISO_DIR)/EFI/BOOT
 	cp -v $(LIMINE_DIR)/BOOTX64.EFI $(ISO_DIR)/EFI/BOOT/
 	cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
@@ -363,16 +140,57 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	$(LIMINE_DIR)/limine bios-install $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
 
 	# automatically clean up all object files from build directory.
-	make clean
+	# make clean
 
-build: $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
+
+all : build
+
+build: kernel lvgl linking build_image
+	make clean
+	@echo "Cleaned object files and empty directories."
+
+	@END_TIME=$$(date +%s); \
+	ELAPSED_TIME=$$((END_TIME - $(START_TIME))); \
+	echo "Build took $$ELAPSED_TIME seconds."
+
 	make run
 
+partial_build: kernel linking build_image
+	@echo "Cleaned object files and empty directories."
+
+	@END_TIME=$$(date +%s); \
+	ELAPSED_TIME=$$((END_TIME - $(START_TIME))); \
+	echo "Build took $$ELAPSED_TIME seconds."
+	
+	make run
 
 # Clean build files
 clean:
-	rm -f $(BUILD_DIR)/*.o
-	#rm -rf $(ISO_DIR)
+	# Delete all .o and .d files recursively inside build directory
+	find $(BUILD_DIR) -type f \( -name '*.o' -o -name '*.d' \) -delete
+
+	# Remove empty directories (which had only .o, .d files) inside build directory
+	find $(BUILD_DIR) -type d -empty -delete
+
+	# Remove all files from iso_root directory
+	rm -rf $(ISO_DIR)/*
+
+	@echo "Cleaned object files and empty directories."
+
+
+
+# Hard clean build files
+hard_clean:
+	# Delete all .o and .d files recursively inside build directory
+	find $(BUILD_DIR) -type f \( -name '*.o' -o -name '*.d' \) -delete
+
+	# Remove empty directories (which had only .o, .d files) inside build directory
+	find $(BUILD_DIR) -type d -empty -delete
+
+	# Remove all files from build directory
+	rm -rf $(BUILD_DIR)/*
+
+	@echo "Cleaned object files and empty directories."
 
 # Running by qemu
 run: 
@@ -394,21 +212,29 @@ run:
 		-D $(DEBUG_DIR)/qemu.log \
 		-vga std
 
-
-
-
-	
+default: build
+	@echo "Default target executed. Use 'make help' for more options."
 
 help:
 	@echo "Available targets:"
 	@echo "  make -B              - For Fresh rebuild"
+	@echo "  make all             - Build the project (default target)"
+	@echo "  make kernel          - Compile the kernel source files"
+	@echo "  make lvgl            - Compile the LVGL library source files"
+	@echo "  make linking         - Link the kernel and LVGL object files"
+	@echo "  make build_image     - Create the ISO image for the OS"
+	@echo "  make build           - Build the project (default target)"
+	@echo "  make debug           - Run the OS using QEMU with GDB debugging"
 	@echo "  make run             - Run the default target (displays this help message)"
-	@echo "  make build           - Compile the project (simulated in this example)"
 	@echo "  make clean           - Clean up build artifacts"
 	@echo "  make help            - Display this help menu"
+	@echo "  make hard_clean      - Clean up build artifacts and remove empty directories and iso_root files *.iso, *bin , disk.img files"
+	@echo "  make partial_build   - Use previous lvgl objects build only kernel without cleaning up"
 
 
-.PHONY: default build run clean help
+
+# This is a phony target, meaning it doesn't correspond to a file.
+.PHONY: all kernel lvgl linking build build_image clean run help hard_clean partial_build
 
 
 
