@@ -8,7 +8,7 @@
 
 START_TIME := $(shell date +%s)
 
-LIMINE_DIR = limine
+LIMINE_DIR = limine-8.6.0
 LVGL_DIR = lvgl-9.2.2
 
 SRC_DIR = kernel
@@ -161,7 +161,7 @@ partial_build: kernel linking build_image
 	@END_TIME=$$(date +%s); \
 	ELAPSED_TIME=$$((END_TIME - $(START_TIME))); \
 	echo "Build took $$ELAPSED_TIME seconds."
-	
+
 	make run
 
 # Clean build files
