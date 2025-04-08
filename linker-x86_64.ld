@@ -67,8 +67,8 @@ SECTIONS
     /* Stack section */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
     .stack ALIGN(16) : {
-        /* Reserve 16 KiB for the kernel stack */
-        . = . + 16 * 1024;
+        /* Reserve 1 MB for the kernel stack */
+        . = . + 1024 * 1024;
     }
 
     /* Discard .note.* and .eh_frame* since they may cause issues on some hosts. */

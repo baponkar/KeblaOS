@@ -11,8 +11,8 @@ START_TIME := $(shell date +%s)
 LIMINE_DIR = limine-8.6.0
 LVGL_DIR = lvgl-9.2.2
 
-SRC_DIR = kernel/src
-ISO_DIR = iso_root
+KERNEL_DIR = kernel-0.13
+ISO_DIR = build/iso_root
 BUILD_DIR = build
 DEBUG_DIR = debug
 CONFIG_DIR = config
@@ -67,28 +67,28 @@ $(BUILD_DIR)/lvgl/%.o: $(LVGL_DIR)/src/%.c
 
 
 # Find all .c files inside of kernel directory recursively
-KERNEL_SRC_FILES := $(shell find $(SRC_DIR) -name '*.c')
+KERNEL_SRC_FILES := $(shell find $(KERNEL_DIR)/src -name '*.c')
 
 # Create corresponding .o file paths inside $(BUILD_DIR)
-KERNEL_OBJ_FILES := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/kernel/%.o, $(KERNEL_SRC_FILES))
+KERNEL_OBJ_FILES := $(patsubst $(KERNEL_DIR)/src/%.c, $(BUILD_DIR)/kernel/%.o, $(KERNEL_SRC_FILES))
 
 # Find all .c files inside of src directory recursively
-KERNEL_SRC_ASM_FILES := $(shell find $(SRC_DIR) -name '*.asm')
+KERNEL_SRC_ASM_FILES := $(shell find $(KERNEL_DIR)/src -name '*.asm')
 
 # Create corresponding .o file paths inside $(BUILD_DIR)
-KERNEL_OBJ_ASM_FILES := $(patsubst $(SRC_DIR)/%.asm, $(BUILD_DIR)/kernel/%.o, $(KERNEL_SRC_ASM_FILES))
+KERNEL_OBJ_ASM_FILES := $(patsubst $(KERNEL_DIR)/src/%.asm, $(BUILD_DIR)/kernel/%.o, $(KERNEL_SRC_ASM_FILES))
 
 # Compile rule for all .o files found from kernel src directory
 kernel: $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES)
 
 
 # Rule to compile each .c file to .o
-$(BUILD_DIR)/kernel/%.o: $(SRC_DIR)/%.c
+$(BUILD_DIR)/kernel/%.o: $(KERNEL_DIR)/src/%.c
 	@mkdir -p $(dir $@)
 	$(GCC) $(GCC_FLAG) -c $< -o $@
 
 # Rule to compile each .asm file to .o
-$(BUILD_DIR)/kernel/%.o: $(SRC_DIR)/%.asm
+$(BUILD_DIR)/kernel/%.o: $(KERNEL_DIR)/src/%.asm
 	@mkdir -p $(dir $@)
 	$(NASM) $(NASM_FLAG) $< -o $@
 
@@ -119,7 +119,7 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	mkdir -p $(ISO_DIR)/boot
 
 	# Copying files to ISO directory and creating directories 
-	cp $(SRC_DIR)/img/boot_loader_wallpaper.bmp  $(ISO_DIR)/boot/boot_loader_wallpaper.bmp
+	cp $(KERNEL_DIR)/src/img/boot_loader_wallpaper.bmp  $(ISO_DIR)/boot/boot_loader_wallpaper.bmp
 	cp -v $(BUILD_DIR)/kernel.bin $(ISO_DIR)/boot/
 	mkdir -p $(ISO_DIR)/boot/limine
 	cp -v limine.conf $(LIMINE_DIR)/limine-bios.sys $(LIMINE_DIR)/limine-bios-cd.bin $(LIMINE_DIR)/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
@@ -128,7 +128,7 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
 
 	# Creating initrd.cpio module for bootloader. These files can be used for various purposes,
-	cp -v $(SRC_DIR)/initrd/initrd.cpio $(ISO_DIR)/boot/initrd.cpio
+	cp -v $(KERNEL_DIR)/src/initrd/initrd.cpio $(ISO_DIR)/boot/initrd.cpio
 
 	# Creating disk image file which will be used to create ISO image
 	dd if=/dev/zero of=$(BUILD_DIR)/disk.img bs=1M count=512
@@ -189,8 +189,20 @@ clean_kernel_object:
 	# Delete all .o and .d files recursively inside build/kernel directory
 	find $(BUILD_DIR)/kernel -type f \( -name '*.o' -o -name '*.d' \) -delete
 
-	# Remove empty directories (which had only .o, .d files) inside build directory
+	# Remove empty directories (which had only .o, .d files) inside build/kernel directory
 	find $(BUILD_DIR)/kernel -type d -empty -delete
+
+	# Remove directory from build/kernel directory
+	rm -rf $(BUILD_DIR)/kernel
+
+	# Remove all files from iso_root directory
+	rm -rf $(ISO_DIR)/*
+
+	# Remove build/kernel directory
+	rm -rf $(BUILD_DIR)/kernel
+
+	# Remove build/iso_root directory
+	rm -rf $(BUILD_DIR)/iso_root
 
 	@echo "Cleaned kernel object files and empty directories."
 
