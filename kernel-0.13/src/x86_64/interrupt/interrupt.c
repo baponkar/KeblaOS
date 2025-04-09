@@ -95,8 +95,6 @@ void isr_handler(registers_t *regs)
         printf("Received Interrupt : %d\n", regs->int_no);
         return;
     }
-
-    // cpu_exception_handler(regs);
 }
 
 

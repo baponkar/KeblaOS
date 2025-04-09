@@ -19,13 +19,3 @@ switch_to_user_mode:
 
     iretq               ; Return to user mode
 
-
-; user_stub.asm
-global user_stub
-section .text
-user_stub:
-    ; Minimal stub code that runs in user mode.
-    ; For testing, it can loop indefinitely.
-    mov rax, 0xDEADBEEF       ; Load a test value into rax (optional)
-.loop:
-    jmp .loop                 ; Infinite loop

@@ -8,6 +8,7 @@ Reference   : https://wiki.osdev.org/Limine
               https://wiki.osdev.org/Limine_Bare_Bones
               https://wiki.osdev.org/SSE
 */
+#include "../memory/vmm.h"
 #include "../driver/vga/vga_gfx.h"
 #include "../driver/vga/framebuffer.h"
 #include "../driver/vga/my_lvgl.h"
@@ -54,7 +55,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../kshell/ring_buffer.h"
 #include "../driver/mouse/mouse.h"       // mouse driver
 #include "../syscall/switch_to_user.h"
-
+#include "../syscall/syscall.h"
 
 #include "../file_system/fs.h"
 #include "../file_system/fat32.h"       // fat32_init
@@ -64,6 +65,14 @@ Reference   : https://wiki.osdev.org/Limine
 
 
 #include "kmain.h"
+
+extern uint64_t V_KMEM_LOW_BASE;
+extern uint64_t V_KMEM_UP_BASE;
+
+extern uint64_t V_UMEM_LOW_BASE;
+extern uint64_t V_UMEM_UP_BASE;
+
+extern uint64_t PHYSICAL_TO_VIRTUAL_OFFSET; // 0xFFFFFFFF010CA000
 
 
 extern ahci_controller_t sata_disk;             // Detecting by pci scan
@@ -135,18 +144,29 @@ void kmain(){
 
     
     
-    lvgl_init();
+    // lvgl_init();
     // create_gui();
-    create_gui_1();
+    // create_gui_1();
     // create_multiple_windows();
     // create_gui_animated();
+    // create_main_gui();
 
-    while (1) {
-        lv_timer_handler();   // Process LVGL tasks
-        apic_delay(5);        // Delay ~5 milliseconds (or your timer delay function)
-    }
+    printf("User Space Low Mem Phys. addr: %x\n", UMEM_LOW_BASE);
+    printf("User Space Low Mem Vir. addr: %x\n", V_UMEM_LOW_BASE);
+
+    // print_memory_map();
+
+    init_syscall();
+    init_user_mode();
     
+    
+
     // start_kshell();
+
+    // while (1) {
+    //     lv_timer_handler();   // Process LVGL tasks
+    //     apic_delay(5);        // Delay ~5 milliseconds (or your timer delay function)
+    // }
 
     halt_kernel();
 }

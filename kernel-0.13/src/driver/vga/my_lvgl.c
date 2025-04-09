@@ -181,3 +181,8 @@ void create_multiple_windows() {
     lv_label_set_text(label3, "This is Window 3 at Bottom");
     lv_obj_center(label3);
 }
+
+
+
+
+

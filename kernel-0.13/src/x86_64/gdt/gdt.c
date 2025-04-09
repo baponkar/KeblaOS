@@ -15,6 +15,7 @@
     https://wiki.osdev.org/Task_State_Segment
 
 */
+
 #include "../../cpu/cpu.h"
 #include "../../lib/stdio.h"
 #include "../../lib/string.h"
@@ -70,9 +71,9 @@ void set_core_gdt_tss(int core_id) {
     uint64_t stack = 0;
 
     if(core_id == 0){
-        stack = (uint64_t) read_rsp();
+        stack = (uint64_t) read_rsp();          // Using present bootstrap cpu stack
     }else{
-        stack = kmalloc_a(STACK_SIZE, true);
+        stack = kmalloc_a(STACK_SIZE, true);    // Assigning new stack memories for application cores
     }
     
     

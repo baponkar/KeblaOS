@@ -4,6 +4,12 @@ This is a simple PS/2 mouse driver for VGA graphics mode.
 It handles basic mouse movement and drawing a cursor on the screen.
 // Found from : https://forum.osdev.org/viewtopic.php?t=10247
 */
+
+#include "../../../../lvgl-9.2.2/lvgl.h"
+#include "../../../../lvgl-9.2.2/src/indev/lv_indev.h"
+
+
+
 #include "../../cpu/cpu.h"
 #include "../vga/framebuffer.h"
 #include "../vga/vga_term.h"     // vga_init, print_bootloader_info, print_memory_map, display_image
@@ -21,6 +27,12 @@ It handles basic mouse movement and drawing a cursor on the screen.
 
 #include "mouse.h"
 
+// Mouse cursor dimensions and colors
+#define CURSOR_WIDTH 8
+#define CURSOR_HEIGHT 8
+#define CURSOR_COLOR COLOR_RED      // Red
+#define CURSOR_BG_COLOR COLOR_BLACK // Black (to erase old position)
+
 #define MOUSE_IRQ 12       // IRQ number for PS/2 mouse
 #define MOUSE_VECTOR 44    // APIC interrupt vector for PS/2 mouse
 
@@ -30,20 +42,16 @@ It handles basic mouse movement and drawing a cursor on the screen.
 extern uint64_t fb_width;
 extern uint64_t fb_height;
 
-int mouse_x = 40; // Initial cursor x position
-int mouse_y = 12; // Initial cursor y position
 
+volatile int mouse_x = 40; // Initial cursor x position
+volatile int mouse_y = 12; // Initial cursor y position
+volatile bool mouse_left_pressed = false;
 
 
 uint8_t mouse_cycle = 0;
 int8_t mouse_bytes[3];
 bool mouse_initialized = false;
 
-// Mouse cursor dimensions and colors
-#define CURSOR_WIDTH 8
-#define CURSOR_HEIGHT 8
-#define CURSOR_COLOR COLOR_RED      // Red
-#define CURSOR_BG_COLOR COLOR_BLACK // Black (to erase old position)
 
 
 void mouse_wait(int type) {
@@ -71,14 +79,16 @@ uint8_t mouse_read() {
 
 
 // Draws the mouse cursor at its current position.
-void draw_mouse_cursor(int mouse_x, int mouse_y) {
-    fill_rectangle(mouse_x, mouse_y, CURSOR_WIDTH, CURSOR_HEIGHT, CURSOR_COLOR);
+void draw_mouse_cursor(int mouse_x, int mouse_y, uint32_t color) {
+    fill_rectangle(mouse_x, mouse_y, CURSOR_WIDTH, CURSOR_HEIGHT, color);
 }
 
 // Erases the mouse cursor at the given old position.
 void erase_mouse_cursor(int old_x, int old_y) {
     fill_rectangle(old_x, old_y, CURSOR_WIDTH, CURSOR_HEIGHT, CURSOR_BG_COLOR);
 }
+
+
 
 // Process incoming mouse data packets.
 void mouse_handler() {
@@ -105,7 +115,7 @@ void mouse_handler() {
         if (mouse_x > (int) fb_width) mouse_x = (int) fb_width;
         if (mouse_y > (int) fb_height) mouse_y = (int) fb_height;
 
-        draw_mouse_cursor(mouse_x, mouse_y);
+        draw_mouse_cursor(mouse_x, mouse_y, CURSOR_BG_COLOR);
     }
 }
 

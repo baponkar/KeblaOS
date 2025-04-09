@@ -21,7 +21,7 @@ uint64_t KMEM_UP_BASE;
 uint64_t KMEM_LOW_BASE;
 uint64_t KMEM_LENGTH;
 
-uint64_t UMEM_LOW_BASE = 0x1000;
+uint64_t UMEM_LOW_BASE = 0x100000;  // 1 MB
 uint64_t UMEM_UP_BASE;
 uint64_t UMEM_LENGTH;
 

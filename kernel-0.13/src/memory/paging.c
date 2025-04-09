@@ -75,7 +75,6 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
     page->user = (is_kernel) ? 0 : 1;   // Should the page be user-mode?
     page->frame = (is_kernel) ? (KMEM_LOW_BASE + (bit_no * FRAME_SIZE)) >> 12 : (UMEM_LOW_BASE + (bit_no * FRAME_SIZE)) >> 12; // Store physical base address
     is_kernel ? (KMEM_LOW_BASE += FRAME_SIZE) : (UMEM_LOW_BASE += FRAME_SIZE);
-
 }
 
 
@@ -118,26 +117,25 @@ void init_paging()
     current_pml4 = (pml4_t *) get_cr3_addr();
 
     // Updating lower half pages
-    // for (uint64_t addr = LOW_HALF_START; addr < LOW_HALF_END; addr += PAGE_SIZE) {
-    //     page_t *page = get_page(addr, 1, current_pml4);
-    //     if (!page) {
-    //         // Handle error: Failed to get the page entry
-    //         continue;
-    //     }
+    for (uint64_t addr = LOW_HALF_START; addr < 0x100000; addr += PAGE_SIZE) {
+        page_t *page = get_page(addr, 1, current_pml4);
+        if (!page) {
+            // Handle error: Failed to get the page entry
+            continue;
+        }
 
-    //     // Allocate a frame if not already allocated
-    //     if (!page->frame) {
-    //         alloc_frame(page, 0, 1); // Allocate a frame with user-level access
-    //     }
+        // Allocate a frame if not already allocated
+        if (!page->frame) {
+            alloc_frame(page, 0, 1); // page, is_kernel, rw
+        }
 
-    //     // Set the User flag (0x4 in x86_64) to allow user-level access
-    //     page->present = 1;  // Ensure the page is present
-    //     page->rw = 1;       // Allow read/write access
-    //     page->user = 1;     // Set user-accessible bit
-    // }
+        // Set the User flag (0x4 in x86_64) to allow user-level access
+        page->present = 1;  // Ensure the page is present
+        page->rw = 1;       // Allow read/write access
+        page->user = 1;     // Set user-accessible bit
+    }
 
     // Invalidate the TLB for the changes to take effect
-    // asm volatile("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "rax");
     flush_tlb_all();
     
     printf("[Info] Successfully Paging initialized.\n");
@@ -187,6 +185,7 @@ static pdpt_t* alloc_pdpt() {
 // The below function will not create a new pdpt, pd, pt and pages if already present for given virtual address
 page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
 
+    // printf("Inside of get_page:va=%x\n", va);
     uint64_t pml4_index = PML4_INDEX(va);
     uint64_t pdpt_index = PDPT_INDEX(va);
     uint64_t pd_index = PD_INDEX(va);
@@ -266,6 +265,7 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
 
     if(page != NULL) page->present = 1;
 
+    flush_tlb(va);
     // return page pointer
     return page;
 }
@@ -355,9 +355,9 @@ void test_paging() {
 
 
 // Function to flush TLB for a specific address
-void flush_tlb(uint64_t address) {
+void flush_tlb(uint64_t va) {
     // Use the invlpg instruction to invalidate the TLB entry for a specific address
-    asm volatile("invlpg (%0)" : : "r"(address) : "memory");
+    asm volatile("invlpg (%0)" : : "r"(va) : "memory");
 }
 
 

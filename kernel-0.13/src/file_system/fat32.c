@@ -283,7 +283,7 @@ uint32_t fat32_get_file_size(const char* filename) {
 void fat32_run_tests(HBA_PORT_T* global_port) {
     printf("[Info] Initializing FAT32...\n");
     if (!fat32_init(global_port)) {
-        printf("FAT32 init failed!\n");
+        printf("[Info] FAT32 init failed!\n");
         return;
     }
     printf("[Info] FAT32 initialized successfully.\n");
@@ -298,10 +298,10 @@ void fat32_run_tests(HBA_PORT_T* global_port) {
         printf("Failed to create file!\n");
         return;
     }
-    printf("File created successfully.\n");
+    printf(" File created successfully.\n");
 
     // 2. Write to file
-    printf("Writing to file: %s\n", filename);
+    printf(" Writing to file: %s\n", filename);
     if (!fat32_write_file(filename, (const uint8_t*)message, strlen(message))) {
         printf("Failed to write to file!\n");
         return;
@@ -310,22 +310,22 @@ void fat32_run_tests(HBA_PORT_T* global_port) {
 
     // 3. Read back the file
     memset(buffer, 0, sizeof(buffer));
-    printf("Reading from file: %s\n", filename);
+    printf(" Reading from file: %s\n", filename);
     if (!fat32_read_file(filename, buffer, sizeof(buffer))) {
-        printf("Failed to read file!\n");
+        printf(" Failed to read file!\n");
         return;
     }
-    printf("File contents: %s\n", buffer);
+    printf(" File contents: %s\n", buffer);
 
     // 4. Delete file
-    printf("Deleting file: %s\n", filename);
+    printf(" Deleting file: %s\n", filename);
     if (!fat32_delete_file(filename)) {
-        printf("Failed to delete file!\n");
+        printf(" Failed to delete file!\n");
         return;
     }
-    printf("File deleted successfully.\n");
+    printf(" File deleted successfully.\n");
 
-    printf("All FAT32 tests passed!\n");
+    printf("[Info] All FAT32 tests passed!\n");
 }
 
 

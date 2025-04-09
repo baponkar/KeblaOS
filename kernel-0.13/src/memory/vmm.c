@@ -50,6 +50,8 @@ void vm_alloc(uint64_t va) {
             page->rw = 1;   // Writable
             page->user = 1; // User accessible
         }
+    }else{
+        printf("page is not present\n");
     }
     
     // Invalidate the TLB for this address

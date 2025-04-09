@@ -36,6 +36,7 @@ void *uheap_alloc(size_t size) {
         V_UMEM_UP_BASE = V_UMEM_LOW_BASE;
     }
 
+    
     return (void *)va; // Return the start of the allocated region
 }
 
