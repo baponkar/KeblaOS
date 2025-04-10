@@ -1,20 +1,23 @@
 
+
 section .text
 global user_stub
+global user_stub_end
 
 user_stub:
-    ; Set syscall number in RAX (1 in this case)
-    mov rax, 1
-
-    ; Set argument in RDI (for example, 1234)
-    mov rdi, 1234
-
-    ; Call syscall
+    mov rax, 1          ; syscall number (e.g. print)
+    mov rdi, msg1        ; argument (message)
     syscall
+    ;hlt                 ; halt or infinite loop
+    
+    mov rax, 3          ; syscall number (e.g. exit)
+    mov rdi, msg2
+    syscall
+    hlt                 ; halt or infinite loop
+    
+user_stub_end:
 
-    ; After syscall, halt or loop
-    hlt
-
-.loop:
-    jmp .loop
+section .data
+msg1: db "Hello from userspace!", 10, 0  ; 10 is asci code of newline character \n
+msg2: db "Exit from userspace!", 10, 0
 

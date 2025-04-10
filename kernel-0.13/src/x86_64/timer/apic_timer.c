@@ -12,6 +12,7 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/08_Timer
 #include "../interrupt/pic.h"
 #include "../interrupt/apic.h"
 #include "../interrupt/interrupt.h"
+#include "../interrupt/irq_manage.h"
 #include "../../lib/string.h"
 #include "../../util/util.h"
 #include "../../lib/stdio.h"
@@ -25,6 +26,7 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/08_Timer
 
 
 #define APIC_TIMER_VECTOR  48
+#define APIC_IRQ 16     // 48 - 32
 
 #define MAX_APIC_TICKS  0xFFFFFFFFFFFFFFFF
 
@@ -177,7 +179,7 @@ void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large cou
     apic_write(APIC_REGISTER_TIMER_DIV , 0x3);                          // Set divisor
     apic_write(APIC_REGISTER_TIMER_INITCNT, apic_count);
 
-    interrupt_install_handler((APIC_TIMER_VECTOR - 32), &apic_timer_handler);
+    irq_install(APIC_IRQ, &apic_timer_handler);
     asm volatile("sti");
 
     printf("[Info] APIC Timer initialized with %d ms interval in CPU: %d.\n", interval_ms, get_lapic_id());

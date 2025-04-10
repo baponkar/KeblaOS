@@ -2,7 +2,8 @@
 /*
 MSR System Call
 */
-
+#include "../driver/vga/vga_term.h"
+#include "../kshell/ring_buffer.h"
 #include "../driver/io/ports.h"
 #include "../lib/stdio.h"
 #include "syscall.h"
@@ -14,8 +15,11 @@ MSR System Call
 
 #define EFER_SCE  (1 << 0)  // Enable SYSCALL/SYSRET
 
-#define USER_CS      0x1B  // User mode code selector (0x18 | 3)
-#define KERNEL_CS    0x08  // Kernel mode code selector
+#define USER_CS      0x1B   // User mode code selector (0x18 | 3)
+#define KERNEL_CS    0x08   // Kernel mode code selector
+
+extern void syscall_entry(); // from syscall_entry.asm
+extern ring_buffer_t* keyboard_buffer; // define into keyboard.c
 
 static inline uint64_t read_msr(uint32_t msr) {
     uint32_t low, high;
@@ -29,7 +33,6 @@ static inline void write_msr(uint32_t msr, uint64_t value) {
     asm volatile ("wrmsr" :: "c"(msr), "a"(low), "d"(high));
 }
 
-extern void syscall_entry(); // from syscall_entry.asm
 
 void init_syscall() {
     // Enable SYSCALL/SYSRET by setting SCE in IA32_EFER.
@@ -48,10 +51,55 @@ void init_syscall() {
     write_msr(MSR_SFMASK, 1 << 9);
 }
 
-void syscall_handler(uint64_t syscall_num, uint64_t arg1) {
-    if (syscall_num == 1) {
-        printf("User called syscall 1 with arg %d\n", (int)arg1);
+
+
+void syscall_handler(uint64_t syscall_num, uint64_t arg1, uint64_t arg2) {
+    switch (syscall_num) {
+        case SYSCALL_PRINT: {
+            const char* str = (const char*)arg1;
+            printf(str);  
+            break;
+        }
+        case SYSCALL_READ: {
+            char* user_buf = (char*)arg1;
+            uint64_t size = arg2;
+            size_t index = 0;
+            uint8_t ch;
+        
+            while (index < size - 1) {
+                while (is_ring_buffer_empty(keyboard_buffer)) {}
+        
+                if (ring_buffer_pop(keyboard_buffer, &ch) == 0) {
+                    if (ch == '\n' || ch == '\r') {
+                        break;
+                    }
+                    user_buf[index++] = ch;
+                }
+            }
+            user_buf[index] = '\0';
+            //return index; // return number of characters read
+        }        
+        case SYSCALL_EXIT: {
+            printf("User requested shell exit.\n");
+            while (1) __asm__("hlt");
+            break;
+        }
+        default:
+            printf("Unknown syscall: %d\n", (int)syscall_num);
+            break;
     }
 }
 
+
+void syscall(uint64_t num, uint64_t arg1, uint64_t arg2) {
+    __asm__ volatile (
+        "mov %%rdi, %1\n"
+        "mov %%rsi, %2\n"
+        "mov %%rax, %0\n"
+        "syscall\n"
+        :
+        : "r"(num), "r"(arg1), "r"(arg2)
+        : "rax", "rdi", "rsi"
+    );
+}
 

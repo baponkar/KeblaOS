@@ -23,7 +23,7 @@
 uint64_t stack_addr;
 uint64_t code_addr;
 
-extern void user_stub();
+extern uint64_t user_stub(uint64_t syscall_num, uint64_t arg1, uint64_t arg2);
 extern void switch_to_user_mode(uint64_t stack_addr, uint64_t code_addr);
 
 
@@ -34,7 +34,7 @@ uint64_t create_user_function() {
     // printf("Created a userspace pointer at: %x\n", user_addr);
 
     memcpy((void *)user_addr, (void *)&user_stub, 0x1000); // Copy function code
-    printf("memory copied from kernel function: %x into user function: %x\n", (uint64_t)&user_stub, (uint64_t) user_addr);
+    // printf("memory copied from kernel function: %x into user function: %x\n", (uint64_t)&user_stub, (uint64_t) user_addr);
 
     return user_addr; // Return the user-accessible function pointer
 }
@@ -46,7 +46,7 @@ void init_user_mode(){
 
     printf("Starting Switching to the user mode\n");
     switch_to_user_mode(stack_addr, code_addr);
-    // printf("Successfully Switch To User_mode implemented\n");
+    printf("Successfully Switch To User_mode implemented\n");
 }
 
 

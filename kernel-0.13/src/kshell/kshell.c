@@ -33,7 +33,7 @@
 extern void restore_cpu_state(registers_t* registers);
 
 // Global ring buffer to store keystrokes from the keyboard driver
-ring_buffer_t* keyboard_buffer;
+extern ring_buffer_t* keyboard_buffer;
 
 
 // Modified read_command that reads from the ring buffer.

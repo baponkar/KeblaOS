@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-
+extern bool has_apic(); // defined in cpuid.c 
 void apic_write(uint32_t reg, uint32_t value);
 uint32_t apic_read(uint32_t reg);
 

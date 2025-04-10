@@ -10,14 +10,15 @@
 #include "../../lib/stdio.h"
 #include "../../driver/io/ports.h"
 #include "../interrupt/interrupt.h"
+#include "../interrupt/irq_manage.h"
 #include "../../util/util.h"
 
 #include "pit_timer.h"
 
+#define PIT_TIMER_VECTOR  32 
+#define PIT_TIMER_IRQ 0 // 32-32
 
 #define MAX_PIT_TICKS 0xFFFFFFFFFFFFFFFF
-
-#define PIT_TIMER_VECTOR  32 
 
 #define CHANEL0_DATA_PORT 0x40
 #define CHANEL1_DATA_PORT 0x41
@@ -73,11 +74,17 @@ void pit_timerHandler(registers_t *regs) {
     outb(0x20, 0x20); // Send End of Interrupt (EOI) to the PIC
 }
 
+void enable_pit_timer(){
+    irq_install(PIT_TIMER_IRQ, &pit_timerHandler); 
+}
 
+void disable_pit_timer(){
+    irq_uninstall(PIT_TIMER_IRQ);
+}
 
 void init_pit_timer(uint32_t interval_ms) {
     asm volatile("cli");
-    interrupt_install_handler((PIT_TIMER_VECTOR - 32), &pit_timerHandler); // IRQ0 for PIT timer
+    enable_pit_timer();
 
     // Compute frequency and divisor dynamically
     frequency = 1000 / interval_ms;  // Convert ms to Hz (interrupts per second)

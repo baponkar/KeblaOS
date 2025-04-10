@@ -8,6 +8,8 @@ Reference   : https://wiki.osdev.org/Limine
               https://wiki.osdev.org/Limine_Bare_Bones
               https://wiki.osdev.org/SSE
 */
+
+#include "../usr/user_shell.h"
 #include "../memory/vmm.h"
 #include "../driver/vga/vga_gfx.h"
 #include "../driver/vga/framebuffer.h"
@@ -63,6 +65,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../driver/vga/my_lvgl.h"
 #include "../../../lvgl-9.2.2/lvgl.h"
 
+#include "../x86_64/interrupt/irq_manage.h"
 
 #include "kmain.h"
 
@@ -78,6 +81,9 @@ extern uint64_t PHYSICAL_TO_VIRTUAL_OFFSET; // 0xFFFFFFFF010CA000
 extern ahci_controller_t sata_disk;             // Detecting by pci scan
 extern ahci_controller_t network_controller;    // Detecting by pci scan
 
+void systemcall_handler(registers_t regs){
+    printf("Hello from system call!\n");
+}
 
 void kmain(){
 
@@ -143,7 +149,6 @@ void kmain(){
     // );
 
     
-    
     // lvgl_init();
     // create_gui();
     // create_gui_1();
@@ -151,15 +156,17 @@ void kmain(){
     // create_gui_animated();
     // create_main_gui();
 
-    printf("User Space Low Mem Phys. addr: %x\n", UMEM_LOW_BASE);
-    printf("User Space Low Mem Vir. addr: %x\n", V_UMEM_LOW_BASE);
 
     // print_memory_map();
 
-    init_syscall();
-    init_user_mode();
-    
-    
+    rtc_init();
+
+    // init_syscall();
+    // init_user_mode();
+
+    // irq_install(140, (void *)&systemcall_handler);
+    // test_interrupt();
+  
 
     // start_kshell();
 

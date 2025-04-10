@@ -7,6 +7,7 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_K
 #include "../../x86_64/interrupt/apic.h"
 #include "../../x86_64/interrupt/ioapic.h"
 #include "../../x86_64/interrupt/interrupt.h"
+#include "../../x86_64/interrupt/irq_manage.h"
 #include "../../lib/stdlib.h"
 #include "../../lib/string.h"
 #include "../../lib/stdio.h"
@@ -17,11 +18,11 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_K
 
 #include "keyboard.h"
 
-#define KEYBOARD_BUF_SIZE 128 // Ring buffer capacity for keystrokes
+#define KEYBOARD_BUF_SIZE 128   // Ring buffer capacity for keystrokes
 #define KEYBOARD_INT_VECTOR 33
-#define  KEYBOARD_IRQ 1
+#define KEYBOARD_IRQ 1          // 33 - 32
 
-extern ring_buffer_t* keyboard_buffer;
+ring_buffer_t* keyboard_buffer;
 
 
 uint32_t scanCode;      // What key is pressed
@@ -243,12 +244,11 @@ void initKeyboard(){
 }
 
 void enableKeyboard(){
-    // apic_interrupt_install_handler(1, &keyboardHandler);
-    interrupt_install_handler(KEYBOARD_IRQ, &keyboardHandler);
+    irq_install(KEYBOARD_IRQ, &keyboardHandler);
 }
 
 void disableKeyboard(){
-    interrupt_uninstall_handler(1);
+    irq_uninstall(KEYBOARD_IRQ);
 }
 
 

@@ -86,20 +86,11 @@ extern void irq16();    // APIC Timer
 extern void irq17();    // HPET Timer
 extern void irq18();
 
+extern void irq140();   // System Call
 
 extern void interrupt_flush(uint64_t);
 extern int_entry_t int_entries[256];
 extern int_ptr_t int_ptr;
-
-extern char* exception_messages[];
-
-extern void (*interrupt_routines[224])(registers_t *);
-
-void isr_handler(registers_t *regs);
-void irq_handler(registers_t *regs);
-
-void interrupt_install_handler(int int_no, void (*handler)(registers_t *r));
-void interrupt_uninstall_handler(int int_no);
 
 
 void init_core_interrupt(uint64_t core_id);
@@ -108,7 +99,6 @@ void init_application_core_interrupt(int start_core_id, int end_core_id);
 
 
 void test_interrupt();
-void gpf_handler(registers_t *regs);
-void debug_error_code(int err_code);
+
 
 

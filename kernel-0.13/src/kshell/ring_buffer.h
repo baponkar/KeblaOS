@@ -29,7 +29,7 @@ void ring_buffer_push(ring_buffer_t* rb, uint8_t data);     // Push an element i
 int ring_buffer_pop(ring_buffer_t* rb, uint8_t *data);      // Pop an element from the ring buffer. Returns 0 on success, -1 if empty.
 
 
-void uses_of_ring_buffer();
+void uses_of_ring_buffer();                                 // Testing of ring buffer.
 
 
 

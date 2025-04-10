@@ -8,8 +8,6 @@ It handles basic mouse movement and drawing a cursor on the screen.
 #include "../../../../lvgl-9.2.2/lvgl.h"
 #include "../../../../lvgl-9.2.2/src/indev/lv_indev.h"
 
-
-
 #include "../../cpu/cpu.h"
 #include "../vga/framebuffer.h"
 #include "../vga/vga_term.h"     // vga_init, print_bootloader_info, print_memory_map, display_image
@@ -19,6 +17,7 @@ It handles basic mouse movement and drawing a cursor on the screen.
 #include "../../x86_64/interrupt/apic.h"        // APIC interrupt support
 #include "../../x86_64/interrupt/ioapic.h"      // IOAPIC support
 #include "../../x86_64/interrupt/interrupt.h"   // Interrupt handler installation
+#include "../../x86_64/interrupt/irq_manage.h"
 
 #include "../io/ports.h"
 
@@ -132,12 +131,12 @@ void mouseHandler(registers_t *regs) {
 
 // Enable mouse interrupts using APIC (no PIC modifications needed)
 void enable_mouse() {
-    interrupt_install_handler(MOUSE_IRQ, &mouseHandler);
+    irq_install(MOUSE_IRQ, &mouseHandler);
 }
 
 // Disable mouse interrupts
 void disable_mouse() {
-    interrupt_uninstall_handler(MOUSE_VECTOR);
+    irq_uninstall(MOUSE_VECTOR);
 }
 
 

@@ -5,7 +5,8 @@
 
 #include "rtc.h"
 
-#define RTC_IRQ_VECTOR  0x28
+#define RTC_VECTOR  40
+#define RTC_IRQ 8   // 40 - 32
 // Ports for RTC
 #define RTC_COMMAND_PORT 0x70
 #define RTC_DATA_PORT 0x71

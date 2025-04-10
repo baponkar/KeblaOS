@@ -1,30 +1,27 @@
-; syscall_entry.asm
-global syscall_entry
-extern syscall_handler
-
-section .text
 global syscall_entry
 extern syscall_handler
 
 section .text
 syscall_entry:
-    ; Save necessary registers
-    push r11             ; RFLAGS from SYSCALL
-    push rcx             ; Return address from SYSCALL
-    push rax             ; Save syscall number
-    push rdi             ; Save user's RDI (first argument)
+    ; Don't touch RCX or R11! They are used by sysretq.
 
-    ; Set up arguments for syscall_handler
-    mov rdi, rax         ; First argument: syscall number (from RAX)
-    mov rsi, [rsp]       ; Second argument: user's RDI (saved on stack)
+    ; Save other registers if needed
+    push rdi
+    push rsi
+    push rdx
+    push rax
 
-    ; Call the C handler
+    ; Arguments to syscall_handler(syscall_num, arg1)
+    mov rsi, rdi         ; user argument → RSI
+    mov rdi, rax         ; syscall number → RDI
+
     call syscall_handler
 
-    ; Clean up stack and restore registers
-    add rsp, 16          ; Pop RDI and RAX (discard saved values)
-    pop rcx              ; Restore RCX (return address)
-    pop r11              ; Restore R11 (RFLAGS)
+    ; Restore registers
+    pop rax
+    pop rdx
+    pop rsi
+    pop rdi
 
-    ; Return to user mode with SYSRET
+    ; Return to user — RCX and R11 must still hold original values
     sysretq
