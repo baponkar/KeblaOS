@@ -2,23 +2,24 @@
 # Reference: https://www.gnu.org/software/make/manual/html_node/index.html
 # Reference: https://wiki.osdev.org/Makefile
 
-# Last Updated : 04-01-2025
+# Last Updated : 10-04-2025
 # Author : Bapon Kar
 # Repository url : https://github.com/baponkar/KeblaOS
 
 START_TIME := $(shell date +%s)
 
-LIMINE_DIR = limine-8.6.0
-LVGL_DIR = lvgl-9.2.2
+OS_NAME = KeblaOS
+OS_VERSION = 0.14
 
-KERNEL_DIR = kernel-0.13
+LIMINE_DIR = limine-8.6.0
+
+KERNEL_DIR = kernel-$(OS_VERSION)
 ISO_DIR = build/iso_root
 BUILD_DIR = build
 DEBUG_DIR = debug
 CONFIG_DIR = config
 
-OS_NAME = KeblaOS
-OS_VERSION = 0.13
+BUILD_INFO_FILE = $(BUILD_DIR)/build_info.txt
 
 HOST_HOME = /home/baponkar
 
@@ -51,20 +52,6 @@ OBJDUMP = /usr/local/x86_64-elf/bin/x86_64-elf-objdump
 LD = /usr/local/x86_64-elf/bin/x86_64-elf-ld
 LD_FLAG = -m elf_x86_64 -nostdlib -static -z max-page-size=0x1000
 
-# Find all .c files inside $(LVGL_DIR)/src recursively
-LVGL_SRC_FILES := $(shell find $(LVGL_DIR)/src -name '*.c')
-
-# Create corresponding .o file paths inside $(BUILD_DIR)
-LVGL_OBJ_FILES := $(patsubst $(LVGL_DIR)/src/%.c, $(BUILD_DIR)/lvgl/%.o, $(LVGL_SRC_FILES))
-
-# Compile rule for all .o files found from LVGL src directory
-lvgl: $(LVGL_OBJ_FILES)
-
-# Rule to compile each .c file to .o for LVGL
-$(BUILD_DIR)/lvgl/%.o: $(LVGL_DIR)/src/%.c
-	@mkdir -p $(dir $@)
-	$(GCC) $(GCC_FLAG) -c $< -o $@
-
 
 # Find all .c files inside of kernel directory recursively
 KERNEL_SRC_FILES := $(shell find $(KERNEL_DIR)/src -name '*.c')
@@ -96,15 +83,14 @@ $(BUILD_DIR)/kernel/%.o: $(KERNEL_DIR)/src/%.asm
 linking: $(BUILD_DIR)/kernel.bin
 
 # Rule to link all object files into a single kernel binary
-$(BUILD_DIR)/kernel.bin: $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES) $(LVGL_OBJ_FILES)
-	@echo "Linking kernel..."
+$(BUILD_DIR)/kernel.bin: $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES)
 	$(LD) $(LD_FLAG) -T linker-x86_64.ld -o $@ $^
-	@echo "Kernel linked successfully."
+
 
 #$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin
 #	$(OBJDUMP) -DxS $< >$@
 
-build_image: $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso 
+build_image: $(BUILD_INFO_FILE) $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso 
 
 # Creating ISO image
 $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBUG_DIR)/objdump.txt
@@ -139,83 +125,9 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 
 
 
-# Clean build files
-clean:
-	# Delete all .o and .d files recursively inside build directory
-	@echo "Cleaning object files..."
-	find $(BUILD_DIR) -type f \( -name '*.o' -o -name '*.d' \) -delete
 
-	# Remove empty directories (which had only .o, .d files) inside build directory
-	@echo "Removing empty directories..."
-	find $(BUILD_DIR) -type d -empty -delete
-
-	# Remove all files from iso_root directory
-	@echo "Removing files from iso_root directory..."
-	rm -rf $(ISO_DIR)/*
-
-	@echo "Cleaned object files and empty directories."
-
-
-
-# Hard clean build files
-hard_clean:
-	# Delete all .o and .d files recursively inside build directory
-	find $(BUILD_DIR) -type f \( -name '*.o' -o -name '*.d' \) -delete
-
-	# Remove empty directories (which had only .o, .d files) inside build directory
-	find $(BUILD_DIR) -type d -empty -delete
-
-	# Remove all files from build directory
-	rm -rf $(BUILD_DIR)/*
-
-	@echo "Cleaned object files and empty directories."
-
-clean_iso:
-	# Remove bin files from build directory
-	rm -rf $(BUILD_DIR)/*.bin
-
-	# Remove disk image file from build directory
-	rm -rf $(BUILD_DIR)/disk.img
-
-	# Remove iso image file from build directory
-	rm -rf $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
-
-	# Remove all files from iso_root directory
-	rm -rf $(ISO_DIR)/*
-
-	@echo "Cleaned iso_root directory."
-
-clean_kernel_object:
-	# Delete all .o and .d files recursively inside build/kernel directory
-	find $(BUILD_DIR)/kernel -type f \( -name '*.o' -o -name '*.d' \) -delete
-
-	# Remove empty directories (which had only .o, .d files) inside build/kernel directory
-	find $(BUILD_DIR)/kernel -type d -empty -delete
-
-	# Remove directory from build/kernel directory
-	rm -rf $(BUILD_DIR)/kernel
-
-	# Remove all files from iso_root directory
-	rm -rf $(ISO_DIR)/*
-
-	# Remove build/kernel directory
-	rm -rf $(BUILD_DIR)/kernel
-
-	# Remove build/iso_root directory
-	rm -rf $(BUILD_DIR)/iso_root
-
-	@echo "Cleaned kernel object files and empty directories."
-
-clean_lvgl_object:
-	# Delete all .o and .d files recursively inside build/lvgl directory
-	find $(BUILD_DIR)/lvgl -type f \( -name '*.o' -o -name '*.d' \) -delete
-
-	# Remove empty directories (which had only .o, .d files) inside build directory
-	find $(BUILD_DIR)/lvgl -type d -empty -delete
-
-	@echo "Cleaned lvgl object files and empty directories."
 # Running by qemu
-run: 
+run:
 	# GDB Debuging
 	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 -smp cores=2,threads=2,sockets=1,maxcpus=4 -s -S -rtc base=utc,clock=host
 
@@ -234,13 +146,37 @@ run:
 		-D $(DEBUG_DIR)/qemu.log \
 		-vga std
 
-# build: hard_clean kernel lvgl linking build_image clean run
-# The below make do not generate lvgl object files as it was taking too long
-build: clean_iso clean_kernel_object kernel linking build_image clean_kernel_object run
 
-all : build
 
-default: build
+# clean all things from inside of build directory
+clean:
+	# Delete all .o and .d files recursively inside build directory
+	find $(BUILD_DIR) -type f \( -name '*.o' -o -name '*.d' \) -delete
+
+	# Remove empty directories (which had only .o, .d files) inside build directory
+	find $(BUILD_DIR) -type d -empty -delete
+
+	# Remove all files from build directory
+	rm -rf $(BUILD_DIR)/*
+
+	@echo "Cleaned object files and empty directories."
+
+
+# Cleaning without binary and iso files
+soft_clean:
+	# Delete all .o and .d files recursively inside build directory
+	find $(BUILD_DIR) -type f \( -name '*.o' -o -name '*.d' \) -delete
+
+	# Deleting iso_root directory
+	rm -rf $(BUILD_DIR)/iso_root
+
+	# Deleting kernel directory
+	rm -rf $(BUILD_DIR)/kernel
+
+
+all: clean kernel linking build_image soft_clean run
+build: kernel linking build_image
+default: all
 
 
 help:
@@ -248,21 +184,28 @@ help:
 	@echo "  make -B              - For Fresh rebuild"
 	@echo "  make all             - Build the project (default target)"
 	@echo "  make kernel          - Compile the kernel source files"
-	@echo "  make lvgl            - Compile the LVGL library source files"
 	@echo "  make linking         - Link the kernel and LVGL object files"
 	@echo "  make build_image     - Create the ISO image for the OS"
-	@echo "  make build           - Build the project (default target)"
-	@echo "  make debug           - Run the OS using QEMU with GDB debugging"
+	@echo "  make build           - Build the iso image"
 	@echo "  make run             - Run the default target (displays this help message)"
 	@echo "  make clean           - Clean up build artifacts"
 	@echo "  make help            - Display this help menu"
-	@echo "  make hard_clean      - Clean up build artifacts and remove empty directories and iso_root files *.iso, *bin , disk.img files"
 
 
+# Create a file with the current timestamp and custom message
+$(BUILD_INFO_FILE):
+	@mkdir -p $(BUILD_DIR)
+	@echo "Build Information for $(OS_NAME) v$(OS_VERSION)" > $@
+	@echo "Build Time: $$(date)" >> $@
+	@echo "Build started by: $$(whoami)@$$(hostname)" >> $@
+	@echo "---------------------------------------" >> $@
+	@echo "Build Project by: make build" >> $@
+	@echo "Build Project and then Run iso by: make all" >> $@
+	@echo "Get make help by: make help" >> $@
 
 
 # This is a phony target, meaning it doesn't correspond to a file.
-.PHONY: all build part_build clean hard_clean help
+.PHONY: all build clean help
 
 
 
