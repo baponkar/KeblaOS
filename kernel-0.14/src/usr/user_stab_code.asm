@@ -9,8 +9,7 @@ user_stub:
     mov rdi, msg
     syscall
 
-    mov rax, 1
-    mov rdi, msg1
+    mov rax, 3
     syscall
 
 .hang:
@@ -22,6 +21,6 @@ user_stub_end:
 
 section .data
 msg: db "Hello from userspace!", 10, 0  ; 10 is asci code of newline character \n
-msg1: db "Test...", 10, 0
+
 
 

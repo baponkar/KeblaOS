@@ -1,11 +1,10 @@
 
 /*
-MSR System Call
+    MSR System Call
 
-https://wiki.osdev.org/SYSENTER#AMD:_SYSCALL/SYSRET
+    https://wiki.osdev.org/SYSENTER#AMD:_SYSCALL/SYSRET
 */
 #include "../driver/vga/vga_term.h"
-#include "../kshell/ring_buffer.h"
 #include "../driver/io/ports.h"
 #include "../lib/stdio.h"
 #include "syscall_manager.h"
@@ -15,13 +14,13 @@ https://wiki.osdev.org/SYSENTER#AMD:_SYSCALL/SYSRET
 #define MSR_LSTAR    0xC0000082
 #define MSR_SFMASK   0xC0000084
 
-#define EFER_SCE  (1 << 0)  // Enable SYSCALL/SYSRET
+#define EFER_SCE  (1 << 0)    // Enable SYSCALL/SYSRET
 
-#define USER_CS      0x1B   // User mode code selector (0x18 | 3)
-#define KERNEL_CS    0x08   // Kernel mode code selector
+#define USER_CS      0x1B     // User mode code selector (0x18 | 3)
+#define KERNEL_CS    0x08     // Kernel mode code selector
 
 extern void syscall_entry(); // from syscall_entry.asm
-extern ring_buffer_t* keyboard_buffer; // define into keyboard.c
+
 
 static inline uint64_t read_msr(uint32_t msr) {
     uint32_t low, high;
@@ -59,18 +58,14 @@ void syscall_handler(uint64_t syscall_num, uint64_t arg1, uint64_t arg2) {
     if(syscall_num == SYSCALL_PRINT){
         const char* str = (const char*)arg1;
         printf(str);  
-        return;
     }else if(syscall_num == SYSCALL_READ){
         char* user_buf = (char*)arg1;
         uint64_t size = arg2;
-        return;
     }else if(syscall_num == SYSCALL_EXIT){
         printf("User requested shell exit.\n");
-        // while (1) __asm__("hlt");
-        return;
+        while (1) __asm__("hlt");
     }else{
         printf("Unknown syscall: %d\n", (int)syscall_num);
-        return;
     }
 }
 

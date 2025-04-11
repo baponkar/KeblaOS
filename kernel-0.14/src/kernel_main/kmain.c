@@ -9,7 +9,7 @@ Reference   : https://wiki.osdev.org/Limine
               https://wiki.osdev.org/SSE
 */
 
-#include "../usr/user_shell.h"
+
 #include "../memory/vmm.h"
 #include "../driver/vga/vga_gfx.h"
 #include "../driver/vga/framebuffer.h"
@@ -55,7 +55,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../kshell/kshell.h"
 #include "../kshell/ring_buffer.h"
 #include "../driver/mouse/mouse.h"       // mouse driver
-#include "../syscall/switch_to_user.h"
+#include "../usr/switch_to_user.h"
 #include "../syscall/syscall_manager.h"
 
 #include "../file_system/fs.h"
@@ -104,8 +104,6 @@ void kmain(){
         init_pit_timer();
     }
     
-    
-
     // Memory management initialization
     init_pmm();
     init_paging();
@@ -135,9 +133,6 @@ void kmain(){
 
     init_syscall();
     init_user_mode();
-
-    char *temp = "Hello\n";
-    _syscall(1, (uint64_t)temp, 0);
 
     // irq_install(140, (void *)&systemcall_handler);
     // test_interrupt();

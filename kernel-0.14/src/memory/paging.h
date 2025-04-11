@@ -87,7 +87,6 @@ static pt_t* alloc_pt();
 static pd_t* alloc_pd();
 static pdpt_t* alloc_pdpt();
 page_t* get_page(uint64_t va, int make, pml4_t* pml4);
-void page_fault_handler(registers_t *regs);
 void test_paging();
 void flush_tlb(uint64_t address);
 void flush_tlb_all();

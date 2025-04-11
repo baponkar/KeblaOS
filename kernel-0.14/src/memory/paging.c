@@ -271,38 +271,7 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
 }
 
 
-// The below function will print some debug message for page fault 
-void page_fault_handler(registers_t *regs)
-{
-    // A page fault has occurred.
-    // Retrieve the faulting address from the CR2 register.
-    uint64_t faulting_address;
-    asm volatile("mov %%cr2, %0" : "=r"(faulting_address));
 
-    // Decode the error code to determine the cause of the page fault.
-    int present = !(regs->err_code & 0x1); // Page not present
-    int rw = regs->err_code & 0x2;         // Write operation?
-    int us = regs->err_code & 0x4;         // Processor was in user mode?
-    int reserved = regs->err_code & 0x8;   // Overwritten CPU-reserved bits of page entry?
-    int id = regs->err_code & 0x10;        // Caused by an instruction fetch?
-
-    // Output an error message with details about the page fault.
-    printf("Page fault! ( ");
-    if (present) printf("not present ");
-    if (rw) printf("write ");
-    if (us) printf("user-mode ");
-    if (reserved) printf("reserved ");
-    if (id) printf("instruction fetch ");
-    printf(") at address %x\n", faulting_address);
-
-
-    // Additional action to handle the page fault could be added here,
-    // such as invoking a page allocator or terminating a faulty process.
-
-    // Halt the system to prevent further errors (for now).
-    printf("Halting the system due to page fault.\n");
-    halt_kernel();
-}
 
 void test_paging() {
 

@@ -6,17 +6,17 @@
 #include  "../lib/stdio.h"
 #include  "../lib/string.h"
 #include "../kshell/kshell.h"
-#include "syscall_manager.h"
-#include "../usr/user_shell.h"
+#include "../syscall/syscall_manager.h"
+
 
 #include "switch_to_user.h"
 
 
-#define KERNEL_CS 0x08 | 0
-#define KERNEL_SS 0x10 | 0
+#define KERNEL_CS 0x08  // 0x08 | 0
+#define KERNEL_SS 0x10  // 0x10 | 0
 
-#define USER_CS 0x18 | 3    // 0x1B
-#define USER_SS 0x20 | 3    // 0x23
+#define USER_CS 0x1B    // 0x18 | 3
+#define USER_SS 0x23    // 0x20 | 3 = 100000 | 11 = 100011 = 0x23
 
 #define STACK_SIZE 0x4000   // 16 kb
 
