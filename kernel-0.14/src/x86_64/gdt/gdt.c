@@ -24,8 +24,12 @@
 #include "../interrupt/apic.h"
 #include "../../util/util.h"
 
+#include "tss.h"
+
 #include "gdt.h"
 
+
+/*
 #define MAX_CORES 256
 #define STACK_SIZE 0x4000  // 16 KB
 
@@ -132,6 +136,87 @@ void init_application_core_gdt_tss(int start_core_id, int end_core_id) {
         init_core_gdt_tss(i);
     }
 }
+*/
+
+#define STACK_SIZE 0x4000   // 16 KB
+#define GDT_ENTRIES 7       // 1-Null(64 Bit) + 2-Kernel(2*64 Bit) + 2-User(2*64 Bit) + 1-TSS(128 Bit)
+
+extern void gdt_flush(gdtr_t *gdtr);
+extern void tss_flush(uint16_t selector);
+
+gdt_entry_t gdt[GDT_ENTRIES];
+gdtr_t gdtr;
+
+// granularity(8 Bit)=> Flags(Upper 4 Bit) | Up-Limit(Lower 4 Bit)
+// flags = (granularity & 0xF0) >> 4
+// up_limit = granularity & 0xF
+void gdt_set_entry(int i, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran) {
+    gdt[i].limit_low     = (limit & 0xFFFF);
+    gdt[i].base_low      = (base & 0xFFFF);
+    gdt[i].base_middle   = (base >> 16) & 0xFF;
+    gdt[i].access        = access;
+    gdt[i].granularity   = (limit >> 16) & 0x0F;
+    gdt[i].granularity  |= gran & 0xF0;
+    gdt[i].base_high     = (base >> 24) & 0xFF;
+}
+
+// Access Byte                Flags       
+//      P DPL S E DC RW A      G DB L R
+// 92 = 1 00  1 0 0  1  0  A = 1 0  1 0
+// 93 = 1 00  1 0 0  1  1  C = 1 1  0 0
+void gdt_init(){
+    gdt_set_entry(0, 0, 0, 0, 0);              // Null Descriptor
+    gdt_set_entry(1, 0, 0xFFFF, 0x9A, 0xA0);   // Kernel Code Descriptor , Selector 0x08
+    gdt_set_entry(2, 0, 0xFFFF, 0x92, 0xA0);   // Kernel Data Descriptor , Selector 0x10
+    gdt_set_entry(3, 0, 0xFFFF, 0xFA, 0xA0);   // User Code Descriptor , Selector 0x18
+    gdt_set_entry(4, 0, 0xFFFF, 0xF2, 0xA0);   // User Data Descriptor , Selector 0x20
+
+    // gdtr.limit = (sizeof(gdt_entry_t) * GDT_ENTRIES) - 1;
+    // gdtr.base = (uint64_t) &gdt;
+}
+
+void gdt_tss_init(){
+    gdt_init();
+    tss_init();
+
+    gdtr.limit = (sizeof(gdt_entry_t) * GDT_ENTRIES) - 1;
+    gdtr.base = (uint64_t) &gdt;
+
+    gdt_flush(&gdtr);     // Load GDT
+    tss_flush(0x28);      // Selector 0x28 (5th entry in GDT)
+    // asm volatile("ltr %0" : : "r"(0x28));
+
+    printf("[Info] GDT & TSS initialized.\n");
+}
+
+
+void print_gdt_entry(uint16_t selector) {
+    uint64_t gdt_base = (uint64_t) &gdt;
+    size_t index = selector >> 3;
+    gdt_entry_t *entry = (gdt_entry_t*)(gdt_base + index * sizeof(gdt_entry_t));
+
+    uint32_t base = entry->base_high << 24 | entry->base_middle << 16 | entry->base_low;
+    uint32_t limit = (entry->granularity & 0xF) << 16 | entry->limit_low;
+    uint8_t access = entry->access;
+    uint8_t flags = (entry->granularity & 0xF0) >> 4;
+
+    printf("GDT Entry %x: Base=%x Limit=%x Access=%x Flags=%x\n",
+           selector, base, limit, access, flags);
+}
+
+
+// Example usage:
+// print_gdt_entry(0);     // Null Descriptor
+// print_gdt_entry(0x08);  // Kernel code segment
+// print_gdt_entry(0x10);  // Kernel data segment
+// print_gdt_entry(0x1B);  // User code segment
+// print_gdt_entry(0x23);  // User data segment
+// print_gdt_entry(0x28);  // TSS segment
+
+
+
+
+
 
 
 

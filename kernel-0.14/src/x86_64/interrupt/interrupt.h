@@ -86,7 +86,9 @@ extern void irq16();    // APIC Timer
 extern void irq17();    // HPET Timer
 extern void irq18();
 
-extern void irq140();   // System Call
+extern void irq140();   // Print System Call
+extern void irq141();   // Read System Call
+extern void irq142();   // Exit System Call
 
 extern void interrupt_flush(uint64_t);
 extern int_entry_t int_entries[256];

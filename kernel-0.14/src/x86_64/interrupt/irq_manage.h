@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "../../util/util.h"
 
 // Defined in irq
 extern void irq0();

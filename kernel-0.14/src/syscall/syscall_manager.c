@@ -4,8 +4,8 @@
 
     https://wiki.osdev.org/SYSENTER#AMD:_SYSCALL/SYSRET
 */
-#include "../driver/vga/vga_term.h"
-#include "../driver/io/ports.h"
+
+
 #include "../lib/stdio.h"
 #include "syscall_manager.h"
 
@@ -19,7 +19,7 @@
 #define USER_CS      0x1B     // User mode code selector (0x18 | 3)
 #define KERNEL_CS    0x08     // Kernel mode code selector
 
-extern void syscall_entry(); // from syscall_entry.asm
+extern void syscall_entry();  // from syscall_entry.asm
 
 
 static inline uint64_t read_msr(uint32_t msr) {
@@ -55,6 +55,7 @@ void init_syscall() {
 
 
 void syscall_handler(uint64_t syscall_num, uint64_t arg1, uint64_t arg2) {
+
     if(syscall_num == SYSCALL_PRINT){
         const char* str = (const char*)arg1;
         printf(str);  
@@ -65,7 +66,7 @@ void syscall_handler(uint64_t syscall_num, uint64_t arg1, uint64_t arg2) {
         printf("User requested shell exit.\n");
         while (1) __asm__("hlt");
     }else{
-        printf("Unknown syscall: %d\n", (int)syscall_num);
+        printf("Unknown syscall: %d\n", (int) syscall_num);
     }
 }
 

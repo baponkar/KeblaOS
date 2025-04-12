@@ -87,13 +87,13 @@ void page_fault_handler(registers_t *regs)
 }
 
 void gpf_handler(registers_t *regs){
-    printf("recieved interrupt: %d\n", regs->int_no);
     printf("%s\n", exception_messages[regs->int_no]);
+    printf("recieved interrupt: %d\n", regs->int_no);
     printf("Error Code: %x\n", regs->err_code);
     printf("CS: %x, RIP : %x\n", regs->iret_cs, regs->iret_rip);
 
     uint64_t *rsp = (uint64_t *)regs->iret_rsp;
-    printf("Stack Contents RSP : %x\n", (uint64_t)rsp);
+    printf("Stack (rsp = %x) Contents(First 26) :\n", (uint64_t)rsp);
     
     for (int i = 0; i < 26; i++) {
         printf("  [%x] = %x\n", (uint64_t)(rsp + i), rsp[i] );
@@ -107,7 +107,7 @@ void gpf_handler(registers_t *regs){
 void debug_error_code(int err_code) {
     // Print the raw error code in decimal and hexadecimal
     printf("Error Code (Decimal): %d\n", err_code);
-    printf("Error Code (Hexadecimal): %d\n", err_code);
+    printf("Error Code (Hexadecimal): %x\n", err_code);
     // Decode the error code bits
     printf("Decoding Error Code:\n");
 
@@ -161,9 +161,8 @@ void isr_handler(registers_t *regs)
         page_fault_handler(regs);
         return;
     }else if(regs->int_no == 13){
-        // print("General Protection Fault\n");
-        debug_error_code(regs->err_code);
         gpf_handler(regs);
+        // debug_error_code(regs->err_code);
         return;
     }else if(regs->int_no < 32){
         cpu_exception_handler(regs);

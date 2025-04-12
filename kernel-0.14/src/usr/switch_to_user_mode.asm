@@ -16,7 +16,7 @@ switch_to_user_mode:
     pushfq                  ; Push RFLAGS (Interrupts enabled)
     push 0x1B               ; CS = user code segment (ring 3)
     push rsi                ; Code address (Entry point)
-    sti                     ; Enable interrupts
+    sti                    ; Enable interrupts
 
-    iretq                   ; Return to user mode
+    iretfq                  ; Return to user mode
 

@@ -42,18 +42,6 @@ extern uint64_t V_KMEM_LOW_BASE;
 pml4_t *current_pml4;
 
 
-void debug_page(page_t *page){
-    printf("page pointer: %x\n", (uint64_t)page);
-    printf("page->present: %d\n", page->present);
-    printf("page->rw: %d\n", page->rw);
-    printf("page->pwt: %x\n", page->pwt);
-    printf("page->pcd: %x\n", page->pcd);
-    printf("page->accessed: %x\n", page->accessed);
-    printf("page->user: %d\n", page->user);
-    printf("page->frame: %x\n", page->frame);
-}
-
-
 // allocate a page with the free physical frame
 void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
     if (page->frame != 0) {
@@ -77,7 +65,6 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
     is_kernel ? (KMEM_LOW_BASE += FRAME_SIZE) : (UMEM_LOW_BASE += FRAME_SIZE);
 }
 
-
 // Function to deallocate a frame.
 void free_frame(page_t *page)
 {
@@ -97,7 +84,6 @@ void free_frame(page_t *page)
     return;
 }
 
-
 // return current cr3 address i.e. root pml4 pointer address
 uint64_t get_cr3_addr() {
     uint64_t cr3;
@@ -105,9 +91,6 @@ uint64_t get_cr3_addr() {
 
     return cr3;
 }
-
-
-
 
 void init_paging()
 {  
@@ -149,8 +132,6 @@ static page_t *alloc_page(){
     }
     return pg;
 }
-
-
 // Function to allocate a new page table
 static pt_t* alloc_pt() {
     pt_t* pt = (pt_t*)kmalloc_a(sizeof(pt_t), 1);
@@ -159,8 +140,6 @@ static pt_t* alloc_pt() {
     }
     return pt;
 }
-
-
 // Function to allocate a new page directory
 static pd_t* alloc_pd() {
     pd_t* pd = (pd_t*)kmalloc_a(sizeof(pd_t), 1);
@@ -169,8 +148,6 @@ static pd_t* alloc_pd() {
     }
     return pd;
 }
-
-
 // Function to allocate a new page directory pointer table
 static pdpt_t* alloc_pdpt() {
     pdpt_t* pdpt = (pdpt_t*)kmalloc_a(sizeof(pdpt_t), 1);
@@ -179,7 +156,6 @@ static pdpt_t* alloc_pdpt() {
     }
     return pdpt;
 }
-
 
 // This function will return corresponding page pointer from virtual address
 // The below function will not create a new pdpt, pd, pt and pages if already present for given virtual address
@@ -270,9 +246,6 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
     return page;
 }
 
-
-
-
 void test_paging() {
 
     printf("\nTest of Paging\n");
@@ -321,14 +294,11 @@ void test_paging() {
     printf("%x\n", val);
 }
 
-
-
 // Function to flush TLB for a specific address
 void flush_tlb(uint64_t va) {
     // Use the invlpg instruction to invalidate the TLB entry for a specific address
     asm volatile("invlpg (%0)" : : "r"(va) : "memory");
 }
-
 
 // Function to flush the entire TLB (by writing to cr3)
 void flush_tlb_all() {
@@ -339,7 +309,6 @@ void flush_tlb_all() {
     // Write the value of CR3 back to itself, which will flush the TLB
     asm volatile("mov %0, %%cr3" : : "r"(cr3) : "memory");
 }
-
 
 void map_virtual_memory(void *phys_addr, size_t size, uint64_t flags) {
     uint64_t pml4_index, pdpt_index, pd_index, pt_index;
@@ -398,7 +367,6 @@ void map_virtual_memory(void *phys_addr, size_t size, uint64_t flags) {
     flush_tlb(virt);
 }
 
-
 uint64_t create_new_pml4() {
     uint64_t pml4_ptr_phys = (uint64_t) kmalloc_a(sizeof(pml4_t), 1);
     memset((void*)pml4_ptr_phys, 0, sizeof(pml4_t)); // Clear PML4 table
@@ -407,10 +375,6 @@ uint64_t create_new_pml4() {
     map_virtual_memory((void*)pml4_ptr_phys, sizeof(pml4_t), PAGE_WRITE | PAGE_PRESENT);
     return pml4_ptr_phys;
 }
-
-
-
-
 
 bool is_user_page(uint64_t virtual_address) {
     uint64_t cr3 = get_cr3_addr(); // Get PML4 base address
@@ -435,6 +399,21 @@ bool is_user_page(uint64_t virtual_address) {
     return (pte & (1 << 2)) != 0;
 }
 
-
+void debug_page(page_t *page){
+    printf("page pointer: %x\n", (uint64_t)page);
+    printf("page->present: %d\n", page->present);
+    printf("page->rw: %d\n", page->rw);
+    printf("page->user: %d\n", page->user);
+    printf("page->pwt: %d\n", page->pwt);
+    printf("page->pcd: %d\n", page->pcd);
+    printf("page->accessed: %d\n", page->accessed);
+    printf("page->dirty: %d\n", page->dirty);
+    printf("page->pat: %d\n", page->pat);
+    printf("page->global: %d\n", page->global);
+    printf("page->ignored: %x\n", page->ignored);
+    printf("page->frame: %x\n", (page->frame << 12));
+    printf("page->reserved: %d\n", page->reserved);
+    printf("page->nx: %d\n", page->nx);
+}
 
 

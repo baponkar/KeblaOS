@@ -3,7 +3,7 @@ Interrupt Request(IRQ)
 
 */
 
-#include "../../util/util.h"
+
 #include "../../driver/io/ports.h"
 #include "../../cpu/cpuid.h"    //has_apic
 #include "apic.h" // apic_send_eoi

@@ -97,5 +97,6 @@ IRQ  16,    48      ; APIC Timer Interrupt
 IRQ  17,    49      ; HPET Timer Interrupt
 IRQ  18,    50 
 
-IRQ  140,   172     ; System Call Interrupt
-
+IRQ  140,   172     ; Print System Call Interrupt
+IRQ  141,   173     ; Read System Call Interrupt
+IRQ  142,   174     ; Exit System Call Interrupt

@@ -192,7 +192,7 @@ uint32_t get_cpu_base_frequency() {
     if (eax == 0) {
         return 0;  // CPU does not report frequency
     }
-
+    
     return eax * 1000000ULL;  // Convert MHz to Hz
 }
 
@@ -256,7 +256,7 @@ void enable_fpu_and_sse() {
         : "rax"
     );
 
-    asm volatile ("fninit");  // Initialize the FPU
+    asm volatile ("fninit");    // Initialize the FPU
 }
 
 

@@ -123,7 +123,10 @@ void set_core_descriptor_table(uint64_t core_id){
     core_int_set_gate(core_id, 49, (uint64_t)&irq17, 0x08, 0x8E);   // HPET Timer, IRQ17
     core_int_set_gate(core_id, 50, (uint64_t)&irq18, 0x08, 0x8E);   // Available, IRQ18
 
-    core_int_set_gate(core_id, 172, (uint64_t)&irq140, 0x08, 0x8E); // System Call, IRQ140
+    core_int_set_gate(core_id, 172, (uint64_t)&irq140, 0x08, 0xEE); // Print System Call, IRQ140
+    core_int_set_gate(core_id, 173, (uint64_t)&irq141, 0x08, 0xEE); // Read System Call, IRQ141
+    core_int_set_gate(core_id, 174, (uint64_t)&irq142, 0x08, 0xEE); // Exit System Call, IRQ142
+
 }
 
 
@@ -179,6 +182,8 @@ void test_interrupt() {
     // asm volatile ("int $0x22");  // Interrupt Request, int no: 34
     // asm volatile ("int $0x30");     // Interrupt Request, int no: 48
     asm volatile ("int $0xAC");      // Interrupt Request for system call IRQ = 140, INT NO = 172
+    asm volatile("int $173");
+    asm volatile("int $174");
 }
 
 

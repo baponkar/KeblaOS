@@ -129,10 +129,30 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 # Running by qemu
 run:
 	# GDB Debuging
-	# qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 -smp cores=2,threads=2,sockets=1,maxcpus=4 -s -S -rtc base=utc,clock=host
+	# qemu-system-x86_64 \
+	#	-machine q35 \
+	#	-m 4096 \
+	#	-smp cores=4,threads=1,sockets=1,maxcpus=4 \
+	#	-s -S -rtc base=utc,clock=host \
+	#	-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
+	#	-serial stdio \
+	#	-d guest_errors,int,cpu_reset \
+	#	-D $(DEBUG_DIR)/qemu.log \
+	#	-vga std
 
 	# UEFI Boot
-	# qemu-system-x86_64 -hda $(BUILD_DIR)/disk.img -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -m 4096 -serial file:$(DEBUG_DIR)/serial_output.log -d guest_errors,int,cpu_reset -D $(DEBUG_DIR)/qemu.log -vga std -machine q35 -smp cores=2,threads=2,sockets=1,maxcpus=4 -bios /usr/share/OVMF/OVMF_CODE.fd  -rtc base=utc,clock=host
+	# qemu-system-x86_64 \
+	#	-machine q35 \
+	#	-m 4096 \
+	#	-smp cores=2,threads=2,sockets=1,maxcpus=4 \
+	#	-hda $(BUILD_DIR)/disk.img \
+	#	-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
+	#	-serial file:$(DEBUG_DIR)/serial_output.log \
+	#	-d guest_errors,int,cpu_reset \
+	#	-D $(DEBUG_DIR)/qemu.log \
+	#	-vga std \
+	#	-bios /usr/share/OVMF/OVMF_CODE.fd  \
+	#	-rtc base=utc,clock=host
 
 	# BIOS Boot
 	qemu-system-x86_64 \
@@ -144,7 +164,8 @@ run:
 		-serial stdio \
 		-d guest_errors,int,cpu_reset \
 		-D $(DEBUG_DIR)/qemu.log \
-		-vga std
+		-vga std \
+		-rtc base=utc,clock=host
 
 
 

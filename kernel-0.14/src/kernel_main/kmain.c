@@ -57,6 +57,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../driver/mouse/mouse.h"       // mouse driver
 #include "../usr/switch_to_user.h"
 #include "../syscall/syscall_manager.h"
+#include "../syscall/int_syscall_manager.h"
 
 #include "../file_system/fs.h"
 #include "../file_system/fat32.h"       // fat32_init
@@ -79,9 +80,7 @@ extern uint64_t PHYSICAL_TO_VIRTUAL_OFFSET;     // 0xFFFFFFFF010CA000
 extern ahci_controller_t sata_disk;             // Detecting by pci scan
 extern ahci_controller_t network_controller;    // Detecting by pci scan
 
-void systemcall_handler(registers_t regs){
-    printf("Hello from system call!\n");
-}
+
 
 void kmain(){
 
@@ -96,14 +95,26 @@ void kmain(){
     
     if(has_apic()){
         disable_pic();
+        gdt_tss_init();
         start_bootstrap_cpu_core();             // Enabling GDT, TSS, Interrupt and APIC Timer for bootstrap core
+        
+        // print_gdt_entry(0);     // Null Descriptor
+        // print_gdt_entry(0x08);  // Kernel code segment
+        // print_gdt_entry(0x10);  // Kernel data segment
+        // print_gdt_entry(0x1B);  // User code segment
+        // print_gdt_entry(0x23);  // User data segment
+        // print_gdt_entry(0x28);  // TSS segment
+        // extern tss_t tss;
+        // print_tss(&tss);
+
     }else{
         pic_irq_remap();
-        init_bootstrap_gdt_tss(0);
+        // init_bootstrap_gdt_tss(0);
+
         init_pic_interrupt();
         init_pit_timer();
     }
-    
+
     // Memory management initialization
     init_pmm();
     init_paging();
@@ -131,12 +142,18 @@ void kmain(){
 
     mouse_init();
 
-    init_syscall();
-    init_user_mode();
+    // MSR Based System Call
+    // init_syscall();
+    // init_user_mode();
+    // _syscall(1, (uint64_t)(char *)"Hello\n", 0);
+    
 
-    // irq_install(140, (void *)&systemcall_handler);
+    // Interrupt Based System Call
+    int_syscall_init();
+    init_user_mode();
     // test_interrupt();
-  
+
+
     // start_kshell();
 
     halt_kernel();
