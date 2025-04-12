@@ -28,14 +28,14 @@ References:
 
 
 extern void start_kshell();     // Defined in kshell.c
-extern void user_stub();        // Defined in user_stub.asm
-extern void user_stub_end();    // Defined in user_stub.asm 
+// extern void user_stub();        // Defined in user_stub.asm
+// extern void user_stub_end();    // Defined in user_stub.asm 
 extern void switch_to_user_mode(uint64_t stack_addr, uint64_t code_addr);   // Defined in switch_to_user_mode.asm
 
 
 uint64_t create_user_function() {
 
-    uint64_t user_stub_size = ((uint64_t)&user_stub_end - (uint64_t)&user_stub);
+    // uint64_t user_stub_size = ((uint64_t)&user_stub_end - (uint64_t)&user_stub);
 
     // uint64_t user_addr = (uint64_t) uheap_alloc(user_stub_size);    // Allocate a page in user space
     uint64_t user_addr = (uint64_t) uheap_alloc(0x1000);
@@ -75,10 +75,8 @@ void init_user_mode(){
     // debug_page(code_page);
     // printf("\n");
     
-    
     printf("Starting Switching to the user mode\n");
     switch_to_user_mode(stack_top_addr, code_addr);
-    // switch_to_user_mode1(stack_top_addr, code_addr);
 }
 
 
