@@ -61,10 +61,12 @@ void read_command(char *command, size_t bufsize) {
     command[index] = '\0';
 }
 
+
 // Rest of your shell.c implementation remains largely the same.
 void kshell_prompt() {
     color_print("KeblaOS>> ", COLOR_LIME);
 }
+
 
 void execute_command(char* command) {
     printf("\n");
@@ -72,7 +74,7 @@ void execute_command(char* command) {
     if(strcmp(command, "") == 0) {
         return; // Ignore empty commands
     }else if (strcmp(command, "help") == 0) {
-        printf("Available commands:\n help, clear, reboot, poweroff, calc, sl, features, time, meminfo, pwd, ps, pkill...\n");
+        printf("Available commands:\n help, clear, reboot, call print, poweroff, calc, sl, int, features, time, meminfo, pwd, ps, pkill...\n");
     }else if (strcmp(command, "clear") == 0) {
         clear_screen();
     }else if (strcmp(command, "exit") == 0) {
@@ -88,6 +90,8 @@ void execute_command(char* command) {
     }else if(strcmp(command, "sl") == 0){
         // Start locomotive animation
         sl_animation();
+    }else if(strcmp(command, "call print") == 0){
+        printf("This is a kernel function\n");
     }else if(strcmp(command, "features") == 0){
         print_os_features();
     }else if(strcmp(command, "time") == 0){

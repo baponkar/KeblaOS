@@ -2,7 +2,6 @@
 #include "../memory/kheap.h"
 #include "../memory/kmalloc.h"
 #include "../memory/vmm.h"
-#include "../ahci/ahci.h"
 #include "../lib/string.h"
 
 #include "fat32.h"
@@ -31,7 +30,7 @@ bool fat32_init(HBA_PORT_T* port) {
     fat32_info.fat_start_sector      = fat32_info.reserved_sector_count;
     fat32_info.cluster_heap_start_sector = fat32_info.fat_start_sector + fat32_info.num_fats * fat32_info.fat_size;
 
-    printf("[Info] FAT32 Info:\n");
+    printf("[Info] FAT32 Initialization:\n");
     printf(" Bytes per sector: %d\n", fat32_info.bytes_per_sector);
     
     return true;
@@ -281,12 +280,12 @@ uint32_t fat32_get_file_size(const char* filename) {
 
 
 void fat32_run_tests(HBA_PORT_T* global_port) {
-    printf("[Info] Initializing FAT32...\n");
+    printf("[-] Initializing FAT32...\n");
     if (!fat32_init(global_port)) {
-        printf("[Info] FAT32 init failed!\n");
+        printf("[-] FAT32 init failed!\n");
         return;
     }
-    printf("[Info] FAT32 initialized successfully.\n");
+    printf("[-] FAT32 initialized successfully.\n");
 
     const char* filename = "TEST    TXT"; // 8.3 format (space padded)
     const char* message = "Hello FAT32 World!";
@@ -325,7 +324,7 @@ void fat32_run_tests(HBA_PORT_T* global_port) {
     }
     printf(" File deleted successfully.\n");
 
-    printf("[Info] All FAT32 tests passed!\n");
+    printf("[-] All FAT32 tests passed!\n");
 }
 
 
@@ -360,6 +359,8 @@ bool fat32_create_directory(const char* name) {
 
     return true;
 }
+
+
 bool fat32_find_free_entry(uint32_t cluster, DIR_ENTRY* entry) {
     uint8_t buffer[512];
     uint32_t sector = fat32_cluster_to_sector(cluster);

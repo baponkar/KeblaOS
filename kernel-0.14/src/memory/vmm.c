@@ -88,9 +88,8 @@ void vm_free(uint64_t *ptr) {
     page->user = 0;
     page->frame = 0;
 
-    printf("vm_free: Going To Flashing TLB addr->%x\n", va);
+
     flush_tlb(va);
-    printf("vm_free: SUccessfully flashed %x memory\n", va);
 }
 
 // converting physical to virtual address

@@ -47,7 +47,6 @@ void kheap_free(void *ptr, size_t size) {
         return;
     }
 
-    printf("Actual value of size variable: %x\n", size);
     // Align size to page size (4 KiB)
     size = (size + 0xFFF) & ~0xFFF;
 
@@ -55,13 +54,13 @@ void kheap_free(void *ptr, size_t size) {
 
     // Free the pages corresponding to the memory region
     while (size > 0) {          // If size greater than zero
-        printf("\nInside kheap_free: va: %x, size:%x\n", va, size);
+        // printf("\nInside kheap_free: va: %x, size:%x\n", va, size);
         vm_free((void *)va);    // Free the virtual page
         va += PAGE_SIZE;        // Increase Virtual Address by 4KB
         size -= PAGE_SIZE;      // Decrease the size variable by 4KB
     }
 
-    printf("Successfully cleared memory from kheap_free\n");
+    // printf("Successfully cleared memory from kheap_free\n");
 }
 
 void test_kheap(){

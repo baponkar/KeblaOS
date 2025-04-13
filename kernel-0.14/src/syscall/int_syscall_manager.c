@@ -3,7 +3,6 @@ Interrupt Based System Call
 
 References: 
     https://github.com/dreamportdev/Osdev-Notes/blob/master/06_Userspace/04_System_Calls.md
-
 */
 
 #include "../lib/stdio.h"
@@ -14,15 +13,14 @@ References:
 
 
 registers_t *int_systemcall_handler(registers_t *regs){
-    registers_t *temp = regs;
     switch(regs->int_no){
-        case 172:
+        case INT_SYSCALL_PRINT:
             printf("System Call 172\n");
             break;
-        case 173:
+        case INT_SYSCALL_READ:
             printf("System Call 173\n");
             break;
-        case 174:
+        case INT_SYSCALL_EXIT:
             printf("System Call 174\n");
             break;
         default:
@@ -42,4 +40,23 @@ void int_syscall_init(){
     printf("[Info] Interrupt Based System Call initialized!\n");
 }
 
-
+char *syscall_test(int syscall_no){
+    switch(syscall_no){
+        case(INT_SYSCALL_PRINT):
+            asm volatile("int $173");
+            return NULL;
+            break;
+        case(INT_SYSCALL_READ):
+            asm volatile("int $173");
+            return NULL;
+            break;
+        case(INT_SYSCALL_EXIT):
+            asm volatile("int $173");
+            return NULL;
+            break;
+        default:
+            return NULL;
+            break;
+    }
+    return NULL;
+}

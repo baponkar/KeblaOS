@@ -16,7 +16,7 @@ user_stub:
     mov rax, msg 
     mov rdi, rax 
     call print 
-    call start_kshell
+    ;call start_kshell
 
     ;mov rax, 1  ; Printing System Call
     ;syscall

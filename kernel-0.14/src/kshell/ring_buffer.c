@@ -15,13 +15,16 @@ https://embedjournal.com/implementing-circular-buffer-embedded-c/
 
 // Initialize the ring buffer with given capacity.
 ring_buffer_t* ring_buffer_init(size_t capacity) {
+
     ring_buffer_t* rb = kheap_alloc(sizeof(ring_buffer_t));
     if (!rb) return NULL;
+
     rb->buffer = kheap_alloc(capacity * sizeof(uint8_t));
     if (!rb->buffer) {
         kheap_free((void *)rb,sizeof(ring_buffer_t));
         return NULL;
     }
+
     rb->max = capacity;
     rb->head = 0;
     rb->tail = 0;
@@ -101,3 +104,6 @@ void uses_of_ring_buffer() {
     
     ring_buffer_free((void *)rb, capacity);
 }
+
+
+

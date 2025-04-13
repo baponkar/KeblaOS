@@ -83,4 +83,10 @@ void init_user_mode(){
 
 
 
+int is_user_mode() {
+    uint64_t cs;
+    asm volatile ("mov %%cs, %0" : "=r"(cs));
+    return (cs & 0x3) == 3; // If CPL (bits 0-1) == 3, then it's user mode
+}
+
 

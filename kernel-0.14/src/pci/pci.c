@@ -57,7 +57,7 @@ void pci_write(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, ui
 }
 
 
-int detect_sata_disk(uint8_t bus, uint8_t device, uint8_t function,
+int detect_disk(uint8_t bus, uint8_t device, uint8_t function,
     uint8_t class, uint8_t subclass, uint8_t prog_if, uint8_t revision) {
 
     if(class == PCI_CLASS_MASS_STORAGE_CONTROLLER){
@@ -77,8 +77,8 @@ int detect_sata_disk(uint8_t bus, uint8_t device, uint8_t function,
                 sata_disk.abar = ((uint64_t)bar_high << 32) | ((uint64_t)bar_low & ~0xFULL);
                 sata_disk.initialized = false; // This sata drive will initialized by ahci
 
-                printf("[Info] Detected SATA Disk at %d:%d.%d - ", bus, device, function);
-                printf(" Class: %x, Subclass: %x, Prog IF: %x, Revision: %x\n",
+                printf("[-] Detected SATA Disk at %d:%d.%d - ", bus, device, function);
+                printf(" Class: %d, Subclass: %d, Prog IF: %d, Revision: %d\n",
                        class, subclass, prog_if, revision);
                 return 1;
             }
@@ -99,8 +99,8 @@ int detect_sata_disk(uint8_t bus, uint8_t device, uint8_t function,
             sata_disk.abar = ((uint64_t)bar_high << 32) | ((uint64_t)bar_low & ~0xFULL);
             sata_disk.initialized = false; // This sata drive will initialized by ahci
 
-            printf("[Info] Detected ATA Disk at %d:%d.%d - ", bus, device, function);
-            printf(" Class: %x, Subclass: %x, Prog IF: %x, Revision: %x\n",
+            printf("[-] Detected ATA Disk at %d:%d.%d - ", bus, device, function);
+            printf(" Class: %d, Subclass: %d, Prog IF: %d, Revision: %d\n",
                    class, subclass, prog_if, revision);
             return 1;
         }
@@ -120,8 +120,8 @@ int detect_sata_disk(uint8_t bus, uint8_t device, uint8_t function,
             sata_disk.abar = ((uint64_t)bar_high << 32) | ((uint64_t)bar_low & ~0xFULL);
             sata_disk.initialized = false; // This sata drive will initialized by ahci
 
-            printf("[Info] Detected IDE Disk at %d:%d.%d - ", bus, device, function);
-            printf(" Class: %x, Subclass: %x, Prog IF: %x, Revision: %x\n",
+            printf("[-] Detected IDE Disk at %d:%d.%d - ", bus, device, function);
+            printf(" Class: %d, Subclass: %d, Prog IF: %d, Revision: %d\n",
                    class, subclass, prog_if, revision);
             return 1;
         }
@@ -136,7 +136,7 @@ int detect_network_controller(uint8_t bus, uint8_t device, uint8_t function,
     uint8_t class, uint8_t subclass, uint8_t prog_if, uint8_t revision) {
 
     if (class == PCI_CLASS_NETWORK_CONTROLLER) {
-        printf("[Info] Detected Network Controller at %d:%d.%d - ", bus, device, function);
+        printf("[-] Detected Network Controller at %d:%d.%d - ", bus, device, function);
 
         switch (subclass) {
             case PCI_SUBCLASS_ETHERNET:
@@ -264,7 +264,7 @@ void pci_scan() {
             header_type, device_id, vendor_id, class, subclass, prog_if);*/
 
         // Detecting SATA Disk and storing into sata_disks array
-        int found_sata = detect_sata_disk(bus, device, function, class, subclass, prog_if, revision);
+        int found_sata = detect_disk(bus, device, function, class, subclass, prog_if, revision);
         // Detecting Network Controller
         int found_network = detect_network_controller(bus, device, function, class, subclass, prog_if, revision);
         // Detecting Wireless controller

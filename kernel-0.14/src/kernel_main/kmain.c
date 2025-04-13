@@ -59,8 +59,9 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../syscall/syscall_manager.h"
 #include "../syscall/int_syscall_manager.h"
 
-#include "../file_system/fs.h"
+
 #include "../file_system/fat32.h"       // fat32_init
+#include "../file_system/fs.h"          // test_file_operations()
 #include "../driver/vga/color.h"
 
 
@@ -124,23 +125,21 @@ void kmain(){
     //     start_secondary_cpu_cores(1, 3);     // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
     // }
 
-    // if(has_fpu()){
-    //     enable_fpu_and_sse();
-    // }
+    if(has_fpu()){
+        enable_fpu_and_sse();
+    }
 
-    // pci_scan();
+    pci_scan();
     
     // Test AHCI drivers for a successful read
-    // HBA_MEM_T* host = (HBA_MEM_T*) sata_disk.abar;
-    // probePort(host);
+    HBA_MEM_T* host = (HBA_MEM_T*) sata_disk.abar;
+    probePort(host);
 
-    // test_ahci(sata_disk);
+    test_ahci(sata_disk);
 
-    // fat32_init((HBA_PORT_T *)&host->ports[0]);
-    // fat32_read_root_dir();
-    // fat32_run_tests((HBA_PORT_T *)&host->ports[0]);
+    fat32_run_tests((HBA_PORT_T *)&host->ports[0]);
 
-    // mouse_init();
+    mouse_init();
 
     // MSR Based System Call
     // init_syscall();
@@ -149,12 +148,19 @@ void kmain(){
     
 
     // Interrupt Based System Call
-    // int_syscall_init();
+    int_syscall_init();
     // init_user_mode();
 
+    test_file_operations(host);
+    test_directory_operations(host);
 
+    if(is_user_mode() == 3){
+        printf("This is User's Space, CPL = %d\n", is_user_mode());
+    }else{
+        printf("This is Kernel's Space, CPL = %d\n", is_user_mode());
+    }
 
-    start_kshell();
+    // start_kshell();
 
     // process_t *ps = create_process("Test Process\n");
     // thread_t *t = create_thread(ps, "initial process\n", &start_kshell, NULL);

@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "../ahci/ahci.h"
 
 typedef struct {
     uint8_t  jump_boot[3];
