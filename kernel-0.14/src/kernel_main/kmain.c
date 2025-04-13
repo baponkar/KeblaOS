@@ -80,7 +80,7 @@ extern uint64_t PHYSICAL_TO_VIRTUAL_OFFSET;     // 0xFFFFFFFF010CA000
 extern ahci_controller_t sata_disk;             // Detecting by pci scan
 extern ahci_controller_t network_controller;    // Detecting by pci scan
 
-
+extern void restore_cpu_state(registers_t* registers);
 
 void kmain(){
 
@@ -124,23 +124,23 @@ void kmain(){
     //     start_secondary_cpu_cores(1, 3);     // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
     // }
 
-    if(has_fpu()){
-        enable_fpu_and_sse();
-    }
+    // if(has_fpu()){
+    //     enable_fpu_and_sse();
+    // }
 
-    pci_scan();
+    // pci_scan();
     
     // Test AHCI drivers for a successful read
-    HBA_MEM_T* host = (HBA_MEM_T*) sata_disk.abar;
-    probePort(host);
+    // HBA_MEM_T* host = (HBA_MEM_T*) sata_disk.abar;
+    // probePort(host);
 
-    test_ahci(sata_disk);
+    // test_ahci(sata_disk);
 
-    fat32_init((HBA_PORT_T *)&host->ports[0]);
-    fat32_read_root_dir();
-    fat32_run_tests((HBA_PORT_T *)&host->ports[0]);
+    // fat32_init((HBA_PORT_T *)&host->ports[0]);
+    // fat32_read_root_dir();
+    // fat32_run_tests((HBA_PORT_T *)&host->ports[0]);
 
-    mouse_init();
+    // mouse_init();
 
     // MSR Based System Call
     // init_syscall();
@@ -149,12 +149,17 @@ void kmain(){
     
 
     // Interrupt Based System Call
-    int_syscall_init();
-    init_user_mode();
-    // test_interrupt();
+    // int_syscall_init();
+    // init_user_mode();
 
 
-    // start_kshell();
+
+    start_kshell();
+
+    // process_t *ps = create_process("Test Process\n");
+    // thread_t *t = create_thread(ps, "initial process\n", &start_kshell, NULL);
+    // restore_cpu_state((registers_t *)&ps->current_thread->registers);
+    // delete_process(ps);
 
     halt_kernel();
 }

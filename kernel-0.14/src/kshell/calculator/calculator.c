@@ -8,11 +8,14 @@
 #include "../../process/process.h"
 #include "../../process/thread.h"
 #include "../kshell.h"
+#include "../../util/util.h"
 
 #include "calculator.h"
 
 extern void restore_cpu_state(registers_t* registers);
 
+extern process_t* kshell_process;
+extern thread_t* kshell_thread;
 process_t* calculator_process;
 
 
@@ -32,6 +35,7 @@ void calculator_main(void* arg) {
 
         if (operator == 'q' || operator == 'Q') {
             printf("\nExiting calculator...\n");
+            destroy_calculator();
             break;
         }
 
@@ -96,8 +100,12 @@ void start_calculator() {
 }
 
 void destroy_calculator() {
-    // Cleanup code for calculator process and thread if needed.
-    // This is a placeholder as the actual cleanup would depend on your process/thread management implementation.
+    registers_t *regs = (registers_t *)&kshell_thread->registers;
+    if(!regs){
+        printf("Kshell is Null\n");
+    }
+
+    restore_cpu_state(regs);
     delete_process(calculator_process);
     printf("Calculator process and thread destroyed.\n");
 }

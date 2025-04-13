@@ -30,7 +30,7 @@ size_t next_free_pid = 0;           // Available free process id
 process_t *current_process;         // Current running process
 process_t *processes_list = NULL;   // List of all processes
 
-
+// Adding Process into process_list
 void add_process(process_t* proc) {
     if (!proc) return;
 
@@ -53,20 +53,21 @@ process_t* create_process(const char* name) {
     proc->status = READY;           // Changed the status into READY
     strncpy(proc->name, name, NAME_MAX_LEN - 1); // Copy name
     proc->name[NAME_MAX_LEN - 1] = '\0'; // Ensure null-termination
-    proc->next = NULL;
-    proc->threads = NULL; // Currents threads are null
+    proc->next = NULL;      // The next process of this is Null
+    proc->threads = NULL;   // Currents threads are null
     proc->current_thread = proc->threads;
     proc->cpu_time = 0;
 
     // Add the process to the global process list
     add_process(proc);
 
-    // printf("Created Process: %s (PID: %d)\n", proc->name, proc->pid);
+    printf("Created Process: %s (PID: %d)\n", proc->name, proc->pid);
 
     return proc;
 }
 
 
+// Removing process from process_list
 void remove_process(process_t* proc) {
     if (!proc) return;
 
@@ -74,22 +75,24 @@ void remove_process(process_t* proc) {
     process_t* prev = NULL;
     process_t* current = processes_list;
 
-    while (current) {
-        if (current == proc) {
-            if (prev) {
-                prev->next = current->next;
-            } else {
-                processes_list = current->next;
+    while (current) { // If current is not null
+        if (current == proc) { // If given proc is equal to current
+            if (prev) {     // If the previous process of current is not null
+                prev->next = current->next; // Removing current process from linked list
+            } else {        // If the current is head of process_list
+                processes_list = current->next; // Removing First Process from linked list
             }
             break;
         }
-        prev = current;
-        current = current->next;
+        prev = current;          // Store the previous process before shifting next process
+        current = current->next; // going from head to tail
     }
 }
 
 
+// Delete process from memory
 void delete_process(process_t* proc) {
+    printf("Start Deleting Process PID: %d\n", proc->pid);
     if (!proc) return;
 
     // Remove the process from the global process list
@@ -98,7 +101,7 @@ void delete_process(process_t* proc) {
     // Free the process and its threads
     while (true)
     {
-        thread_t* thread = proc->threads;
+        thread_t* thread = proc->threads; // First Thread of the thread linked list
         if (!thread) break; // No more threads to delete
         proc->threads = thread->next;
         delete_thread(thread);
@@ -171,3 +174,7 @@ process_t* get_process_by_pid(size_t pid) {
 process_t * get_current_process() {
     return processes_list; // Return the current process
 }
+
+
+
+

@@ -7,6 +7,7 @@
 
 #include "kheap.h"
 
+#define PAGE_SIZE 0x1000
 extern uint64_t V_KMEM_LOW_BASE;
 extern uint64_t V_KMEM_UP_BASE;
 
@@ -25,11 +26,11 @@ void *kheap_alloc(size_t size) {
     uint64_t va = V_KMEM_LOW_BASE;
     while (V_KMEM_LOW_BASE < va + size) {
         vm_alloc(V_KMEM_LOW_BASE); // Use the previous vm_alloc
-        V_KMEM_LOW_BASE += 0x1000; // Increment by page size (size)
+        V_KMEM_LOW_BASE += PAGE_SIZE; // Increment by page size (size)
     }
 
     // Add 4KB padding between allocations to prevent overlapping
-    V_KMEM_LOW_BASE += 0x1000;
+    // V_KMEM_LOW_BASE += PAGE_SIZE;
 
     // Update the maximum allocated address
     if (V_KMEM_LOW_BASE > V_KMEM_UP_BASE) {
@@ -42,20 +43,25 @@ void *kheap_alloc(size_t size) {
 
 void kheap_free(void *ptr, size_t size) {
     if (!ptr || size == 0) {
+        printf("ptr | size == 0\n");
         return;
     }
 
+    printf("Actual value of size variable: %x\n", size);
     // Align size to page size (4 KiB)
     size = (size + 0xFFF) & ~0xFFF;
 
     uint64_t va = (uint64_t)ptr;
 
     // Free the pages corresponding to the memory region
-    while (size > 0) {
-        vm_free((void *)va); // Free the virtual page
-        va += 0x1000;        // Move to the next page
-        size -= 0x1000;      // Reduce the remaining size
+    while (size > 0) {          // If size greater than zero
+        printf("\nInside kheap_free: va: %x, size:%x\n", va, size);
+        vm_free((void *)va);    // Free the virtual page
+        va += PAGE_SIZE;        // Increase Virtual Address by 4KB
+        size -= PAGE_SIZE;      // Decrease the size variable by 4KB
     }
+
+    printf("Successfully cleared memory from kheap_free\n");
 }
 
 void test_kheap(){

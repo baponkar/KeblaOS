@@ -66,10 +66,12 @@ uint64_t free_frame_bit_no()
                 if ( !(frames[bitmap_idx] & toTest) ) // if corresponding bit is zero
                 {
                     return CONVERT_BIT_NO(bitmap_idx, bitmap_off); // return corresponding bit number i.e frame index
+                    printf("Breaking Inner for loop\n");
                     break;
                 }
             }
         }
+        printf("Inside Outer for loop\n");
    }
    return (uint64_t)-1; // Return an invalid frame index to indicate failure.
 }

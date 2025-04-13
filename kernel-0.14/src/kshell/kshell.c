@@ -28,6 +28,8 @@
 
 #include "kshell.h"
 
+process_t* kshell_process;
+thread_t* kshell_thread;
 
 
 extern void restore_cpu_state(registers_t* registers);
@@ -155,14 +157,14 @@ void kshell_main() {
 void start_kshell() {
 
     // Create a new process for the shell.
-    process_t* kshell_process = create_process("Shell Process");
+   kshell_process = create_process("Shell Process");
     if (!kshell_process) {
         printf("Failed to create shell process!\n");
         return;
     }
 
     // Create a new thread within the shell process, with shell_main as its entry.
-    thread_t* kshell_thread = create_thread(kshell_process, "Shell Thread", &kshell_main, NULL);
+    kshell_thread = create_thread(kshell_process, "Shell Thread", &kshell_main, NULL);
     if (!kshell_thread) {
         printf("Failed to create shell thread!\n");
         return;

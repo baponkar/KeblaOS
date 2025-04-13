@@ -10,6 +10,7 @@
 
 #define NAME_MAX_LEN 64
 
+// Process or Thread Status
 typedef enum { // 4 bytes
     READY,    // 0
     RUNNING,  // 1
@@ -18,7 +19,7 @@ typedef enum { // 4 bytes
 } status_t;
 
 
-typedef struct process { // 112 byte
+typedef struct process {        // 112 byte
     size_t pid;                 // Process ID
     status_t status;            // Process status
     char name[NAME_MAX_LEN];    // Process name
@@ -37,8 +38,6 @@ extern process_t *current_process;  // Current running process
 extern process_t *processes_list;   // List of all processes
 
 process_t* create_process(const char* name);
-void add_process(process_t* proc);
-void remove_process(process_t* proc);
 void delete_process(process_t* proc);
 
 registers_t* schedule(registers_t* registers);

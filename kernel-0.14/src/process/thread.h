@@ -27,8 +27,6 @@ struct thread {                     // Allocated size 312 byte
 extern size_t next_free_tid;
 
 thread_t* create_thread(process_t* parent, const char* name, void (*function)(void*), void* arg);
-void add_thread(thread_t* thread);
-void remove_thread(thread_t* thread);
 void delete_thread(thread_t* thread);
 
 

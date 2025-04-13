@@ -70,18 +70,10 @@ void free_frame(page_t *page)
 {
     if (page->frame != NULL)
     {
-        // print("Frame address: ");
-        // print_hex((uint64_t)page->frame);
-        // print("\n");
-
         uint64_t frame_idx = ADDR_TO_BIT_NO((uint64_t)page->frame);
         clear_frame(frame_idx); // Frame is now free again from bitmap.
         page->frame = 0; // Page now doesn't have a frame.
     }
-
-    // print("No frame address found!\n");
-
-    return;
 }
 
 // return current cr3 address i.e. root pml4 pointer address
@@ -296,7 +288,9 @@ void test_paging() {
 
 // Function to flush TLB for a specific address
 void flush_tlb(uint64_t va) {
+    // page_t *page = get_page(va, 0, (pml4_t *)get_cr3_addr());
     // Use the invlpg instruction to invalidate the TLB entry for a specific address
+    // if(page->present) asm volatile("invlpg (%0)" : : "r"(va) : "memory");
     asm volatile("invlpg (%0)" : : "r"(va) : "memory");
 }
 

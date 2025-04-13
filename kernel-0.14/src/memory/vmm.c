@@ -62,15 +62,20 @@ void vm_alloc(uint64_t va) {
 // Free a virtual page at the specified virtual address
 void vm_free(uint64_t *ptr) {
     if (!ptr) {
+        printf("Inside of vm_free: invalid ptr\n");
         return; // Invalid pointer
     }
     
     uint64_t va = (uint64_t)ptr;
 
     // Get the page for the virtual address
-    page_t *page = get_page(va, 0, current_pml4);
+    page_t *page = get_page(va, 0, current_pml4);   // If not present do not create
     if (!page || !page->present) {
         // Page not allocated or invalid
+        if(!page)
+            printf("vm_free: page == NULL\n");
+        if(!page->present)
+            printf("vm_free: page at addr: %x is not present\n");
         return;
     }
 
@@ -83,8 +88,9 @@ void vm_free(uint64_t *ptr) {
     page->user = 0;
     page->frame = 0;
 
-    // Invalidate the TLB for this address
-    asm volatile("invlpg (%0)" ::"r"(va) : "memory");
+    printf("vm_free: Going To Flashing TLB addr->%x\n", va);
+    flush_tlb(va);
+    printf("vm_free: SUccessfully flashed %x memory\n", va);
 }
 
 // converting physical to virtual address
