@@ -40,9 +40,11 @@ This notes have written during my learning and building KeblaOS.
 
 12. [Chapter 12](./gdb_debugging.md) : GDB Debugging
 
+13. [Manage Disk Image](./disk-image-manage.md) : Manging Virtual Disk Image
+
 100. [References](./Reference.md)
 -------------------------------------------------------
 
 
 
-*© 2024 KeblaOS Project. All rights reserved.*
+*© 2025 KeblaOS Project. All rights reserved.*
