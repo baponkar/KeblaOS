@@ -278,56 +278,6 @@ uint32_t fat32_get_file_size(const char* filename) {
 
 
 
-
-void fat32_run_tests(HBA_PORT_T* global_port) {
-    printf("[-] Initializing FAT32...\n");
-    if (!fat32_init(global_port)) {
-        printf("[-] FAT32 init failed!\n");
-        return;
-    }
-    printf("[-] FAT32 initialized successfully.\n");
-
-    const char* filename = "TEST    TXT"; // 8.3 format (space padded)
-    const char* message = "Hello FAT32 World!";
-    uint8_t buffer[512];
-
-    // 1. Create file
-    printf("Creating file: %s\n", filename);
-    if (!fat32_create_file(filename)) {
-        printf("Failed to create file!\n");
-        return;
-    }
-    printf(" File created successfully.\n");
-
-    // 2. Write to file
-    printf(" Writing to file: %s\n", filename);
-    if (!fat32_write_file(filename, (const uint8_t*)message, strlen(message))) {
-        printf("Failed to write to file!\n");
-        return;
-    }
-    printf("File written successfully.\n");
-
-    // 3. Read back the file
-    memset(buffer, 0, sizeof(buffer));
-    printf(" Reading from file: %s\n", filename);
-    if (!fat32_read_file(filename, buffer, sizeof(buffer))) {
-        printf(" Failed to read file!\n");
-        return;
-    }
-    printf(" File contents: %s\n", buffer);
-
-    // 4. Delete file
-    printf(" Deleting file: %s\n", filename);
-    if (!fat32_delete_file(filename)) {
-        printf(" Failed to delete file!\n");
-        return;
-    }
-    printf(" File deleted successfully.\n");
-
-    printf("[-] All FAT32 tests passed!\n");
-}
-
-
 bool fat32_create_directory(const char* name) {
     // uint32_t parent_cluster = fat32_root_cluster; // Assuming root directory for simplicity
     uint32_t parent_cluster = fat32_info.root_dir_first_cluster; // Root directory cluster
@@ -455,3 +405,52 @@ bool fat32_delete_directory_entry(uint32_t cluster, const char* name) {
     }
     return false;
 }
+
+void fat32_run_tests(HBA_PORT_T* global_port) {
+    printf("[-] Initializing FAT32...\n");
+    if (!fat32_init(global_port)) {
+        printf("[-] FAT32 init failed!\n");
+        return;
+    }
+    printf("[-] FAT32 initialized successfully.\n");
+
+    const char* filename = "TEST    TXT"; // 8.3 format (space padded)
+    const char* message = "Hello FAT32 World!";
+    uint8_t buffer[512];
+
+    // 1. Create file
+    printf("Creating file: %s\n", filename);
+    if (!fat32_create_file(filename)) {
+        printf("Failed to create file!\n");
+        return;
+    }
+    printf(" File created successfully.\n");
+
+    // 2. Write to file
+    printf(" Writing to file: %s\n", filename);
+    if (!fat32_write_file(filename, (const uint8_t*)message, strlen(message))) {
+        printf("Failed to write to file!\n");
+        return;
+    }
+    printf("File written successfully.\n");
+
+    // 3. Read back the file
+    memset(buffer, 0, sizeof(buffer));
+    printf(" Reading from file: %s\n", filename);
+    if (!fat32_read_file(filename, buffer, sizeof(buffer))) {
+        printf(" Failed to read file!\n");
+        return;
+    }
+    printf(" File contents: %s\n", buffer);
+
+    // 4. Delete file
+    printf(" Deleting file: %s\n", filename);
+    if (!fat32_delete_file(filename)) {
+        printf(" Failed to delete file!\n");
+        return;
+    }
+    printf(" File deleted successfully.\n");
+
+    printf("[-] All FAT32 tests passed!\n");
+}
+

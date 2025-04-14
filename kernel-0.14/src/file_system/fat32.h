@@ -87,8 +87,10 @@ uint32_t fat32_first_data_sector();
 uint32_t fat32_fat_size();
 uint32_t fat32_fat_start_sector();
 uint32_t fat32_data_start_sector();
+
 uint32_t fat32_cluster_to_sector(uint32_t cluster);
 uint32_t fat32_sector_to_cluster(uint32_t sector);
+
 uint32_t fat32_next_cluster(uint32_t cluster);
 uint32_t fat32_read_cluster(uint32_t cluster, uint8_t* buffer, uint32_t size);
 uint32_t fat32_write_cluster(uint32_t cluster, const uint8_t* buffer, uint32_t size);
@@ -104,12 +106,12 @@ uint32_t fat32_allocate_cluster();
 void fat32_set_cluster(uint32_t cluster, uint32_t value);
 uint32_t fat32_get_file_size(const char* filename);
 
-
-void fat32_run_tests(HBA_PORT_T* global_port);
-
 bool fat32_create_directory(const char* name);
 bool fat32_find_free_entry(uint32_t cluster, DIR_ENTRY* entry);
 bool fat32_write_directory_entry(uint32_t cluster, DIR_ENTRY* entry);
 bool fat32_init_directory_cluster(uint32_t cluster, uint32_t parent_cluster);
 bool fat32_delete_directory(uint32_t cluster);
 bool fat32_delete_directory_entry(uint32_t cluster, const char* name);
+
+
+void fat32_run_tests(HBA_PORT_T* global_port);

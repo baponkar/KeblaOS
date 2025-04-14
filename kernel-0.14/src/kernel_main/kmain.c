@@ -132,12 +132,12 @@ void kmain(){
     pci_scan();
     
     // Test AHCI drivers for a successful read
-    HBA_MEM_T* host = (HBA_MEM_T*) sata_disk.abar;
-    probePort(host);
+    HBA_MEM_T* abar = (HBA_MEM_T*) sata_disk.abar;
+    probePort(abar);
 
     test_ahci(sata_disk);
 
-    fat32_run_tests((HBA_PORT_T *)&host->ports[0]);
+    fat32_run_tests((HBA_PORT_T *)&abar->ports[0]);
 
     mouse_init();
 
@@ -151,8 +151,8 @@ void kmain(){
     int_syscall_init();
     // init_user_mode();
 
-    test_file_operations(host);
-    test_directory_operations(host);
+    test_file_operations(abar);
+    test_directory_operations(abar);
 
     if(is_user_mode() == 3){
         printf("This is User's Space, CPL = %d\n", is_user_mode());

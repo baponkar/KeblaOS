@@ -40,7 +40,7 @@ References:
 
 #include "ahci.h"
 
-extern ahci_controller_t sata_disk;
+extern ahci_controller_t sata_disk; // This detect by pci scan
 
 
 
@@ -297,8 +297,6 @@ static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t 
 	return true;
 }
 
-
-
 inline bool ahci_read(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint32_t count, uint16_t* buf) {
     return runCommand(ATA_CMD_READ_DMA_EX, 0, port, start_l, start_h, count, buf);
 }
@@ -311,42 +309,42 @@ inline bool ahci_write(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uin
 void test_ahci(ahci_controller_t controller)
 {
 	printf("[Info] Start Testing AHCI\n");
-    HBA_MEM_T* host = (HBA_MEM_T*) controller.abar;
-    HBA_PORT_T* port = &host->ports[0];
-    uint16_t* buf = (uint16_t*)(uintptr_t)vir_to_phys((uint64_t)kheap_alloc(0x8000)); // 32 KB buffer (overkill but fine for test)
+    HBA_MEM_T* abar = (HBA_MEM_T*) controller.abar;
+    HBA_PORT_T* port = &abar->ports[0];
 
-    if (buf == NULL) {
-        printf("[-] Memory allocation failed!\n");
+    uint16_t* buf_1 = (uint16_t*)(uintptr_t)vir_to_phys((uint64_t)kheap_alloc(0x8000)); // 32 KB buffer (overkill but fine for test)
+    if (buf_1 == NULL) {
+        printf("[-] Buffer_1 Memory allocation failed!\n");
         return;
     }
-
-    // Step 1: Clear the buffer
-    memset(buf, 0, 512); // Clear first sector (only 512 bytes needed)
+    memset(buf_1, 0, 512); // Clear first sector (only 512 bytes needed)
 
     // Step 2: Write a string into the buffer
     const char* test_string = "Hello from KeblaOS!";
-    memcpy((char*)buf, test_string, strlen(test_string)); // Copy into buffer
+    memcpy((char*)buf_1, test_string, strlen(test_string)); // Copy into buffer
 
     // Step 3: Write the buffer to disk
-    if (ahci_write(port, 0, 0, 1, buf)) {
-        printf("[-] Write successful.\n");
+    if (ahci_write(port, 0, 0, 1, buf_1)) {
+        printf("[-] Write successful from buf_1 into disk.\n");
     } else {
-        printf("[-] Write failed!\n");
+        printf("[-] Write failed from buf_1 into disk!\n");
         return;
     }
 
-    // Step 4: Clear buffer again before reading back
-    memset(buf, 0, 512);
 
+	uint16_t* buf_2 = (uint16_t*)(uintptr_t)vir_to_phys((uint64_t)kheap_alloc(0x8000)); // 32 KB buffer (overkill but fine for test)
+    if (buf_2 == NULL) {
+        printf("[-] Buffer_2 Memory allocation failed!\n");
+        return;
+    }
+    memset(buf_2, 0, 512);
     // Step 5: Read back from disk
-    if (ahci_read(port, 0, 0, 1, buf)) {
-        printf("[-] Read successful.\n");
-
-        // Step 6: Print what we read
-        printf("[-] Data read: %s.\n", (char*)buf);
+    if (ahci_read(port, 0, 0, 1, buf_2)) {
+        printf("[-] Data read from disk: %s.\n", (char*)buf_2);
     } else {
-        printf("[-] Read failed!\n");
+        printf("[-] Read failed from disk!\n");
     }
 
-    kheap_free((void *)phys_to_vir((uint64_t) buf), 0x8000); // Free memory if you have kfree
+    kheap_free((void *)phys_to_vir((uint64_t) buf_1), 0x8000); // Free memory
+	kheap_free((void *)phys_to_vir((uint64_t) buf_2), 0x8000);
 }

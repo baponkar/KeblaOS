@@ -86,10 +86,5 @@ void test_directory_operations(HBA_MEM_T* abar) {
 
 
 
-// Define the max length for paths
-#define MAX_PATH_LENGTH 256
-
-
-
 
 
