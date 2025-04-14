@@ -90,4 +90,5 @@ There are many situation to change task like end of a task then we need to chang
 4. [osdever.net](http://www.osdever.net/tutorials/view/software-task-switching)
 
 
-
+---------------------------------
+*© 2025 KeblaOS Project. All rights reserved.*

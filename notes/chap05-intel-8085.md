@@ -149,4 +149,4 @@ Reference :
 2. 
 
 -------------------------------------------------------
-*© 2024 KeblaOS Project. All rights reserved.*
+*© 2025 KeblaOS Project. All rights reserved.*

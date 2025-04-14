@@ -158,3 +158,6 @@ struct registers { // Total 26*8 = 208 bytes, 16 bytes aligned
 } __attribute__((packed));
 typedef struct registers registers_t;
 ```
+
+--------------------------
+*© 2025 KeblaOS Project. All rights reserved.*

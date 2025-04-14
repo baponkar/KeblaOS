@@ -132,3 +132,7 @@ The useful references for OS development
 * [OSkit](https://www-old.cs.utah.edu/flux/oskit/)
 
 * [forum.osdev.org](https://forum.osdev.org)
+
+
+---------------------------------
+*© 2024 KeblaOS Project. All rights reserved.*

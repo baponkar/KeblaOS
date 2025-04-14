@@ -109,3 +109,7 @@ Now all physical frames allocated from PHYSICAL_PLACEMENT_ADDRESS address.
 4. https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html
 
 5. 
+
+
+------------------------------
+*© 2025 KeblaOS Project. All rights reserved.*

@@ -85,3 +85,6 @@ To see the 0x1000 address
 - [olivestem video tutorials](https://www.youtube.com/watch?v=q5vagAJ2YH8&list=PL2EF13wm-hWCoj6tUBGUmrkJmH1972dBB&index=40)
 
 - 
+
+-------------------------------
+*© 2024 KeblaOS Project. All rights reserved.*

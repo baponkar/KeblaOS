@@ -59,3 +59,7 @@ Top address of thread1->stack: 0xFFFFFFFF80335000   => 0xFFFFFFFF80331000 + 0x40
 *Thread0 : 0xFFFFFFFF80323000
 
 ```
+
+
+------------------------------
+*© 2024 KeblaOS Project. All rights reserved.*

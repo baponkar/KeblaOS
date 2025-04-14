@@ -75,4 +75,4 @@ There are many number systems such as decimal, binary, hexadecimal, octal number
 
 
 -------------------------------------------------------
-© 2024 KeblaOS Project. All rights reserved.
+© 2025 KeblaOS Project. All rights reserved.

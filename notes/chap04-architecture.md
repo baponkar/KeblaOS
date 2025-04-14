@@ -116,4 +116,4 @@ Understanding the strengths and limitations of these architectures is crucial fo
 
 
 -------------------------------------------------------
-© 2024 KeblaOS Project. All rights reserved.
+© 2025 KeblaOS Project. All rights reserved.

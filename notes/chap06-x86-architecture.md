@@ -125,3 +125,6 @@ CPU architecture refers to the design and structure of a Central Processing Unit
    - **Examples**: Xilinx, Altera (Intel).
 
 Each of these architectures has its own strengths and weaknesses, making them suitable for different types of applications and workloads. The choice of architecture depends on factors such as performance requirements, power consumption, cost, and the specific tasks the CPU is expected to perform.
+
+---------------------------
+*© 2025 KeblaOS Project. All rights reserved.*

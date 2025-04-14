@@ -9,3 +9,8 @@
 | SRAT	            | System Resource Affinity Table (NUMA support)                 |
 | MCFG	            | PCI Express Memory Configuration Table                        |
 -------------------------------------------------------------------------------------
+
+
+
+---------------------------------
+*© 2024 KeblaOS Project. All rights reserved.*

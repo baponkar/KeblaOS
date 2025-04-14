@@ -174,4 +174,4 @@ If you want to use [limine](https://github.com/limine-bootloader/limine) bootloa
 
 
 -------------------------------------------------------
-*© 2024 KeblaOS Project. All rights reserved.*
+*© 2025 KeblaOS Project. All rights reserved.*

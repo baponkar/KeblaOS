@@ -2,6 +2,21 @@
 
 *Created: 14<sup>th</sup> April 2025*
 
+## Introduction
+
+A `disk.img` is a **disk image file** — a complete byte-for-byte copy of a physical disk (like a hard drive, SSD, USB stick, or CD/DVD). It acts as a **virtual disk**, storing everything the physical disk would: partitions, boot records, filesystems, and data files.
+
+### 🔧 Key Properties:
+- It's usually created using tools like `dd`, `qemu-img`, or disk utilities.
+- It can contain **bootable operating systems**, **file structures**, or even **custom partition schemes**.
+- Can be mounted as a loop device on Linux, or opened using tools like OSFMount on Windows.
+
+### 🛠 Common Uses:
+- **Operating System Development**: Used to test or install OS builds (like you're doing in KeblaOS).
+- **Virtual Machines**: Used by QEMU, VirtualBox, etc., as a virtual hard disk.
+- **Disk Cloning & Backup**: Used to back up or restore exact disk states.
+- **Forensics & Analysis**: Used to analyze disks without touching the original.
+
 ## Overview
 
 A **disk image** (`disk.img`) is a file that emulates a physical disk, containing all the data, partition tables, boot sectors, and filesystem metadata. Disk images are widely used for emulation, virtualization, OS development, backup, and software testing.
@@ -153,5 +168,5 @@ Disk images are essential for OS development. They simulate real disk environmen
 
 With tools like `dd`, `parted`, `losetup`, and `mount`, `disk.img` becomes a powerful part of your system programming toolkit.
 
----
-
+----------------------------------------------
+*© 2025 KeblaOS Project. All rights reserved.*
