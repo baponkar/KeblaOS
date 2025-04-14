@@ -108,9 +108,12 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 
 	# Copying files to ISO directory and creating directories 
 	cp $(KERNEL_DIR)/src/img/boot_loader_wallpaper.bmp  $(ISO_DIR)/boot/boot_loader_wallpaper.bmp
+
 	cp -v $(BUILD_DIR)/kernel.bin $(ISO_DIR)/boot/
+
 	mkdir -p $(ISO_DIR)/boot/limine
 	cp -v limine.conf $(LIMINE_DIR)/limine-bios.sys $(LIMINE_DIR)/limine-bios-cd.bin $(LIMINE_DIR)/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
+	
 	mkdir -p $(ISO_DIR)/EFI/BOOT
 	cp -v $(LIMINE_DIR)/BOOTX64.EFI $(ISO_DIR)/EFI/BOOT/
 	cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
@@ -119,7 +122,17 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	cp -v $(KERNEL_DIR)/src/initrd/initrd.cpio $(ISO_DIR)/boot/initrd.cpio
 
 	# Creating KeblaOS-0.11-image.iso file by using xorriso.
-	xorriso -as mkisofs -b boot/limine/limine-bios-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine/limine-uefi-cd.bin -efi-boot-part --efi-boot-image --protective-msdos-label $(ISO_DIR) -o $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
+	xorriso \
+		-as mkisofs \
+		-b boot/limine/limine-bios-cd.bin -no-emul-boot \
+		-boot-load-size 4 \
+		-boot-info-table --efi-boot \
+		boot/limine/limine-uefi-cd.bin \
+		-efi-boot-part --efi-boot-image \
+		--protective-msdos-label $(ISO_DIR) \
+		-o $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
+		
+	# install the Limine bootloader into an ISO file, specifically for BIOS-based booting.
 	$(LIMINE_DIR)/limine bios-install $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
 
 
@@ -140,7 +153,7 @@ build_disk:
 
 	# Setup loop device and detect partitions
 	sudo losetup -fP $(DISK_DIR)/disk.img    # Creates /dev/loopX and /dev/loop0p1
-	sudo mkfs.vfat -F 32 /dev/loop0p1         # Format as FAT32
+	sudo mkfs.vfat -F 32 /dev/loop0p1        # Format as FAT32
 	@echo "Formatted Disk Image with FAT32"
 
 	# Mount the Disk Image
@@ -223,7 +236,7 @@ soft_clean:
 	rm -rf $(BUILD_DIR)/kernel
 
 
-all: clean kernel linking build_image soft_clean run
+all: clean kernel linking build_image run
 build: kernel linking build_image
 default: all
 

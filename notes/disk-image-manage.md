@@ -2,6 +2,8 @@
 
 *Created: 14<sup>th</sup> April 2025*
 
+![Disk.img image](./images/disk_img_file.png)
+
 ## Introduction
 
 A `disk.img` is a **disk image file** — a complete byte-for-byte copy of a physical disk (like a hard drive, SSD, USB stick, or CD/DVD). It acts as a **virtual disk**, storing everything the physical disk would: partitions, boot records, filesystems, and data files.
@@ -22,6 +24,8 @@ A `disk.img` is a **disk image file** — a complete byte-for-byte copy of a phy
 A **disk image** (`disk.img`) is a file that emulates a physical disk, containing all the data, partition tables, boot sectors, and filesystem metadata. Disk images are widely used for emulation, virtualization, OS development, backup, and software testing.
 
 In this project, I am creating a **`disk.img`** inside the `Disk` directory, which will serve as a virtual disk drive for **QEMU** during the development and testing of the **KeblaOS** operating system.
+
+![Hard Drive image](./images//disk_drive_img.png)
 
 The Makefile includes a command:
 
@@ -144,6 +148,43 @@ sudo mount /dev/loop0p1 Disk/mnt
 ## 📁 10. Browsing Contents Inside `disk.img`
 
 Once mounted, you can directly browse or manipulate files inside `Disk/mnt` just like a normal filesystem.
+
+1. 1. Check the partitions inside disk.img
+```bash
+fdisk -l disk.img
+```
+This will show you if disk.img contains partitions and where they start (sector offset).
+
+2. Mount a specific partition inside disk.img
+Suppose you found a partition starting at sector 2048. To mount it:
+```
+sudo mount -o loop,offset=$((2048 * 512)) disk.img /mnt
+```
+Here, 2048 is the sector number and 512 is the sector size in bytes.
+
+3. If it's a raw filesystem (no partition table)
+```
+sudo mount -o loop disk.img /mnt
+```
+
+4. Use losetup (optional, advanced)
+```
+sudo losetup -fP disk.img   # Associate loop devices
+lsblk                       # Check loop devices
+sudo mount /dev/loopXpY /mnt
+```
+
+5. 🪟 On Windows, or with GUI tools:
+Use OSFMount
+
+![OSFMount Screenshot](./images/osfmount_screenshot.png)
+
+Free tool to mount .img files as a drive
+
+Allows mounting individual partitions or whole image
+
+Great for viewing FAT, NTFS, ext2/3 (with limitations)
+
 
 ---
 

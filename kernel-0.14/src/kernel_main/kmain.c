@@ -135,9 +135,9 @@ void kmain(){
     HBA_MEM_T* abar = (HBA_MEM_T*) sata_disk.abar;
     probePort(abar);
 
-    test_ahci(sata_disk);
+    // test_ahci(sata_disk);
 
-    fat32_run_tests((HBA_PORT_T *)&abar->ports[0]);
+    // fat32_run_tests((HBA_PORT_T *)&abar->ports[0]);
 
     mouse_init();
 
@@ -151,10 +151,10 @@ void kmain(){
     int_syscall_init();
     // init_user_mode();
 
-    test_file_operations(abar);
-    test_directory_operations(abar);
+    // test_file_operations(abar);
+    // test_directory_operations(abar);
 
-    list_root_dir();
+    // list_root_dir();
 
     // if(is_user_mode() == 3){
     //     printf("This is User's Space, CPL = %d\n", is_user_mode());
@@ -162,7 +162,7 @@ void kmain(){
     //     printf("This is Kernel's Space, CPL = %d\n", is_user_mode());
     // }
 
-    // start_kshell();
+    start_kshell();
 
     // process_t *ps = create_process("Test Process\n");
     // thread_t *t = create_thread(ps, "initial process\n", &start_kshell, NULL);
