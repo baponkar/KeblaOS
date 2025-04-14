@@ -19,6 +19,8 @@ BUILD_DIR = build
 DEBUG_DIR = debug
 CONFIG_DIR = config
 
+DISK_DIR = disk
+
 BUILD_INFO_FILE = $(BUILD_DIR)/build_info.txt
 
 HOST_HOME = /home/baponkar
@@ -116,12 +118,35 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	# Creating initrd.cpio module for bootloader. These files can be used for various purposes,
 	cp -v $(KERNEL_DIR)/src/initrd/initrd.cpio $(ISO_DIR)/boot/initrd.cpio
 
-	# Creating disk image file which will be used to create ISO image
-	dd if=/dev/zero of=$(BUILD_DIR)/disk.img bs=1M count=512
-
 	# Creating KeblaOS-0.11-image.iso file by using xorriso.
 	xorriso -as mkisofs -b boot/limine/limine-bios-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine/limine-uefi-cd.bin -efi-boot-part --efi-boot-image --protective-msdos-label $(ISO_DIR) -o $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
 	$(LIMINE_DIR)/limine bios-install $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
+
+
+build_disk:
+	# Create Disk Image (1GiB size, change 'count' as needed)
+	dd if=/dev/zero of=$(DISK_DIR)/disk.img bs=1M count=512
+	@echo "Created blank Disk image"
+
+	# Make Partition on the Disk Image
+	parted $(DISK_DIR)/disk.img --script -- mklabel msdos
+	parted $(DISK_DIR)/disk.img --script -- mkpart primary fat32 1MiB 100%
+	@echo "Disk image Partitioned"
+
+	# Unmount the Disk Image (If previously mounted)
+	sudo umount $(DISK_DIR)/mnt || true
+	sudo losetup -d /dev/loop0 || true
+	@echo "Unmount any existing Disk Image from loop0"
+
+	# Setup loop device and detect partitions
+	sudo losetup -fP $(DISK_DIR)/disk.img    # Creates /dev/loopX and /dev/loop0p1
+	sudo mkfs.vfat -F 32 /dev/loop0p1         # Format as FAT32
+	@echo "Formatted Disk Image with FAT32"
+
+	# Mount the Disk Image
+	mkdir -p $(DISK_DIR)/mnt
+	sudo mount /dev/loop0p1 $(DISK_DIR)/mnt
+	@echo "Mounted Disk Image into loop0"
 
 
 
@@ -133,19 +158,22 @@ run:
 	#	-machine q35 \
 	#	-m 4096 \
 	#	-smp cores=4,threads=1,sockets=1,maxcpus=4 \
-	#	-s -S -rtc base=utc,clock=host \
+	#	-boot d \
+	#	-hda $(DISK_DIR)/disk.img \
 	#	-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
 	#	-serial stdio \
 	#	-d guest_errors,int,cpu_reset \
 	#	-D $(DEBUG_DIR)/qemu.log \
 	#	-vga std
-
+	#	-s -S -rtc base=utc,clock=host \
+	
 	# UEFI Boot
 	# qemu-system-x86_64 \
 	#	-machine q35 \
 	#	-m 4096 \
 	#	-smp cores=2,threads=2,sockets=1,maxcpus=4 \
-	#	-hda $(BUILD_DIR)/disk.img \
+	#	-boot d \
+	#	-hda $(DISK_DIR)/disk.img \
 	#	-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
 	#	-serial file:$(DEBUG_DIR)/serial_output.log \
 	#	-d guest_errors,int,cpu_reset \
@@ -159,14 +187,14 @@ run:
 		-machine q35 \
 		-m 4096 \
 		-smp cores=4,threads=1,sockets=1,maxcpus=4 \
-		-hda $(BUILD_DIR)/disk.img \
+		-boot d \
+		-hda $(DISK_DIR)/disk.img \
 		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
 		-serial stdio \
 		-d guest_errors,int,cpu_reset \
 		-D $(DEBUG_DIR)/qemu.log \
 		-vga std \
 		-rtc base=utc,clock=host
-
 
 
 # clean all things from inside of build directory
@@ -210,6 +238,7 @@ help:
 	@echo "  make build           - Build the iso image"
 	@echo "  make run             - Run the default target (displays this help message)"
 	@echo "  make clean           - Clean up build artifacts"
+	@echo "	 make build_disk_image - Create Format Disk image which will be use in Kernel as disk"
 	@echo "  make help            - Display this help menu"
 
 
@@ -230,10 +259,3 @@ $(BUILD_INFO_FILE):
 
 
 
-
-
-
-
-
-
-	

@@ -7,3 +7,4 @@
 void test_file_operations();
 void test_directory_operations();
 
+void list_root_dir();

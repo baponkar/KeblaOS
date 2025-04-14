@@ -206,12 +206,15 @@ uint32_t fat32_next_cluster(uint32_t cluster) {
     ahci_read(fat32_port, fat_sector, 0, 1, (uint16_t*)sector);
     return *(uint32_t*)&sector[entry_offset] & 0x0FFFFFFF;
 }
+
 uint32_t fat32_fat_start_sector() {
     return fat32_info.fat_start_sector;
 }
+
 uint32_t fat32_data_start_sector() {
     return fat32_info.cluster_heap_start_sector;
 }
+
 uint32_t fat32_sector_to_cluster(uint32_t sector) {
     return ((sector - fat32_info.cluster_heap_start_sector) / fat32_info.sectors_per_cluster) + 2;
 }
@@ -223,27 +226,35 @@ uint32_t fat32_first_data_sector() {
 uint32_t fat32_fat_size() {
     return fat32_bpb.fat_size_32;
 }
+
 uint32_t fat32_total_sectors() {
     return fat32_bpb.total_sectors_32;
 }
+
 uint32_t fat32_bytes_per_sector() {
     return fat32_bpb.bytes_per_sector;
 }
+
 uint32_t fat32_sectors_per_cluster() {
     return fat32_bpb.sectors_per_cluster;
 }
+
 uint32_t fat32_reserved_sector_count() {
     return fat32_bpb.reserved_sector_count;
 }
+
 uint32_t fat32_num_fats() {
     return fat32_bpb.num_fats;
 }
+
 uint32_t fat32_root_entry_count() {
     return fat32_bpb.root_entry_count;
 }
+
 uint32_t fat32_media() {
     return fat32_bpb.media;
 }
+
 uint32_t fat32_allocate_cluster() {
     uint8_t sector[512];
     for (uint32_t i = 2; i < 0x0FFFFFF6; i++) {
@@ -261,6 +272,7 @@ uint32_t fat32_allocate_cluster() {
     }
     return 0;
 }
+
 uint32_t fat32_get_file_size(const char* filename) {
     uint8_t sector[512];
     uint32_t root_sector = fat32_cluster_to_sector(fat32_info.root_dir_first_cluster);
@@ -275,8 +287,6 @@ uint32_t fat32_get_file_size(const char* filename) {
     }
     return 0;
 }
-
-
 
 bool fat32_create_directory(const char* name) {
     // uint32_t parent_cluster = fat32_root_cluster; // Assuming root directory for simplicity
@@ -310,7 +320,6 @@ bool fat32_create_directory(const char* name) {
     return true;
 }
 
-
 bool fat32_find_free_entry(uint32_t cluster, DIR_ENTRY* entry) {
     uint8_t buffer[512];
     uint32_t sector = fat32_cluster_to_sector(cluster);
@@ -325,6 +334,7 @@ bool fat32_find_free_entry(uint32_t cluster, DIR_ENTRY* entry) {
     }
     return false;
 }
+
 bool fat32_write_directory_entry(uint32_t cluster, DIR_ENTRY* entry) {
     uint8_t buffer[512];
     uint32_t sector = fat32_cluster_to_sector(cluster);
@@ -390,6 +400,7 @@ bool fat32_delete_directory(uint32_t cluster) {
 
     return true;
 }
+
 bool fat32_delete_directory_entry(uint32_t cluster, const char* name) {
     uint8_t buffer[512];
     uint32_t sector = fat32_cluster_to_sector(cluster);
@@ -454,3 +465,32 @@ void fat32_run_tests(HBA_PORT_T* global_port) {
     printf("[-] All FAT32 tests passed!\n");
 }
 
+
+
+uint32_t fat32_read_cluster(uint32_t cluster, uint8_t* buffer, uint32_t size) {
+    if (cluster < 2) return 0;
+
+    uint32_t first_sector = fat32_info.fat_start_sector + (cluster - 2) * fat32_info.sectors_per_cluster;
+    uint32_t total_bytes = fat32_info.sectors_per_cluster * fat32_info.bytes_per_sector;
+
+    if (size > total_bytes) size = total_bytes;
+
+    uint32_t sectors_to_read = (size + fat32_info.bytes_per_sector - 1) / fat32_info.bytes_per_sector;
+
+    bool success = ahci_read(fat32_port, first_sector, 0, sectors_to_read, (uint16_t*)buffer);
+    return success ? size : 0;
+}
+
+uint32_t fat32_write_cluster(uint32_t cluster, const uint8_t* buffer, uint32_t size) {
+    if (cluster < 2) return 0;
+
+    uint32_t first_sector = fat32_info.fat_start_sector + (cluster - 2) * fat32_info.sectors_per_cluster;
+    uint32_t total_bytes = fat32_info.sectors_per_cluster * fat32_info.bytes_per_sector;
+
+    if (size > total_bytes) size = total_bytes;
+
+    uint32_t sectors_to_write = (size + fat32_info.bytes_per_sector - 1) / fat32_info.bytes_per_sector;
+
+    bool success = ahci_write(fat32_port, first_sector, 0, sectors_to_write, (uint16_t*)buffer);
+    return success ? size : 0;
+}

@@ -154,11 +154,13 @@ void kmain(){
     test_file_operations(abar);
     test_directory_operations(abar);
 
-    if(is_user_mode() == 3){
-        printf("This is User's Space, CPL = %d\n", is_user_mode());
-    }else{
-        printf("This is Kernel's Space, CPL = %d\n", is_user_mode());
-    }
+    list_root_dir();
+
+    // if(is_user_mode() == 3){
+    //     printf("This is User's Space, CPL = %d\n", is_user_mode());
+    // }else{
+    //     printf("This is Kernel's Space, CPL = %d\n", is_user_mode());
+    // }
 
     // start_kshell();
 

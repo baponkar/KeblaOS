@@ -7,6 +7,8 @@ objdump.txt
 serial_output.log
 qemu.log 
 
+Disk
+
 lvgl-9.2.2/*
 **/*.o
 **/*bin

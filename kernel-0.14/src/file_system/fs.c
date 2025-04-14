@@ -38,13 +38,14 @@ void test_file_operations(HBA_MEM_T* abar) {
     } else {
         printf("Failed to read file '%s'.\n", filename);
     }
+
 }
 
 
 void test_directory_operations(HBA_MEM_T* abar) {
 
     // Create a new directory
-    const char* dir_name = "newdir";
+    const char* dir_name = "home";
     if (fat32_create_directory(dir_name)) {
         printf("Directory '%s' created successfully.\n", dir_name);
     } else {
@@ -84,7 +85,36 @@ void test_directory_operations(HBA_MEM_T* abar) {
 }
 
 
+uint32_t fat32_read_cluster(uint32_t cluster, uint8_t* buffer, uint32_t size);
 
+void list_root_dir() {
+    uint32_t cluster = fat32_info.root_dir_first_cluster;
+    uint8_t buffer[4096]; // Can hold multiple sectors if needed
 
+    // uint32_t fat32_read_cluster(uint32_t cluster, uint8_t* buffer, uint32_t size);
+    if (!fat32_read_cluster(cluster, buffer, sizeof(buffer))) {
+        printf("Failed to read root directory cluster\n");
+        return;
+    }
+
+    DIR_ENTRY* entries = (DIR_ENTRY*)buffer;
+
+    for (int i = 0; i < 4096 / sizeof(DIR_ENTRY); i++) {
+        DIR_ENTRY* entry = &entries[i];
+
+        if (entry->name[0] == 0x00) break;                 // No more entries
+        if ((uint8_t)entry->name[0] == 0xE5) continue;      // Deleted entry
+        if ((entry->attr & 0x0F) == 0x0F) continue;         // Long filename entry
+
+        // Print name (8.3 format)
+        char name[12];
+        for (int j = 0; j < 11; j++) {
+            name[j] = entry->name[j];
+        }
+        name[11] = '\0';
+
+        printf("Entry: %s | Attr: 0x%x | Size: %u bytes\n", name, entry->attr, entry->fileSize);
+    }
+}
 
 
