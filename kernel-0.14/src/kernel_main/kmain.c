@@ -83,6 +83,11 @@ extern ahci_controller_t network_controller;    // Detecting by pci scan
 
 extern void restore_cpu_state(registers_t* registers);
 
+
+void print_test(){
+    printf("This is a test function\n");
+}
+
 void kmain(){
 
     serial_init();
@@ -149,7 +154,7 @@ void kmain(){
 
     // Interrupt Based System Call
     int_syscall_init();
-    // init_user_mode();
+    init_user_mode();
 
     // test_file_operations(abar);
     // test_directory_operations(abar);
@@ -162,7 +167,7 @@ void kmain(){
     //     printf("This is Kernel's Space, CPL = %d\n", is_user_mode());
     // }
 
-    start_kshell();
+    // start_kshell();
 
     // process_t *ps = create_process("Test Process\n");
     // thread_t *t = create_thread(ps, "initial process\n", &start_kshell, NULL);

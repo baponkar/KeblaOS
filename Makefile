@@ -48,6 +48,7 @@ GCC_FLAG = -g -Wall \
 # Assembler
 NASM = nasm
 NASM_FLAG = -g -Wall -f elf64
+
 OBJDUMP = /usr/local/x86_64-elf/bin/x86_64-elf-objdump
 
 # Linker
@@ -85,8 +86,8 @@ $(BUILD_DIR)/kernel/%.o: $(KERNEL_DIR)/src/%.asm
 linking: $(BUILD_DIR)/kernel.bin
 
 # Rule to link all object files into a single kernel binary
-$(BUILD_DIR)/kernel.bin: $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES)
-	$(LD) $(LD_FLAG) -T linker-x86_64.ld -o $@ $^
+$(BUILD_DIR)/kernel.bin: $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES) user_programe.o
+	$(LD) $(LD_FLAG) -T kernel_linker_x86_64.ld -o $@ $^
 
 
 #$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin
@@ -167,18 +168,8 @@ build_disk:
 # Running by qemu
 run:
 	# GDB Debuging
-	# qemu-system-x86_64 \
-	#	-machine q35 \
-	#	-m 4096 \
-	#	-smp cores=4,threads=1,sockets=1,maxcpus=4 \
-	#	-boot d \
-	#	-hda $(DISK_DIR)/disk.img \
-	#	-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
-	#	-serial stdio \
-	#	-d guest_errors,int,cpu_reset \
-	#	-D $(DEBUG_DIR)/qemu.log \
-	#	-vga std
-	#	-s -S -rtc base=utc,clock=host \
+	#qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -s -S
+		
 	
 	# UEFI Boot
 	# qemu-system-x86_64 \
@@ -266,6 +257,12 @@ $(BUILD_INFO_FILE):
 	@echo "Build Project and then Run iso by: make all" >> $@
 	@echo "Get make help by: make help" >> $@
 
+
+build_user_programe:
+	nasm -g -Wall -f elf64 user_programe.asm -o user_programe.o
+	ld -T user_linker_x86_64.ld -o user_programe.elf user_programe.o
+
+	@echo "Successfully build user_programe.elf" 
 
 # This is a phony target, meaning it doesn't correspond to a file.
 .PHONY: all build clean help

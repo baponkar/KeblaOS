@@ -13,10 +13,10 @@ switch_to_user_mode:
 
     push 0x23               ; SS = user data segment
     push rdi                ; Stack address
-    pushfq                  ; Push RFLAGS (Interrupts enabled)
+    ;pushfq                  ; Push RFLAGS (Interrupts enabled)
+    push 0x202
     push 0x1B               ; CS = user code segment (ring 3)
     push rsi                ; Code address (Entry point)
-    sti                    ; Enable interrupts
 
-    iretfq                  ; Return to user mode
+    iretq                   ; Return to user mode
 
