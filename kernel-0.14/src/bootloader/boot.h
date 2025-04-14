@@ -15,8 +15,7 @@ extern uint64_t STACK_SIZE;
 extern char *LIMINE_PAGING_MODE;
 
 
-void get_kernel_modules_info();
-void print_kernel_modules_info();
+
 
 
 

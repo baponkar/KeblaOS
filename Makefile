@@ -120,7 +120,10 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
 
 	# Creating initrd.cpio module for bootloader. These files can be used for various purposes,
-	cp -v $(KERNEL_DIR)/src/initrd/initrd.cpio $(ISO_DIR)/boot/initrd.cpio
+	#cp -v $(KERNEL_DIR)/src/initrd/initrd.cpio $(ISO_DIR)/boot/initrd.cpio
+
+	# Copying user_programe.elf 
+	cp -v user_programe.elf $(ISO_DIR)/boot/user_programe.elf 
 
 	# Creating KeblaOS-0.11-image.iso file by using xorriso.
 	xorriso \

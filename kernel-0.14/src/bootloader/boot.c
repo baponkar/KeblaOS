@@ -137,70 +137,13 @@ void print_stack_info(){
 
 
 
-// Get Module info
-__attribute__((used, section(".requests")))
-static volatile struct limine_module_request module_request = {
-    .id = LIMINE_MODULE_REQUEST,
-    .revision = 3
-};
 
-
-void get_kernel_modules_info(){
-    if(module_request.response != NULL){
-        //uint64_t revision = module_request.response->revision;
-        //uint64_t module_count = module_request.response->module_count;
-        // struct limine_file **modules = module_request.response->modules;
-    }else{
-        printf("No kernel modules found!\n");
-    }
-}
-
-void print_kernel_modules_info(){
-    if(module_request.response != NULL){
-        // uint64_t revision = module_request.response->revision;
-        uint64_t module_count = module_request.response->module_count;
-        struct limine_file **modules = module_request.response->modules;
-        for(size_t i=0;i<(size_t) module_count;i++){
-            // uint64_t revision = modules[i]->revision;
-            void *address = modules[i]->address;
-            uint64_t size = modules[i]->size;
-            char *path = modules[i]->path;
-            // char *cmdline = modules[i]->cmdline;
-            // uint32_t media_type = modules[i]->media_type;
-            // uint32_t unused = modules[i]->unused;
-            // uint32_t tftp_ip = modules[i]->tftp_ip;
-            // uint32_t tftp_port = modules[i]->tftp_port;
-            uint32_t partition_index = modules[i]->partition_index;
-            uint32_t mbr_disk_id = modules[i]->mbr_disk_id;
-            // struct limine_uuid gpt_disk_uuid = modules[i]->gpt_disk_uuid;
-            // struct limine_uuid gpt_part_uuid = modules[i]->gpt_part_uuid;
-            // struct limine_uuid part_uuid = modules[i]->part_uuid;
-
-            printf("Module Path : %s\n", path);
-            printf("Module Address : %x\n", (uint64_t) address);
-            printf("Module Size : ");
-            print_size_with_units(size);
-            printf("\n");
-
-            printf("Module Media Type : ");
-            // print_dec(media_type);
-            printf("\n");
-
-            printf("Module Partition Index : %d\n", partition_index);
-
-            printf("Module MBR Disk ID : %d\n", mbr_disk_id);
-        }
-    }else{
-        printf("No kernel modules found!\n");
-    }
-}
 
 
 
 // finuls functions which will actually use in different ways
 void get_bootloader_info(){
     get_firmware_info();
-    get_kernel_modules_info();
     get_stack_info();
     get_limine_info();
     get_paging_mode_info();
@@ -208,7 +151,6 @@ void get_bootloader_info(){
 
 
 void print_bootloader_info(void){
-    print_kernel_modules_info();
     print_stack_info();
     print_limine_info();
     print_paging_mode_info();

@@ -71,7 +71,6 @@ uint64_t free_frame_bit_no()
                 }
             }
         }
-        printf("Inside Outer for loop\n");
    }
    return (uint64_t)-1; // Return an invalid frame index to indicate failure.
 }

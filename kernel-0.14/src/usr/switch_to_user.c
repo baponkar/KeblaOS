@@ -60,7 +60,7 @@ void init_user_mode(){
     
     flush_tlb_all();
     
-    printf("Starting Switching to the user mode %x\n", code_addr);
+    printf("Starting Switching to the user mode: code addr.- %x, stack addr.- %x\n", code_addr, stack_top_addr);
     // switch_to_user_mode_1(stack_top_addr, code_addr);
     // switch_to_user_mode(stack_top_addr, code_addr);
     enter_user_mode(0x400000, stack_top_addr);
@@ -93,18 +93,18 @@ void switch_to_user_mode_1(uint64_t stack_addr, uint64_t code_addr)
 __attribute__((naked, noreturn))
 void enter_user_mode(uint64_t rip, uint64_t rsp) {
     asm volatile (
-        "cli\n"
-        "mov $0x23, %%ax\n"
-        "mov %%ax, %%ds\n"
-        "mov %%ax, %%es\n"
-        "mov %%ax, %%fs\n"
-        "mov %%ax, %%gs\n"
+        "cli             \n"
+        "mov $0x23, %%ax \n"
+        "mov %%ax, %%ds  \n"
+        "mov %%ax, %%es  \n"
+        "mov %%ax, %%fs  \n"
+        "mov %%ax, %%gs  \n"
 
-        "pushq $0x23\n"       // user SS
-        "pushq %[rsp]\n"      // user RSP
-        "pushq 0x202\n"            
-        "pushq $0x1B\n"       // user CS
-        "pushq %[rip]\n"      // user RIP
+        "push $0x23     \n"      // user SS
+        "push %[rsp]    \n"      // user RSP
+        "push 0x202     \n"            
+        "push $0x1B     \n"      // user CS
+        "push %[rip]    \n"      // user RIP
         "iretq\n"
         :
         : [rip]"r"(rip), [rsp]"r"(rsp)

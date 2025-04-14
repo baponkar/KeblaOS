@@ -12,7 +12,8 @@
         "types.h": "c",
         "process.h": "c",
         "apic_timer.h": "c",
-        "lv_string.h": "c"
+        "lv_string.h": "c",
+        "load_and_parse_elf.h": "c"
     },
     "cmake.sourceDirectory": "B:/Git-Projects/GitHub/baponkar/KeblaOS/lvgl-9.2.2"
 }

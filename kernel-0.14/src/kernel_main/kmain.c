@@ -58,6 +58,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../usr/switch_to_user.h"
 #include "../syscall/syscall_manager.h"
 #include "../syscall/int_syscall_manager.h"
+#include "../usr/load_and_parse_elf.h"
 
 
 #include "../file_system/fat32.h"       // fat32_init
@@ -154,7 +155,9 @@ void kmain(){
 
     // Interrupt Based System Call
     int_syscall_init();
-    init_user_mode();
+
+    // init_user_mode();
+    load_user_elf_and_jump();
 
     // test_file_operations(abar);
     // test_directory_operations(abar);

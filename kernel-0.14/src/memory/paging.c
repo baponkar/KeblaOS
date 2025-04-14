@@ -92,7 +92,7 @@ void init_paging()
     current_pml4 = (pml4_t *) get_cr3_addr();
 
     // Updating lower half pages
-    for (uint64_t addr = LOW_HALF_START; addr < 0x100000; addr += PAGE_SIZE) {
+    for (uint64_t addr = LOW_HALF_START; addr < 0x1000000; addr += PAGE_SIZE) {
         page_t *page = get_page(addr, 1, current_pml4);
         if (!page) {
             // Handle error: Failed to get the page entry
