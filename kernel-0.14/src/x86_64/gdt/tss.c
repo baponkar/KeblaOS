@@ -42,8 +42,13 @@ void tss_init(){
 
     // TSS descriptor needs two entries (16 bytes)
     uint64_t tss_base = (uint64_t)&tss;
-    uint32_t tss_limit = sizeof(tss_t) - 1;
+    uint32_t tss_limit = (uint32_t)(sizeof(tss_t) - 1);
 
+    // Access Byte                      Flags       
+    //      P DPL S E DC RW A           G DB L R
+    // 92 = 1 00  1 0 0  1  0       A = 1 0  1 0 
+    // 93 = 1 00  1 0 0  1  1       C = 1 1  0 0
+    // 89 = 1 00  0 1 0  0  1       0 = 0 0  0 0
     tss_set_entry(5, tss_base, tss_limit , 0x89, 0x00);     // TSS Descriptor, selector 0x28
 }
 

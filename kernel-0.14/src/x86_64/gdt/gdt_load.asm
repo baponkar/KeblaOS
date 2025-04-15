@@ -2,10 +2,12 @@
 ; https://wiki.osdev.org/GDT_Tutorial
 ; 
 
+[BITS 64]
+
 section .text
 
 extern reload_segments
-extern reload_DS
+
 
 global gdt_flush        ; gd_flush(gdtr_t *gdtr)
 global tss_flush        ; void tss_flush(uint16_t selector)
