@@ -51,6 +51,9 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
 
     uint64_t bit_no = free_frame_bit_no(); // idx is now the index of the first free frame.
 
+    if(bit_no > 0x1000000)
+        printf("bit_no: %d\n", bit_no);
+
     if (bit_no == (uint64_t)-1) {
         printf("No free frames!");
         halt_kernel();

@@ -1,5 +1,4 @@
 
-
 #include "../../../limine-8.6.0/limine.h"
 #include "../lib/stdio.h"
 #include "../lib/string.h"
@@ -14,15 +13,15 @@
 __attribute__((used, section(".requests")))
 static volatile struct limine_module_request module_request = {
     .id = LIMINE_MODULE_REQUEST,
-    .revision = 3
+    .revision = 0
 };
 
 
 void get_kernel_modules_info(){
     if(module_request.response != NULL){
-        //uint64_t revision = module_request.response->revision;
-        //uint64_t module_count = module_request.response->module_count;
-        // struct limine_file **modules = module_request.response->modules;
+        uint64_t revision = module_request.response->revision;
+        uint64_t module_count = module_request.response->module_count;
+        struct limine_file **modules = module_request.response->modules;
     }else{
         printf("No kernel modules found!\n");
     }
@@ -30,24 +29,24 @@ void get_kernel_modules_info(){
 
 void print_kernel_modules_info(){
     if(module_request.response != NULL){
-        // uint64_t revision = module_request.response->revision;
+        uint64_t revision = module_request.response->revision;
         uint64_t module_count = module_request.response->module_count;
         struct limine_file **modules = module_request.response->modules;
         for(size_t i=0;i<(size_t) module_count;i++){
-            // uint64_t revision = modules[i]->revision;
+            uint64_t revision = modules[i]->revision;
             void *address = modules[i]->address;
             uint64_t size = modules[i]->size;
             char *path = modules[i]->path;
-            // char *cmdline = modules[i]->cmdline;
-            // uint32_t media_type = modules[i]->media_type;
-            // uint32_t unused = modules[i]->unused;
-            // uint32_t tftp_ip = modules[i]->tftp_ip;
-            // uint32_t tftp_port = modules[i]->tftp_port;
+            char *cmdline = modules[i]->cmdline;
+            uint32_t media_type = modules[i]->media_type;
+            uint32_t unused = modules[i]->unused;
+            uint32_t tftp_ip = modules[i]->tftp_ip;
+            uint32_t tftp_port = modules[i]->tftp_port;
             uint32_t partition_index = modules[i]->partition_index;
             uint32_t mbr_disk_id = modules[i]->mbr_disk_id;
-            // struct limine_uuid gpt_disk_uuid = modules[i]->gpt_disk_uuid;
-            // struct limine_uuid gpt_part_uuid = modules[i]->gpt_part_uuid;
-            // struct limine_uuid part_uuid = modules[i]->part_uuid;
+            struct limine_uuid gpt_disk_uuid = modules[i]->gpt_disk_uuid;
+            struct limine_uuid gpt_part_uuid = modules[i]->gpt_part_uuid;
+            struct limine_uuid part_uuid = modules[i]->part_uuid;
 
             printf("Module Path : %s\n", path);
             printf("Module Address : %x\n", (uint64_t) address);
@@ -55,9 +54,7 @@ void print_kernel_modules_info(){
             print_size_with_units(size);
             printf("\n");
 
-            printf("Module Media Type : ");
-            // print_dec(media_type);
-            printf("\n");
+            printf("Module Media Type : %d\n", media_type);
 
             printf("Module Partition Index : %d\n", partition_index);
 
@@ -68,7 +65,7 @@ void print_kernel_modules_info(){
     }
 }
 
-extern void enter_user_mode(uint64_t rip, uint64_t rsp);
+extern __attribute__((naked, noreturn)) void switch_to_user_mode(uint64_t stack_addr, uint64_t code_addr);
 
 void load_user_elf_and_jump() {
     void *elf_base = module_request.response->modules[0]->address;
@@ -94,5 +91,5 @@ void load_user_elf_and_jump() {
 
     printf("Switching into usermode: user_entry_addr-%x, user_stack_addr-%x",
           user_entry, user_stack);
-    enter_user_mode(user_entry, user_stack);
+    switch_to_user_mode(user_stack, user_entry);
 }

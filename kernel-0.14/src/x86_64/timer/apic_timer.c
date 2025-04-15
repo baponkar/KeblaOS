@@ -9,6 +9,7 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/08_Timer
 #include "../../process/types.h"
 #include "../../process/thread.h"
 #include "../../process/process.h"
+
 #include "../interrupt/pic.h"
 #include "../interrupt/apic.h"
 #include "../interrupt/interrupt.h"
@@ -107,7 +108,6 @@ void calibrate_apic_timer_tsc() {
 }
 
 
-
 void apic_timer_handler(registers_t *regs) {
     if(apic_ticks >= MAX_APIC_TICKS) apic_ticks = 0;
 
@@ -118,6 +118,7 @@ void apic_timer_handler(registers_t *regs) {
     if(apic_ticks % 100 == 0){
         // toggle_cursor();
         // draw_cursor();
+        // printf("apic ticks: %d\n", apic_ticks);
     }
 
     // if(apic_ticks % 100 != 0 && apic_ticks % 120 != 0 && apic_ticks % 130 != 0 && apic_ticks % 140 != 0)
@@ -161,11 +162,9 @@ void apic_timer_handler(registers_t *regs) {
     // }
 }
 
-
-
-
 void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large count
 
+    printf("Starting apic_timer...\n");
     apic_start_timer(0xFFFFFFFF);
     calibrate_apic_timer_tsc();
     // calibrate_apic_timer_pit();
@@ -174,8 +173,8 @@ void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large cou
     
     asm volatile("cli");
     // Set APIC Timer for periodic interrupts
-    apic_write(APIC_REGISTER_LVT_TIMER, APIC_TIMER_VECTOR | APIC_LVT_TIMER_MODE_PERIODIC);   // Vector 48, Periodic Mode
-    apic_write(APIC_REGISTER_TIMER_DIV , 0x3);                          // Set divisor
+    apic_write(APIC_REGISTER_LVT_TIMER, APIC_TIMER_VECTOR | APIC_LVT_TIMER_MODE_PERIODIC);      // Vector 48, Periodic Mode
+    apic_write(APIC_REGISTER_TIMER_DIV , 0x3);                                                  // Set divisor
     apic_write(APIC_REGISTER_TIMER_INITCNT, apic_count);
 
     irq_install(APIC_IRQ, &apic_timer_handler);

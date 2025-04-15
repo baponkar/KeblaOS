@@ -25,6 +25,8 @@ BUILD_INFO_FILE = $(BUILD_DIR)/build_info.txt
 
 HOST_HOME = /home/baponkar
 
+MODULE_DIR = module
+
 
 # GCC Compiler
 GCC = /usr/local/x86_64-elf/bin/x86_64-elf-gcc
@@ -86,7 +88,7 @@ $(BUILD_DIR)/kernel/%.o: $(KERNEL_DIR)/src/%.asm
 linking: $(BUILD_DIR)/kernel.bin
 
 # Rule to link all object files into a single kernel binary
-$(BUILD_DIR)/kernel.bin: $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES) user_programe.o
+$(BUILD_DIR)/kernel.bin: $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES) $(MODULE_DIR)/user_programe.o
 	$(LD) $(LD_FLAG) -T kernel_linker_x86_64.ld -o $@ $^
 
 
@@ -123,15 +125,14 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	#cp -v $(KERNEL_DIR)/src/initrd/initrd.cpio $(ISO_DIR)/boot/initrd.cpio
 
 	# Copying user_programe.elf 
-	cp -v user_programe.elf $(ISO_DIR)/boot/user_programe.elf 
+	cp -v $(MODULE_DIR)/user_programe.elf $(ISO_DIR)/boot/user_programe.elf 
 
 	# Creating KeblaOS-0.11-image.iso file by using xorriso.
 	xorriso \
 		-as mkisofs \
-		-b boot/limine/limine-bios-cd.bin -no-emul-boot \
-		-boot-load-size 4 \
-		-boot-info-table --efi-boot \
-		boot/limine/limine-uefi-cd.bin \
+		-b boot/limine/limine-bios-cd.bin \
+		-no-emul-boot -boot-load-size 4 -boot-info-table \
+		--efi-boot boot/limine/limine-uefi-cd.bin \
 		-efi-boot-part --efi-boot-image \
 		--protective-msdos-label $(ISO_DIR) \
 		-o $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
@@ -164,8 +165,6 @@ build_disk:
 	mkdir -p $(DISK_DIR)/mnt
 	sudo mount /dev/loop0p1 $(DISK_DIR)/mnt
 	@echo "Mounted Disk Image into loop0"
-
-
 
 
 # Running by qemu
@@ -262,10 +261,11 @@ $(BUILD_INFO_FILE):
 
 
 build_user_programe:
-	nasm -g -Wall -f elf64 user_programe.asm -o user_programe.o
-	ld -T user_linker_x86_64.ld -o user_programe.elf user_programe.o
+	$(NASM) $(NASM_FLAG) $(MODULE_DIR)/user_programe.asm -o $(MODULE_DIR)/user_programe.o
+	ld -T user_linker_x86_64.ld -o $(MODULE_DIR)/user_programe.elf $(MODULE_DIR)/user_programe.o
 
 	@echo "Successfully build user_programe.elf" 
+
 
 # This is a phony target, meaning it doesn't correspond to a file.
 .PHONY: all build clean help

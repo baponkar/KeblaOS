@@ -209,9 +209,7 @@ void start_bootstrap_cpu_core() {
     init_bootstrap_interrupt(bsp_lapic_id);
     init_tsc();
     init_apic_interrupt();
-    
-    init_apic_timer(100);
-
+   
     // Route IRQs to the bootstrap core
     uint32_t bsp_flags = (0 << 8) | (0 << 13) | (0 << 15);
     ioapic_route_irq(0, bsp_lapic_id, 32, bsp_flags);      // Route IRQ 1 to current LAPIC ID with vector 33
@@ -237,6 +235,8 @@ void start_bootstrap_cpu_core() {
     ioapic_route_irq(140, bsp_lapic_id, 172, bsp_flags);   // Route IRQ 140 to current LAPIC ID with vector 172
     ioapic_route_irq(141, bsp_lapic_id, 173, bsp_flags);   // Route IRQ 141 to current LAPIC ID with vector 173
     ioapic_route_irq(142, bsp_lapic_id, 174, bsp_flags);   // Route IRQ 142 to current LAPIC ID with vector 174
+
+    init_apic_timer(100);
 
     // init_pit_timer();
     initKeyboard();

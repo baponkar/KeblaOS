@@ -7,13 +7,13 @@
 
 
 __attribute__((used, section(".limine_requests")))
-static volatile LIMINE_BASE_REVISION(3);
+static volatile LIMINE_BASE_REVISION(0);
 
 // Get memory info
 __attribute__((used, section(".requests")))
 static volatile struct limine_memmap_request memmap_request = {
     .id = LIMINE_MEMMAP_REQUEST,
-    .revision = 3
+    .revision = 0
 };
 
 
@@ -84,12 +84,12 @@ void get_memory_map(){
         }
 
         // Placing lower physical memory for kernel space although Higher half virtual address would be use for kernel
-        KMEM_UP_BASE = entries[entry_ids[1]]->base;
+        KMEM_LOW_BASE = entries[entry_ids[1]]->base;
         KMEM_LENGTH = entries[entry_ids[1]]->length;
-        KMEM_LOW_BASE = KMEM_UP_BASE - KMEM_LENGTH;
+        KMEM_UP_BASE = KMEM_LOW_BASE + KMEM_LENGTH;
 
         // Placing upper physical memory for user space although Lower half  virtual address would be use for user
-        // UMEM_LOW_BASE = entries[entry_ids[3]]->base;
+        UMEM_LOW_BASE = entries[entry_ids[3]]->base;
         UMEM_LENGTH = entries[entry_ids[3]]->length;
         UMEM_UP_BASE = UMEM_LOW_BASE + UMEM_LENGTH;
     }else{

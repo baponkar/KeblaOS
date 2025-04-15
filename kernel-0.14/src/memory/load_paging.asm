@@ -5,13 +5,14 @@
 [BITS 64]
 
 section .data
-DATA_SEL dw 0x10       ; Data Segment Selector
-CODE_SEL dw 0x08       ; Code Segment Selector
+%define KERNEL_CODE 0x08
+%define KERNEL_DATA 0x10
 
 section .text
 global enable_paging
 global disable_paging
-extern reloadSegments  ; Defined in gdt_load.asm file
+global reload_segments
+global reload_DS
 
 disable_paging:
     ; Skip these 3 lines if paging is already disabled
@@ -43,6 +44,24 @@ enable_paging:
 
     ; Now reload the segment registers (CS, DS, SS, etc.) with the appropriate segment selectors...
 
-    jmp reloadSegments
+    jmp reload_segments
+
+
+reload_segments:
+    ; Make sure stack is 16-byte aligned if needed
+    ; Reload CS (Code Segment) using RETFQ
+    push    KERNEL_CODE          ; 0x08
+    lea     rax, [rel reload_DS] ; RIP for next instruction
+    push    rax
+    retfq                        ; Far return to reload CS
+
+reload_DS:
+    mov     ax, KERNEL_DATA      ; 0x10
+    mov     ds, ax
+    mov     es, ax
+    mov     fs, ax
+    mov     gs, ax
+    mov     ss, ax
+    ret                          ; Return if this function was called
 
 

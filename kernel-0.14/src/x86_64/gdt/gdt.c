@@ -151,19 +151,23 @@ gdtr_t gdtr;
 // flags = (granularity & 0xF0) >> 4
 // up_limit = granularity & 0xF
 void gdt_set_entry(int i, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran) {
-    gdt[i].limit_low     = (limit & 0xFFFF);
-    gdt[i].base_low      = (base & 0xFFFF);
-    gdt[i].base_middle   = (base >> 16) & 0xFF;
-    gdt[i].access        = access;
-    gdt[i].granularity   = (limit >> 16) & 0x0F;
-    gdt[i].granularity  |= gran & 0xF0;
-    gdt[i].base_high     = (base >> 24) & 0xFF;
+    gdt[i].limit_low     = (limit & 0xFFFF);        // Set lower 16 bit of limit
+    gdt[i].granularity   = (limit >> 16) & 0x0F;    // Set upper 4 bit of limit
+
+    gdt[i].base_low      = (base & 0xFFFF);         // Set lower 16 bit baase
+    gdt[i].base_middle   = (base >> 16) & 0xFF;     // Set middle 8 bit base
+    gdt[i].base_high     = (base >> 24) & 0xFF;     // Set high 8 bit base
+
+    gdt[i].access        = access;                  // Set  bit access
+
+    gdt[i].granularity  |= gran & 0xF0;             // Set 4 bit Flags
+    
 }
 
-// Access Byte                Flags       
-//      P DPL S E DC RW A      G DB L R
-// 92 = 1 00  1 0 0  1  0  A = 1 0  1 0
-// 93 = 1 00  1 0 0  1  1  C = 1 1  0 0
+// Access Byte                      Flags       
+//      P DPL S E DC RW A           G DB L R
+// 92 = 1 00  1 0 0  1  0       A = 1 0  1 0 = 1010 
+// 93 = 1 00  1 0 0  1  1       C = 1 1  0 0 = 1100 
 void gdt_init(){
     gdt_set_entry(0, 0, 0, 0, 0);              // Null Descriptor
     gdt_set_entry(1, 0, 0xFFFF, 0x9A, 0xA0);   // Kernel Code Descriptor , Selector 0x08
@@ -184,7 +188,6 @@ void gdt_tss_init(){
 
     gdt_flush(&gdtr);     // Load GDT
     tss_flush(0x28);      // Selector 0x28 (5th entry in GDT)
-    // asm volatile("ltr %0" : : "r"(0x28));
 
     printf("[Info] GDT & TSS initialized.\n");
 }
@@ -206,12 +209,12 @@ void print_gdt_entry(uint16_t selector) {
 
 
 // Example usage:
-// print_gdt_entry(0);     // Null Descriptor
-// print_gdt_entry(0x08);  // Kernel code segment
-// print_gdt_entry(0x10);  // Kernel data segment
-// print_gdt_entry(0x1B);  // User code segment
-// print_gdt_entry(0x23);  // User data segment
-// print_gdt_entry(0x28);  // TSS segment
+// print_gdt_entry(0);     // Null Descriptor     : GDT Entry 0x0:  Base=0x0 Limit=0x0    Access=0x0  Flags=0x0
+// print_gdt_entry(0x08);  // Kernel code segment : GDT Entry 0x8:  Base=0x0 Limit=0xFFFF Access=0x9A Flags=0xA
+// print_gdt_entry(0x10);  // Kernel data segment : GDT Entry 0x10: Base=0x0 Limit=0xFFFF Access=0x93 Flags=0x8
+// print_gdt_entry(0x1B);  // User code segment   : GDT Entry 0x1B: Base=0x0 Limit=0xFFFF Access=0xFA Flags=0xA
+// print_gdt_entry(0x23);  // User data segment   : GDT Entry 0x23: Base=0x0 Limit=0xFFFF Access=0xF2 Flags=0xA
+// print_gdt_entry(0x28);  // TSS segment         : GDT Entry 0x28: Base=0x8059A060 Limit=0x67 Access=0x8B Flags=0x0
 
 
 

@@ -29,7 +29,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include  "../cpu/cpuid.h"              // get_cpu_count, get_cpu_info
 #include "../memory/detect_memory.h"
 #include "../bootloader/firmware.h"
-#include "../../../limine-8.6.0/limine.h"           // bootloader info
+#include "../../../limine-8.6.0/limine.h"// bootloader info
 #include "../bootloader/boot.h"         // bootloader info
 #include "../lib/stdio.h"               // printf
 #include "../lib/string.h"
@@ -39,6 +39,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../driver/image_data.h"
 #include "../driver/io/serial.h"
 #include "../x86_64/gdt/gdt.h"           // init_gdt
+#include "../x86_64/gdt/tss.h"
 #include "../memory/pmm.h"               // init_pmm, test_pmm
 #include "../memory/paging.h"            // init_paging, test_paging
 #include "../memory/kmalloc.h"           // test_kmalloc
@@ -59,13 +60,9 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../syscall/syscall_manager.h"
 #include "../syscall/int_syscall_manager.h"
 #include "../usr/load_and_parse_elf.h"
-
-
 #include "../file_system/fat32.h"       // fat32_init
 #include "../file_system/fs.h"          // test_file_operations()
 #include "../driver/vga/color.h"
-
-
 #include "../x86_64/interrupt/irq_manage.h"
 
 #include "kmain.h"
@@ -83,6 +80,8 @@ extern ahci_controller_t sata_disk;             // Detecting by pci scan
 extern ahci_controller_t network_controller;    // Detecting by pci scan
 
 extern void restore_cpu_state(registers_t* registers);
+
+extern tss_t tss;
 
 
 void print_test(){
@@ -103,6 +102,7 @@ void kmain(){
     if(has_apic()){
         disable_pic();
         gdt_tss_init();
+        printf("Going to initialize paging\n");
         start_bootstrap_cpu_core();             // Enabling GDT, TSS, Interrupt and APIC Timer for bootstrap core
         
         // print_gdt_entry(0);     // Null Descriptor
@@ -122,6 +122,7 @@ void kmain(){
         init_pit_timer();
     }
 
+    
     // Memory management initialization
     init_pmm();
     init_paging();
@@ -156,26 +157,33 @@ void kmain(){
     // Interrupt Based System Call
     int_syscall_init();
 
-    // init_user_mode();
-    load_user_elf_and_jump();
-
     // test_file_operations(abar);
     // test_directory_operations(abar);
-
     // list_root_dir();
-
-    // if(is_user_mode() == 3){
-    //     printf("This is User's Space, CPL = %d\n", is_user_mode());
-    // }else{
-    //     printf("This is Kernel's Space, CPL = %d\n", is_user_mode());
-    // }
 
     // start_kshell();
 
-    // process_t *ps = create_process("Test Process\n");
-    // thread_t *t = create_thread(ps, "initial process\n", &start_kshell, NULL);
-    // restore_cpu_state((registers_t *)&ps->current_thread->registers);
-    // delete_process(ps);
+    // get_kernel_modules_info();
+    // print_kernel_modules_info();
+    // load_user_elf_and_jump();
+
+
+
+    
+    print_gdt_entry(0);     // Null Descriptor
+    print_gdt_entry(0x08);  // Kernel code segment
+    print_gdt_entry(0x10);  // Kernel data segment
+    print_gdt_entry(0x1B);  // User code segment
+    print_gdt_entry(0x23);  // User data segment
+    print_gdt_entry(0x28);  // TSS segment
+    print_tss((tss_t *)&tss);            
+    printf("Current stack address: %x\n", read_rsp());
+    printf("Current rip address: %x\n", read_rip());
+    printf("Current rflags address: %x\n", read_rflags());
+    init_user_mode();
+    // This won't be reached if successful
+    printf("Failed to switch to user mode!\n");
+
 
     halt_kernel();
 }

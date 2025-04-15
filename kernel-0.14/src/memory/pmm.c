@@ -55,7 +55,10 @@ uint64_t test_frame(uint64_t bit_no)
 // The below function will return a valid bit number or invalid bit no -1
 uint64_t free_frame_bit_no()
 {
-    for (uint64_t bitmap_idx = 0; bitmap_idx < INDEX_FROM_BIT_NO(nframes); bitmap_idx++)
+    uint64_t free_bit = (uint64_t)-1;
+    bool found = false;
+
+    for (uint64_t bitmap_idx = 0; (bitmap_idx < INDEX_FROM_BIT_NO(nframes)) && !found; bitmap_idx++)
     {
         if (frames[bitmap_idx] != 0xFFFFFFFFFFFFFFFF) // if all bits not set, i.e. there has at least one bit is clear
         {    
@@ -65,14 +68,14 @@ uint64_t free_frame_bit_no()
 
                 if ( !(frames[bitmap_idx] & toTest) ) // if corresponding bit is zero
                 {
-                    return CONVERT_BIT_NO(bitmap_idx, bitmap_off); // return corresponding bit number i.e frame index
-                    printf("Breaking Inner for loop\n");
+                    free_bit = CONVERT_BIT_NO(bitmap_idx, bitmap_off); // return corresponding bit number i.e frame index
+                    found = true;
                     break;
                 }
             }
         }
    }
-   return (uint64_t)-1; // Return an invalid frame index to indicate failure.
+   return free_bit; // Return an invalid frame index to indicate failure.
 }
 
 
@@ -83,9 +86,12 @@ void init_pmm(){
 
     uint64_t tmp_i = KMEM_LOW_BASE;
 
+    printf("KMEM_LENGTH: %x, UMEM_LENGTH: %x\n", KMEM_LENGTH, UMEM_LENGTH );
+
     nframes = (uint64_t) (KMEM_LENGTH + UMEM_LENGTH) / FRAME_SIZE;
-    frames = (uint64_t*) kmalloc_a( (nframes + 63) * sizeof(uint64_t) / 64 , 1); // Allocate enough bytes for the bitmap
-    memset(frames, 0, (nframes + 63) * sizeof(uint64_t) / 64 ); // Zero out the bitmap array
+    frames = (uint64_t*) kmalloc_a( (nframes + 63) * sizeof(uint64_t) / 64 , 1);    // Allocate enough bytes for the bitmap
+    printf("nframes: %x(%d)\n", frames, frames);
+    memset(frames, 0, (nframes + 63) * sizeof(uint64_t) / 64 );                     // Zero out the bitmap array
 
     uint64_t tmp_f = KMEM_LOW_BASE; // KMEM_LOW_BASE changed from initial value of KMEM_LOW_BASE 
 

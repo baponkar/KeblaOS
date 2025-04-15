@@ -7,6 +7,7 @@ Interrupt Request(IRQ)
 #include "../../driver/io/ports.h"
 #include "../../cpu/cpuid.h"    //has_apic
 #include "apic.h" // apic_send_eoi
+#include "../../lib/stdio.h"
 
 #include "irq_manage.h"
 
