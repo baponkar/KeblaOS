@@ -13,10 +13,15 @@ switch_to_user_mode:
 
     push 0x23
     push rdi
+
     pushfq 
     pop rax
     or rax, 0x200
     push rax
+    
     push 0x1B
     push rsi
+    sti
     iretq
+
+    

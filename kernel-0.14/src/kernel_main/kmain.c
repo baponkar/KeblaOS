@@ -170,16 +170,17 @@ void kmain(){
 
 
     
-    print_gdt_entry(0);     // Null Descriptor
-    print_gdt_entry(0x08);  // Kernel code segment
-    print_gdt_entry(0x10);  // Kernel data segment
-    print_gdt_entry(0x1B);  // User code segment
-    print_gdt_entry(0x23);  // User data segment
-    print_gdt_entry(0x28);  // TSS segment
-    print_tss((tss_t *)&tss);            
-    printf("Current stack address: %x\n", read_rsp());
-    printf("Current rip address: %x\n", read_rip());
-    printf("Current rflags address: %x\n", read_rflags());
+    // print_gdt_entry(0);     // Null Descriptor
+    // print_gdt_entry(0x08);  // Kernel code segment
+    // print_gdt_entry(0x10);  // Kernel data segment
+    // print_gdt_entry(0x1B);  // User code segment
+    // print_gdt_entry(0x23);  // User data segment
+    // print_gdt_entry(0x28);  // TSS segment
+    // print_tss((tss_t *)&tss);            
+    // printf("Current stack address: %x\n", read_rsp());
+    // printf("Current rip address: %x\n", read_rip());
+    // printf("Current rflags address: %x\n", read_rflags());
+    
     init_user_mode();
     // This won't be reached if successful
     printf("Failed to switch to user mode!\n");

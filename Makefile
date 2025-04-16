@@ -168,26 +168,24 @@ build_disk:
 
 
 # Running by qemu
-run:
-	# GDB Debuging
-	#qemu-system-x86_64 -cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso -s -S
-		
+uefi_run:
 	
 	# UEFI Boot
-	# qemu-system-x86_64 \
-	#	-machine q35 \
-	#	-m 4096 \
-	#	-smp cores=2,threads=2,sockets=1,maxcpus=4 \
-	#	-boot d \
-	#	-hda $(DISK_DIR)/disk.img \
-	#	-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
-	#	-serial file:$(DEBUG_DIR)/serial_output.log \
-	#	-d guest_errors,int,cpu_reset \
-	#	-D $(DEBUG_DIR)/qemu.log \
-	#	-vga std \
-	#	-bios /usr/share/OVMF/OVMF_CODE.fd  \
-	#	-rtc base=utc,clock=host
+	qemu-system-x86_64 \
+		-machine q35 \
+		-m 4096 \
+		-smp cores=2,threads=2,sockets=1,maxcpus=4 \
+		-boot d \
+		-hda $(DISK_DIR)/disk.img \
+		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
+		-serial file:$(DEBUG_DIR)/serial_output.log \
+		-d guest_errors,int,cpu_reset \
+		-D $(DEBUG_DIR)/qemu.log \
+		-vga std \
+		-bios /usr/share/OVMF/OVMF_CODE.fd  \
+		-rtc base=utc,clock=host
 
+run:
 	# BIOS Boot
 	qemu-system-x86_64 \
 		-machine q35 \
@@ -202,6 +200,21 @@ run:
 		-vga std \
 		-rtc base=utc,clock=host
 
+gdb_debug:
+	# GDB Debuging
+	qemu-system-x86_64 \
+		-machine q35 \
+		-m 4096 \
+		-smp cores=4,threads=1,sockets=1,maxcpus=4 \
+		-boot d \
+		-hda $(DISK_DIR)/disk.img \
+		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
+		-serial stdio \
+		-d guest_errors,int,cpu_reset \
+		-D $(DEBUG_DIR)/qemu.log \
+		-vga std \
+		-rtc base=utc,clock=host \
+		-s -S
 
 # clean all things from inside of build directory
 clean:
@@ -243,8 +256,10 @@ help:
 	@echo "  make build_image     - Create the ISO image for the OS"
 	@echo "  make build           - Build the iso image"
 	@echo "  make run             - Run the default target (displays this help message)"
+	@echo "  make uefi_run        - UEFI Run the target"
+	@echo "  make gdb_debug       - Debugging By GDB"
 	@echo "  make clean           - Clean up build artifacts"
-	@echo "	 make build_disk_image - Create Format Disk image which will be use in Kernel as disk"
+	@echo "  make build_disk_image - Create Format Disk image which will be use in Kernel as disk"
 	@echo "  make help            - Display this help menu"
 
 

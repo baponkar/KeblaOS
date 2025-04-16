@@ -7,14 +7,13 @@ References:
     https://hasinisama.medium.com/operating-system-user-mode-2c2f19ca8e43
     https://hasinisama.medium.com/operating-systems-the-road-to-user-mode-854b72221b1b
 */
-#include "../memory/umalloc.h"
+
 #include "../memory/uheap.h"
 #include "../memory/paging.h"
 #include "../util/util.h"
 #include  "../lib/stdio.h"
 #include  "../lib/string.h"
-#include "../kshell/kshell.h"
-#include "../syscall/syscall_manager.h"
+
 
 #include "switch_to_user.h"
 
@@ -26,7 +25,7 @@ References:
 
 #define STACK_SIZE 0x4000   // 16 kb
 
-
+extern void switch_to_user_mode(uint64_t stack_addr, uint64_t code_addr); // Defined in switch_user.asm
 
 int is_user_mode() {
     uint64_t cs;
@@ -34,39 +33,21 @@ int is_user_mode() {
     return (cs & 0x3) == 3;     // If CPL (bits 0-1) == 3, then it's user mode
 }
 
-extern void switch_to_user_mode(uint64_t stack_addr, uint64_t code_addr); // Defined in switch_user.asm
-// __attribute__((naked, noreturn))
-// void switch_to_user_mode(uint64_t stack_addr, uint64_t code_addr)
-// {
-//     asm volatile(
-//         "cli\n"                     // Disable Interrupt
-//         "mov $0x23, %%ax    \n"     // User-mode data segment (ring 3)
-//         "mov %%ax, %%ds     \n"     // Pushing data segment
-//         "mov %%ax, %%es     \n"     // 
-//         "mov %%ax, %%fs     \n"     //
-//         "mov %%ax, %%gs     \n"     //
-//         "pushq $0x23        \n"     // Push USER_SS(DATA SEGMENT) Selector
-//         "pushq %[stack]     \n"     // Push User Stack pointer
-//         "pushfq             \n"     // Push RFLAGS
-//         "popq %%rax         \n"     // Taking RFLAGS into RAX
-//         "or $0x200, %%rax   \n"     // Set IF flag to make automatic enabling Interrupt
-//         "pushq %%rax        \n"     // Push Updated RFLAGS into the stack
-//         "pushq $0x1B        \n"     // Push USER_CS(CODE SEGMENT)
-//         "pushq %[entry]     \n"     // Push entry point address        
-//         "iretq              \n"     // Interrupt Return to User Mode
-//         :
-//         : [stack] "r" (stack_addr), [entry] "r" (code_addr)
-//         : "rax"
-//     );
-// }
 
 
 uint64_t create_user_function() {
+
     void *user_code = (void *) uheap_alloc(0x1000);
 
-    // simple infinite loop machine code
+    // The machine code determined from user_programe.asm
+    // nasm -f bin module/user_programe.asm -o module/user_programe.bin
+    // objdump -D -b binary -m i386:x86-64 module/user_programe.bin
     uint8_t user_program[] = {
-        0xeb, 0xfe  // Infinite loop: jmp $
+        // 0x31, 0xc9,                     // xor    %ecx,%ecx
+        // 0xf7, 0xf1,                     // div    %ecx
+        0xb8, 0x78, 0x56, 0x34, 0x12,   // mov $0x12345678,%eax
+        0xcd, 0xac,                     // int $0xac
+        0xeb, 0xfe                      // jmp 0x9
     };
 
     memcpy(user_code, (void*)&user_program, sizeof(user_program));
@@ -84,10 +65,10 @@ void init_user_mode(){
 
     uint64_t stack_base_addr = ((uint64_t) uheap_alloc(STACK_SIZE));
     for(uint64_t addr = stack_base_addr; addr < stack_base_addr + STACK_SIZE; addr += 0x1000){
-        page_t *_page = get_page(addr, 0,  (pml4_t *)get_cr3_addr());
-        _page->rw = 1;      // Making it read-writable
-        _page->nx = 1;      // Making non-executable
-        _page->user = 1;    // Making User accessible
+        page_t *stack_page = get_page(addr, 0,  (pml4_t *)get_cr3_addr());
+        stack_page->rw = 1;      // Making it read-writable
+        stack_page->nx = 1;      // Making non-executable
+        stack_page->user = 1;    // Making User accessible
     }
     uint64_t stack_top_addr = stack_base_addr + STACK_SIZE;   // Set stack top
     

@@ -21,7 +21,7 @@ struct tss{ // 104 bytes is the minimum size of a TSS
     uint64_t reserved2;
     uint16_t reserved3;
     uint16_t iopb_offset;
-} __attribute__((aligned(16)));
+} __attribute__((packed));
 typedef struct tss tss_t;
 
 void tss_init();

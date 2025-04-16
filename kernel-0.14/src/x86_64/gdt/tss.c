@@ -42,7 +42,9 @@ void tss_init(){
 
     // TSS descriptor needs two entries (16 bytes)
     uint64_t tss_base = (uint64_t)&tss;
-    uint32_t tss_limit = (uint32_t)(sizeof(tss_t) - 1);
+    uint32_t tss_limit = (uint32_t)(sizeof(tss_t));
+
+    printf("tss_limit: %x\n", tss_limit);
 
     // Access Byte                      Flags       
     //      P DPL S E DC RW A           G DB L R

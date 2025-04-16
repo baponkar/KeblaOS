@@ -64,7 +64,11 @@ void set_core_descriptor_table(uint64_t core_id){
     // selector value is 1000 because GDT code segment index is 1
     // selector = index + table_to_use + privilege
     // selector  = 1<<3(index 1) + 0<<2(TI for GDT 0) + 0<<1(for ring 0) => 1000 + 000 + 00 = 1000 = 0x08
+    // attribute = P | DPL | 0 | Gate Type        | 
+    // attribute = 1 | 00  | 0 | 1110 (interrupt) | = 0x8E for DPL = 0
+    // attribute = 1 | 11  | 0 | 1110 (interrupt) | = 0xEE for DPL = 3
 
+    // Define Interrupt for DPL = 0
     core_int_set_gate(core_id,  0, (uint64_t)&isr0 ,  0x8, 0x8E);    // Division By Zero
     core_int_set_gate(core_id,  1, (uint64_t)&isr1 ,  0x8, 0x8E);    // Debug
     core_int_set_gate(core_id,  2, (uint64_t)&isr2 ,  0x8, 0x8E);    // Non Maskable Interrupt  
@@ -123,10 +127,10 @@ void set_core_descriptor_table(uint64_t core_id){
     core_int_set_gate(core_id, 49, (uint64_t)&irq17, 0x08, 0x8E);   // HPET Timer, IRQ17
     core_int_set_gate(core_id, 50, (uint64_t)&irq18, 0x08, 0x8E);   // Available, IRQ18
 
+    // Define Interrupt for DPL = 3
     core_int_set_gate(core_id, 172, (uint64_t)&irq140, 0x08, 0xEE); // Print System Call, IRQ140
     core_int_set_gate(core_id, 173, (uint64_t)&irq141, 0x08, 0xEE); // Read System Call, IRQ141
     core_int_set_gate(core_id, 174, (uint64_t)&irq142, 0x08, 0xEE); // Exit System Call, IRQ142
-
 }
 
 
