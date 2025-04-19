@@ -63,7 +63,7 @@ void init_user_mode(){
     code_page->user = 1;        // Making User accessible
 
     uint64_t stack_base_addr = ((uint64_t) uheap_alloc(STACK_SIZE));
-    for(uint64_t addr = stack_base_addr; addr < stack_base_addr + STACK_SIZE; addr += 0x1000){
+    for(uint64_t addr = stack_base_addr; addr < stack_base_addr + STACK_SIZE + 0x1000; addr += 0x1000){
         page_t *stack_page = get_page(addr, 0,  (pml4_t *)get_cr3_addr());
         stack_page->rw = 1;      // Making it read-writable
         stack_page->nx = 1;      // Making non-executable

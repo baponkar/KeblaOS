@@ -29,15 +29,17 @@ void vm_alloc(uint64_t va) {
             // Allocate a physical frame for the page
             alloc_frame(page, 1, 1); // Kernel-mode, writable by default
             page->present = 1;
-            page->rw = 1;   // Writable
-            page->user = 0; // User non-accessible
+            page->rw = 1;           // Writable
+            page->user = 0;         // User non-accessible
         }
-        if(va <= LOWER_HALF_END_ADDR){ // For user page
+
+        if(va < LOWER_HALF_END_ADDR){ // For user page
+            printf("User addr: %x\n", va);
             // Allocate a physical frame for the page
             alloc_frame(page, 0, 1); // User-mode, writable by default
             page->present = 1;
-            page->rw = 1;   // Writable
-            page->user = 1; // User accessible
+            page->rw = 1;           // Writable
+            page->user = 1;         // User accessible
         }
     }else{
         printf("[Error] page is not present\n");

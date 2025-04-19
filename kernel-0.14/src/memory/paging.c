@@ -83,24 +83,24 @@ void init_paging()
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
     current_pml4 = (pml4_t *) get_cr3_addr();
 
-    // Updating lower half pages
-    for (uint64_t addr = USABLE_START_PHYS_MEM; addr < 0x1000000; addr += PAGE_SIZE) {
-        page_t *page = get_page(addr, 1, current_pml4);
-        if (!page) {
-            // Handle error: Failed to get the page entry
-            continue;
-        }
+    // // Updating lower half pages
+    // for (uint64_t addr = USABLE_START_PHYS_MEM; addr < 0x1000000; addr += PAGE_SIZE) {
+    //     page_t *page = get_page(addr, 1, current_pml4);
+    //     if (!page) {
+    //         // Handle error: Failed to get the page entry
+    //         continue;
+    //     }
 
-        // Allocate a frame if not already allocated
-        if (!page->frame) {
-            alloc_frame(page, 0, 1); // page, is_kernel, rw
-        }
+    //     // Allocate a frame if not already allocated
+    //     if (!page->frame) {
+    //         alloc_frame(page, 0, 1); // page, is_kernel, rw
+    //     }
 
-        // Set the User flag (0x4 in x86_64) to allow user-level access
-        page->present = 1;  // Ensure the page is present
-        page->rw = 1;       // Allow read/write access
-        page->user = 1;     // Set user-accessible bit
-    }
+    //     // Set the User flag (0x4 in x86_64) to allow user-level access
+    //     page->present = 1;  // Ensure the page is present
+    //     page->rw = 1;       // Allow read/write access
+    //     page->user = 1;     // Set user-accessible bit
+    // }
 
     // Invalidate the TLB for the changes to take effect
     flush_tlb_all();

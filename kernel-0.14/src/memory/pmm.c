@@ -99,11 +99,11 @@ void init_pmm(){
 
 
 void test_pmm(){
-    printf("\nTest Physical Memory Manager(pmm):\n");
-    printf("Frames Pointer Address : %x\n", (uint64_t) frames);
-    printf("Total Frames : %d\n", nframes);
-    printf("After frames allocation next free address pointer: %x\n", USABLE_START_PHYS_MEM);
-    printf("Total Memory used for bitmap : ");
+    printf(" Test Physical Memory Manager(pmm):\n");
+    printf(" Frames Pointer Address : %x\n", (uint64_t) frames);
+    printf(" Total Frames : %d\n", nframes);
+    printf(" After frames allocation next free address pointer: %x\n", USABLE_START_PHYS_MEM);
+    printf(" Total Memory used for bitmap : ");
     print_size_with_units(bitmap_mem_size);
     printf("\n");
 }

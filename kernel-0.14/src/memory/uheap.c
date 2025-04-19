@@ -17,7 +17,7 @@ void *uheap_alloc(size_t size) {
 
     // Check if we have enough space in the heap
     if ((LOWER_HALF_START_ADDR + size) > LOWER_HALF_END_ADDR) {
-        printf("Out of memory\n");
+        printf("[Error] Out of memory\n");
         return NULL; // Out of heap space
     }
 
@@ -29,7 +29,7 @@ void *uheap_alloc(size_t size) {
     }
 
     // Add 4KB padding between allocations to prevent overlapping
-    LOWER_HALF_START_ADDR += 0x1000;
+    // LOWER_HALF_START_ADDR += 0x1000;
 
     // Update the maximum allocated address
     if (LOWER_HALF_START_ADDR > LOWER_HALF_END_ADDR) {

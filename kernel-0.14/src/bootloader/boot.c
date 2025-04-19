@@ -34,41 +34,6 @@ __attribute__((used, section(".requests_end_marker")))
 static volatile LIMINE_REQUESTS_END_MARKER;
 
 
-// Get Paging info
-
-__attribute__((used, section(".requests")))
-static volatile struct limine_paging_mode_request paging_mode_request = {
-    .id = LIMINE_PAGING_MODE_REQUEST,
-    .revision = 3
-};
-
-
-char *LIMINE_PAGING_MODE;
-
-void get_paging_mode_info(){
-    if(paging_mode_request.response != NULL){
-        uint64_t mode = paging_mode_request.response->mode;
-        if(mode == LIMINE_PAGING_MODE_X86_64_4LVL){
-            LIMINE_PAGING_MODE = "Limine Paging mode x86_64 4 Level";
-        } else if(mode == LIMINE_PAGING_MODE_X86_64_5LVL){
-            LIMINE_PAGING_MODE = "Limine Paging mode x86_64 5 Level";
-        }
-    }else{
-        LIMINE_PAGING_MODE = "No Paging mode found!";
-        printf("No Paging mode found!\n");
-    }
-}
-
-
-void print_paging_mode_info(){
-     if(paging_mode_request.response != NULL){
-        printf("Limine Paging Mode : %d\n", LIMINE_PAGING_MODE);
-    }else{
-        LIMINE_PAGING_MODE = "No Paging mode found!";
-        printf("No Paging mode found!\n");
-    }
-}
-
 
 // Get  Limine Bootloader name, version etc 
 __attribute__((used, section(".requests")))
@@ -104,51 +69,14 @@ void print_limine_info(){
 }
 
 
-
-
-
-// Get Stack size info
-__attribute__((used, section(".requests")))
-static volatile struct limine_stack_size_request stack_size_request = {
-    .id = LIMINE_STACK_SIZE_REQUEST,
-    .revision = 3,
-    .stack_size = 16384
-};
-
-uint64_t STACK_SIZE;
-
-void get_stack_info(){
-    if(stack_size_request.response != NULL){
-        STACK_SIZE = stack_size_request.stack_size;
-    }else{
-        STACK_SIZE = 0;
-        printf("No stack size found!\n");
-    }
-}
-
-
-void print_stack_info(){
-    if(stack_size_request.response != NULL){
-        printf("Stack Size : %x\n", STACK_SIZE);
-    }else{
-        printf("No stack size found!\n");
-    }
-}
-
-
 // finuls functions which will actually use in different ways
 void get_bootloader_info(){
-    get_firmware_info();
-    get_stack_info();
     get_limine_info();
-    get_paging_mode_info();
 }
 
 
 void print_bootloader_info(void){
-    print_stack_info();
     print_limine_info();
-    print_paging_mode_info();
 }
 
 
