@@ -44,8 +44,6 @@ void tss_init(){
     uint64_t tss_base = (uint64_t)&tss;
     uint32_t tss_limit = (uint32_t)(sizeof(tss_t));
 
-    printf("tss_limit: %x\n", tss_limit);
-
     // Access Byte                      Flags       
     //      P DPL S E DC RW A           G DB L R
     // 92 = 1 00  1 0 0  1  0       A = 1 0  1 0 

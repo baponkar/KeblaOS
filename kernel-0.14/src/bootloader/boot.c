@@ -136,11 +136,6 @@ void print_stack_info(){
 }
 
 
-
-
-
-
-
 // finuls functions which will actually use in different ways
 void get_bootloader_info(){
     get_firmware_info();

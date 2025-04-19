@@ -163,6 +163,15 @@ typedef enum {
     STANDARD_HEADER_MULTI_FUNCTION = 0x80
 }HeaderType;
 
+uint32_t pci_read(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset);
+void pci_write(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, uint32_t value);
+
+
+int detect_disk_controller(uint8_t bus, uint8_t device, uint8_t function,uint8_t class,uint8_t subclass, uint8_t prog_if, uint8_t revision);
+int detect_network_controller(uint8_t bus, uint8_t device, uint8_t function,uint8_t class, uint8_t subclass, uint8_t prog_if, uint8_t revision);
+int detect_wireless_controller(uint8_t bus, uint8_t device, uint8_t function,uint8_t class, uint8_t subclass, uint8_t prog_if, uint8_t revision);
+
+
 
 void pci_scan();
 

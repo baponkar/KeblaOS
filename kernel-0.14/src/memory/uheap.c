@@ -7,8 +7,8 @@
 
 #include "kheap.h"
 
-extern uint64_t V_UMEM_LOW_BASE;
-extern uint64_t V_UMEM_UP_BASE;
+extern uint64_t LOWER_HALF_START_ADDR;
+extern uint64_t LOWER_HALF_END_ADDR;
 
 
 void *uheap_alloc(size_t size) {
@@ -16,24 +16,24 @@ void *uheap_alloc(size_t size) {
     size = (size + 0xFFF) & ~0xFFF;
 
     // Check if we have enough space in the heap
-    if ((V_UMEM_LOW_BASE + size) > V_UMEM_UP_BASE) {
+    if ((LOWER_HALF_START_ADDR + size) > LOWER_HALF_END_ADDR) {
         printf("Out of memory\n");
         return NULL; // Out of heap space
     }
 
     // Allocate virtual pages for the requested size
-    uint64_t va = V_UMEM_LOW_BASE;
-    while (V_UMEM_LOW_BASE < va + size) {
-        vm_alloc(V_UMEM_LOW_BASE); // Use the vm_alloc from vmm.c
-        V_UMEM_LOW_BASE += 0x1000; // Increment by page size (4 KiB)
+    uint64_t va = LOWER_HALF_START_ADDR;
+    while (LOWER_HALF_START_ADDR < va + size) {
+        vm_alloc(LOWER_HALF_START_ADDR); // Use the vm_alloc from vmm.c
+        LOWER_HALF_START_ADDR += 0x1000; // Increment by page size (4 KiB)
     }
 
     // Add 4KB padding between allocations to prevent overlapping
-    V_UMEM_LOW_BASE += 0x1000;
+    LOWER_HALF_START_ADDR += 0x1000;
 
     // Update the maximum allocated address
-    if (V_UMEM_LOW_BASE > V_UMEM_UP_BASE) {
-        V_UMEM_UP_BASE = V_UMEM_LOW_BASE;
+    if (LOWER_HALF_START_ADDR > LOWER_HALF_END_ADDR) {
+        LOWER_HALF_END_ADDR = LOWER_HALF_START_ADDR;
     }
 
     

@@ -18,7 +18,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../acpi/acpi.h"               // init_acpi
 #include "../acpi/descriptor_table/mcfg.h"
 #include "../acpi/descriptor_table/madt.h"
-#include "../x86_64/interrupt/interrupt.h"
+#include "../x86_64/interrupt/multi_core_interrupt.h"
 #include "../x86_64/interrupt/apic.h"
 #include "../x86_64/interrupt/ioapic.h"
 #include "../x86_64/interrupt/pic.h"    // init_idt, test_interrupt
@@ -52,7 +52,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../x86_64/timer/rtc.h"         // RTC
 #include "../x86_64/timer/pit_timer.h"   // init_timer
 #include "../x86_64/timer/apic_timer.h"  // apic timer
-#include "../x86_64/timer/hpet_timer.h"  // hpet timer
+#include "../x86_64/timer/hpet_timer.h"  // hpet timerzz
 #include "../kshell/kshell.h"
 #include "../kshell/ring_buffer.h"
 #include "../driver/mouse/mouse.h"       // mouse driver
@@ -64,6 +64,8 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../file_system/fs.h"          // test_file_operations()
 #include "../driver/vga/color.h"
 #include "../x86_64/interrupt/irq_manage.h"
+
+#include "../usr/usr_shell.h"
 
 #include "kmain.h"
 
@@ -92,27 +94,30 @@ void kmain(){
 
     serial_init();
     get_bootloader_info();
-    get_memory_info();
     vga_init();
+    printf("[Info] %s - %s\nBuild starts on: %s, Last Update on: %s\n",
+        OS_NAME, OS_VERSION, BUILD_DATE, LAST_UPDATE);
+    get_set_memory();
+    get_smp_info();
 
-    get_cpu_info();
-
-    printf("[Info] %s - %s\n", OS_NAME, OS_VERSION);
+    
     
     if(has_apic()){
         disable_pic();
         gdt_tss_init();
-        printf("Going to initialize paging\n");
-        start_bootstrap_cpu_core();             // Enabling GDT, TSS, Interrupt and APIC Timer for bootstrap core
+        start_bootstrap_cpu_core();                 // Enabling GDT, TSS, Interrupt and APIC Timer for bootstrap core
         
-        // print_gdt_entry(0);     // Null Descriptor
-        // print_gdt_entry(0x08);  // Kernel code segment
-        // print_gdt_entry(0x10);  // Kernel data segment
-        // print_gdt_entry(0x1B);  // User code segment
-        // print_gdt_entry(0x23);  // User data segment
-        // print_gdt_entry(0x28);  // TSS segment
-        // extern tss_t tss;
-        // print_tss(&tss);
+        // Interrupt Based System Call
+        int_syscall_init();
+
+        // Memory management initialization
+        init_pmm();
+        init_paging();
+
+        // if(has_apic()){
+        //     set_ap_stacks(1, 3);                 // Initialize stacks for other cores
+        //     start_secondary_cpu_cores(1, 3);     // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
+        // }
 
     }else{
         pic_irq_remap();
@@ -123,68 +128,14 @@ void kmain(){
     }
 
     
-    // Memory management initialization
-    init_pmm();
-    init_paging();
-
-    // if(has_apic()){
-    //     set_ap_stacks(1, 3);                 // Initialize stacks for other cores
-    //     start_secondary_cpu_cores(1, 3);     // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
-    // }
-
     if(has_fpu()){
         enable_fpu_and_sse();
     }
 
     pci_scan();
     
-    // Test AHCI drivers for a successful read
-    HBA_MEM_T* abar = (HBA_MEM_T*) sata_disk.abar;
-    probePort(abar);
-
-    // test_ahci(sata_disk);
-
-    // fat32_run_tests((HBA_PORT_T *)&abar->ports[0]);
-
-    mouse_init();
-
-    // MSR Based System Call
-    // init_syscall();
-    // init_user_mode();
-    // _syscall(1, (uint64_t)(char *)"Hello\n", 0);
-    
-
-    // Interrupt Based System Call
-    int_syscall_init();
-
-    // test_file_operations(abar);
-    // test_directory_operations(abar);
-    // list_root_dir();
-
-    // start_kshell();
-
-    // get_kernel_modules_info();
-    // print_kernel_modules_info();
-    // load_user_elf_and_jump();
-
-
-
-    
-    // print_gdt_entry(0);     // Null Descriptor
-    // print_gdt_entry(0x08);  // Kernel code segment
-    // print_gdt_entry(0x10);  // Kernel data segment
-    // print_gdt_entry(0x1B);  // User code segment
-    // print_gdt_entry(0x23);  // User data segment
-    // print_gdt_entry(0x28);  // TSS segment
-    // print_tss((tss_t *)&tss);            
-    // printf("Current stack address: %x\n", read_rsp());
-    // printf("Current rip address: %x\n", read_rip());
-    // printf("Current rflags address: %x\n", read_rflags());
-    
+ 
     init_user_mode();
-    // This won't be reached if successful
-    printf("Failed to switch to user mode!\n");
-
 
     halt_kernel();
 }

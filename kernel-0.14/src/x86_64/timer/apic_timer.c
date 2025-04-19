@@ -164,7 +164,6 @@ void apic_timer_handler(registers_t *regs) {
 
 void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large count
 
-    printf("Starting apic_timer...\n");
     apic_start_timer(0xFFFFFFFF);
     calibrate_apic_timer_tsc();
     // calibrate_apic_timer_pit();

@@ -84,16 +84,13 @@ void init_pmm(){
 
     // printf("Strat of PMM initialization...\n");
 
-    uint64_t tmp_i = KMEM_LOW_BASE;
+    uint64_t tmp_i = USABLE_START_PHYS_MEM;
 
-    printf("KMEM_LENGTH: %x, UMEM_LENGTH: %x\n", KMEM_LENGTH, UMEM_LENGTH );
-
-    nframes = (uint64_t) (KMEM_LENGTH + UMEM_LENGTH) / FRAME_SIZE;
+    nframes = (uint64_t) (USABLE_LENGTH_PHYS_MEM) / FRAME_SIZE;
     frames = (uint64_t*) kmalloc_a( (nframes + 63) * sizeof(uint64_t) / 64 , 1);    // Allocate enough bytes for the bitmap
-    printf("nframes: %x(%d)\n", frames, frames);
     memset(frames, 0, (nframes + 63) * sizeof(uint64_t) / 64 );                     // Zero out the bitmap array
 
-    uint64_t tmp_f = KMEM_LOW_BASE; // KMEM_LOW_BASE changed from initial value of KMEM_LOW_BASE 
+    uint64_t tmp_f = USABLE_START_PHYS_MEM; // USABLE_START_PHYS_MEM changed from initial value of USABLE_START_PHYS_MEM 
 
     bitmap_mem_size = tmp_f - tmp_i;
 
@@ -105,7 +102,7 @@ void test_pmm(){
     printf("\nTest Physical Memory Manager(pmm):\n");
     printf("Frames Pointer Address : %x\n", (uint64_t) frames);
     printf("Total Frames : %d\n", nframes);
-    printf("After frames allocation next free address pointer: %x\n", KMEM_LOW_BASE);
+    printf("After frames allocation next free address pointer: %x\n", USABLE_START_PHYS_MEM);
     printf("Total Memory used for bitmap : ");
     print_size_with_units(bitmap_mem_size);
     printf("\n");

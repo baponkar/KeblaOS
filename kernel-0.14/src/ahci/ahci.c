@@ -40,6 +40,7 @@ References:
 
 #include "ahci.h"
 
+
 extern ahci_controller_t sata_disk; // This detect by pci scan
 
 
@@ -82,23 +83,23 @@ int probePort(HBA_MEM_T *abar)
             switch (checkType(&abar->ports[i])) 
             {
                 case AHCI_DEV_SATA:
-                    printf("[-] SATA drive found at port: %d\n", i);
+                    printf(" [-] AHCI: SATA drive found at port: %d\n", i);
                     return i;
                     break;
                 case AHCI_DEV_SATAPI:
-                    printf("[-] SATAPI drive found at port: %d \n", i);
+                    printf(" [-] AHCI: SATAPI drive found at port: %d \n", i);
                     // return i;
                     break;
                 case AHCI_DEV_SEMB:
-                    printf("[-] SEMB drive found at port: %d \n", i);
+                    printf(" [-] AHCI: SEMB drive found at port: %d \n", i);
                     // return i;
                     break;
                 case AHCI_DEV_PM:
-                    printf("[-]] PM drive found at port: %d \n", i);
+                    printf(" [-] AHCI: PM drive found at port: %d \n", i);
                     // return i;
                     break;
 			    default:
-                    printf("[-] No drive found at port: %d \n", i);
+                    printf(" [-] AHCI: No drive found at port: %d \n", i);
             }
 		}
 		pi >>= 1;
@@ -186,7 +187,7 @@ int findCMDSlot(HBA_PORT_T* port, size_t cmd_slots)
 			return i;
 		slots >>= 1;
 	}
-	printf("[-] Cannot find free command list entry\n");
+	printf(" [-] AHCI: Cannot find free command list entry\n");
 	return -1;
 }
 
@@ -264,7 +265,7 @@ static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t 
     
 	if (spin == 1000000)
 	{
-		printf("[-] Port is hung\n");
+		printf("[-] AHCI: Port is hung\n");
 		return false;
 	}
 
@@ -282,7 +283,7 @@ static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t 
         // Task file error
 		if (port->is & HBA_PxIS_TFES)	
 		{
-			printf("[-] Read disk error\n");
+			printf("[-] AHCI: Read disk error\n");
 			return false;
 		}
 	}
@@ -290,7 +291,7 @@ static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t 
 	// Check again
 	if (port->is & HBA_PxIS_TFES)
 	{
-		printf("[-]] Read disk error\n");
+		printf("[-] AHCI: Read disk error\n");
 		return false;
 	}
  
@@ -308,13 +309,13 @@ inline bool ahci_write(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uin
 
 void test_ahci(ahci_controller_t controller)
 {
-	printf("[Info] Start Testing AHCI\n");
+	printf(" [Info] Start Testing AHCI\n");
     HBA_MEM_T* abar = (HBA_MEM_T*) controller.abar;
     HBA_PORT_T* port = &abar->ports[0];
 
     uint16_t* buf_1 = (uint16_t*)(uintptr_t)vir_to_phys((uint64_t)kheap_alloc(0x8000)); // 32 KB buffer (overkill but fine for test)
     if (buf_1 == NULL) {
-        printf("[-] Buffer_1 Memory allocation failed!\n");
+        printf(" [-] AHCI: Buffer_1 Memory allocation failed!\n");
         return;
     }
     memset(buf_1, 0, 512); // Clear first sector (only 512 bytes needed)
@@ -325,24 +326,24 @@ void test_ahci(ahci_controller_t controller)
 
     // Step 3: Write the buffer to disk
     if (ahci_write(port, 0, 0, 1, buf_1)) {
-        printf("[-] Write successful from buf_1 into disk.\n");
+        printf(" [-] AHCI: Write successful from buf_1 into disk.\n");
     } else {
-        printf("[-] Write failed from buf_1 into disk!\n");
+        printf(" [-] AHCI: Write failed from buf_1 into disk!\n");
         return;
     }
 
 
 	uint16_t* buf_2 = (uint16_t*)(uintptr_t)vir_to_phys((uint64_t)kheap_alloc(0x8000)); // 32 KB buffer (overkill but fine for test)
     if (buf_2 == NULL) {
-        printf("[-] Buffer_2 Memory allocation failed!\n");
+        printf(" [-] AHCI: Buffer_2 Memory allocation failed!\n");
         return;
     }
     memset(buf_2, 0, 512);
     // Step 5: Read back from disk
     if (ahci_read(port, 0, 0, 1, buf_2)) {
-        printf("[-] Data read from disk: %s.\n", (char*)buf_2);
+        printf(" [-] AHCI: Data read from disk: %s.\n", (char*)buf_2);
     } else {
-        printf("[-] Read failed from disk!\n");
+        printf(" [-] AHCI: Read failed from disk!\n");
     }
 
     kheap_free((void *)phys_to_vir((uint64_t) buf_1), 0x8000); // Free memory

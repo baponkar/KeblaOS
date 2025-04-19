@@ -17,7 +17,7 @@ uint32_t get_lapic_id_by_limine(int core_id);       // Get Limine LAPIC ID by co
 struct limine_smp_info ** get_cpus();               // Get Limine SMP info
 limine_goto_address get_goto_address(int core_id);  // Get Limine goto address
 uint64_t get_extra_argument(int core_id);           // Get Limine extra argument
-void get_cpu_info();                                // Get Limine CPU info
+void get_smp_info();                                // Get Limine CPU info
 
 void target_cpu_task(struct limine_smp_info *smp_info);
 void switch_to_core(uint32_t target_lapic_id);
@@ -31,5 +31,5 @@ void set_ap_stacks(int start_id, int end_id);
 // Debugging
 void print_cpu_vendor();
 void print_cpu_brand();
-void print_cpu_info();
+void print_smp_info();
 

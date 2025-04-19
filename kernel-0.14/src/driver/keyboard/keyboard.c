@@ -49,8 +49,6 @@ const uint32_t lowercase[128] = {
     UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,
     UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN
 };
-
-
 const uint32_t uppercase[128] = {
     UNKNOWN,ESC,'!','@','#','$','%','^','&','*',
     '(',')','_','+','\b','\t','Q','W','E','R',

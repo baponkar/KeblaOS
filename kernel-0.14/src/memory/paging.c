@@ -23,21 +23,9 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 #include "paging.h"
 
 
-#define LOW_HALF_START 0x0000000000000000ULL
-#define LOW_HALF_END   0x7FFFFFFFFFFFFFFFULL
-// #define LOW_HALF_END    0x0000000000800000  // For testing purpose
-
-#define UPPER_HALF_START 0xFFFF800000000000ULL
-#define UPPER_HALF_END   0xFFFFFFFFFFFFFFFFULL
 
 extern void enable_paging(uint64_t pml4_address); // present in load_paging.asm
 extern void disable_paging();   //  present in load_paging.asm
-
-extern uint64_t KMEM_UP_BASE;
-extern uint64_t KMEM_LOW_BASE;
-
-extern uint64_t V_KMEM_UP_BASE;
-extern uint64_t V_KMEM_LOW_BASE;
 
 pml4_t *current_pml4;
 
@@ -55,7 +43,7 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
         printf("bit_no: %d\n", bit_no);
 
     if (bit_no == (uint64_t)-1) {
-        printf("No free frames!");
+        printf("[Error] No free frames!");
         halt_kernel();
     }
 
@@ -64,8 +52,9 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
     page->present = 1; // Mark it as present.
     page->rw = (is_writeable) ? 1 : 0;  // Should the page be writeable?
     page->user = (is_kernel) ? 0 : 1;   // Should the page be user-mode?
-    page->frame = (is_kernel) ? (KMEM_LOW_BASE + (bit_no * FRAME_SIZE)) >> 12 : (UMEM_LOW_BASE + (bit_no * FRAME_SIZE)) >> 12; // Store physical base address
-    is_kernel ? (KMEM_LOW_BASE += FRAME_SIZE) : (UMEM_LOW_BASE += FRAME_SIZE);
+    page->frame = (USABLE_START_PHYS_MEM + (bit_no * FRAME_SIZE)) >> 12; // Store physical base address
+
+    USABLE_START_PHYS_MEM += FRAME_SIZE;
 }
 
 // Function to deallocate a frame.
@@ -95,7 +84,7 @@ void init_paging()
     current_pml4 = (pml4_t *) get_cr3_addr();
 
     // Updating lower half pages
-    for (uint64_t addr = LOW_HALF_START; addr < 0x1000000; addr += PAGE_SIZE) {
+    for (uint64_t addr = USABLE_START_PHYS_MEM; addr < 0x1000000; addr += PAGE_SIZE) {
         page_t *page = get_page(addr, 1, current_pml4);
         if (!page) {
             // Handle error: Failed to get the page entry
@@ -245,10 +234,10 @@ void test_paging() {
 
     printf("\nTest of Paging\n");
 
-    // uint64_t va1 = (uint64_t) PAGE_ALIGN(0xFFFFFFFF80322000 + 40*PAGE_SIZE);
+    uint64_t va1 = (uint64_t) PAGE_ALIGN(0xFFFFFFFF80322000 + 40*PAGE_SIZE);
 
     // test following address
-    uint64_t va1 = VIRTUAL_BASE;
+    // uint64_t va1 = VIRTUAL_BASE;
     // uint64_t va2 = PAGE_ALIGN(KMEM_LOW_BASE) + PHYSICAL_TO_VIRTUAL_OFFSET + PAGE_SIZE; 
  
     // Virtual Pointer on based higher half

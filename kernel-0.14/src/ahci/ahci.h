@@ -320,3 +320,10 @@ bool ahci_read(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint32_t co
 bool ahci_write(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint32_t count, uint16_t* buf);
 
 void test_ahci(ahci_controller_t controller);
+
+
+
+
+
+
+

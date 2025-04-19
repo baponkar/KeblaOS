@@ -70,3 +70,5 @@ void ioapic_route_irq(uint8_t irq, uint8_t apic_id, uint8_t vector, uint32_t fla
     ioapic_write_reg(reg_low, low);
 }
  
+
+

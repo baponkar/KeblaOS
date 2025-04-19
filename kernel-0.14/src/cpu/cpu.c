@@ -4,6 +4,7 @@
 
     https://github.com/limine-bootloader/limine/blob/v9.x/PROTOCOL.md
     https://wiki.osdev.org/CPUID
+    https://wiki.osdev.org/CPU_Registers_x86
 */
 
 #include <cpuid.h>
@@ -13,7 +14,7 @@
 
 #include "../x86_64/gdt/gdt.h"
 
-#include "../x86_64/interrupt/interrupt.h"
+#include "../x86_64/interrupt/multi_core_interrupt.h"
 #include "../x86_64/interrupt/apic.h"
 #include "../x86_64/interrupt/ioapic.h"
 
@@ -197,12 +198,13 @@ void switch_to_core(uint32_t target_lapic_id) {
 }
 
 
+extern madt_t *madt;
 
 void start_bootstrap_cpu_core() {
     uint32_t bsp_lapic_id = get_bsp_lapic_id();
     asm volatile("cli");
     init_acpi();
-    parse_madt(madt_addr);
+    parse_madt(madt);
 
     // init_bootstrap_gdt_tss(bsp_lapic_id);
     gdt_tss_init();
@@ -212,6 +214,7 @@ void start_bootstrap_cpu_core() {
    
     // Route IRQs to the bootstrap core
     uint32_t bsp_flags = (0 << 8) | (0 << 13) | (0 << 15);
+    
     ioapic_route_irq(0, bsp_lapic_id, 32, bsp_flags);      // Route IRQ 1 to current LAPIC ID with vector 33
     ioapic_route_irq(1, bsp_lapic_id, 33, bsp_flags);      // Route IRQ 1 to current LAPIC ID with vector 33
     ioapic_route_irq(2, bsp_lapic_id, 34, bsp_flags);      // Route IRQ 2 to current LAPIC ID with vector 34
@@ -276,7 +279,7 @@ void init_all_cpu_cores() {
 
 
 
-void get_cpu_info(){
+void get_smp_info(){
     if(!smp_request.response) printf("[Info] No CPU info found!\n");
 
     uint64_t revision = smp_request.response->revision;
@@ -300,7 +303,7 @@ void get_cpu_info(){
 }
 
 // Debugging
-void print_cpu_info(){
+void print_smp_info(){
     if(!smp_request.response) printf("[Info] No CPU info found!\n");
     
     uint64_t revision = smp_request.response->revision;

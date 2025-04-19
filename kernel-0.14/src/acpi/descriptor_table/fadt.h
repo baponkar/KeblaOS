@@ -81,7 +81,8 @@ typedef struct fadt fadt_t;
 void qemu_poweroff();
 void qemu_reboot();
 
-void parse_fadt();
+void parse_fadt(fadt_t *fadt);
+
 void acpi_poweroff();
 void acpi_reboot();
 

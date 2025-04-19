@@ -16,8 +16,6 @@ static volatile struct limine_firmware_type_request firmware_type_request = {
 
 char *FIRMWARE_TYPE;
 
-
-
 void get_firmware_info(){
     if(firmware_type_request.response != NULL){
         uint64_t firmware_type = firmware_type_request.response->firmware_type;

@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <stdint.h>
@@ -20,5 +21,5 @@ typedef struct mcfg_allocation {
     uint32_t reserved;
 } __attribute__((packed)) mcfg_alloc_t;
 
-void parse_mcfg();
+void parse_mcfg(mcfg_t *mcfg);
 

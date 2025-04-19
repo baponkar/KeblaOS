@@ -1,19 +1,20 @@
 
 #include "../lib/stdio.h"
+#include "detect_memory.h"
+
 #include "umalloc.h"
 
 
 #define FRAME_SIZE 4096
 
-extern uint64_t UMEM_UP_BASE;       // 1 MB
-extern uint64_t UMEM_LOW_BASE;    // 1 GB
+
 
 // Low level memory allocation by usin base as UMEM_UP_BASE
 uint64_t umalloc(uint64_t sz)       // vanilla (normal).
 {
-    if(UMEM_LOW_BASE >= UMEM_UP_BASE) return 0;
-    uint64_t tmp = (uint64_t) UMEM_LOW_BASE; // memory allocate in current placement address
-    UMEM_LOW_BASE += sz;    // increase the placement address for next memory allocation
+    if(USABLE_START_PHYS_MEM >= USABLE_END_PHYS_MEM) return 0;
+    uint64_t tmp = (uint64_t) USABLE_START_PHYS_MEM; // memory allocate in current placement address
+    USABLE_START_PHYS_MEM += sz;    // increase the placement address for next memory allocation
     return tmp;
 }
 
@@ -28,16 +29,16 @@ uint64_t umalloc_a(uint64_t sz, int align)    // page aligned.
     page directory and page table addresses need to be page-aligned: that is, the bottom 12 
     bits need to be zero (otherwise they would interfere with the read/write/protection/accessed bits).
     */
-    if(UMEM_LOW_BASE >= UMEM_UP_BASE) return 0;
-    if (align == 1 && (UMEM_LOW_BASE & 0xFFF)) // If the address is not already page-aligned i.e. multiple of PAGE_SIZE
+    if(USABLE_START_PHYS_MEM >= USABLE_END_PHYS_MEM) return 0;
+    if (align == 1 && (USABLE_START_PHYS_MEM & 0xFFF)) // If the address is not already page-aligned i.e. multiple of PAGE_SIZE
     {
         // Align it.
-        UMEM_LOW_BASE &= 0xFFFFFFFFFFFFF000; // masking of most significant 20 bit which is used for address
-        UMEM_LOW_BASE += FRAME_SIZE;    // increase  the placement address by 4 KB, Page Size
+        USABLE_START_PHYS_MEM &= 0xFFFFFFFFFFFFF000; // masking of most significant 20 bit which is used for address
+        USABLE_START_PHYS_MEM += FRAME_SIZE;    // increase  the placement address by 4 KB, Page Size
     }
     
-    uint64_t tmp = UMEM_LOW_BASE;
-    UMEM_LOW_BASE += sz;
+    uint64_t tmp = USABLE_START_PHYS_MEM;
+    USABLE_START_PHYS_MEM += sz;
 
     return tmp;
 }
@@ -50,10 +51,10 @@ uint64_t umalloc_p(uint64_t sz, uint64_t *phys){
     if (phys)
     {   // phys (parameter): This is a pointer to a uint64_t variable where 
         // the physical address of the allocated memory will be stored.
-        *phys = UMEM_LOW_BASE;
+        *phys = USABLE_START_PHYS_MEM;
     }
-    uint64_t tmp = UMEM_LOW_BASE;
-    UMEM_UP_BASE += sz;
+    uint64_t tmp = USABLE_START_PHYS_MEM;
+    USABLE_START_PHYS_MEM += sz;
     return tmp;
 }
 
@@ -63,19 +64,19 @@ and also ensure page boundary alignment
 */
 uint64_t umalloc_ap(uint64_t sz, int align, uint64_t *phys)  // page aligned and returns a physical address.
 {
-    if (align == 1 && (UMEM_LOW_BASE & 0xFFF)) // If the address is not already page-aligned and want to make it page aligned
+    if (align == 1 && (USABLE_START_PHYS_MEM & 0xFFF)) // If the address is not already page-aligned and want to make it page aligned
     {
         // Align it.
-        UMEM_LOW_BASE &= 0xFFFFFFFFFFFFF000;
-        UMEM_LOW_BASE += FRAME_SIZE;    // increase  the placement address by 4 KB, Page Size
+        USABLE_START_PHYS_MEM &= 0xFFFFFFFFFFFFF000;
+        USABLE_START_PHYS_MEM += FRAME_SIZE;    // increase  the placement address by 4 KB, Page Size
     }
-    if(UMEM_LOW_BASE >= UMEM_UP_BASE) return 0;
+    if(USABLE_START_PHYS_MEM >= USABLE_START_PHYS_MEM) return 0;
     if (phys)
     {
-        *phys = UMEM_LOW_BASE;
+        *phys = USABLE_START_PHYS_MEM;
     }
-    uint64_t tmp = UMEM_LOW_BASE;
-    UMEM_LOW_BASE += sz;
+    uint64_t tmp = USABLE_START_PHYS_MEM;
+    USABLE_START_PHYS_MEM += sz;
     return tmp;
 }
 

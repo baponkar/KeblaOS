@@ -8,8 +8,8 @@
 
 // Multiple APIC Description Table (MADT)
 struct madt{
-    acpi_header_t header; // ACPI standard header
-    uint32_t local_apic_address; // Physical address of LAPIC
+    acpi_header_t header;           // ACPI standard header
+    uint32_t local_apic_address;    // Physical address of LAPIC
     uint32_t flags;
 } __attribute__((packed));
 typedef struct madt madt_t;
@@ -33,6 +33,7 @@ struct madt_ioapic {
 } __attribute__((packed));
 typedef struct madt_ioapic madt_ioapic_t;
 
+
 // Interrupt Source Override entry
 typedef struct madt_iso {
     uint8_t type;
@@ -42,6 +43,7 @@ typedef struct madt_iso {
     uint32_t gsi;
     uint16_t flags;
 } __attribute__((packed)) madt_iso_t;
+
 
 // Local APIC Address Override entry
 typedef struct madt_lapic_override {

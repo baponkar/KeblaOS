@@ -10,12 +10,11 @@ https://wiki.osdev.org/PCI_Express
 #include "mcfg.h"
 
 
-extern void *mcfg_addr; // Defined in acpi.c
+mcfg_t *mcfg; // Defined in acpi.c
 
 
 
-void parse_mcfg() {
-    mcfg_t *mcfg = (mcfg_t *) mcfg_addr;
+void parse_mcfg(mcfg_t *mcfg) {
     // Calculate the number of allocation entries.
     // The total size of the table is in the header; subtract the size of the mcfg header
     // and then divide by the size of an allocation entry.
@@ -50,7 +49,7 @@ void parse_mcfg() {
                         continue;
 
                     // Otherwise, print the device information.
-                    printf("PCI Device Found: Bus %d, Device %d, Function %d - Vendor ID: 0x%x, Device ID: 0x%x\n",
+                    printf("PCIe Device Found: Bus %d, Device %d, Function %d - Vendor ID: %x, Device ID: %x\n",
                            bus, device, function, vendor_id, device_id);
 
                     // Optionally, you can read more configuration registers here,

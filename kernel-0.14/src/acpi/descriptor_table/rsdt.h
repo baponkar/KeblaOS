@@ -22,5 +22,5 @@ typedef struct xsdt xsdt_t;
 
 
 
-void parse_rsdt_or_xsdt();
+void parse_rsdt_table(rsdp_t *rsdp);
 

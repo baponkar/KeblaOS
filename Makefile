@@ -178,7 +178,7 @@ uefi_run:
 		-boot d \
 		-hda $(DISK_DIR)/disk.img \
 		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
-		-serial file:$(DEBUG_DIR)/serial_output.log \
+		-serial stdio \
 		-d guest_errors,int,cpu_reset \
 		-D $(DEBUG_DIR)/qemu.log \
 		-vga std \

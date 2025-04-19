@@ -43,12 +43,12 @@ rsdp_t *rsdp;
 rsdp_ext_t *rsdp_ext;
 
 // Descriptor Table Address
-rsdt_t *rsdt_addr;
-xsdt_t *xsdt_addr;
-fadt_t *fadt_addr;
-madt_t *madt_addr;
-mcfg_t *mcfg_addr;
-hpet_t *hpet_addr;
+extern rsdt_t *rsdt;   // Defined in rsdt.c
+extern xsdt_t *xsdt;   // Defined in rsdt.c
+extern fadt_t *fadt;   // Defined in fadt.c
+extern madt_t *madt;   // Defined in madt.c
+extern mcfg_t *mcfg;   // Defined in mcfg.c
+extern hpet_t *hpet;   // Defined in hpet.c
 
 
 
@@ -86,68 +86,9 @@ void validate_rsdp_table(rsdp_t *rsdp){
 }
 
 
-
-// parsing RSDT and XSDT tables to get MADT, MCFG, FADT and HPET tables
-void parse_rsdt_table(rsdp_t *rsdp){
-    if(rsdp->revision >= 2){
-        rsdp_ext_t *rsdp_ext = (rsdp_ext_t *) rsdp;
-        xsdt_addr = (xsdt_t *)(uintptr_t) rsdp_ext->xsdt_address;
-
-        acpi_header_t header = xsdt_addr->header;
-        int entry_size = sizeof(uint64_t);
-        int entry_count = (header.length - sizeof(acpi_header_t)) / entry_size;
-
-        uint64_t *entries_64 = (uint64_t *)(uintptr_t) xsdt_addr->entries;
-        void *entries = (void *) entries_64;
-
-        for (int i = 0; i < entry_count; i++)
-        {
-            acpi_header_t *entry = (acpi_header_t *)(uintptr_t) ((uint64_t *)entries)[i];
-            if(memcmp(entry->signature, "APIC", 4) == 0){
-                madt_addr = (madt_t *)(uintptr_t) entry;
-            }else if(memcmp(entry->signature, "MCFG", 4) == 0){
-                mcfg_addr = (mcfg_t *)(uintptr_t) entry;
-            }else if(memcmp(entry->signature, "FACP", 4) == 0){
-                fadt_addr = (fadt_t *)(uintptr_t) entry;
-            }else if(memcmp(entry->signature, "HPET", 4) == 0){
-                hpet_addr = (hpet_t *)(uintptr_t) entry;
-            }else{
-                continue;
-            }
-        }
-    }else{
-        rsdt_addr = (rsdt_t *)(uintptr_t) rsdp->rsdt_address;
-        acpi_header_t header = rsdt_addr->header;
-        int entry_size = sizeof(uint32_t);
-        int entry_count = (header.length - sizeof(acpi_header_t)) / entry_size;
-
-        uint32_t *entries_32 = (uint32_t *)(uintptr_t) rsdt_addr->entries;
-        void *entries = (void *) entries_32;
-
-        for (int i = 0; i < entry_count; i++)
-        {
-            acpi_header_t *entry = (acpi_header_t *)(uintptr_t) ((uint32_t *)entries)[i];
-            if(memcmp(entry->signature, "APIC", 4) == 0){
-                madt_addr = (madt_t *)(uintptr_t) entry;
-            }else if(memcmp(entry->signature, "MCFG", 4) == 0){
-                mcfg_addr = (mcfg_t *)(uintptr_t) entry;
-            }else if(memcmp(entry->signature, "FACP", 4) == 0){
-                fadt_addr = (fadt_t *)(uintptr_t) entry;
-            }else if(memcmp(entry->signature, "HPET", 4) == 0){
-                hpet_addr = (hpet_t *)(uintptr_t) entry;
-            }else{
-                continue;
-            }
-        }
-    }
-}
-
-
-
-
 // Function to read ACPI enable status
 int is_acpi_enabled() {
-    fadt_t *fadt = (fadt_t *)fadt_addr;
+    fadt_t *fadt = (fadt_t *)fadt;
     if (!fadt) {
         printf("[Info] FADT not found! ACPI status unknown.\n");
         return -1;
@@ -169,15 +110,15 @@ int is_acpi_enabled() {
     if (acpi_status & 1) { // Check SCI_EN (Bit 0)
         printf("[Info] ACPI is ENABLED.\n");
         return 1;
-    } else {
-        printf("[Info] ACPI is DISABLED.\n");
-        return 0;
     }
+    
+    printf("[Info] ACPI is DISABLED.\n");
+    return 0;
 }
 
 
 void acpi_enable() {
-    fadt_t *fadt = (fadt_t *) fadt_addr;
+    fadt_t *fadt = (fadt_t *) fadt;
     if (!fadt) {
         printf("[Info] FADT not found, ACPI cannot be enabled!\n");
         return;
@@ -195,11 +136,20 @@ void acpi_enable() {
 
 
 void init_acpi(){
+    
     find_acpi_table_pointer();
     validate_rsdp_table(rsdp);
     parse_rsdt_table(rsdp);
-    is_acpi_enabled();
-    acpi_enable();
+
+    if(!is_acpi_enabled())
+        acpi_enable();
+
+    parse_fadt(fadt);
+    // hpet
+    parse_madt(madt);
+    // parse_mcfg(mcfg);    // PCIe Scan
+
+    printf("[Info] Successfully ACPI Enabled\n");
 }
 
 

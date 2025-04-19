@@ -1,3 +1,10 @@
+/*
+ FADT(Fixed ACPI Description Table
+
+ Reference:
+ https://wiki.osdev.org/FADT
+*/
+
 
 #include "../../lib/stdio.h"
 #include "../acpi.h"
@@ -6,11 +13,11 @@
 #include "fadt.h"
 
 
-#define PM1A_CNT_REG  0x604  // Default address of PM1a_CNT for many systems
-#define SLP_EN (1 << 13)     // Bit 13: SLP_EN (Sleep Enable)
-#define S5_SLEEP_TYPA (5 << 10)  // Sleep type S5 (5) in bits 10-12
+#define PM1A_CNT_REG  0x604     // Default address of PM1a_CNT for many systems
+#define SLP_EN (1 << 13)        // Bit 13: SLP_EN (Sleep Enable)
+#define S5_SLEEP_TYPA (5 << 10) // Sleep type S5 (5) in bits 10-12
 
-extern fadt_t *fadt_addr; // defined in acpi.c
+fadt_t *fadt; 
 
 void qemu_poweroff() {
     // Write to the PM1a_CNT register
@@ -29,12 +36,11 @@ void qemu_reboot(){
 }
 
 
-void parse_fadt(){
+void parse_fadt(fadt_t *fadt){
     
 }
 
 void acpi_poweroff() {
-    fadt_t *fadt = (fadt_t *) fadt_addr;
     if (!fadt) {
         printf("[Info] FADT not found, ACPI shutdown unavailable!\n");
         return;
@@ -68,7 +74,6 @@ void acpi_poweroff() {
 
 
 void acpi_reboot(){
-    fadt_t *fadt = (fadt_t *) fadt_addr;
     uint8_t reset_value = fadt->ResetValue;
     GenericAddressStructure_t reset_reg = fadt->ResetReg;
 

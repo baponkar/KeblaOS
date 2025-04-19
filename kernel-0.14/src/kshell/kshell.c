@@ -24,7 +24,7 @@
 
 #include "calculator/calculator.h"
 #include "steam_locomotive/sl.h" // For locomotive animation
-#include "../x86_64/interrupt/interrupt.h" // for test_interrupt
+#include "../x86_64/interrupt/multi_core_interrupt.h" // for test_interrupt
 
 #include "kshell.h"
 
@@ -97,7 +97,7 @@ void execute_command(char* command) {
     }else if(strcmp(command, "time") == 0){
         print_current_timestamp();
     }else if(strcmp(command, "meminfo") == 0){
-        print_memory_map(); // Function to print memory information
+        
     }else if(strcmp(command, "pwd") == 0){
         printf("PID: %d\n", get_current_process()->pid); // Print current process ID
     }else if(strcmp(command, "ps") == 0) {

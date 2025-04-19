@@ -15,16 +15,16 @@ void test_file_operations(HBA_MEM_T* abar) {
     const char* content = "Hello, this is a test file!\n";
 
     if (fat32_create_file(filename)) {
-        printf("File '%s' created successfully.\n", filename);
+        printf("[File-System]: File '%s' created successfully.\n", filename);
     } else {
-        printf("Failed to create file '%s'.\n", filename);
+        printf("[File-System]: Failed to create file '%s'.\n", filename);
         return;
     }
 
     if (fat32_write_file(filename, (const uint8_t*)content, strlen(content))) {
-        printf("Data written to '%s' successfully.\n", filename);
+        printf("[File-System]: Data written to '%s' successfully.\n", filename);
     } else {
-        printf("Failed to write to '%s'.\n", filename);
+        printf("[File-System]: Failed to write to '%s'.\n", filename);
         return;
     }
 
@@ -33,10 +33,10 @@ void test_file_operations(HBA_MEM_T* abar) {
     uint32_t max_size = sizeof(buffer);
 
     if (fat32_read_file(filename, buffer, max_size)) {
-        printf("Data read from '%s':\n", filename);
-        printf("%s\n", buffer);  // This prints the content of the file
+        printf("[File-System]: Data read from '%s':\n", filename);
+        printf(" %s\n", buffer);  // This prints the content of the file
     } else {
-        printf("Failed to read file '%s'.\n", filename);
+        printf("[File-System]: Failed to read file '%s'.\n", filename);
     }
 
 }
@@ -47,9 +47,9 @@ void test_directory_operations(HBA_MEM_T* abar) {
     // Create a new directory
     const char* dir_name = "home";
     if (fat32_create_directory(dir_name)) {
-        printf("Directory '%s' created successfully.\n", dir_name);
+        printf("[File-System]: Directory '%s' created successfully.\n", dir_name);
     } else {
-        printf("Failed to create directory '%s'.\n", dir_name);
+        printf("[File-System]: Failed to create directory '%s'.\n", dir_name);
         return;
     }
 
@@ -58,17 +58,17 @@ void test_directory_operations(HBA_MEM_T* abar) {
     const char* content = "Hello, this is a test file inside a directory!\n";
 
     if (fat32_create_file(filename)) {
-        printf("File '%s' created successfully.\n", filename);
+        printf("[File-System]: File '%s' created successfully.\n", filename);
     } else {
-        printf("Failed to create file '%s'.\n", filename);
+        printf("[File-System]: Failed to create file '%s'.\n", filename);
         return;
     }
 
     // Write data to the file inside the directory
     if (fat32_write_file(filename, (const uint8_t*)content, strlen(content))) {
-        printf("Data written to '%s' successfully.\n", filename);
+        printf("[File-System]: Data written to '%s' successfully.\n", filename);
     } else {
-        printf("Failed to write to '%s'.\n", filename);
+        printf("[File-System]: Failed to write to '%s'.\n", filename);
         return;
     }
 
@@ -77,10 +77,10 @@ void test_directory_operations(HBA_MEM_T* abar) {
     uint32_t max_size = sizeof(buffer);
 
     if (fat32_read_file(filename, buffer, max_size)) {
-        printf("Data read from '%s':\n", filename);
+        printf("[File-System]: Data read from '%s':\n", filename);
         printf("%s\n", buffer);  // This prints the content of the file
     } else {
-        printf("Failed to read file '%s'.\n", filename);
+        printf("[File-System]: Failed to read file '%s'.\n", filename);
     }
 }
 
@@ -93,7 +93,7 @@ void list_root_dir() {
 
     // uint32_t fat32_read_cluster(uint32_t cluster, uint8_t* buffer, uint32_t size);
     if (!fat32_read_cluster(cluster, buffer, sizeof(buffer))) {
-        printf("Failed to read root directory cluster\n");
+        printf("[File-System]: Failed to read root directory cluster\n");
         return;
     }
 
@@ -113,7 +113,7 @@ void list_root_dir() {
         }
         name[11] = '\0';
 
-        printf("Entry: %s | Attr: 0x%x | Size: %u bytes\n", name, entry->attr, entry->fileSize);
+        printf("[File-System]: Entry: %s | Attr: 0x%x | Size: %u bytes\n", name, entry->attr, entry->fileSize);
     }
 }
 

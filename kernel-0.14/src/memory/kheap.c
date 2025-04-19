@@ -8,8 +8,8 @@
 #include "kheap.h"
 
 #define PAGE_SIZE 0x1000
-extern uint64_t V_KMEM_LOW_BASE;
-extern uint64_t V_KMEM_UP_BASE;
+extern uint64_t HIGHER_HALF_START_ADDR;
+extern uint64_t HIGHER_HALF_END_ADDR;
 
 
 void *kheap_alloc(size_t size) {
@@ -17,24 +17,24 @@ void *kheap_alloc(size_t size) {
     size = (size + 0xFFF) & ~0xFFF;
 
     // Check if we have enough space in the heap
-    if ((V_KMEM_LOW_BASE + size) > V_KMEM_UP_BASE) {
+    if ((HIGHER_HALF_START_ADDR + size) > HIGHER_HALF_END_ADDR) {
         printf("Out of memory\n");
         return NULL; // Out of heap space
     }
 
     // Allocate virtual pages for the requested size
-    uint64_t va = V_KMEM_LOW_BASE;
-    while (V_KMEM_LOW_BASE < va + size) {
-        vm_alloc(V_KMEM_LOW_BASE); // Use the previous vm_alloc
-        V_KMEM_LOW_BASE += PAGE_SIZE; // Increment by page size (size)
+    uint64_t va = HIGHER_HALF_START_ADDR;
+    while (HIGHER_HALF_START_ADDR < va + size) {
+        vm_alloc(HIGHER_HALF_START_ADDR); // Use the previous vm_alloc
+        HIGHER_HALF_START_ADDR += PAGE_SIZE; // Increment by page size (size)
     }
 
     // Add 4KB padding between allocations to prevent overlapping
-    // V_KMEM_LOW_BASE += PAGE_SIZE;
+    // HIGHER_HALF_START_ADDR += PAGE_SIZE;
 
     // Update the maximum allocated address
-    if (V_KMEM_LOW_BASE > V_KMEM_UP_BASE) {
-        V_KMEM_UP_BASE = V_KMEM_LOW_BASE;
+    if (HIGHER_HALF_START_ADDR > HIGHER_HALF_END_ADDR) {
+        HIGHER_HALF_END_ADDR = HIGHER_HALF_START_ADDR;
     }
 
     return (void *)va; // Return the start of the allocated region

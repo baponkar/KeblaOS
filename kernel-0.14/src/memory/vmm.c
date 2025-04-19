@@ -9,19 +9,7 @@
 
 #include "vmm.h"
 
-#define LOW_HALF_START 0x0000000000000000ULL
-#define LOW_HALF_END   0x7FFFFFFFFFFFFFFFULL
 
-#define UPPER_HALF_START 0xFFFF800000000000ULL
-#define UPPER_HALF_END   0xFFFFFFFFFFFFFFFFULL
-
-extern uint64_t V_KMEM_LOW_BASE;
-extern uint64_t V_KMEM_UP_BASE;
-
-extern uint64_t V_UMEM_LOW_BASE;
-extern uint64_t V_UMEM_UP_BASE;
-
-extern uint64_t PHYSICAL_TO_VIRTUAL_OFFSET; // 0xFFFFFFFF010CA000
 
 extern pml4_t *current_pml4;
 
@@ -32,18 +20,19 @@ void vm_alloc(uint64_t va) {
 
     if (!page) {
         // Handle error if page creation fails
-        printf("Page creation failed!\n");
+        printf("[Error] Page creation failed!\n");
         return;
     }
   
     if (page->present){
-        if(va > V_UMEM_UP_BASE && va >= V_KMEM_LOW_BASE){ // For kernel page
+        if(va >= HIGHER_HALF_START_ADDR){ // For kernel page
             // Allocate a physical frame for the page
             alloc_frame(page, 1, 1); // Kernel-mode, writable by default
             page->present = 1;
             page->rw = 1;   // Writable
             page->user = 0; // User non-accessible
-        }else{ // For user page
+        }
+        if(va <= LOWER_HALF_END_ADDR){ // For user page
             // Allocate a physical frame for the page
             alloc_frame(page, 0, 1); // User-mode, writable by default
             page->present = 1;
@@ -51,7 +40,7 @@ void vm_alloc(uint64_t va) {
             page->user = 1; // User accessible
         }
     }else{
-        printf("page is not present\n");
+        printf("[Error] page is not present\n");
     }
     
     // Invalidate the TLB for this address
@@ -94,23 +83,23 @@ void vm_free(uint64_t *ptr) {
 
 // converting physical to virtual address
 uint64_t phys_to_vir(uint64_t phys){
-    return phys + PHYSICAL_TO_VIRTUAL_OFFSET;
+    return phys + HHDM_OFFSET;
 }
 
 // converting virtual to physical address
 uint64_t vir_to_phys(uint64_t va){
-    return va - PHYSICAL_TO_VIRTUAL_OFFSET;
+    return va - HHDM_OFFSET;
 }
 
 bool is_phys_addr(uint64_t addr){
-    if(addr < PHYSICAL_TO_VIRTUAL_OFFSET){
+    if(addr < HHDM_OFFSET){
         return true;
     }
     return false;
 }
 
 bool is_virt_addr(uint64_t addr){
-    if(addr < PHYSICAL_TO_VIRTUAL_OFFSET){
+    if(addr < HHDM_OFFSET){
         return false;
     }
     return true;

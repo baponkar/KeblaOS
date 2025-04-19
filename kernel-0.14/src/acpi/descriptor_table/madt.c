@@ -1,17 +1,21 @@
+/*
+Multiple APIC Description Table (MADT)
+
+Reference:
+    https://wiki.osdev.org/MADT
+*/
+
 
 #include "../../lib/stdio.h"
 
 #include "madt.h"
 
-extern madt_t *madt_addr;       // Defined in acpi.c
+madt_t *madt;       // Defined in acpi.c
 extern uint32_t ioapic_addr;    // Defined in ioapic.c
 
 
 
-void parse_madt(madt_t *madt) {
-    // printf("Parsing MADT...\n");
-    // printf("LAPIC Address: 0x%x\n", madt->local_apic_address);
-    
+void parse_madt(madt_t *madt) {    
     uint8_t *ptr = (uint8_t *)(madt + 1);  // Start after MADT header
     uint8_t *end = (uint8_t *)madt + madt->header.length;
 
@@ -53,8 +57,6 @@ void parse_madt(madt_t *madt) {
         
         ptr += entry->length;  // Move to next entry
     }
-
-    // printf("MADT parsing complete\n");
 }
 
 

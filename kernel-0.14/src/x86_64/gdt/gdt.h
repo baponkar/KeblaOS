@@ -49,6 +49,7 @@ typedef struct gdtr gdtr_t;
 // void init_application_core_gdt_tss(int start_core_id, int end_core_id);
 
 
+
 void gdt_tss_init();
 
 void print_gdt_entry(uint16_t selector);

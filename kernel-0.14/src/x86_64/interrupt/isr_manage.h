@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "../../util/util.h"
 
 // The below functions are defined in isr.asm
 extern void isr0();

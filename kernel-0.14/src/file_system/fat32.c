@@ -31,7 +31,7 @@ bool fat32_init(HBA_PORT_T* port) {
     fat32_info.cluster_heap_start_sector = fat32_info.fat_start_sector + fat32_info.num_fats * fat32_info.fat_size;
 
     printf("[Info] FAT32 Initialization:\n");
-    printf(" Bytes per sector: %d\n", fat32_info.bytes_per_sector);
+    printf(" [-] FAT32: Bytes per sector: %d\n", fat32_info.bytes_per_sector);
     
     return true;
 }
@@ -192,7 +192,7 @@ bool fat32_read_root_dir() {
 
     for (int i = 0; i < 512 / sizeof(DIR_ENTRY); i++) {
         if (entries[i].name[0] == 0x00) break; // End of directory
-        printf("File: %s Size: %d\n", entries[i].name, entries[i].fileSize);
+        printf("  FAT32: File: %s Size: %d\n", entries[i].name, entries[i].fileSize);
     }
     return true;
 }
@@ -418,51 +418,51 @@ bool fat32_delete_directory_entry(uint32_t cluster, const char* name) {
 }
 
 void fat32_run_tests(HBA_PORT_T* global_port) {
-    printf("[-] Initializing FAT32...\n");
+    printf(" [-] FAT32: Initializing FAT32...\n");
     if (!fat32_init(global_port)) {
-        printf("[-] FAT32 init failed!\n");
+        printf(" [-] FAT32 init failed!\n");
         return;
     }
-    printf("[-] FAT32 initialized successfully.\n");
+    printf(" [-] FAT32: FAT32 initialized successfully.\n");
 
     const char* filename = "TEST    TXT"; // 8.3 format (space padded)
     const char* message = "Hello FAT32 World!";
     uint8_t buffer[512];
 
     // 1. Create file
-    printf("Creating file: %s\n", filename);
+    printf(" [-] FAT32: Creating file: %s\n", filename);
     if (!fat32_create_file(filename)) {
-        printf("Failed to create file!\n");
+        printf(" [-] FAT32: Failed to create file!\n");
         return;
     }
-    printf(" File created successfully.\n");
+    printf(" [-] FAT32: File created successfully.\n");
 
     // 2. Write to file
-    printf(" Writing to file: %s\n", filename);
+    printf(" [-] FAT32: Writing to file: %s\n", filename);
     if (!fat32_write_file(filename, (const uint8_t*)message, strlen(message))) {
-        printf("Failed to write to file!\n");
+        printf(" [-] FAT32: Failed to write to file!\n");
         return;
     }
-    printf("File written successfully.\n");
+    printf(" [-] FAT32: File written successfully.\n");
 
     // 3. Read back the file
     memset(buffer, 0, sizeof(buffer));
-    printf(" Reading from file: %s\n", filename);
+    printf(" [-] FAT32: Reading from file: %s\n", filename);
     if (!fat32_read_file(filename, buffer, sizeof(buffer))) {
-        printf(" Failed to read file!\n");
+        printf(" [-] FAT32: Failed to read file!\n");
         return;
     }
-    printf(" File contents: %s\n", buffer);
+    printf(" [-] FAT32: File contents: %s\n", buffer);
 
     // 4. Delete file
-    printf(" Deleting file: %s\n", filename);
+    printf(" [-] FAT32: Deleting file: %s\n", filename);
     if (!fat32_delete_file(filename)) {
-        printf(" Failed to delete file!\n");
+        printf(" [-] FAT32: Failed to delete file!\n");
         return;
     }
-    printf(" File deleted successfully.\n");
+    printf(" [-] FAT32: File deleted successfully.\n");
 
-    printf("[-] All FAT32 tests passed!\n");
+    printf(" [-] FAT32: All FAT32 tests passed!\n");
 }
 
 
