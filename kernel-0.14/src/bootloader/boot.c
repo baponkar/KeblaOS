@@ -42,6 +42,9 @@ static volatile struct limine_bootloader_info_request limine_info_request = {
     .revision = 3
 };
 
+
+
+
 char *BOOTLOADER_NAME;
 char *BOOTLOADER_VERSION;
 

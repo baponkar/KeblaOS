@@ -7,96 +7,43 @@
     https://wiki.osdev.org/CPU_Registers_x86
 */
 
-#include <cpuid.h>
 
 #include "../../../limine-8.6.0/limine.h"
 #include "../lib/stdio.h"
-
 #include "../x86_64/gdt/gdt.h"
-
+#include "../x86_64/gdt/multi_core_gdt_tss.h"
 #include "../x86_64/interrupt/multi_core_interrupt.h"
 #include "../x86_64/interrupt/apic.h"
 #include "../x86_64/interrupt/ioapic.h"
-
 #include "../driver/keyboard/keyboard.h"
-
 #include "../x86_64/timer/tsc.h"
 #include "../x86_64/timer/pit_timer.h"
 #include "../x86_64/timer/apic_timer.h"
-
 #include "../memory/kmalloc.h"
 #include "../util/util.h"
-
 #include "../acpi/acpi.h"
 #include "../acpi/descriptor_table/madt.h"
 
 #include "cpu.h"
 
 
-__attribute__((used, section(".limine_requests")))
-static volatile LIMINE_BASE_REVISION(3);
 
-__attribute__((used, section(".requests")))
-static volatile struct limine_smp_request smp_request = {
-    .id = LIMINE_SMP_REQUEST,
-    .revision = 3
-};
-
+extern struct limine_smp_response *smp_response;
 
 // Define stack size and storage
 #define MAX_CORES 16
-#define STACK_SIZE 4096 * 4  // 16 KB per core
+#define STACK_SIZE 4096 * 4             // 16 KB per core
 static uint8_t *ap_stacks[MAX_CORES];   // Stores stack for each AP core
 
+extern madt_t *madt;
 
-// Getting CPU information using Limine Bootloader
-struct limine_smp_info ** get_cpus(){
-    if(smp_request.response != NULL)  return smp_request.response->cpus;
-    return NULL;
-}
-
-limine_goto_address get_goto_address(int core_id){
-    if(smp_request.response != NULL)  return smp_request.response->cpus[core_id]->goto_address;
-    return NULL;
-}
-
-uint64_t get_extra_argument(int core_id){
-    if(smp_request.response != NULL)  return smp_request.response->cpus[core_id]->extra_argument;
-    return 0;
-}
-
-
-uint64_t get_revision(){
-    if(smp_request.response != NULL)  return smp_request.response->revision;
-    return 0;
-}
-
-uint32_t get_flags(){
-    if(smp_request.response != NULL)  return smp_request.response->flags;
-    return 0;
-}
-
-int get_cpu_count(){
-    if(smp_request.response != NULL)  return (int) smp_request.response->cpu_count;
-    return 1; // Defult one processor count
-}
-
-int get_bsp_lapic_id(){
-    if(smp_request.response != NULL)  return (int) smp_request.response->bsp_lapic_id;
-    return 0; // Defult one bootstrap processor count
-}
-
-uint32_t get_lapic_id_by_limine(int core_id){
-    if(smp_request.response != NULL)  return smp_request.response->cpus[core_id]->lapic_id;
-    return 0; // Defult one processor count
-}
 
 // Allocate stack for each AP core
 void set_ap_stacks(int start_id, int end_id) {
     for (int i = start_id; i < end_id; i++) {
         ap_stacks[i] = (uint8_t *) kmalloc_a(STACK_SIZE, 1);
         if (!ap_stacks[i]) {
-            printf("Failed to allocate AP stack\n");
+            printf("[Error] CPU: Failed to allocate AP stack!\n");
         }
     }
 }
@@ -109,38 +56,19 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
 
     // Set the stack pointer
     set_rsp((uint64_t) stack_top);
-
-    // init_acpi(); // Alreadt ACPI Initialized in bootstrap core
     
     // Initialize GDT and TSS for this core
-    // init_core_gdt_tss(core_id);
+    init_gdt_tss_in_cpu(core_id);
 
     // Initialize interrupts for this core
     init_core_interrupt(core_id);
-
-    // Do not need to initialize TSC for application core
-    // init_tsc();
 
     // Initialize APIC for this 
     init_apic_interrupt();
 
     // Configure APIC timer for this core
-    // init_apic_timer(150); // 150 ms interval
-    switch (core_id)
-    {
-    case 1:
-        init_apic_timer(120); // 100 ms interval
-        break;
-    case 2:
-        init_apic_timer(130); // 130 ms interval
-        break;
-    case 3:
-        init_apic_timer(140); // 140 ms interval
-        break;
-    default:
-        init_apic_timer(100); // 100 ms interval
-        break;
-    }
+    init_apic_timer(150); // 150 ms interval
+
 
     printf("[Info] CPU %d: APIC Timer initialized!\n", core_id);
 
@@ -149,7 +77,7 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
 
 
     if(core_id == 1){
-        // ioapic_route_irq(1, get_lapic_id(), 33, lapic_flags);      // Route IRQ 1 to current LAPIC ID with vector 33
+        ioapic_route_irq(1, get_lapic_id(), 33, lapic_flags);      // Route IRQ 1 to current LAPIC ID with vector 33
         ioapic_route_irq(2, get_lapic_id(), 34, lapic_flags);      // Route IRQ 2 to current LAPIC ID with vector 34
         ioapic_route_irq(3, get_lapic_id(), 35, lapic_flags);      // Route IRQ 3 to current LAPIC ID with vector 35
         ioapic_route_irq(4, get_lapic_id(), 36, lapic_flags);      // Route IRQ 4 to current LAPIC ID with vector 36
@@ -184,10 +112,10 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
 
 
 void switch_to_core(uint32_t target_lapic_id) {
-    if (smp_request.response == NULL) return;
+    if (smp_response == NULL) return;
 
-    for (size_t i = 0; i < smp_request.response->cpu_count; i++) {
-        struct limine_smp_info *smp_info = smp_request.response->cpus[i];
+    for (size_t i = 0; i < smp_response->cpu_count; i++) {
+        struct limine_smp_info *smp_info = smp_response->cpus[i];
         if (smp_info->lapic_id == target_lapic_id) {
             // Send IPI to the target core
             lapic_send_ipi(target_lapic_id, 0x40); // 0x20 is the vector
@@ -198,10 +126,10 @@ void switch_to_core(uint32_t target_lapic_id) {
 }
 
 
-extern madt_t *madt;
+
 
 void start_bootstrap_cpu_core() {
-    uint32_t bsp_lapic_id = get_bsp_lapic_id();
+    uint32_t bsp_lapic_id = smp_response->bsp_lapic_id;
     asm volatile("cli");
     init_acpi();
     parse_madt(madt);
@@ -251,8 +179,8 @@ void start_bootstrap_cpu_core() {
 
 
 void start_secondary_cpu_cores(int start_id, int end_id) {
-    for (int core = start_id; core < smp_request.response->cpu_count; core++) {
-        struct limine_smp_info *smp_info = smp_request.response->cpus[core];
+    for (int core = start_id; core < smp_response->cpu_count; core++) {
+        struct limine_smp_info *smp_info = smp_response->cpus[core];
 
         // passing sm_info as argument which will accept as input by target_cpu_task
         smp_info->extra_argument = (uint64_t)smp_info;
@@ -268,64 +196,17 @@ void start_secondary_cpu_cores(int start_id, int end_id) {
 
 // Initializing all CPU cores
 void init_all_cpu_cores() {
-    if (smp_request.response == NULL) return;
+    set_ap_stacks(0, smp_response->cpu_count);
 
     // Initialize the bootstrap core
     start_bootstrap_cpu_core();
 
     // Initialize the application cores
-    start_secondary_cpu_cores(1, smp_request.response->cpu_count);
+    start_secondary_cpu_cores(1, smp_response->cpu_count);
 }
 
 
 
-void get_smp_info(){
-    if(!smp_request.response) printf("[Info] No CPU info found!\n");
-
-    uint64_t revision = smp_request.response->revision;
-    uint32_t flags = smp_request.response->flags;
-    uint32_t bsp_lapic_id = smp_request.response->bsp_lapic_id;
-    uint64_t cpu_count = smp_request.response->cpu_count;
-
-    struct limine_smp_info ** cpus = smp_request.response->cpus;
-
-    for(size_t i=0; i<(size_t) cpu_count; i++){
-        uint32_t processor_id = cpus[i]->processor_id;
-
-        uint32_t lapic_id = cpus[i]->lapic_id;
-        uint64_t reserved = cpus[i]->reserved;
-
-        limine_goto_address goto_address = cpus[i]->goto_address;
-        uint64_t extra_argument = cpus[i]->extra_argument;
-
-        // printf("LAPIC ID: %d\n", lapic_id);
-    }
-}
-
-// Debugging
-void print_smp_info(){
-    if(!smp_request.response) printf("[Info] No CPU info found!\n");
-    
-    uint64_t revision = smp_request.response->revision;
-    uint32_t flags = smp_request.response->flags;
-    uint32_t bsp_lapic_id = smp_request.response->bsp_lapic_id;
-    uint64_t cpu_count = smp_request.response->cpu_count;
-    struct limine_smp_info ** cpus = smp_request.response->cpus;
-
-    printf("[Info] CPU info : \nRevision : %d, Flags : %d, BSP LAPIC ID : %d, CPU count : %d\n", 
-        revision, flags, bsp_lapic_id, cpu_count);
-
-    for(size_t i=0; i<(size_t) cpu_count; i++){
-        uint32_t processor_id = cpus[i]->processor_id;
-        uint32_t lapic_id = cpus[i]->lapic_id;
-        uint64_t reserved = cpus[i]->reserved;
-        limine_goto_address goto_address = cpus[i]->goto_address;
-        uint64_t extra_argument = cpus[i]->extra_argument;
-
-        printf("[Info] Processor ID : %d, LAPIC ID : %d, Reserved : %x, Extra argument : %x\n", 
-            processor_id, lapic_id, reserved, extra_argument );
-    }
-}
 
 
 

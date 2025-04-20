@@ -34,7 +34,6 @@ void vm_alloc(uint64_t va) {
         }
 
         if(va < LOWER_HALF_END_ADDR){ // For user page
-            printf("User addr: %x\n", va);
             // Allocate a physical frame for the page
             alloc_frame(page, 0, 1); // User-mode, writable by default
             page->present = 1;
@@ -42,7 +41,7 @@ void vm_alloc(uint64_t va) {
             page->user = 1;         // User accessible
         }
     }else{
-        printf("[Error] page is not present\n");
+        printf("[Error] page is not present!\n");
     }
     
     // Invalidate the TLB for this address

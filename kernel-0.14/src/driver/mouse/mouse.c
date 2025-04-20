@@ -169,7 +169,7 @@ void mouse_init() {
     asm volatile("cli");  // Disable interrupts
     
     uint32_t flag = IOAPIC_EDGE_TRIG | IOAPIC_HIGH_ACTIVE | IOAPIC_FIXED | IOAPIC_UNMASKED;
-    ioapic_route_irq(MOUSE_IRQ, get_bsp_lapic_id(), MOUSE_VECTOR, flag );    // For bootstrap cpu
+    ioapic_route_irq(MOUSE_IRQ, 0, MOUSE_VECTOR, flag );    // For bootstrap cpu
     
     mouse_install();
     enable_mouse();   // Enable mouse interrupts via APIC

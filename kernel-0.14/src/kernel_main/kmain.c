@@ -43,7 +43,6 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../memory/pmm.h"               // init_pmm, test_pmm
 #include "../memory/paging.h"            // init_paging, test_paging
 #include "../memory/kmalloc.h"           // test_kmalloc
-#include "../memory/umalloc.h"           // test_umalloc
 #include "../memory/vmm.h"               // test_vmm
 #include "../memory/kheap.h"             // test_kheap
 #include "../memory/uheap.h"             // test_uheap
@@ -67,6 +66,8 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "../usr/usr_shell.h"
 
+#include "../cpu/smp.h"
+
 #include "kmain.h"
 
 extern uint64_t V_KMEM_LOW_BASE;
@@ -86,6 +87,8 @@ extern void restore_cpu_state(registers_t* registers);
 extern tss_t tss;
 
 
+
+
 void print_test(){
     printf("This is a test function\n");
 }
@@ -95,17 +98,18 @@ void kmain(){
     serial_init();
     get_bootloader_info();
     vga_init();
-    printf("[Info] %s - %s\nBuild starts on: %s, Last Update on: %s\n",
+    printf("[Info] %s - %s\n[Info] Build starts on: %s, Last Update on: %s\n",
         OS_NAME, OS_VERSION, BUILD_DATE, LAST_UPDATE);
     get_set_memory();
-    get_smp_info();
-
+    get_smp_info_1();
     
     
     if(has_apic()){
         disable_pic();
         gdt_tss_init();
         start_bootstrap_cpu_core();                 // Enabling GDT, TSS, Interrupt and APIC Timer for bootstrap core
+        // init_all_cpu_cores();
+        // switch_to_core(0);
         
         // Interrupt Based System Call
         int_syscall_init();

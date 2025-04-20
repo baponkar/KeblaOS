@@ -15,7 +15,7 @@ void serial_init() {
     outb(0x3F8 + 2, 0xC7); // Enable FIFO, clear them, 14-byte threshold
     outb(0x3F8 + 4, 0x0B); // IRQs enabled, RTS/DSR set
 
-    printf("Successfully Serial read write enabled.\n");
+    printf("[Info] Serial: Successfully Serial read write enabled.\n");
 }
 
 
