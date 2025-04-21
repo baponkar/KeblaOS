@@ -17,7 +17,7 @@ https://wiki.osdev.org/TSC
 
 volatile uint64_t tsc_ticks = 0;
 
-uint64_t cpu_frequency_hz1 = 0;  // Cached CPU frequency in Hz
+uint64_t cpu_frequency_hz = 0;  // Cached CPU frequency in Hz
 
 void tsc_tick_handler() {
     static uint64_t last_tsc = 0;
@@ -26,8 +26,8 @@ void tsc_tick_handler() {
     // Calculate elapsed ticks
     uint64_t elapsed_tsc = current_tsc - last_tsc;
 
-    // Convert to milliseconds: elapsed_tsc / (cpu_frequency_hz1 / 1000)
-    uint64_t elapsed_ms = (elapsed_tsc * 1000) / cpu_frequency_hz1;
+    // Convert to milliseconds: elapsed_tsc / (cpu_frequency_hz / 1000)
+    uint64_t elapsed_ms = (elapsed_tsc * 1000) / cpu_frequency_hz;
 
     if (elapsed_ms >= 100) {  // Print every 100ms
         tsc_ticks++;
@@ -56,7 +56,7 @@ void tsc_sleep(uint64_t microseconds) {
     uint64_t start = read_tsc();
     
     // freq cycles in 1 s; 1 cycle = 1/freq s; x µs = x/1000000 s; no. of cycle in x µs = x*freq/1000000
-    uint64_t cycles_to_wait = (microseconds * cpu_frequency_hz1) / 1000000; // Adjust based on CPU frequency
+    uint64_t cycles_to_wait = (microseconds * cpu_frequency_hz) / 1000000; // Adjust based on CPU frequency
 
     while ((read_tsc() - start) < cycles_to_wait); // Wait in loop to perform all loops
     asm volatile("sti");
@@ -86,9 +86,9 @@ uint64_t get_cpu_freq_msr() {
 
 
 void init_tsc(){
-    cpu_frequency_hz1 = get_cpu_freq_msr();
+    cpu_frequency_hz = get_cpu_freq_msr();
 
-    printf("[Info] TSC Timer initialized with CPU Frequency %d Hz\n", cpu_frequency_hz1);
+    printf("[Info] TSC Timer initialized with CPU Frequency %d Hz\n", cpu_frequency_hz);
 }
 
 

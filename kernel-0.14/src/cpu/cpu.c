@@ -96,6 +96,7 @@ void start_bootstrap_cpu_core() {
 
     init_apic_timer(100);
     initKeyboard();
+    int_syscall_init();
 
     asm volatile("sti");
     printf("[Info] Bootstrap CPU initialized...\n\n");
@@ -110,6 +111,9 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
     }
 
     uint32_t core_id = smp_info->lapic_id;
+    init_acpi();
+    parse_madt(madt);
+    init_tsc();
 
     // The limine automatically allocates a stack for each CPU core
     uint64_t stack_top = ap_stacks[core_id] + STACK_SIZE;
@@ -130,39 +134,13 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
 
     init_core_paging(core_id);
 
-    // Route IRQs to the current core
-    // uint32_t lapic_flags = (0 << 8) | (0 << 13) | (0 << 15);
-
-    // ioapic_route_irq(1, core_id, 33, lapic_flags);      // Route IRQ 1 to current LAPIC ID with vector 33
-    // ioapic_route_irq(2, core_id, 34, lapic_flags);      // Route IRQ 2 to current LAPIC ID with vector 34
-    // ioapic_route_irq(3, core_id, 35, lapic_flags);      // Route IRQ 3 to current LAPIC ID with vector 35
-    // ioapic_route_irq(4, core_id, 36, lapic_flags);      // Route IRQ 4 to current LAPIC ID with vector 36
-    // ioapic_route_irq(5, core_id, 37, lapic_flags);      // Route IRQ 5 to current LAPIC ID with vector 37
-    // ioapic_route_irq(6, core_id, 38, lapic_flags);      // Route IRQ 6 to current LAPIC ID with vector 38
-    // ioapic_route_irq(7, core_id, 39, lapic_flags);      // Route IRQ 7 to current LAPIC ID with vector 39
-    // ioapic_route_irq(8, core_id, 40, lapic_flags);      // Route IRQ 8 to current LAPIC ID with vector 40
-    // ioapic_route_irq(9, core_id, 41, lapic_flags);      // Route IRQ 9 to current LAPIC ID with vector 41
-    // ioapic_route_irq(10, core_id, 42, lapic_flags);     // Route IRQ 10 to current LAPIC ID with vector 42
-    // ioapic_route_irq(11, core_id, 43, lapic_flags);     // Route IRQ 11 to current LAPIC ID with vector 43
-    // ioapic_route_irq(12, core_id, 44, lapic_flags);     // Route IRQ 12 to current LAPIC ID with vector 44
-    // ioapic_route_irq(13, core_id, 45, lapic_flags);     // Route IRQ 13 to current LAPIC ID with vector 45
-    // ioapic_route_irq(14, core_id, 46, lapic_flags);     // Route IRQ 14 to current LAPIC ID with vector 46
-    // ioapic_route_irq(15, core_id, 47, lapic_flags);     // Route IRQ 15 to current LAPIC ID with vector 47
-    // ioapic_route_irq(16, core_id, 48, lapic_flags);     // Route IRQ 16 to current LAPIC ID with vector 48
-    // ioapic_route_irq(17, core_id, 49, lapic_flags);     // Route IRQ 17 to current LAPIC ID with vector 49
-    // ioapic_route_irq(18, core_id, 50, lapic_flags);     // Route IRQ 18 to current LAPIC ID with vector 50
-
-    // ioapic_route_irq(140, core_id, 172, lapic_flags);   // Route IRQ 140 to current LAPIC ID with vector 172
-    // ioapic_route_irq(141, core_id, 173, lapic_flags);   // Route IRQ 141 to current LAPIC ID with vector 173
-    // ioapic_route_irq(142, core_id, 174, lapic_flags);   // Route IRQ 142 to current LAPIC ID with vector 174
-
-    init_apic_timer(100);
-    // initKeyboard();
-    
     // Enable interrupts for this core
     asm volatile("sti");
 
     printf(" [-] CPU %d (LAPIC ID: %x) is online\n", core_id, core_id);
+
+    // Testing system call from AP core
+    // asm volatile("int $0x0"); // System call interrupt
 
     // Halt the AP as we have nothing else to do currently
     for (;;) {

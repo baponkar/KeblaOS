@@ -125,8 +125,7 @@ void kmain(){
 
     pci_scan();
     
- 
-    init_user_mode();
+    // init_user_mode();
 
     halt_kernel();
 }

@@ -15,7 +15,6 @@ References:
 extern ring_buffer_t* keyboard_buffer;
 
 registers_t *int_systemcall_handler(registers_t *regs) {
-
     switch (regs->int_no) { // syscall number
         case INT_SYSCALL_READ: {
             uint8_t *user_buf = (uint8_t *)regs->rbx;  // user buffer pointer
@@ -69,7 +68,6 @@ void int_syscall_init(){
 
 
 char *syscall_test(int syscall_no){
-
     switch(syscall_no){
         case(INT_SYSCALL_READ):
             asm volatile("int $172");
