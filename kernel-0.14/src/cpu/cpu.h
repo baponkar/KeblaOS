@@ -5,8 +5,6 @@
 #include <stddef.h>
 
 
-void set_ap_stacks(int start_id, int end_id);
-
 void target_cpu_task(struct limine_smp_info *smp_info);
 void switch_to_core(uint32_t target_lapic_id);
 

@@ -84,6 +84,7 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable);
 void free_frame(page_t *page);
 uint64_t get_cr3_addr();
 void init_paging();
+void init_core_paging(int core_id);
 static page_t *alloc_page();
 static pt_t* alloc_pt();
 static pd_t* alloc_pd();

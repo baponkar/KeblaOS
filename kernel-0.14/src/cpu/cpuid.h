@@ -23,4 +23,4 @@ void enable_fpu_and_sse();
 
 void print_cpu_vendor();
 void print_cpu_brand();
-
+void print_cpu_base_frequency();

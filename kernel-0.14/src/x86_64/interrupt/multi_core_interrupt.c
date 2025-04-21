@@ -151,7 +151,7 @@ void init_core_interrupt(uint64_t core_id){
     idt_flush((uint64_t) &core_int_ptr[core_id]);
    
     asm volatile("sti");
-    printf("[Info] Successfully CPU %d Interrupt Initialized.\n", core_id);
+    printf(" [-] Successfully CPU %d Interrupt Initialized.\n", core_id);
 }
 
 

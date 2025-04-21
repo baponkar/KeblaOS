@@ -37,7 +37,7 @@ struct limine_smp_info **cpus;
 //     uint64_t extra_argument;
 // };
 
-void get_smp_info_1(){
+void get_smp_info(){
     smp_response = smp_request.response;
     if(smp_response == NULL){
         printf("[Error] SMP: smp_request not found!\n");
@@ -54,7 +54,7 @@ void get_smp_info_1(){
 
     for(int i=0; i<cpu_count; i++){
         printf(" [-] processor_id: %d, lapic_id: %d, reserved: %x, goto_address: %x, extra_argument: %x\n",
-        cpus[i]->processor_id, cpus[i]->lapic_id, cpus[i]->reserved, cpus[i]->goto_address, cpus[i]->extra_argument);
+        cpus[i]->processor_id, cpus[i]->lapic_id, cpus[i]->reserved, (uint64_t)cpus[i]->goto_address, (uint64_t)cpus[i]->extra_argument);
     }
 }
 

@@ -15,12 +15,12 @@ extern void gdt_flush(gdtr_t *gdtr_instance);
 extern void tss_flush(uint16_t selector);
 
 
-cpu_data_t cpu_data[MAX_CPUS];  // Array indexed by CPU ID (APIC ID)
+cpu_data_t cpu_datas[MAX_CPUS];  // Array indexed by CPU ID (APIC ID)
 
 // This function set data of each cpu_data from cpu_data array
 void set_cpu_data(size_t cpu_id){
     // Getting cpu_data pointer from cpu_id
-    cpu_data_t *cpu_data = &cpu_data[cpu_id];
+    cpu_data_t temp = cpu_datas[cpu_id];
 
     uint64_t stack_top = kmalloc_a(STACK_SIZE, true) + STACK_SIZE;
     if(stack_top <= STACK_SIZE) {
@@ -28,7 +28,7 @@ void set_cpu_data(size_t cpu_id){
         return;
     }
 
-    cpu_data->kernel_stack = stack_top;
+    temp.kernel_stack = stack_top;
 }
 
 
@@ -55,36 +55,36 @@ void tss_setup(gdt_entry_t gdt_entries[], uint8_t idx, uint64_t base, uint32_t l
 // Initialize GDT and TSS for a CPU
 void init_gdt_tss_in_cpu(size_t cpu_id){
     if(cpu_id >= MAX_CPUS) {
-        printf("Invalid core ID %d\n", cpu_id);
+        printf("[Error] Invalid core ID %d\n", cpu_id);
         return;
     }
 
     set_cpu_data(cpu_id);
 
     // Getting cpu_data pointer from cpu_id
-    cpu_data_t *cpu = &cpu_data[cpu_id];
+    cpu_data_t temp = cpu_datas[cpu_id];
 
     // Set GDT Entries for this cpu
-    gdt_setup(cpu->gdt_entries, 0, 0, 0x0, 0x0, 0x0);      // Null
-    gdt_setup(cpu->gdt_entries, 1, 0, 0xFFFF, 0x9A, 0xA0); // Kernel Code Selector 0x08
-    gdt_setup(cpu->gdt_entries, 2, 0, 0xFFFF, 0x92, 0xA0); // Kernel Data Selector 0x10
-    gdt_setup(cpu->gdt_entries, 3, 0, 0xFFFF, 0xFA, 0xA0); // User Code Selector   0x18
-    gdt_setup(cpu->gdt_entries, 4, 0, 0xFFFF, 0xF2, 0xA0); // User Data Selector   0x20
+    gdt_setup(temp.gdt_entries, 0, 0, 0x0, 0x0, 0x0);      // Null
+    gdt_setup(temp.gdt_entries, 1, 0, 0xFFFF, 0x9A, 0xA0); // Kernel Code Selector 0x08
+    gdt_setup(temp.gdt_entries, 2, 0, 0xFFFF, 0x92, 0xA0); // Kernel Data Selector 0x10
+    gdt_setup(temp.gdt_entries, 3, 0, 0xFFFF, 0xFA, 0xA0); // User Code Selector   0x18
+    gdt_setup(temp.gdt_entries, 4, 0, 0xFFFF, 0xF2, 0xA0); // User Data Selector   0x20
 
     // Set TSS Entries for this cpu
-    memset(&cpu->tss, 0, sizeof(cpu->tss));
-    cpu->tss.rsp0 = cpu->kernel_stack;
-    cpu->tss.iopb_offset = sizeof(cpu->tss);
-    tss_setup(cpu->gdt_entries, 5, (uint64_t)&cpu->tss, sizeof(tss_t), 0x89, 0x0 );
+    memset((void *)&temp.tss, 0, sizeof(tss_t)); // Clear TSS
+    temp.tss.rsp0 = temp.kernel_stack;
+    temp.tss.iopb_offset = sizeof(tss_t); // I/O Port Base Address
+    tss_setup(temp.gdt_entries, 5, (uint64_t)&temp.tss, sizeof(tss_t), 0x89, 0x0 );
 
     // Load The above GDT and TSS
-    cpu->gdtr.limit = (uint16_t) (sizeof(gdt_entry_t) * 7 - 1); // 16 * 7 - 1 = 111 bytes
-    cpu->gdtr.base = (uint64_t) &cpu->gdt_entries;
+    temp.gdtr.limit = (uint16_t) (sizeof(gdt_entry_t) * 7 - 1); // 16 * 7 - 1 = 111 bytes
+    temp.gdtr.base = (uint64_t) &temp.gdt_entries;
 
-    gdt_flush(&cpu->gdtr);  // Load GDT
-    tss_flush(0x28);        // Selector 0x28 (5th entry in GDT)
+    gdt_flush((gdtr_t *)&temp.gdtr);    // Load GDT
+    tss_flush(0x28);                    // Selector 0x28 (5th entry in GDT)
 
-    printf("[Info] Initialize GDT & TSS for CPU %d.\n", cpu_id);
+    printf(" [-] Initialize GDT & TSS for CPU %d.\n", cpu_id);
 }
 
 

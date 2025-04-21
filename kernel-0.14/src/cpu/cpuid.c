@@ -264,16 +264,20 @@ void enable_fpu_and_sse() {
 void print_cpu_vendor() {
     char vendor[13];
     get_cpu_vendor(vendor);
-    printf("CPU Vendor : %s\n", vendor);
+    printf("[Info] CPUID: CPU Vendor : %s\n", vendor);
 }
 
 void print_cpu_brand() {
     char brand[49];
     get_cpu_brand(brand);
-    printf("CPU Brand : %s\n", brand);
+    printf("[Info] CPUID: CPU Brand : %s\n", brand);
 }
 
+void print_cpu_base_frequency(){
+    uint32_t cpu_base_frequency = get_cpu_base_frequency();
 
+    printf("[Info] CPUID: CPU Base Frequency: %d Hz\n", cpu_base_frequency);
+}
 
 
 

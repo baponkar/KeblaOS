@@ -29,6 +29,7 @@ extern void disable_paging();   //  present in load_paging.asm
 
 pml4_t *current_pml4;
 
+uint64_t bsp_cr3;
 
 // allocate a page with the free physical frame
 void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
@@ -73,9 +74,15 @@ uint64_t get_cr3_addr() {
     return cr3;
 }
 
+void set_cr3_addr(uint64_t cr3) {
+    asm volatile("mov %0, %%cr3" : : "r"(cr3)); // Write the CR3 register
+}
+
+// Initialising Paging for bootstrap CPU core
 void init_paging()
 {  
 
+    bsp_cr3 = get_cr3_addr(); // Get the current value of CR3 (the base of the PML4 table)
     // Lowest Virtual address 0xFFFFFFFF80322000 which have page and the page.frame address pointer have 0xFFFFFFFFFFFFFFFF value.
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
     current_pml4 = (pml4_t *) get_cr3_addr();
@@ -99,10 +106,20 @@ void init_paging()
     //     page->user = 1;     // Set user-accessible bit
     // }
 
+    set_cr3_addr(bsp_cr3); // Set the CR3 register to the PML4 address
     // Invalidate the TLB for the changes to take effect
     flush_tlb_all();
+
+    printf(" [-] Bootstrap CPU: Set CR3 to PML4 address: %x\n", bsp_cr3);
     
     printf("[Info] Successfully Paging initialized.\n");
+}
+
+// Initializing Paging for other CPU cores
+void init_core_paging(int core_id) {
+    set_cr3_addr(bsp_cr3);  // Set the CR3 register to the PML4 address
+    flush_tlb_all();        // Flush TLB for the current core
+    printf(" [-] Successfully Paging initialized for core %d.\n", core_id);
 }
 
 
@@ -137,6 +154,7 @@ static pdpt_t* alloc_pdpt() {
     }
     return pdpt;
 }
+
 
 // This function will return corresponding page pointer from virtual address
 // The below function will not create a new pdpt, pd, pt and pages if already present for given virtual address
@@ -274,6 +292,7 @@ void test_paging() {
 
     printf("%x\n", val);
 }
+
 
 // Function to flush TLB for a specific address
 void flush_tlb(uint64_t va) {

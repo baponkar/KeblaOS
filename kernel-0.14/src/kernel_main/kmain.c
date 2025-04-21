@@ -100,29 +100,16 @@ void kmain(){
     vga_init();
     printf("[Info] %s - %s\n[Info] Build starts on: %s, Last Update on: %s\n",
         OS_NAME, OS_VERSION, BUILD_DATE, LAST_UPDATE);
+    print_cpu_brand();
+    print_cpu_vendor();
+    print_cpu_base_frequency();
     get_set_memory();
-    get_smp_info_1();
+    get_smp_info();
     
     
     if(has_apic()){
         disable_pic();
-        gdt_tss_init();
-        start_bootstrap_cpu_core();                 // Enabling GDT, TSS, Interrupt and APIC Timer for bootstrap core
-        // init_all_cpu_cores();
-        // switch_to_core(0);
-        
-        // Interrupt Based System Call
-        int_syscall_init();
-
-        // Memory management initialization
-        init_pmm();
-        init_paging();
-
-        // if(has_apic()){
-        //     set_ap_stacks(1, 3);                 // Initialize stacks for other cores
-        //     start_secondary_cpu_cores(1, 3);     // Enabling GDT, TSS, Interrupt and APIC Timer for other cores
-        // }
-
+        init_all_cpu_cores();
     }else{
         pic_irq_remap();
         // init_bootstrap_gdt_tss(0);

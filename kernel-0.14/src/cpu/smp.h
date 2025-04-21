@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-void get_smp_info_1();
+void get_smp_info();
 
 
 
