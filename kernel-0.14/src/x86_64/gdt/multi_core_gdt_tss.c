@@ -4,21 +4,20 @@ This file will enable GDT and TSS for every CPU
 #include "../../lib/stdio.h"
 #include "../../lib/string.h"
 #include "../../memory/kmalloc.h"
+#include "../../cpu/cpu.h"
 
 #include "multi_core_gdt_tss.h"
 
-#define MAX_CPUS 256
-#define STACK_SIZE 0x4000   // 16 KB
 
 
 extern void gdt_flush(gdtr_t *gdtr_instance);
 extern void tss_flush(uint16_t selector);
 
+extern cpu_data_t cpu_datas[MAX_CPUS];  // Defined in cpu.c
 
-cpu_data_t cpu_datas[MAX_CPUS];  // Array indexed by CPU ID (APIC ID)
 
 // This function set data of each cpu_data from cpu_data array
-void set_cpu_data(size_t cpu_id){
+void set_tss_stack(size_t cpu_id){
     // Getting cpu_data pointer from cpu_id
     cpu_data_t temp = cpu_datas[cpu_id];
 
@@ -28,7 +27,7 @@ void set_cpu_data(size_t cpu_id){
         return;
     }
 
-    temp.kernel_stack = stack_top;
+    temp.tss_stack = stack_top;
 }
 
 
@@ -59,7 +58,7 @@ void init_gdt_tss_in_cpu(size_t cpu_id){
         return;
     }
 
-    set_cpu_data(cpu_id);
+    set_tss_stack(cpu_id);
 
     // Getting cpu_data pointer from cpu_id
     cpu_data_t temp = cpu_datas[cpu_id];
@@ -73,7 +72,7 @@ void init_gdt_tss_in_cpu(size_t cpu_id){
 
     // Set TSS Entries for this cpu
     memset((void *)&temp.tss, 0, sizeof(tss_t)); // Clear TSS
-    temp.tss.rsp0 = temp.kernel_stack;
+    temp.tss.rsp0 = temp.tss_stack;
     temp.tss.iopb_offset = sizeof(tss_t); // I/O Port Base Address
     tss_setup(temp.gdt_entries, 5, (uint64_t)&temp.tss, sizeof(tss_t), 0x89, 0x0 );
 

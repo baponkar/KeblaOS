@@ -81,7 +81,7 @@ void gdt_tss_init(){
     gdt_flush(&gdtr);     // Load GDT
     tss_flush(0x28);      // Selector 0x28 (5th entry in GDT)
 
-    printf("[Info] GDT & TSS initialized.\n");
+    printf(" [-] GDT & TSS initialized.\n");
 }
 
 

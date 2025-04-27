@@ -257,6 +257,8 @@ void enable_fpu_and_sse() {
     );
 
     asm volatile ("fninit");    // Initialize the FPU
+
+    // printf("[Info] FPU and SSE enabled\n");
 }
 
 

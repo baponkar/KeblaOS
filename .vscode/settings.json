@@ -15,7 +15,9 @@
         "lv_string.h": "c",
         "load_and_parse_elf.h": "c",
         "stdio.h": "c",
-        "ports.h": "c"
+        "ports.h": "c",
+        "limine.h": "c",
+        "cpu.h": "c"
     },
     "cmake.sourceDirectory": "B:/Git-Projects/GitHub/baponkar/KeblaOS/lvgl-9.2.2"
 }

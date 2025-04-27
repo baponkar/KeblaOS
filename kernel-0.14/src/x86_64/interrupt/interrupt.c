@@ -22,11 +22,11 @@ int_ptr_t   int_ptr;
 void int_set_gate(uint8_t index, uint64_t offset, uint16_t selector, uint8_t attr){
     int_entry_t *entry = (int_entry_t *) &int_entries[index];
 
-    entry->offset_1 = (uint16_t) (offset & 0xFFFF); // set lower 16 bit
-    entry->offset_2 = (uint16_t) (offset >> 16) & 0xFFFF; // set 16 bit
-    entry->offset_3 = (uint32_t) (offset >> 32) & 0xFFFFFFFF; // set upper 32 bit
+    entry->offset_1 = (uint16_t) (offset & 0xFFFF);             // set lower 16 bit
+    entry->offset_2 = (uint16_t) (offset >> 16) & 0xFFFF;       // set 16 bit
+    entry->offset_3 = (uint32_t) (offset >> 32) & 0xFFFFFFFF;   // set upper 32 bit
 
-    entry->selector = selector;                   // set 16 bit of selector
+    entry->selector = selector;                                 // set 16 bit of selector
     //              |P|DPL|R|TYPE|
     // for x86_64 : |1|00 |0|1110| ==> 10001110 ==> 0x8E
     entry->type_attributes = attr;    // set 8 bit  of P(1 bit) + DPL(2 bit) + gate type(4 bit) + 0(1 bit)
@@ -36,7 +36,7 @@ void int_set_gate(uint8_t index, uint64_t offset, uint16_t selector, uint8_t att
 }
 
 void set_int_descriptor_table(){
-    // Define Interrupt for DPL = 0
+    // Software Interrupts
     int_set_gate(0, (uint64_t)&isr0 ,  0x8, 0x8E);    // Division By Zero
     int_set_gate(1, (uint64_t)&isr1 ,  0x8, 0x8E);    // Debug
     int_set_gate(2, (uint64_t)&isr2 ,  0x8, 0x8E);    // Non Maskable Interrupt  
@@ -70,9 +70,10 @@ void set_int_descriptor_table(){
     int_set_gate(30, (uint64_t)&isr30 , 0x8, 0x8E);    // Reserved
     int_set_gate(31, (uint64_t)&isr31 , 0x8, 0x8E);    // Reserved
 
+    // Hardware Interrupts
     int_set_gate(32, (uint64_t)&irq0, 0x08, 0x8E);    // Timer Interrupt, IRQ0
     int_set_gate(33, (uint64_t)&irq1, 0x08, 0x8E);    // Keyboard Interrupt, IRQ1
-    int_set_gate(34, (uint64_t)&irq2, 0x08, 0x8E);    // Cascade (for PIC chaining), IRQ2
+    // int_set_gate(34, (uint64_t)&irq2, 0x08, 0x8E);    // Cascade (for PIC chaining), IRQ2
     int_set_gate(35, (uint64_t)&irq3, 0x08, 0x8E);    // COM2 (Serial Port 2), IRQ3
     int_set_gate(36, (uint64_t)&irq4, 0x08, 0x8E);    // COM1 (Serial Port 1), IRQ4
     int_set_gate(37, (uint64_t)&irq5, 0x08, 0x8E);    // LPT2 (Parallel Port 2) or Sound Card, IRQ5
@@ -80,29 +81,24 @@ void set_int_descriptor_table(){
     int_set_gate(39, (uint64_t)&irq7, 0x08, 0x8E);    // LPT1 (Parallel Port 1) / Spurious IRQ, IRQ7
     int_set_gate(40, (uint64_t)&irq8, 0x08, 0x8E);    // Real-Time Clock (RTC), IRQ8
     int_set_gate(41, (uint64_t)&irq9, 0x08, 0x8E);    // ACPI / General system use, IRQ9
-
     int_set_gate(42, (uint64_t)&irq10, 0x08, 0x8E);   // Available (often used for SCSI or NIC), IRQ10
     int_set_gate(43, (uint64_t)&irq11, 0x08, 0x8E);   // Available (often used for PCI devices), IRQ11
-
     int_set_gate(44, (uint64_t)&irq12, 0x08, 0x8E);   // PS/2 Mouse, IRQ12
-    
     int_set_gate(45, (uint64_t)&irq13, 0x08, 0x8E);   // FPU / Floating-Point Unit (Coprocessor), IRQ13
-
     int_set_gate(46, (uint64_t)&irq14, 0x08, 0x8E);   // Primary ATA Hard Disk Controller, IRQ14
     int_set_gate(47, (uint64_t)&irq15, 0x08, 0x8E);   // Secondary ATA Hard Disk Controller, IRQ15
-
     int_set_gate(48, (uint64_t)&irq16, 0x08, 0x8E);   // APIC Timer, IRQ16
     int_set_gate(49, (uint64_t)&irq17, 0x08, 0x8E);   // HPET Timer, IRQ17
     int_set_gate(50, (uint64_t)&irq18, 0x08, 0x8E);   // Available, IRQ18
 
-    // Define Interrupt for DPL = 3
+    // System Calls
     int_set_gate(172, (uint64_t)&irq140, 0x08, 0xEE); // Print System Call, IRQ140
     int_set_gate(173, (uint64_t)&irq141, 0x08, 0xEE); // Read System Call, IRQ141
     int_set_gate(174, (uint64_t)&irq142, 0x08, 0xEE); // Exit System Call, IRQ142
 }
 
 
-
+// Initialize the Interrupt Descriptor Table (IDT) for bootstrap cpu core
 void int_init(){
 
     asm volatile("cli");
@@ -121,6 +117,26 @@ void int_init(){
 
     asm volatile("sti");
 
-    printf("[Info] Successfully Interrupt Initialized.\n");
+    printf("[Info] Successfully Bootstrap Interrupt Initialized.\n");
 }
 
+// Testing Interrupts and Debugging
+void test_interrupt() {
+    printf("Testing Interrupts\n");
+    // asm volatile ("div %b0" :: "a"(0)); // Int no 0
+    // asm volatile ("int $0x3");       // Breakpoint int no : 3
+    // asm volatile ("int $0x0");       // Division By Zero, int no : 0
+    // asm volatile ("int $0xE");       // Page Fault Request, int no: 14
+    // asm volatile ("int $0xF");       // int no 15
+    // asm volatile ("int $0x10");      // int no 16
+    // asm volatile ("int $0x11");      // int no 17
+    // asm volatile ("int $0x20");      // Interrupt Request, int no: 32, Timer Interrupt 
+    // asm volatile ("int $0x21");      // Interrupt Request, int no : 33, Keyboard Interrupt
+    // asm volatile ("int $0x2C");      // Interrupt Request, int no : 44, Mouse Interrupt
+    // asm volatile ("int $0x22");      // Interrupt Request, int no: 34
+    // asm volatile ("int $0x30");      // Interrupt Request, int no: 48
+    
+    asm volatile ("int $172");       // Interrupt Request for system call IRQ = 140, INT NO = 172
+    asm volatile ("int $173");       // Interrupt Request for system call IRQ = 140, INT NO = 173
+    asm volatile ("int $174");       // Interrupt Request for system call IRQ = 140, INT NO = 174
+}

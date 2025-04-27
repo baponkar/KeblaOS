@@ -1,5 +1,6 @@
 /*
 Interrupt Descriptor Table
+
 https://wiki.osdev.org/Interrupt_Descriptor_Table
 https://stackoverflow.com/questions/52214531/x86-64-order-of-passing-parameters-in-registers
 https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/05_InterruptHandling.md
@@ -20,7 +21,7 @@ https://stackoverflow.com/questions/79386685/how-does-stack-memory-will-be-use-t
 #define PIC2_COMMAND_PORT 0xA0      //Secondary PIC Command Port:
 #define PIC2_DATA_PORT 0xA1         //Secondary PIC Data Port
 
-#define PIC_EOI 0x20 // End of Interrupt
+#define PIC_EOI 0x20                // End of Interrupt
 
 #define ICW_1 0x11
 #define ICW_2_M 0x20
@@ -49,20 +50,38 @@ void pic_irq_remap()
 }
 
 
+// PIC commands may require small I/O delays
+#define io_wait() outb(0x80, 0)
+
 // Function to disable the PIC
 void disable_pic() {
+    
     outb(PIC1_COMMAND_PORT, ICW_1); // ICW1: Select 8086 mode
+    io_wait();
     outb(PIC2_COMMAND_PORT, ICW_1); // ICW1: Select 8086 mode
-    outb(PIC1_DATA_PORT, ICW_2_M);  // ICW2: Master PIC vector offset
-    outb(PIC2_DATA_PORT, ICW_2_S);  // ICW2: Slave PIC vector offset
-    outb(PIC1_DATA_PORT, ICW_3_M);  // ICW3: Tell Master PIC that there is a slave PIC at IRQ2 (0000 0100)
-    outb(PIC2_DATA_PORT, ICW_3_S);  // ICW3: Tell Slave PIC its cascade identity (0000 0010)
-    outb(PIC1_DATA_PORT, ICW_4);    // ICW4: 8086 mode, normal EOI
-    outb(PIC2_DATA_PORT, ICW_4);    // ICW4: 8086 mode, normal EOI
-    outb(PIC1_DATA_PORT, 0xFF);     // Mask all interrupts
-    outb(PIC2_DATA_PORT, 0xFF);     // Mask all interrupts
 
-    printf("[Info] PIC Disabled.\n");
+    io_wait();
+    outb(PIC1_DATA_PORT, ICW_2_M);  // ICW2: Master PIC vector offset
+    io_wait();
+    outb(PIC2_DATA_PORT, ICW_2_S);  // ICW2: Slave PIC vector offset
+
+    io_wait();
+    outb(PIC1_DATA_PORT, ICW_3_M);  // ICW3: Tell Master PIC that there is a slave PIC at IRQ2 (0000 0100)
+    io_wait();
+    outb(PIC2_DATA_PORT, ICW_3_S);  // ICW3: Tell Slave PIC its cascade identity (0000 0010)
+
+    io_wait();
+    outb(PIC1_DATA_PORT, ICW_4);    // ICW4: 8086 mode, normal EOI
+    io_wait();
+    outb(PIC2_DATA_PORT, ICW_4);    // ICW4: 8086 mode, normal EOI
+
+    io_wait();
+    outb(PIC1_DATA_PORT, 0xFF);     // Mask all interrupts
+    io_wait();
+    outb(PIC2_DATA_PORT, 0xFF);     // Mask all interrupts
+    io_wait();
+
+    printf(" [-] PIC Disabled.\n");
 }
 
 
@@ -72,7 +91,9 @@ void init_pic_interrupt(){
     pic_irq_remap();
    
     asm volatile("sti");
-    printf("[Info] Successfully PIC Initialized.\n");
+    printf(" [-] Successfully PIC Initialized.\n");
 }
+
+
 
 

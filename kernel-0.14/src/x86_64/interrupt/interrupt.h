@@ -30,3 +30,4 @@ typedef struct int_ptr_struct int_ptr_t;
 
 void int_init();
 
+void test_interrupt();

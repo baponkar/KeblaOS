@@ -68,7 +68,7 @@ void set_core_descriptor_table(uint64_t core_id){
     // attribute = 1 | 00  | 0 | 1110 (interrupt) | = 0x8E for DPL = 0
     // attribute = 1 | 11  | 0 | 1110 (interrupt) | = 0xEE for DPL = 3
 
-    // Define Interrupt for DPL = 0
+    // Software Interrupts
     core_int_set_gate(core_id,  0, (uint64_t)&isr0 ,  0x8, 0x8E);    // Division By Zero
     core_int_set_gate(core_id,  1, (uint64_t)&isr1 ,  0x8, 0x8E);    // Debug
     core_int_set_gate(core_id,  2, (uint64_t)&isr2 ,  0x8, 0x8E);    // Non Maskable Interrupt  
@@ -102,6 +102,7 @@ void set_core_descriptor_table(uint64_t core_id){
     core_int_set_gate(core_id, 30, (uint64_t)&isr30 , 0x8, 0x8E);    // Reserved
     core_int_set_gate(core_id, 31, (uint64_t)&isr31 , 0x8, 0x8E);    // Reserved
 
+    // Hardware Interrupts
     core_int_set_gate(core_id, 32, (uint64_t)&irq0, 0x08, 0x8E);    // Timer Interrupt, IRQ0
     core_int_set_gate(core_id, 33, (uint64_t)&irq1, 0x08, 0x8E);    // Keyboard Interrupt, IRQ1
     core_int_set_gate(core_id, 34, (uint64_t)&irq2, 0x08, 0x8E);    // Cascade (for PIC chaining), IRQ2
@@ -112,29 +113,24 @@ void set_core_descriptor_table(uint64_t core_id){
     core_int_set_gate(core_id, 39, (uint64_t)&irq7, 0x08, 0x8E);    // LPT1 (Parallel Port 1) / Spurious IRQ, IRQ7
     core_int_set_gate(core_id, 40, (uint64_t)&irq8, 0x08, 0x8E);    // Real-Time Clock (RTC), IRQ8
     core_int_set_gate(core_id, 41, (uint64_t)&irq9, 0x08, 0x8E);    // ACPI / General system use, IRQ9
-
     core_int_set_gate(core_id, 42, (uint64_t)&irq10, 0x08, 0x8E);   // Available (often used for SCSI or NIC), IRQ10
     core_int_set_gate(core_id, 43, (uint64_t)&irq11, 0x08, 0x8E);   // Available (often used for PCI devices), IRQ11
-
     core_int_set_gate(core_id, 44, (uint64_t)&irq12, 0x08, 0x8E);   // PS/2 Mouse, IRQ12
-    
     core_int_set_gate(core_id, 45, (uint64_t)&irq13, 0x08, 0x8E);   // FPU / Floating-Point Unit (Coprocessor), IRQ13
-
     core_int_set_gate(core_id, 46, (uint64_t)&irq14, 0x08, 0x8E);   // Primary ATA Hard Disk Controller, IRQ14
     core_int_set_gate(core_id, 47, (uint64_t)&irq15, 0x08, 0x8E);   // Secondary ATA Hard Disk Controller, IRQ15
-
     core_int_set_gate(core_id, 48, (uint64_t)&irq16, 0x08, 0x8E);   // APIC Timer, IRQ16
     core_int_set_gate(core_id, 49, (uint64_t)&irq17, 0x08, 0x8E);   // HPET Timer, IRQ17
     core_int_set_gate(core_id, 50, (uint64_t)&irq18, 0x08, 0x8E);   // Available, IRQ18
 
-    // Define Interrupt for DPL = 3
+    // Software Interrupts for System Calls
     core_int_set_gate(core_id, 172, (uint64_t)&irq140, 0x08, 0xEE); // Print System Call, IRQ140
     core_int_set_gate(core_id, 173, (uint64_t)&irq141, 0x08, 0xEE); // Read System Call, IRQ141
     core_int_set_gate(core_id, 174, (uint64_t)&irq142, 0x08, 0xEE); // Exit System Call, IRQ142
 }
 
 
-void init_core_interrupt(uint64_t core_id){
+void init_ap_core_interrupt(uint64_t core_id){
     asm volatile("cli");
 
     // Setting up the Interrupt Descriptor Table Register
@@ -155,41 +151,8 @@ void init_core_interrupt(uint64_t core_id){
 }
 
 
-void init_bootstrap_interrupt(int bootstrap_core_id){
-    init_core_interrupt(bootstrap_core_id);
-    
-    printf("[Info] Successfully Bootstrap CPU %d Interrupt Initialized.\n", bootstrap_core_id);
-}
 
 
-void init_application_core_interrupt(int start_core_id, int end_core_id){
-    for (int core_id = start_core_id; core_id <= end_core_id; core_id++) {
-        init_core_interrupt(core_id);
-        printf("[Info] Successfully Application CPU %d Interrupt Initialized.\n", core_id);
-    }
-}
-
-
-// Testing Interrupts and Debugging
-void test_interrupt() {
-    printf("Testing Interrupts\n");
-    // asm volatile ("div %b0" :: "a"(0)); // Int no 0
-    // asm volatile ("int $0x3");       // Breakpoint int no : 3
-    // asm volatile ("int $0x0");       // Division By Zero, int no : 0
-    // asm volatile ("int $0xE");       // Page Fault Request, int no: 14
-    // asm volatile ("int $0xF");       // int no 15
-    // asm volatile ("int $0x10");      // int no 16
-    // asm volatile ("int $0x11");      // int no 17
-    // asm volatile ("int $0x20");      // Interrupt Request, int no: 32, Timer Interrupt 
-    // asm volatile ("int $0x21");      // Interrupt Request, int no : 33, Keyboard Interrupt
-    // asm volatile ("int $0x2C");      // Interrupt Request, int no : 44, Mouse Interrupt
-    // asm volatile ("int $0x22");      // Interrupt Request, int no: 34
-    // asm volatile ("int $0x30");      // Interrupt Request, int no: 48
-    
-    asm volatile ("int $172");       // Interrupt Request for system call IRQ = 140, INT NO = 172
-    asm volatile ("int $173");       // Interrupt Request for system call IRQ = 140, INT NO = 173
-    asm volatile ("int $174");       // Interrupt Request for system call IRQ = 140, INT NO = 174
-}
 
 
 

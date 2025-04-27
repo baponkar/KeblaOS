@@ -117,7 +117,7 @@ void execute_command(char* command) {
             printf("Invalid PID: %d\n", pid);
         }
     }else if(strcmp(command, "int") == 0){
-        test_interrupt();
+        // test_interrupt();
     }else {
         color_print("!Unknown command: ", COLOR_RED);
         color_print(command, COLOR_OLIVE);

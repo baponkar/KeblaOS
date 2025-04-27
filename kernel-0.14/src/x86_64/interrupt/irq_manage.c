@@ -28,12 +28,16 @@ void irq_handler(registers_t *regs)
     int irq_no = regs->int_no - 32;     // Getting IRQ No from Interrupt No
     handler = irq_routines[irq_no];     // Getting Corresponding IRQ Routine
 
+    // printf("Interrupt No: %d, IRQ No: %d\n", regs->int_no, irq_no); // Debugging purpose
+
+    // Call the handler if it exists
     if (handler){
         handler(regs);
     }
 
     if(has_apic()){
         apic_send_eoi();
+
     }else{
         /* If the IDT entry that was invoked was greater than 40
         *  (meaning IRQ8 - 15), then we need to send an EOI to
@@ -58,3 +62,10 @@ void irq_install(int irq_no, void (*handler)(registers_t *r)){
 void irq_uninstall(int irq_no){
     irq_routines[irq_no] = 0;
 }
+
+
+
+
+
+
+

@@ -94,7 +94,7 @@ void init_pmm(){
 
     bitmap_mem_size = tmp_f - tmp_i;
 
-    printf("[Info] Successfully initialized PMM!\n");
+    printf(" [-] Successfully initialized PMM!\n");
 }
 
 

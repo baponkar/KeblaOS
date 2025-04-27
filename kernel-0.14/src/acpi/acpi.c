@@ -54,7 +54,7 @@ extern hpet_t *hpet;   // Defined in hpet.c
 
 void find_acpi_table_pointer(){
     if(!rsdp_request.response || !rsdp_request.response->address){
-        printf("ACPI is not available!\n");
+        printf("[Error] ACPI is not available!\n");
         return;
     }
     rsdp = (rsdp_t *) rsdp_request.response->address;
@@ -73,15 +73,15 @@ void validate_rsdp_table(rsdp_t *rsdp){
                 sum += ptr[i];
             }
             if((sum % 256) == 0){
-                printf("[Info] ACPI %d.0 is signature and checksum validated\n", acpi_version);
+                printf(" [-] ACPI %d.0 is signature and checksum validated\n", acpi_version);
             }else{
-                printf("[Info] ACPI %d.0 is not checksum validated\n", acpi_version);
+                printf("[Error] ACPI %d.0 is not checksum validated\n", acpi_version);
             }
         }else{
-            printf("[Info] ACPI %d.0 is not signature validated\n", acpi_version);
+            printf(" [-] ACPI %d.0 is not signature validated\n", acpi_version);
         }
     }else{
-        printf("[Info] ACPI Table not found\n");
+        printf("[Error] ACPI Table not found\n");
     }
 }
 
@@ -90,7 +90,7 @@ void validate_rsdp_table(rsdp_t *rsdp){
 int is_acpi_enabled() {
     fadt_t *fadt = (fadt_t *)fadt;
     if (!fadt) {
-        printf("[Info] FADT not found! ACPI status unknown.\n");
+        printf("[Error] FADT not found! ACPI status unknown.\n");
         return -1;
     }
 
@@ -101,18 +101,18 @@ int is_acpi_enabled() {
     // printf("FADT X_PM1a Control Block: %x\n", fadt->X_PM1aControlBlock.Address);
 
     if (!pm1a_control) {
-        printf("[Info] PM1a Control Block not found!\n");
+        printf("[Error] PM1a Control Block not found!\n");
         return -1;
     }
 
     uint16_t acpi_status = inw(pm1a_control); // Read PM1a Control Block register
 
     if (acpi_status & 1) { // Check SCI_EN (Bit 0)
-        printf("[Info] ACPI is ENABLED.\n");
+        printf(" [-] ACPI is ENABLED.\n");
         return 1;
     }
     
-    printf("[Info] ACPI is DISABLED.\n");
+    printf(" [-] ACPI is DISABLED.\n");
     return 0;
 }
 
@@ -120,7 +120,7 @@ int is_acpi_enabled() {
 void acpi_enable() {
     fadt_t *fadt = (fadt_t *) fadt;
     if (!fadt) {
-        printf("[Info] FADT not found, ACPI cannot be enabled!\n");
+        printf("[Error] FADT not found, ACPI cannot be enabled!\n");
         return;
     }
 
@@ -130,7 +130,7 @@ void acpi_enable() {
 
         // Wait a bit for ACPI mode to activate
         for (volatile int i = 0; i < 100000; i++);
-        printf("[Info] Succesfully ACPI Mode enable\n");
+        printf(" [-] Succesfully ACPI Mode enable\n");
     }
 }
 
@@ -149,7 +149,7 @@ void init_acpi(){
     parse_madt(madt);
     // parse_mcfg(mcfg);    // PCIe Scan
 
-    printf("[Info] Successfully ACPI Enabled\n");
+    printf(" [-] Successfully ACPI Enabled\n");
 }
 
 

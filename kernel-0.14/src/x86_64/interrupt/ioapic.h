@@ -22,12 +22,13 @@
 #define IOAPIC_UNMASKED     (0 << 16)   // Interrupt unmasked (enabled)
 
 
-void ioapic_write_reg(uint32_t reg, uint32_t value);
-uint32_t ioapic_read_reg(uint32_t reg);
 
 void enable_ioapic_mode();
 
 void ioapic_route_irq(uint8_t irq, uint8_t apic_id, uint8_t vector, uint32_t flags);
+
+void ioapic_route_hardware_irq(uint8_t lapic_id, uint32_t flags);
+void ioapic_route_syscall_irq(uint8_t lapic_id, uint32_t flags);
 
 void ioapic_init();
 

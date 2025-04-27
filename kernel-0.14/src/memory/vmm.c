@@ -11,16 +11,22 @@
 
 
 
-extern pml4_t *current_pml4;
-
 
 // Allocate a virtual page at the specified virtual address
-void vm_alloc(uint64_t va) {    
+void vm_alloc(uint64_t va) {  
+
+    pml4_t *current_pml4 = (pml4_t *) get_cr3_addr(); // Get the current PML4 table
+    
+    if(current_pml4 == NULL){
+        printf("[Error] VMM: current_pml4 is NULL\n");
+        return;
+    }
+
     page_t *page = get_page(va, 1, current_pml4); // if not present then create the page
 
     if (!page) {
         // Handle error if page creation fails
-        printf("[Error] Page creation failed!\n");
+        printf("[Error] VMM: Page creation failed!\n");
         return;
     }
   
@@ -57,6 +63,13 @@ void vm_free(uint64_t *ptr) {
     }
     
     uint64_t va = (uint64_t)ptr;
+
+    pml4_t *current_pml4 = (pml4_t *) get_cr3_addr(); // Get the current PML4 table
+    
+    if(current_pml4 == NULL){
+        printf("[Error] VMM: current_pml4 is NULL\n");
+        return;
+    }
 
     // Get the page for the virtual address
     page_t *page = get_page(va, 0, current_pml4);   // If not present do not create

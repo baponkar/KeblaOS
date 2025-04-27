@@ -27,7 +27,7 @@ struct limine_smp_response *smp_response;
 uint32_t flags;
 uint32_t bsp_lapic_id;
 uint64_t cpu_count;
-struct limine_smp_info **cpus;
+struct limine_smp_info **cpus;  // Pointer to an array of pointers to smp_info structures
 
 // struct limine_smp_info {
 //     uint32_t processor_id;
@@ -53,7 +53,7 @@ void get_smp_info(){
         flags, bsp_lapic_id, cpu_count, cpus);
 
     for(int i=0; i<cpu_count; i++){
-        printf(" [-] processor_id: %d, lapic_id: %d, reserved: %x, goto_address: %x, extra_argument: %x\n",
+        printf(" [-] cpu_id: %d, lapic_id: %d, reserved: %x, goto_address: %x, extra_argument: %x\n",
         cpus[i]->processor_id, cpus[i]->lapic_id, cpus[i]->reserved, (uint64_t)cpus[i]->goto_address, (uint64_t)cpus[i]->extra_argument);
     }
 }

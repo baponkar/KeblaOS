@@ -234,16 +234,16 @@ void keyboardHandler(registers_t *regs){
 void initKeyboard(){
     asm volatile("cli");
     
-    uint32_t flag = IOAPIC_EDGE_TRIG | IOAPIC_HIGH_ACTIVE | IOAPIC_FIXED | IOAPIC_UNMASKED;
-    ioapic_route_irq(KEYBOARD_IRQ, 0, KEYBOARD_INT_VECTOR, flag );
+    // uint32_t flag = IOAPIC_EDGE_TRIG | IOAPIC_HIGH_ACTIVE | IOAPIC_FIXED | IOAPIC_UNMASKED;
+    // ioapic_route_irq(KEYBOARD_IRQ, 0, KEYBOARD_INT_VECTOR, flag );
 
     enableKeyboard();
     asm volatile("sti");
-    printf("[Info] Successfully KEYBOARD initialized.\n");
+    printf(" [-] Successfully KEYBOARD initialized.\n");
 }
 
 void enableKeyboard(){
-    irq_install(KEYBOARD_IRQ, &keyboardHandler);
+    irq_install(KEYBOARD_IRQ, (void *) &keyboardHandler);
 }
 
 void disableKeyboard(){

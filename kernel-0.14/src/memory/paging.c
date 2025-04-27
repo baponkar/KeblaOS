@@ -41,7 +41,7 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
     uint64_t bit_no = free_frame_bit_no(); // idx is now the index of the first free frame.
 
     if (bit_no == (uint64_t)-1) {
-        printf("[Error] No free frames!");
+        printf("[Error] Paging: No free frames!");
         halt_kernel();
     }
 
@@ -75,6 +75,11 @@ uint64_t get_cr3_addr() {
 }
 
 void set_cr3_addr(uint64_t cr3) {
+    if (cr3 == 0) {
+        printf("[Error] CR3 address is NULL\n");
+        return;
+    }
+    // Set the CR3 register to the new PML4 address
     asm volatile("mov %0, %%cr3" : : "r"(cr3)); // Write the CR3 register
 }
 
@@ -87,39 +92,61 @@ void init_paging()
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
     current_pml4 = (pml4_t *) get_cr3_addr();
 
-    // // Updating lower half pages
-    // for (uint64_t addr = USABLE_START_PHYS_MEM; addr < 0x1000000; addr += PAGE_SIZE) {
-    //     page_t *page = get_page(addr, 1, current_pml4);
-    //     if (!page) {
-    //         // Handle error: Failed to get the page entry
-    //         continue;
-    //     }
+    // Updating lower half pages
+    for (uint64_t addr = USABLE_START_PHYS_MEM; addr < 0x1000000; addr += PAGE_SIZE) {
+        page_t *page = get_page(addr, 1, current_pml4);
+        if (!page) {
+            // Handle error: Failed to get the page entry
+            printf("[Error] Failed to get page entry for address: %x\n", addr);
+            continue;
+        }
 
-    //     // Allocate a frame if not already allocated
-    //     if (!page->frame) {
-    //         alloc_frame(page, 0, 1); // page, is_kernel, rw
-    //     }
+        // Allocate a frame if not already allocated
+        if (!page->frame) {
+            alloc_frame(page, 0, 1); // page, is_kernel, rw
+        }
 
-    //     // Set the User flag (0x4 in x86_64) to allow user-level access
-    //     page->present = 1;  // Ensure the page is present
-    //     page->rw = 1;       // Allow read/write access
-    //     page->user = 1;     // Set user-accessible bit
-    // }
+        // Set the User flag (0x4 in x86_64) to allow user-level access
+        page->present = 1;  // Ensure the page is present
+        page->rw = 1;       // Allow read/write access
+        page->user = 1;     // Set user-accessible bit
+    }
 
-    set_cr3_addr(bsp_cr3); // Set the CR3 register to the PML4 address
     // Invalidate the TLB for the changes to take effect
     flush_tlb_all();
 
-    printf(" [-] Bootstrap CPU: Set CR3 to PML4 address: %x\n", bsp_cr3);
+    // printf(" [-] Bootstrap CPU: Set CR3 to PML4 address: %x\n", bsp_cr3);
     
-    printf("[Info] Successfully Paging initialized.\n");
+    // printf("[Info] Successfully Paging initialized.\n");
 }
 
 // Initializing Paging for other CPU cores
 void init_core_paging(int core_id) {
     set_cr3_addr(bsp_cr3);  // Set the CR3 register to the PML4 address
+    pml4_t * pml4 = (pml4_t *) get_cr3_addr(); // Get the current value of CR3 (the base of the PML4 table)
+
+    // Updating lower half pages
+    for (uint64_t addr = USABLE_START_PHYS_MEM; addr < 0x1000000; addr += PAGE_SIZE) {
+        page_t *page = get_page(addr, 1, current_pml4);
+        if (!page) {
+            // Handle error: Failed to get the page entry
+            printf("[Error] Failed to get page entry for address: %x\n", addr);
+            continue;
+        }
+
+        // Allocate a frame if not already allocated
+        if (!page->frame) {
+            alloc_frame(page, 0, 1); // page, is_kernel, rw
+        }
+
+        // Set the User flag (0x4 in x86_64) to allow user-level access
+        page->present = 1;  // Ensure the page is present
+        page->rw = 1;       // Allow read/write access
+        page->user = 1;     // Set user-accessible bit
+    }
+
     flush_tlb_all();        // Flush TLB for the current core
-    printf(" [-] Successfully Paging initialized for core %d.\n", core_id);
+    // printf(" [-] Successfully Paging initialized for core %d.\n", core_id);
 }
 
 
@@ -168,6 +195,7 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
     uint64_t page_offset = PAGE_OFFSET(va);
 
     if(!pml4){
+        printf("[Error] get_page: pml4 is NULL\n");
         return NULL;
     }
 

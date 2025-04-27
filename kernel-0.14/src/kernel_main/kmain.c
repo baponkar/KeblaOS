@@ -108,8 +108,9 @@ void kmain(){
     
     
     if(has_apic()){
-        disable_pic();
-        init_all_cpu_cores();
+        printf("[Info] This System has APIC.\n");
+        start_bootstrap_cpu_core(); // Starts only the bootstrap core
+        // init_all_cpu_cores();
     }else{
         pic_irq_remap();
         // init_bootstrap_gdt_tss(0);
@@ -118,14 +119,13 @@ void kmain(){
         init_pit_timer();
     }
 
-    
-    if(has_fpu()){
-        enable_fpu_and_sse();
-    }
-
-    pci_scan();
+    // pci_scan();
     
     // init_user_mode();
+
+    // switch_to_core(3);
+
+    // start_kshell();
 
     halt_kernel();
 }

@@ -63,7 +63,7 @@ void int_syscall_init(){
     irq_install(141, (void *)&int_systemcall_handler);
     irq_install(142, (void *)&int_systemcall_handler);
 
-    printf("[Info] Interrupt Based System Call initialized!\n");
+    printf(" [-] Interrupt Based System Call initialized!\n");
 }
 
 
