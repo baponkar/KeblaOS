@@ -7,34 +7,16 @@ using the RDTSC (Read Time-Stamp Counter) instruction.
 https://wiki.osdev.org/TSC
 */
 
-#include "../../util/util.h" // for enable_interrupts()
-#include "../interrupt/interrupt.h"
+#include "../../util/util.h"            // for enable_interrupts()
+#include "../interrupt/pic/pic_interrupt.h"
 #include "../../lib/stdio.h"
-#include "apic_timer.h"
-#include "pit_timer.h"
+#include "../timer/pit_timer.h"
 
 #include "tsc.h"
 
 volatile uint64_t tsc_ticks = 0;
 
-uint64_t cpu_frequency_hz = 0;  // Cached CPU frequency in Hz
-
-void tsc_tick_handler() {
-    static uint64_t last_tsc = 0;
-    uint64_t current_tsc = read_tsc();
-    
-    // Calculate elapsed ticks
-    uint64_t elapsed_tsc = current_tsc - last_tsc;
-
-    // Convert to milliseconds: elapsed_tsc / (cpu_frequency_hz / 1000)
-    uint64_t elapsed_ms = (elapsed_tsc * 1000) / cpu_frequency_hz;
-
-    if (elapsed_ms >= 100) {  // Print every 100ms
-        tsc_ticks++;
-        printf("TSC Tick: %llu\n", tsc_ticks);
-        last_tsc = current_tsc;  // Update the last TSC checkpoint
-    }
-}
+uint64_t cpu_frequency_hz = 0;          // Cached CPU frequency in Hz
 
 
 static inline uint64_t rdmsr(uint32_t msr) {
@@ -52,14 +34,33 @@ uint64_t read_tsc() {
 
 
 void tsc_sleep(uint64_t microseconds) {
-    asm volatile("cli");  // Prevent interruptions
+
+    asm volatile("cli");                            // Prevent interruptions
     uint64_t start = read_tsc();
     
     // freq cycles in 1 s; 1 cycle = 1/freq s; x µs = x/1000000 s; no. of cycle in x µs = x*freq/1000000
     uint64_t cycles_to_wait = (microseconds * cpu_frequency_hz) / 1000000; // Adjust based on CPU frequency
 
-    while ((read_tsc() - start) < cycles_to_wait); // Wait in loop to perform all loops
-    asm volatile("sti");
+    while ((read_tsc() - start) < cycles_to_wait);  // Wait in loop to perform all loops
+    asm volatile("sti");                            // Re-enable interrupts 
+}
+
+
+void tsc_tick_handler() {
+    static uint64_t last_tsc = 0;
+    uint64_t current_tsc = read_tsc();
+    
+    // Calculate elapsed ticks
+    uint64_t elapsed_tsc = current_tsc - last_tsc;
+
+    // Convert to milliseconds: elapsed_tsc / (cpu_frequency_hz / 1000)
+    uint64_t elapsed_ms = (elapsed_tsc * 1000) / cpu_frequency_hz;
+
+    if (elapsed_ms >= 100) {    // Print every 100ms
+        tsc_ticks++;
+        printf("TSC Tick: %d\n", tsc_ticks);
+        last_tsc = current_tsc;  // Update the last TSC checkpoint
+    }
 }
 
 
@@ -70,7 +71,8 @@ uint64_t get_cpu_freq_msr() {
     start_tsc = read_tsc();
 
     // Sleep for 1s
-    tsc_sleep(1000000000);
+    // tsc_sleep(1000000000);
+    pit_sleep(1000); // Sleep for 1 second using PIT timer
 
     // Read TSC at the end
     end_tsc = read_tsc();

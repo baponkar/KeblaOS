@@ -25,10 +25,10 @@
 
 void enable_ioapic_mode();
 
+// Route an IRQ to a specific APIC ID and vector number
 void ioapic_route_irq(uint8_t irq, uint8_t apic_id, uint8_t vector, uint32_t flags);
-
-void ioapic_route_hardware_irq(uint8_t lapic_id, uint32_t flags);
-void ioapic_route_syscall_irq(uint8_t lapic_id, uint32_t flags);
+// Route all IRQs to a specific LAPIC ID with the given flags
+void ioapic_route_all_irq(uint8_t lapic_id, uint32_t flags);
 
 void ioapic_init();
 

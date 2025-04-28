@@ -54,20 +54,19 @@ void get_limine_info(){
         BOOTLOADER_NAME = limine_info_request.response->name;
         BOOTLOADER_VERSION = limine_info_request.response->version;
     }else{
-        BOOTLOADER_NAME = "No Limine Bootloader Info found!";
+        BOOTLOADER_NAME = "[Error] : No Limine Bootloader Info found!";
         BOOTLOADER_VERSION = NULL;
-        printf("No Limine Bootloader Info found!\n");
     }
 }
 
 
 void print_limine_info(){
     if(limine_info_request.response != NULL){
-        printf("Bootloader Name : %s\n", BOOTLOADER_NAME);
-        printf("Bootloader Version : %s\n", BOOTLOADER_VERSION);
+
+        printf("[Info] %s - %s bootloader.\n", BOOTLOADER_NAME, BOOTLOADER_VERSION);
 
     }else{
-        printf("No Limine Bootloader Info found!\n");
+        printf("[Error] : No Limine Bootloader Info found!\n");
     }
 }
 
@@ -78,7 +77,7 @@ void get_bootloader_info(){
 }
 
 
-void print_bootloader_info(void){
+void print_bootloader_info(){
     print_limine_info();
 }
 

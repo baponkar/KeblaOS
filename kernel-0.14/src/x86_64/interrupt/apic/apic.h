@@ -15,6 +15,8 @@ uint64_t get_lapic_base();
 uint32_t get_lapic_id();
 uint32_t get_lapic_version();
 
+void init_ipi();
+
 void lapic_send_ipi(uint8_t cpu_id, uint8_t vector);
 void enable_apic();
 void disable_apic();
@@ -23,3 +25,7 @@ bool is_apic_enabled();
 void init_apic_interrupt();
 
 void start_application_processor(uint8_t core_id);
+
+
+
+

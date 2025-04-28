@@ -24,7 +24,7 @@
 
 #include "calculator/calculator.h"
 #include "steam_locomotive/sl.h" // For locomotive animation
-#include "../x86_64/interrupt/multi_core_interrupt.h" // for test_interrupt
+#include "../x86_64/interrupt/apic/apic_interrupt.h" // for test_interrupt
 
 #include "kshell.h"
 

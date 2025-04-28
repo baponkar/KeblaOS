@@ -24,12 +24,15 @@ typedef struct {
     uint64_t cpu_stack;                     // Pointer to the CPU stack
 } cpu_data_t;
 
-void target_cpu_task(struct limine_smp_info *smp_info);
+
 void switch_to_core(uint32_t target_lapic_id);
 
 void start_bootstrap_cpu_core();
 void start_ap_cpu_cores();
 void init_all_cpu_cores();
+
+
+
 
 void check_long_mode();
 void check_paging_enabled();

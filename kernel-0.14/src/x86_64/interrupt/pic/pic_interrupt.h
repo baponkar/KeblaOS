@@ -1,5 +1,3 @@
-
-
 #pragma once
 
 #include <stdint.h>
@@ -7,10 +5,10 @@
 #include <stdbool.h>
 
 
+#include "../int_common.h"
 
-void init_ap_core_interrupt(uint64_t core_id);
+void pic_int_init();
 
-
-
+void test_interrupt();
 
 

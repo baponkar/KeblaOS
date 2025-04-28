@@ -18,10 +18,13 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../acpi/acpi.h"               // init_acpi
 #include "../acpi/descriptor_table/mcfg.h"
 #include "../acpi/descriptor_table/madt.h"
-#include "../x86_64/interrupt/multi_core_interrupt.h"
-#include "../x86_64/interrupt/apic.h"
-#include "../x86_64/interrupt/ioapic.h"
-#include "../x86_64/interrupt/pic.h"    // init_idt, test_interrupt
+
+#include "../x86_64/interrupt/apic/apic_interrupt.h"
+#include "../x86_64/interrupt/apic/apic.h"
+#include "../x86_64/interrupt/apic/ioapic.h"
+#include "../x86_64/interrupt/pic/pic.h"    // init_idt, test_interrupt
+#include "../x86_64/interrupt/pic/pic_interrupt.h"
+
 #include "../ahci/ahci.h"
 #include "../pci/pci.h"
 #include "../disk/disk.h"
@@ -87,17 +90,12 @@ extern void restore_cpu_state(registers_t* registers);
 extern tss_t tss;
 
 
-
-
-void print_test(){
-    printf("This is a test function\n");
-}
-
 void kmain(){
 
     serial_init();
     get_bootloader_info();
     vga_init();
+    print_bootloader_info();
     printf("[Info] %s - %s\n[Info] Build starts on: %s, Last Update on: %s\n",
         OS_NAME, OS_VERSION, BUILD_DATE, LAST_UPDATE);
     print_cpu_brand();
@@ -105,19 +103,23 @@ void kmain(){
     print_cpu_base_frequency();
     get_set_memory();
     get_smp_info();
-    
-    
+
+    // initially starts pic
+    gdt_tss_init();
+    init_pmm();
+    init_paging();
+    pic_int_init();
+    init_pit_timer(100);
+    init_tsc();             // Initialize TSC for the bootstrap core
+
+
     if(has_apic()){
         printf("[Info] This System has APIC.\n");
-        start_bootstrap_cpu_core(); // Starts only the bootstrap core
-        // init_all_cpu_cores();
-    }else{
-        pic_irq_remap();
-        // init_bootstrap_gdt_tss(0);
-
-        init_pic_interrupt();
-        init_pit_timer();
+        // start_bootstrap_cpu_core(); // Starts only the bootstrap core
+        init_all_cpu_cores();
     }
+
+    printf("Hello from CPU %d (BSP)\n", 0);
 
     // pci_scan();
     

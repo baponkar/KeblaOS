@@ -12,9 +12,9 @@ It handles basic mouse movement and drawing a cursor on the screen.
 #include "../vga/vga_gfx.h"
 #include "../vga/color.h"
 
-#include "../../x86_64/interrupt/apic.h"        // APIC interrupt support
-#include "../../x86_64/interrupt/ioapic.h"      // IOAPIC support
-#include "../../x86_64/interrupt/interrupt.h"   // Interrupt handler installation
+#include "../../x86_64/interrupt/apic/apic.h"        // APIC interrupt support
+#include "../../x86_64/interrupt/apic/ioapic.h"      // IOAPIC support
+#include "../../x86_64/interrupt/apic/apic_interrupt.h"   // Interrupt handler installation
 #include "../../x86_64/interrupt/irq_manage.h"
 
 #include "../io/ports.h"

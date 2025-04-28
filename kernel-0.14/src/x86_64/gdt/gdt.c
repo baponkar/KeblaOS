@@ -21,7 +21,7 @@
 #include "../../lib/string.h"
 #include "../../memory/kmalloc.h"
 #include "../../lib/assert.h"
-#include "../interrupt/apic.h"
+#include "../interrupt/apic/apic.h"
 #include "../../util/util.h"
 
 #include "tss.h"

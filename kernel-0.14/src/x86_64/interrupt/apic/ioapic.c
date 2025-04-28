@@ -6,8 +6,8 @@ It is a separate chip on the motherboard and is connected to the CPU through the
 https://wiki.osdev.org/IOAPIC
 */
 
-#include "../../lib/stdio.h"
-#include "../../driver/io/ports.h"
+#include "../../../lib/stdio.h"
+#include "../../../driver/io/ports.h"
 #include "ioapic.h"
 
 // Offsets for IOAPIC registers
@@ -76,7 +76,7 @@ void ioapic_route_irq(uint8_t irq_no, uint8_t apic_id, uint8_t vector_no, uint32
 }
 
 
-void ioapic_route_hardware_irq(uint8_t lapic_id, uint32_t flags) {
+void ioapic_route_all_irq(uint8_t lapic_id, uint32_t flags) {
     ioapic_route_irq(0, lapic_id, 32, flags);      // Route IRQ 1 to current LAPIC ID with vector 32 : Timer interrupt
     ioapic_route_irq(1, lapic_id, 33, flags);      // Route IRQ 1 to current LAPIC ID with vector 33 : Keyboard interrupt
     // ioapic_route_irq(2, lapic_id, 34, flags);      // Route IRQ 2 to current LAPIC ID with vector 34 : Mouse interrupt
@@ -97,17 +97,15 @@ void ioapic_route_hardware_irq(uint8_t lapic_id, uint32_t flags) {
     ioapic_route_irq(17,lapic_id, 49, flags);     // Route IRQ 17 to current LAPIC ID with vector 49 : HPET Timer interrupt
     ioapic_route_irq(18,lapic_id, 50, flags);     // Route IRQ 18 to current LAPIC ID with vector 50 : Available interrupt
 
-    printf(" [-] IOAPIC Hardware IRQs routed to LAPIC ID %d\n", lapic_id);
-}
-
-
-void ioapic_route_syscall_irq(uint8_t lapic_id, uint32_t flags) {
     ioapic_route_irq(140, lapic_id, 172, flags);   // Route IRQ 140 to current LAPIC ID with vector 172 : Print System Call
     ioapic_route_irq(141, lapic_id, 173, flags);   // Route IRQ 141 to current LAPIC ID with vector 173 : Read System Call
     ioapic_route_irq(142, lapic_id, 174, flags);   // Route IRQ 142 to current LAPIC ID with vector 174 : Exit System Call
 
-    printf(" [-] IOAPIC Syscall IRQs routed to LAPIC ID %d\n", lapic_id);
+    printf(" [-] IOAPIC Hardware IRQs routed to LAPIC ID %d\n", lapic_id);
 }
+
+
+
 
 
 void ioapic_init() {

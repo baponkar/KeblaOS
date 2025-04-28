@@ -3,10 +3,10 @@ https://wiki.osdev.org/PS/2_Keyboard
 https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_Keyboard_Support.md
 */
 
-#include "../../x86_64/interrupt/pic.h"
-#include "../../x86_64/interrupt/apic.h"
-#include "../../x86_64/interrupt/ioapic.h"
-#include "../../x86_64/interrupt/interrupt.h"
+#include "../../x86_64/interrupt/pic/pic.h"
+#include "../../x86_64/interrupt/apic/apic.h"
+#include "../../x86_64/interrupt/apic/ioapic.h"
+#include "../../x86_64/interrupt/apic/apic_interrupt.h"
 #include "../../x86_64/interrupt/irq_manage.h"
 #include "../../lib/stdlib.h"
 #include "../../lib/string.h"

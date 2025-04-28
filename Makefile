@@ -11,7 +11,7 @@ START_TIME := $(shell date +%s)
 OS_NAME = KeblaOS
 OS_VERSION = 0.14
 
-LIMINE_DIR = limine-8.6.0
+LIMINE_DIR = limine-9.2.3
 
 KERNEL_DIR = kernel-$(OS_VERSION)
 ISO_DIR = build/iso_root

@@ -1,22 +1,24 @@
 /*
+    Programmable Interval Timer (PIT) chip (Intel 8253/8254) 
+    
+    https://wiki.osdev.org/Programmable_Interval_Timer
     https://wiki.osdev.org/Programmable_Interval_Timer
 */
 
 #include "../../process/process.h"
 #include "../../process/thread.h"
-#include "../interrupt/pic.h"
-#include "../interrupt/apic.h"
-#include "tsc.h"
+#include "../interrupt/pic/pic.h"
+#include "../interrupt/apic/apic.h"
 #include "../../lib/stdio.h"
 #include "../../driver/io/ports.h"
-#include "../interrupt/interrupt.h"
+#include "../interrupt/apic/apic_interrupt.h"
 #include "../interrupt/irq_manage.h"
 #include "../../util/util.h"
 
 #include "pit_timer.h"
 
-#define PIT_TIMER_VECTOR  32 
-#define PIT_TIMER_IRQ 0 // 32-32
+#define PIT_TIMER_VECTOR  32    // 0x20 = 32, IRQ0 is the first interrupt vector in the PIC 
+#define PIT_TIMER_IRQ 0         // 32-32 = 0
 
 #define MAX_PIT_TICKS 0xFFFFFFFFFFFFFFFF
 
@@ -41,10 +43,10 @@ uint16_t read_pit_count(void) {
     asm volatile("cli");
 	
 	// al = channel in bits 6 and 7, remaining bits clear
-	outb(0x43, 0b0000000);
+	outb(COMMAND_PORT, 0b0000000);              // Read command: 0b00000000
 	
-	count = inb(0x40);		    // Low byte
-	count |= inb(0x40)<<8;		// High byte
+	count = inb(CHANEL0_DATA_PORT);		        // Low byte
+	count |= inb(CHANEL0_DATA_PORT) << 8;		// High byte
 	
 	return count;
 }
@@ -55,8 +57,8 @@ void set_pit_count(unsigned count) {
     asm volatile("cli");
 	
 	// Set low byte
-	outb(0x40,count & 0xFF);		    // Low byte of divisor
-	outb(0x40,(count & 0xFF00) >> 8);	// High byte of divisor
+	outb(CHANEL0_DATA_PORT, count & 0xFF);		    // Low byte of divisor
+	outb(CHANEL0_DATA_PORT, (count & 0xFF00) >> 8);	// High byte of divisor
 	return;
 }
 
@@ -64,6 +66,7 @@ void set_pit_count(unsigned count) {
 void pit_timerHandler(registers_t *regs) {
 
     (void *)regs; // To remove warning
+    
     if(pit_ticks >= MAX_PIT_TICKS) pit_ticks = 0; // Reset pit_ticks value with zero
     pit_ticks++;
 
@@ -71,7 +74,7 @@ void pit_timerHandler(registers_t *regs) {
         printf("PIT Tick no : %d\n", pit_ticks);
     }
 
-    outb(0x20, 0x20); // Send End of Interrupt (EOI) to the PIC
+    send_eoi(PIT_TIMER_IRQ);    // Send End of Interrupt (EOI) to the PIC
 }
 
 void enable_pit_timer(){

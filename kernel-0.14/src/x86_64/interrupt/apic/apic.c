@@ -10,9 +10,13 @@ Reference:  https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architect
 */
 
 
-#include "../../cpu/cpu.h"
-#include "../../lib/stdio.h"
-#include "../../driver/io/ports.h"
+#include "../../../cpu/cpu.h"
+#include "../../../lib/stdio.h"
+#include "../../../driver/io/ports.h"
+
+
+
+#include "../../timer/tsc.h"
 
 #include "apic.h"
 
@@ -53,6 +57,8 @@ Reference:  https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architect
 #define IA32_APIC_BASE_MSR 0x1B
 #define IA32_APIC_BASE_MSR_BSP 0x100        // Processor is a BSP
 #define IA32_APIC_BASE_MSR_ENABLE 0x800     // Enable APIC
+
+
 
 uint32_t LAPIC_BASE = 0xFEE00000;   
 
@@ -102,6 +108,8 @@ uint32_t get_lapic_id() {
 uint32_t get_lapic_version() {
     return apic_read(LAPIC_VERSION_REGISTER) & 0xFF; // Get the version of the LAPIC
 }
+
+
 
 
 /* Send an Inter-Processor Interrupt (IPI) to a specific CPU core.

@@ -9,15 +9,16 @@ https://stackoverflow.com/questions/79386685/how-does-stack-memory-will-be-use-t
 
 */
 
-#include "interrupt.h"
-#include "../../driver/io/ports.h"
-#include "../../lib/stdio.h"
+
+#include "../../../driver/io/ports.h"
+#include "../../../lib/stdio.h"
 
 #include "pic.h"
 
 
 #define PIC1_COMMAND_PORT 0x20      //Primary PIC(programmable interrupt controller) Command Port:
 #define PIC1_DATA_PORT 0x21         //Primary PIC Data Port
+
 #define PIC2_COMMAND_PORT 0xA0      //Secondary PIC Command Port:
 #define PIC2_DATA_PORT 0xA1         //Secondary PIC Data Port
 
@@ -85,13 +86,20 @@ void disable_pic() {
 }
 
 
-void init_pic_interrupt(){
-    asm volatile("cli");
+void enable_pic() {
+    outb(PIC1_DATA_PORT, 0x00);     // Unmask all interrupts
+    io_wait();
+    outb(PIC2_DATA_PORT, 0x00);     // Unmask all interrupts
+    io_wait();
 
-    pic_irq_remap();
-   
-    asm volatile("sti");
-    printf(" [-] Successfully PIC Initialized.\n");
+    printf(" [+] PIC Enabled.\n");
+}
+
+void send_eoi(uint8_t irq) {
+    if (irq >= 40) {
+        outb(PIC2_COMMAND_PORT, PIC_EOI); // Send EOI to slave PIC
+    }
+    outb(PIC1_COMMAND_PORT, PIC_EOI); // Send EOI to master PIC
 }
 
 

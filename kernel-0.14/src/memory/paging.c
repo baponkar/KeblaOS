@@ -13,7 +13,7 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 
 */ 
 
-#include "../x86_64/interrupt/pic.h"
+#include "../x86_64/interrupt/pic/pic.h"
 #include "../memory/detect_memory.h"
 #include "kmalloc.h"
 #include  "../lib/string.h"
@@ -123,30 +123,32 @@ void init_paging()
 // Initializing Paging for other CPU cores
 void init_core_paging(int core_id) {
     set_cr3_addr(bsp_cr3);  // Set the CR3 register to the PML4 address
-    pml4_t * pml4 = (pml4_t *) get_cr3_addr(); // Get the current value of CR3 (the base of the PML4 table)
+    printf(" [-] CPU %d: Set CR3 to PML4 address: %x\n", core_id, bsp_cr3);
+
+    // pml4_t * pml4 = (pml4_t *) get_cr3_addr(); // Get the current value of CR3 (the base of the PML4 table)
 
     // Updating lower half pages
-    for (uint64_t addr = USABLE_START_PHYS_MEM; addr < 0x1000000; addr += PAGE_SIZE) {
-        page_t *page = get_page(addr, 1, current_pml4);
-        if (!page) {
-            // Handle error: Failed to get the page entry
-            printf("[Error] Failed to get page entry for address: %x\n", addr);
-            continue;
-        }
+    // for (uint64_t addr = USABLE_START_PHYS_MEM; addr < 0x1000000; addr += PAGE_SIZE) {
+    //     page_t *page = get_page(addr, 1, current_pml4);
+    //     if (!page) {
+    //         // Handle error: Failed to get the page entry
+    //         printf("[Error] Failed to get page entry for address: %x\n", addr);
+    //         continue;
+    //     }
 
-        // Allocate a frame if not already allocated
-        if (!page->frame) {
-            alloc_frame(page, 0, 1); // page, is_kernel, rw
-        }
+    //     // Allocate a frame if not already allocated
+    //     if (!page->frame) {
+    //         alloc_frame(page, 0, 1); // page, is_kernel, rw
+    //     }
 
-        // Set the User flag (0x4 in x86_64) to allow user-level access
-        page->present = 1;  // Ensure the page is present
-        page->rw = 1;       // Allow read/write access
-        page->user = 1;     // Set user-accessible bit
-    }
+    //     // Set the User flag (0x4 in x86_64) to allow user-level access
+    //     page->present = 1;  // Ensure the page is present
+    //     page->rw = 1;       // Allow read/write access
+    //     page->user = 1;     // Set user-accessible bit
+    // }
 
     flush_tlb_all();        // Flush TLB for the current core
-    // printf(" [-] Successfully Paging initialized for core %d.\n", core_id);
+    printf(" [-] Successfully Paging initialized for core %d.\n", core_id);
 }
 
 

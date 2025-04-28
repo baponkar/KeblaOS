@@ -17,7 +17,8 @@
         "stdio.h": "c",
         "ports.h": "c",
         "limine.h": "c",
-        "cpu.h": "c"
+        "cpu.h": "c",
+        "thread.h": "c"
     },
     "cmake.sourceDirectory": "B:/Git-Projects/GitHub/baponkar/KeblaOS/lvgl-9.2.2"
 }

@@ -8,7 +8,7 @@
 #include "framebuffer.h"
 #include "../../lib/string.h"
 #include "../../lib/stdio.h"
-#include "../../x86_64/interrupt/apic.h"
+#include "../../x86_64/interrupt/apic/apic.h"
 
 #include "vga_term.h"
 
