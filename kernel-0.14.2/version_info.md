@@ -348,7 +348,7 @@ KeblaOS>>
 ```
 
 Screenshot 1
-![screenshot 1](./screenshot/Screenshot 2025-05-05 232758.png)
+![screenshot 2](./screenshot/keblaos_screenshot_1.png)
 
 Screenshot 2
 ![screenshot 2](./screenshot/keblaos_screenshot_2.png)
