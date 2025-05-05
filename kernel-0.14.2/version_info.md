@@ -348,13 +348,13 @@ KeblaOS>>
 ```
 
 Screenshot 1
-![screenshot 2](./screenshot/keblaos_screenshot_1.png)
+![screenshot 1](./screenshot/keblaos_screenshot_1.png)
 
 Screenshot 2
 ![screenshot 2](./screenshot/keblaos_screenshot_2.png)
 
 Screenshot 3
-![screenshot 1](./screenshot/keblaos_screenshot_3.png)
+![screenshot 3](./screenshot/keblaos_screenshot_3.png)
 
 Screenshot 4
 ![screenshot 2](./screenshot/keblaos_screenshot_4.png)
