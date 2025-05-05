@@ -9,7 +9,7 @@
 START_TIME := $(shell date +%s)
 
 OS_NAME = KeblaOS
-OS_VERSION = 0.14
+OS_VERSION = 0.14.2
 
 LIMINE_DIR = limine-9.2.3
 
@@ -199,6 +199,9 @@ run:
 		-D $(DEBUG_DIR)/qemu.log \
 		-vga std \
 		-rtc base=utc,clock=host
+# We can add -noo--rebboot to prevent rebooting after kernel panic
+
+
 
 gdb_debug:
 	# GDB Debuging
@@ -259,7 +262,7 @@ help:
 	@echo "  make uefi_run        - UEFI Run the target"
 	@echo "  make gdb_debug       - Debugging By GDB"
 	@echo "  make clean           - Clean up build artifacts"
-	@echo "  make build_disk_image - Create Format Disk image which will be use in Kernel as disk"
+	@echo "  make build_disk      - Create Format Disk image which will be use in Kernel as disk"
 	@echo "  make help            - Display this help menu"
 
 
