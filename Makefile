@@ -9,7 +9,7 @@
 START_TIME := $(shell date +%s)
 
 OS_NAME = KeblaOS
-OS_VERSION = 0.14.2
+OS_VERSION = 0.15.0
 
 LIMINE_DIR = limine-9.2.3
 
@@ -110,7 +110,7 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	mkdir -p $(ISO_DIR)/boot
 
 	# Copying files to ISO directory and creating directories 
-	cp $(KERNEL_DIR)/src/img/boot_loader_wallpaper.bmp  $(ISO_DIR)/boot/boot_loader_wallpaper.bmp
+	cp $(KERNEL_DIR)/src/bootloader/img/boot_loader_wallpaper.bmp  $(ISO_DIR)/boot/boot_loader_wallpaper.bmp
 
 	cp -v $(BUILD_DIR)/kernel.bin $(ISO_DIR)/boot/
 
@@ -142,29 +142,62 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 
 
 build_disk:
-	# Create Disk Image (1GiB size, change 'count' as needed)
+	# Ensure disk directory exists
+	mkdir -p $(DISK_DIR)
+
+	# Clean previous mounts and loop device
+	sudo umount $(DISK_DIR)/mnt || true
+	sudo umount /dev/loop0p1 || true
+	sudo losetup -d /dev/loop0 || true
+
+	# 1. Create Disk Image (512MiB)
 	dd if=/dev/zero of=$(DISK_DIR)/disk.img bs=1M count=512
 	@echo "Created blank Disk image"
 
-	# Make Partition on the Disk Image
+	# 2. Partition the Disk Image
 	parted $(DISK_DIR)/disk.img --script -- mklabel msdos
 	parted $(DISK_DIR)/disk.img --script -- mkpart primary fat32 1MiB 100%
 	@echo "Disk image Partitioned"
 
-	# Unmount the Disk Image (If previously mounted)
-	sudo umount $(DISK_DIR)/mnt || true
-	sudo losetup -d /dev/loop0 || true
-	@echo "Unmount any existing Disk Image from loop0"
+	# 3. Setup loop device and partition mapping
+	sudo losetup -Pf $(DISK_DIR)/disk.img # Automatically creates /dev/loop0 and /dev/loop0p1
+	sleep 1                               # Wait a bit to let /dev/loop0p1 appear
+	sudo mkfs.vfat -F 32 /dev/loop0p1
+	@echo "Formatted loop0p1 as FAT32"
 
-	# Setup loop device and detect partitions
-	sudo losetup -fP $(DISK_DIR)/disk.img    # Creates /dev/loopX and /dev/loop0p1
-	sudo mkfs.vfat -F 32 /dev/loop0p1        # Format as FAT32
-	@echo "Formatted Disk Image with FAT32"
-
-	# Mount the Disk Image
+	# 4. Mount partition
 	mkdir -p $(DISK_DIR)/mnt
 	sudo mount /dev/loop0p1 $(DISK_DIR)/mnt
-	@echo "Mounted Disk Image into loop0"
+	@echo "Mounted /dev/loop0p1"
+
+	# 5. Copy kernel and Limine files
+	sudo mkdir -p $(DISK_DIR)/mnt/boot/limine
+	sudo mkdir -p $(DISK_DIR)/mnt/EFI/BOOT
+	sudo cp -v $(BUILD_DIR)/kernel.bin $(DISK_DIR)/mnt/boot/
+	sudo cp -v $(MODULE_DIR)/user_programe.elf $(DISK_DIR)/mnt/boot/
+	sudo cp -v limine.conf \
+		$(LIMINE_DIR)/limine-bios.sys \
+		$(LIMINE_DIR)/limine-bios-cd.bin \
+		$(LIMINE_DIR)/limine-uefi-cd.bin \
+		$(DISK_DIR)/mnt/boot/limine/
+	sudo cp -v $(LIMINE_DIR)/BOOTX64.EFI $(DISK_DIR)/mnt/EFI/BOOT/
+	sudo cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(DISK_DIR)/mnt/EFI/BOOT/
+	@echo "Copied Limine and kernel files to mounted disk"
+
+	# 6. Install Limine to raw disk image
+	sudo sync
+	sudo $(LIMINE_DIR)/limine bios-install $(DISK_DIR)/disk.img
+	@echo "Installed Limine to disk image"
+
+	# 7. Cleanup
+	sudo umount $(DISK_DIR)/mnt
+	sudo losetup -d /dev/loop0
+	@echo "Disk image is ready and bootable"
+
+
+# To Convert the disk image into vmdk which can be used in Vmwire
+# qemu-img convert -f raw Disk/disk.img -O vmdk Disk/disk.vmdk
+
 
 
 # Running by qemu
@@ -201,6 +234,19 @@ run:
 		-rtc base=utc,clock=host
 # We can add -noo--rebboot to prevent rebooting after kernel panic
 
+disk_run:
+	# Running from Disk Image
+	qemu-system-x86_64 \
+    -machine q35 \
+    -m 4096 \
+    -smp cores=4,threads=1,sockets=1,maxcpus=4 \
+    -boot c \
+    -hda $(DISK_DIR)/disk.img \
+    -serial stdio \
+    -d guest_errors,int,cpu_reset \
+    -D $(DEBUG_DIR)/qemu_diskboot.log \
+    -vga std \
+    -rtc base=utc,clock=host
 
 
 gdb_debug:
@@ -263,6 +309,7 @@ help:
 	@echo "  make gdb_debug       - Debugging By GDB"
 	@echo "  make clean           - Clean up build artifacts"
 	@echo "  make build_disk      - Create Format Disk image which will be use in Kernel as disk"
+	@echo "  make disk_run        - Run the Disk Image"
 	@echo "  make help            - Display this help menu"
 
 
