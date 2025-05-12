@@ -19,9 +19,7 @@ void backspace_manage();
 
 void putchar(unsigned char c);
 void print(const char* text);
-void print_hex(uint64_t n);
-void print_dec(uint64_t n);
-void print_bin(uint64_t n);
+
 
 size_t get_cursor_pos_x();
 size_t get_cursor_pos_y();

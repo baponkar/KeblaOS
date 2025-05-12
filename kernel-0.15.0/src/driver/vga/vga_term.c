@@ -233,65 +233,6 @@ void print(const char* text) {
 }
 
 
-void print_hex(uint64_t n) {
-    char hex_chars[] = "0123456789ABCDEF";
-    print("0x");
-
-    int leading_zero = 1; // Flag to skip leading zeros
-
-    for (int i = 60; i >= 0; i -= 4) { // Process each nibble (4 bits)
-        char digit = hex_chars[(n >> i) & 0xF];
-        if (digit != '0' || !leading_zero || i == 0) {
-            putchar(digit);
-            leading_zero = 0; // Once a non-zero digit is found, reset the flag
-        }
-    }
-}
-
-
-
-
-
-// Outputs a decimal number to the screen.
-void print_dec(uint64_t n){
-    if (n == 0)
-    {
-        putchar('0');
-        return;
-    }
-
-    if(n < 0){
-        putchar('-');
-        n *= -1;
-        return;
-    }
-
-    char buffer[48]; // Enough for a 64-bit integer
-    int i = 0;
-
-    while (n > 0)
-    {
-        buffer[i++] = '0' + (n % 10); // get the last digit
-        n /= 10;                      // remove the last digit
-    }
-
-    // Digits are in reverse order, so print them backwards
-    for (int j = i - 1; j >= 0; j--)
-    {
-        putchar(buffer[j]);
-    }
-}
-
-
-// This will print binary numbers
-void print_bin(uint64_t n) {
-    print("0b");  // Print binary prefix
-    // Loop through all 32 bits of the number, starting from the most significant bit (31)
-    for (int i = 63; i >= 0; i--) {
-        uint64_t bit = (n >> i) & 1;  // Extract the i-th bit (0 or 1)
-        putchar(bit ? '1' : '0');     // Print '1' or '0'
-    }
-}
 
 
 

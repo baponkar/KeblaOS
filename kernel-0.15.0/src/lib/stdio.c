@@ -24,6 +24,36 @@ void puts(const char* str) {
     putchar('\n');
 }
 
+// Outputs a decimal number to the screen.
+void print_dec(uint64_t n){
+    if (n == 0)
+    {
+        putchar('0');
+        return;
+    }
+
+    if(n < 0){
+        putchar('-');
+        n *= -1;
+        return;
+    }
+
+    char buffer[48]; // Enough for a 64-bit integer
+    int i = 0;
+
+    while (n > 0)
+    {
+        buffer[i++] = '0' + (n % 10); // get the last digit
+        n /= 10;                      // remove the last digit
+    }
+
+    // Digits are in reverse order, so print them backwards
+    for (int j = i - 1; j >= 0; j--)
+    {
+        putchar(buffer[j]);
+    }
+}
+
 // Helper function to print floating-point numbers
 void print_float(double num, int precision) {
     if (num < 0) {
@@ -43,6 +73,43 @@ void print_float(double num, int precision) {
         int digit = (int)frac_part;
         putchar('0' + digit);
         frac_part -= digit;
+    }
+}
+
+void print_bin(uint64_t value) {
+    if (value == 0) {
+        print("0");
+        return;
+    }
+
+    char buffer[65]; // Max for 64-bit binary + null terminator
+    int pos = 0;
+    bool started = false;
+
+    for (int i = 63; i >= 0; i--) {
+        if ((value >> i) & 1)
+            started = true;
+
+        if (started)
+            buffer[pos++] = ((value >> i) & 1) ? '1' : '0';
+    }
+
+    buffer[pos] = '\0';
+    print(buffer);
+}
+
+void print_hex(uint64_t n) {
+    char hex_chars[] = "0123456789ABCDEF";
+    print("0x");
+
+    int leading_zero = 1; // Flag to skip leading zeros
+
+    for (int i = 60; i >= 0; i -= 4) { // Process each nibble (4 bits)
+        char digit = hex_chars[(n >> i) & 0xF];
+        if (digit != '0' || !leading_zero || i == 0) {
+            putchar(digit);
+            leading_zero = 0; // Once a non-zero digit is found, reset the flag
+        }
     }
 }
 

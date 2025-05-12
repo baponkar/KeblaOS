@@ -308,7 +308,6 @@ typedef struct HBA_CMD_TBL HBA_CMD_TBL_T;
 
 
 
-
 int probePort(HBA_MEM_T *abar);	// Iterates through AHCI ports and finds any connected drives.
 void portRebase(HBA_MEM_T *abar, int portno); // 
 
@@ -322,10 +321,4 @@ bool ahci_read(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint32_t co
 bool ahci_write(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint32_t count, uint16_t* buf);
 
 void test_ahci(HBA_MEM_T* abar);
-
-
-
-
-
-
-
+void test_ahci_1();

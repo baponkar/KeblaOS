@@ -4,7 +4,7 @@ Copyright (C) 2023 KeblaOS Project
 Build Date: 2025-04-05
 */
 
-#include "../kernel_main/kmain.h" // Kernel main header
+#include "../kmain/kmain.h" // Kernel main header
 #include "../lib/stdio.h"
 #include "../lib/string.h"
 #include "../lib/stdlib.h"
@@ -117,3 +117,8 @@ void help(){
     printf("21. cd <dirname> : Change directory.\n");
     printf("22. tree : Print directory tree.\n");
 }
+
+
+
+
+

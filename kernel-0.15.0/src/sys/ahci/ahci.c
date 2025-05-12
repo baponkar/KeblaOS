@@ -131,10 +131,12 @@ void stopCMD(HBA_PORT_T *port)
 	// Wait until FR (bit14), CR (bit15) are cleared
 	while (true)
 	{
-		if (port->cmd & HBA_PxCMD_FR)
+		if (port->cmd & HBA_PxCMD_FR){
 			continue;
-		if (port->cmd & HBA_PxCMD_CR)
+		}
+		if(port->cmd & HBA_PxCMD_CR){
 			continue;
+		}
 		break;
 	}
 
@@ -144,32 +146,29 @@ void stopCMD(HBA_PORT_T *port)
 // AHCI driver to rebase a SATA port to use new memory locations for its command lis
 void portRebase(HBA_MEM_T *abar, int port_no)
 {
-	printf("Debugging portRebase\n");
-	HBA_PORT_T *port = (HBA_PORT_T *) &abar->ports[0];
-	uint32_t AHCI_BASE = (uint32_t) abar;
-	printf("AHCI Base %x\n", AHCI_BASE);	// AHCI Base 0xFEBD5000
+	HBA_PORT_T *port = (HBA_PORT_T *) &abar->ports[port_no];
 
 	stopCMD(port);	// Stop command engine	// Successfully CMD Stopped
+
+	uint32_t AHCI_BASE = (uint32_t) abar;
 
 	// Command list offset: 1K * port_no
 	// Command list entry size = 32
 	// Command list entry maximum count = 32
 	// Command list maximum size = 32 * 32 = 1K per port
 	port->clb = AHCI_BASE + (port_no << 10);
-	printf("port->clb=%x\n", port->clb);	// port->clb=0xFEBD5000
 	port->clbu = 0;
 	uint64_t vir_clb = phys_to_vir(port->clb); // convert phys to virt
 	memset((void*) (uint64_t) (vir_clb), 0, 0x400);
-	printf("Content of port->clb=%x\n", *(uint32_t *)(uint64_t)vir_clb);
+
 
 	// FIS offset: 32K + 256 * port_no
 	// FIS entry size = 256 bytes per port
 	port->fb = AHCI_BASE + (32 << 10) + (port_no << 8);
-	printf("port->fb=%x\n", port->fb);
+
 	port->fbu = 0;
 	uint64_t vir_fb = phys_to_vir(port->fb);
 	memset((void*) (uint64_t) (vir_fb), 0, 0x100);
-	printf("Content of port->fb=%x\n", *(uint32_t *)(uint64_t)port->fb);
  
 	// Command table offset: 40K + 8K * port_no
 	// Command table size = 256 * 32 = 8K per port
@@ -193,6 +192,8 @@ void portRebase(HBA_MEM_T *abar, int port_no)
 
     // Start command engine
 	startCMD(port);	
+
+	printf("[AHCI] Successfully port rebase implemented.\n");
 }
 
 // Find a free command list slot
@@ -221,7 +222,8 @@ static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t 
 	if (slot == -1)
 		return false;
  
-	HBA_CMD_HEADER_T* cmd_header = (HBA_CMD_HEADER_T*) (uint64_t) port->clb;
+	HBA_CMD_HEADER_T* cmd_header = (HBA_CMD_HEADER_T*) phys_to_vir((uint64_t) port->clb);
+
 	cmd_header += slot;
     // Command FIS size
 	cmd_header->cfl = sizeof(FIS_REG_H2D_T) / sizeof(uint32_t);	
@@ -230,14 +232,14 @@ static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t 
     // PRDT entries count
 	cmd_header->prdtl = (uint16_t) ((count - 1) >> 4) + 1;	
  
-	HBA_CMD_TBL_T* cmd_tbl = (HBA_CMD_TBL_T*) (uint64_t) (cmd_header->ctba);
-	memset(cmd_tbl, 0, sizeof(HBA_CMD_TBL_T) + (cmd_header->prdtl - 1) * sizeof(HBA_PRDT_ENTRY_T));
+	HBA_CMD_TBL_T* cmd_tbl = (HBA_CMD_TBL_T*) phys_to_vir((uint64_t) (cmd_header->ctba));
+	memset((void *)cmd_tbl, 0, sizeof(HBA_CMD_TBL_T) + (cmd_header->prdtl - 1) * sizeof(HBA_PRDT_ENTRY_T));
  
 	// 8K bytes (16 sectors) per PRDT
     uint16_t i;
 	for (i = 0; i < cmd_header->prdtl - 1; i++)
 	{
-		cmd_tbl->prdt_entry[i].dba = (uint32_t) buf;
+		cmd_tbl->prdt_entry[i].dba = (uint32_t)((uint64_t)buf);
         // 8K bytes (this value should always be set to 1 less than the actual value)
 		cmd_tbl->prdt_entry[i].dbc = 8 * 1024 - 1;	
 		cmd_tbl->prdt_entry[i].i = 1;
@@ -246,6 +248,8 @@ static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t 
         // 16 sectors
 		count -= 16;	
 	}
+
+
 	// Last entry
 	cmd_tbl->prdt_entry[i].dba = (uint32_t) buf;
 
@@ -279,7 +283,7 @@ static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t 
 	{
 		spin++;
 	}
-    
+
 	if (spin == 1000000)
 	{
 		printf(" [-] AHCI: Port is hung\n");
@@ -303,8 +307,10 @@ static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t 
 			printf(" [-] AHCI: Read disk error\n");
 			return false;
 		}
+		printf("!(port->ci & (1 << slot)): %b, port->is & HBA_PxIS_TFES: %b\n",
+			!(port->ci & (1 << slot)), port->is & HBA_PxIS_TFES);
 	}
- 
+
 	// Check again
 	if (port->is & HBA_PxIS_TFES)
 	{
@@ -320,6 +326,7 @@ inline bool ahci_read(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint
 }
 
 inline bool ahci_write(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint32_t count, uint16_t* buf) {
+	printf("port:%x\n", (uint64_t)port);
     return runCommand(ATA_CMD_WRITE_DMA_EX, 1, port, start_l, start_h, count, buf);
 }
 
@@ -365,13 +372,11 @@ void test_ahci(HBA_MEM_T* abar)
 	portRebase(abar, 0);  // Rebase the port to the new address
 
 	// Check if the port is ready
-	if (port->cmd & HBA_PxCMD_CR) {
-		printf(" [-] AHCI: Port is not ready!\n");
-		return;
-	}
+	// if (port->cmd & HBA_PxCMD_CR) {
+	// 	printf(" [-] AHCI: Port is not ready!\n");
+	// 	return;
+	// }
 
-	// Start command engine
-	startCMD(port);
 
 	// Create a buffer for the command list
     uint16_t* buf_1 = (uint16_t*)vir_to_phys((uint64_t)kheap_alloc(0x8000)); // 32 KB buffer (overkill but fine for test)
@@ -415,7 +420,17 @@ void test_ahci(HBA_MEM_T* abar)
 	return;
 }
 
+#define ATA_CMD_IDENTIFY 0xEC
 
+// read the Identify data from a device.
+void test_ahci_1(){
+	FIS_REG_H2D_T fis;
+	memset((void *)&fis, 0, sizeof(FIS_REG_H2D_T));
+	fis.fis_type = FIS_TYPE_REG_H2D;
+	fis.command = ATA_CMD_IDENTIFY;	// 0xEC
+	fis.device = 0;			// Master device
+	fis.c = 1;				// Write command register
+}
 
 
 

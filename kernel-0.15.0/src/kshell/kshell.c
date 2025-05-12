@@ -6,8 +6,6 @@
 #include "../util/util.h"   // registers_t structure
 
 #include "kshell_helper.h"
-#include "../file_system/fat32.h" // FAT32 file system functions
-#include "../file_system/vfs.h"  // VFS functions
 
 #include "../driver/vga/color.h"
 #include "../driver/vga/vga_term.h" // clear_screen , color_print
@@ -144,57 +142,57 @@ void execute_command(char* command) {
         print_sys_info();
 
     } else if(strcmp(command, "pwd") == 0){
-        printf("%s\n", current_path);
+        // printf("%s\n", current_path);
     
     } else if(strncmp(command, "touch ", 6) == 0) {
-        const char* filename = command + 6;
-        if (fat32_create_file(filename)) {
-            printf("File '%s' created successfully\n", filename);
-        } else {
-            printf("Failed to create file '%s'\n", filename);
-        }
+        // const char* filename = command + 6;
+        // if (fat32_create_file(filename)) {
+        //     printf("File '%s' created successfully\n", filename);
+        // } else {
+        //     printf("Failed to create file '%s'\n", filename);
+        // }
 
     } else if(strncmp(command, "rm ", 3) == 0) {
-        const char* filename = command + 3;
-        if (fat32_delete_file(filename)) {
-            printf("Deleted file '%s'\n", filename);
-        } else {
-            printf("Failed to delete file '%s'\n", filename);
-        }
+        // const char* filename = command + 3;
+        // if (fat32_delete_file(filename)) {
+        //     printf("Deleted file '%s'\n", filename);
+        // } else {
+        //     printf("Failed to delete file '%s'\n", filename);
+        // }
 
     } else if(strncmp(command, "mkdir ", 6) == 0) {
-        const char* dirname = command + 6;
-        if (fat32_create_directory(dirname)) {
-            printf("Directory '%s' created\n", dirname);
-        } else {
-            printf("Failed to create directory '%s'\n", dirname);
-        }
+        // const char* dirname = command + 6;
+        // if (fat32_create_directory(dirname)) {
+        //     printf("Directory '%s' created\n", dirname);
+        // } else {
+        //     printf("Failed to create directory '%s'\n", dirname);
+        // }
 
     } else if(strncmp(command, "rmdir ", 6) == 0) {
-        const char* dirname = command + 6;
-        uint32_t dir_cluster = fat32_get_directory_cluster(dirname);
-        if (dir_cluster && fat32_delete_directory(dir_cluster)) {
-            printf("Directory '%s' deleted\n", dirname);
-        } else {
-            printf("Failed to delete directory '%s'\n", dirname);
-        }
+        // const char* dirname = command + 6;
+        // uint32_t dir_cluster = fat32_get_directory_cluster(dirname);
+        // if (dir_cluster && fat32_delete_directory(dir_cluster)) {
+        //     printf("Directory '%s' deleted\n", dirname);
+        // } else {
+        //     printf("Failed to delete directory '%s'\n", dirname);
+        // }
 
     } else if(strncmp(command, "cd ", 3) == 0) {
-        const char* dirname = command + 3;
-        if(strcmp(dirname, "..") == 0) {
-            // Go up to parent dir (you must store a parent path mapping or parse current_path)
-        } else {
-            uint32_t dir_cluster = fat32_get_directory_cluster(dirname);
-            if(dir_cluster != 0) {
-                vfs_set_current_cluster(dir_cluster);
-                strcat(current_path, "/");
-                strcat(current_path, dirname);
-            } else {
-                printf("Directory '%s' not found\n", dirname);
-            }
-        }
+        // const char* dirname = command + 3;
+        // if(strcmp(dirname, "..") == 0) {
+        //     // Go up to parent dir (you must store a parent path mapping or parse current_path)
+        // } else {
+        //     uint32_t dir_cluster = fat32_get_directory_cluster(dirname);
+        //     if(dir_cluster != 0) {
+        //         vfs_set_current_cluster(dir_cluster);
+        //         strcat(current_path, "/");
+        //         strcat(current_path, dirname);
+        //     } else {
+        //         printf("Directory '%s' not found\n", dirname);
+        //     }
+        // }
     }else if(strcmp(command, "tree") == 0){
-        print_dir_tree(vfs_get_current_cluster(), 0);
+        // print_dir_tree(vfs_get_current_cluster(), 0);
 
     }else {
         color_print("!Unknown command: ", COLOR_RED);
@@ -253,7 +251,7 @@ void start_kshell() {
         return;
     }
 
-    init_vfs();
+    // init_vfs();
 
     restore_cpu_state((registers_t *)(uintptr_t)&kshell_thread->registers);
 

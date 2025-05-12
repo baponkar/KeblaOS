@@ -2,7 +2,7 @@
     The common function is present in this file.
 */
 
-#include "../driver/vga/vga_term.h"
+#include "../lib/stdio.h"
 
 #include "util.h"
 
@@ -17,19 +17,19 @@ void halt_kernel(void) {
 
 void print_regs_content(registers_t *regs) {
     // Print segment registers
-    print("  gs: "); print_hex(regs->gs); print("\n");
-    print("  fs: "); print_hex(regs->fs); print("\n");
-    print("  es: "); print_hex(regs->es); print("\n");
-    print("  ds: "); print_hex(regs->ds); print("\n");
+    // print("  gs: "); print_hex(regs->gs); print("\n");
+    // print("  fs: "); print_hex(regs->fs); print("\n");
+    // print("  es: "); print_hex(regs->es); print("\n");
+    // print("  ds: "); print_hex(regs->ds); print("\n");
 
     // Print general-purpose registers
-    print("  rax: "); print_hex(regs->rax); print("\n");
-    print("  rbx: "); print_hex(regs->rbx); print("\n");
-    print("  rcx: "); print_hex(regs->rcx); print("\n");
-    print("  rdx: "); print_hex(regs->rdx); print("\n");
-    print("  rbp: "); print_hex(regs->rbp); print("\n");
-    print("  rdi: "); print_hex(regs->rdi); print("\n");
-    print("  rsi: "); print_hex(regs->rsi); print("\n");
+    // print("  rax: "); print_hex(regs->rax); print("\n");
+    // print("  rbx: "); print_hex(regs->rbx); print("\n");
+    // print("  rcx: "); print_hex(regs->rcx); print("\n");
+    // print("  rdx: "); print_hex(regs->rdx); print("\n");
+    // print("  rbp: "); print_hex(regs->rbp); print("\n");
+    // print("  rdi: "); print_hex(regs->rdi); print("\n");
+    // print("  rsi: "); print_hex(regs->rsi); print("\n");
     // print("  r8:  "); print_hex(regs->r8); print("\n");
     // print("  r9:  "); print_hex(regs->r9); print("\n");
     // print("  r10: "); print_hex(regs->r10); print("\n");
@@ -44,11 +44,11 @@ void print_regs_content(registers_t *regs) {
     // print("  err_code: "); print_dec(regs->err_code); print("\n");
 
     // Print CPU state (iret context)
-    print("  iret_ss:    "); print_hex(regs->iret_ss); print("\n");
-    print("  iret_rsp:   "); print_hex(regs->iret_rsp); print("\n");
-    print("  iret_rflags:"); print_hex(regs->iret_rflags); print("\n");
-    print("  iret_cs:    "); print_hex(regs->iret_cs); print("\n");
-    print("  iret_rip:   "); print_hex(regs->iret_rip); print("\n");
+    // print("  iret_ss:    "); print_hex(regs->iret_ss); print("\n");
+    // print("  iret_rsp:   "); print_hex(regs->iret_rsp); print("\n");
+    // print("  iret_rflags:"); print_hex(regs->iret_rflags); print("\n");
+    // print("  iret_cs:    "); print_hex(regs->iret_cs); print("\n");
+    // print("  iret_rip:   "); print_hex(regs->iret_rip); print("\n");
 }
 
 
@@ -64,9 +64,7 @@ void print_size_with_units(uint64_t size) {
     }
 
     // Print the size with the unit
-    print_dec((uint64_t)size); // Print the integer part
-    print(" ");
-    print(units[unit_index]);
+    printf("%d %s", (uint64_t)size, units[unit_index]); // Print the integer part
 }
 
 
