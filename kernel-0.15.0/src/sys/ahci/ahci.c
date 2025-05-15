@@ -148,9 +148,10 @@ void portRebase(HBA_MEM_T *abar, int port_no)
 {
 	HBA_PORT_T *port = (HBA_PORT_T *) &abar->ports[port_no];
 
-	stopCMD(port);	// Stop command engine	// Successfully CMD Stopped
+	stopCMD(port);	// Stop command engine
 
-	uint32_t AHCI_BASE = (uint32_t) abar;
+	// uint32_t AHCI_BASE = (uint32_t) abar;
+	uint32_t AHCI_BASE = (uint32_t) kmalloc(0x1000); // although 0x400 i.e. 1KB memory need
 
 	// Command list offset: 1K * port_no
 	// Command list entry size = 32
@@ -206,6 +207,7 @@ int findCMDSlot(HBA_PORT_T* port, size_t cmd_slots)
 		if (!(slots & 1))
 			return i;
 		slots >>= 1;
+		printf(" [-] AHCI: find free command list entry at %d\n", i);
 	}
 	printf(" [-] AHCI: Cannot find free command list entry\n");
 	return -1;
@@ -307,8 +309,6 @@ static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t 
 			printf(" [-] AHCI: Read disk error\n");
 			return false;
 		}
-		printf("!(port->ci & (1 << slot)): %b, port->is & HBA_PxIS_TFES: %b\n",
-			!(port->ci & (1 << slot)), port->is & HBA_PxIS_TFES);
 	}
 
 	// Check again
