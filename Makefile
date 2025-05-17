@@ -13,7 +13,7 @@ OS_VERSION = 0.15.0
 
 LIMINE_DIR = limine-9.2.3
 
-KERNEL_DIR = kernel-$(OS_VERSION)
+KERNEL_DIR = kernel
 ISO_DIR = build/iso_root
 BUILD_DIR = build
 DEBUG_DIR = debug
@@ -150,8 +150,8 @@ build_disk:
 	sudo umount /dev/loop0p1 || true
 	sudo losetup -d /dev/loop0 || true
 
-	# 1. Create Disk Image (512MiB)
-	dd if=/dev/zero of=$(DISK_DIR)/disk.img bs=1M count=512
+	# 1. Create Disk Image (1024 MiB)
+	dd if=/dev/zero of=$(DISK_DIR)/disk.img bs=1M count=1024
 	@echo "Created blank Disk image"
 
 	# 2. Partition the Disk Image

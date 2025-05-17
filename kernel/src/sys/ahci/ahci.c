@@ -150,7 +150,6 @@ void portRebase(HBA_MEM_T *abar, int port_no)
 
 	stopCMD(port);	// Stop command engine
 
-	// uint32_t AHCI_BASE = (uint32_t) abar;
 	uint32_t AHCI_BASE = (uint32_t) kmalloc(0x1000); // although 0x400 i.e. 1KB memory need
 
 	// Command list offset: 1K * port_no
@@ -326,8 +325,50 @@ inline bool ahci_read(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint
 }
 
 inline bool ahci_write(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint32_t count, uint16_t* buf) {
-	printf("port:%x\n", (uint64_t)port);
     return runCommand(ATA_CMD_WRITE_DMA_EX, 1, port, start_l, start_h, count, buf);
+}
+
+
+uint64_t get_total_sectors(uint16_t* identify_buf) {
+    // Check if LBA48 is supported
+    bool lba48_supported = identify_buf[83] & (1 << 10);
+
+    if (lba48_supported) {
+        uint64_t total_sectors =
+            ((uint64_t)identify_buf[103] << 48) |
+            ((uint64_t)identify_buf[102] << 32) |
+            ((uint64_t)identify_buf[101] << 16) |
+            (uint64_t)identify_buf[100];
+        return total_sectors;
+    } else {
+        // Fallback to 28-bit
+        uint32_t total_sectors =
+            ((uint32_t)identify_buf[61] << 16) |
+            (uint32_t)identify_buf[60];
+        return total_sectors;
+    }
+}
+
+
+void ahci_identify(HBA_PORT_T* port) {
+    FIS_REG_H2D_T fis;
+    memset(&fis, 0, sizeof(fis));
+    fis.fis_type = FIS_TYPE_REG_H2D;
+    fis.command = ATA_CMD_IDENTIFY;		// 0xEC
+    fis.device = 0;						// Master device
+    fis.c = 1;							// Write command register
+
+    uint16_t identify_buf[256];
+
+	if(runCommand(FIS_TYPE_REG_H2D, 0, port, 0, 0, 1, identify_buf)){
+        uint64_t sectors = get_total_sectors(identify_buf);
+        uint64_t size_mb = (sectors * 512) / (1024 * 1024);
+
+        printf("Disk Total Sectors: %d\n", sectors);
+        printf("Disk Size: %d MB\n", size_mb);
+    } else {
+        printf("IDENTIFY command failed.\n");
+    }
 }
 
 
@@ -363,19 +404,6 @@ void test_ahci(HBA_MEM_T* abar)
 			printf("AHCI_DEV_SATA\n");
 			break;
 	}
-
-	// Step 1: Rebase the port
-	// if (port->clb == 0 || port->fb == 0) {
-	// 	printf("AHCI Need Rebase\n");
-	// 	portRebase(abar, 0);  // Rebase the port to the new address
-	// }
-	portRebase(abar, 0);  // Rebase the port to the new address
-
-	// Check if the port is ready
-	// if (port->cmd & HBA_PxCMD_CR) {
-	// 	printf(" [-] AHCI: Port is not ready!\n");
-	// 	return;
-	// }
 
 
 	// Create a buffer for the command list
@@ -419,19 +447,3 @@ void test_ahci(HBA_MEM_T* abar)
 	printf("[Info] AHCI test completed successfully.\n");
 	return;
 }
-
-#define ATA_CMD_IDENTIFY 0xEC
-
-// read the Identify data from a device.
-void test_ahci_1(){
-	FIS_REG_H2D_T fis;
-	memset((void *)&fis, 0, sizeof(FIS_REG_H2D_T));
-	fis.fis_type = FIS_TYPE_REG_H2D;
-	fis.command = ATA_CMD_IDENTIFY;	// 0xEC
-	fis.device = 0;			// Master device
-	fis.c = 1;				// Write command register
-}
-
-
-
-

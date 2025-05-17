@@ -106,6 +106,7 @@ void kmain(){
     print_cpu_base_frequency();
     get_set_memory();
     get_smp_info();
+    // enable_fpu_and_sse();
 
     // initially starts pic
     gdt_tss_init();         // Initialize GDT and TSS
@@ -119,7 +120,6 @@ void kmain(){
 
     // Initialize APIC and IOAPIC
     if(has_apic()){
-        // start_bootstrap_cpu_core(); // Starts only the bootstrap core
         init_all_cpu_cores();    // Starts all CPU cores
     }else{
         printf("[Error] This System does not have APIC.\n");
@@ -131,41 +131,9 @@ void kmain(){
 
     uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5]; // Found from pci scan 0xFEBD5000
 
-    // Mapping Physical Memory address 0xFEBD5000 into Virtual Address 0xFEBD5000 (1:1 Map)
-    map_virtual_memory((void *)bar5, sizeof(HBA_MEM_T), PAGE_PRESENT | PAGE_WRITE);
-
     HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
     test_ahci(abar);
-
-    // test_ahci_1();
-
-    // test_kheap();   // Test Kernel Heap
-   
-    // HBA_MEM_T* abar = (HBA_MEM_T*) mass_storage_controllers[0].base_address_registers[5]; // BAR5 address
-    // if (((uint32_t)abar & 0x1) == 0) {
-    //     printf(" [-] MMIO space - valid for mapping\n");
-    // } else {
-    //     printf(" [-] I/O space - you should not map this into virtual memory\n");
-    // }
-    
-
-    // Mapping Physical abar into Virtual Address (1:1)
-	// uint64_t vir_addr = phys_to_vir((uint64_t)abar);
-	// map_virtual_memory_1((void *) abar, vir_addr, sizeof(HBA_MEM_T), PAGE_PRESENT | PAGE_WRITE);
-
-    // printf("abar: phy=%x, vir=%x\n", (uint64_t)abar, vir_addr);
-
-	// abar = (HBA_MEM_T *) vir_addr;
-
-    // HBA_PORT_T* port = &abar->ports[0];
-
-    // printf("ABAR: %x\n", (uint64_t)abar);
-
-    // test_ahci(abar);        // Test AHCI controller
-    
-    // fat32_init(port);    // Initialize FAT32 file system
-
-    // fat32_run_tests(port); // Test FAT32 file system
+    ahci_identify((HBA_PORT_T *)&abar->ports[0]);
 
     // switch_to_core(3);
 

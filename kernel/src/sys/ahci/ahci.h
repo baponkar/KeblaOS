@@ -14,8 +14,10 @@
 
 #define ATA_DEV_BUSY            0x80
 #define ATA_DEV_DRQ             0x08
+
 #define ATA_CMD_READ_DMA_EX     0x25
 #define ATA_CMD_WRITE_DMA_EX    0x35
+#define ATA_CMD_IDENTIFY 		0xEC
  
 #define AHCI_DEV_NULL 0
 #define AHCI_DEV_SATA 1
@@ -308,17 +310,12 @@ typedef struct HBA_CMD_TBL HBA_CMD_TBL_T;
 
 
 
-int probePort(HBA_MEM_T *abar);	// Iterates through AHCI ports and finds any connected drives.
-void portRebase(HBA_MEM_T *abar, int portno); // 
-
-void startCMD(HBA_PORT_T* port);
-void stopCMD(HBA_PORT_T* port);
-
-
-int findCMDSlot(HBA_PORT_T* port, size_t cmd_slots);
-
 bool ahci_read(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint32_t count, uint16_t* buf);
 bool ahci_write(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint32_t count, uint16_t* buf);
 
+void ahci_identify(HBA_PORT_T* port);
+
 void test_ahci(HBA_MEM_T* abar);
-void test_ahci_1();
+
+
+
