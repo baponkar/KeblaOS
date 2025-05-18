@@ -223,7 +223,7 @@ static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t 
 	if (slot == -1)
 		return false;
  
-	HBA_CMD_HEADER_T* cmd_header = (HBA_CMD_HEADER_T*) phys_to_vir((uint64_t) port->clb);
+	HBA_CMD_HEADER_T* cmd_header = (HBA_CMD_HEADER_T*) (uint64_t) port->clb;
 
 	cmd_header += slot;
     // Command FIS size
@@ -233,7 +233,7 @@ static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t 
     // PRDT entries count
 	cmd_header->prdtl = (uint16_t) ((count - 1) >> 4) + 1;	
  
-	HBA_CMD_TBL_T* cmd_tbl = (HBA_CMD_TBL_T*) phys_to_vir((uint64_t) (cmd_header->ctba));
+	HBA_CMD_TBL_T* cmd_tbl = (HBA_CMD_TBL_T*) (uint64_t) (cmd_header->ctba);
 	memset((void *)cmd_tbl, 0, sizeof(HBA_CMD_TBL_T) + (cmd_header->prdtl - 1) * sizeof(HBA_PRDT_ENTRY_T));
  
 	// 8K bytes (16 sectors) per PRDT
@@ -245,7 +245,7 @@ static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t 
 		cmd_tbl->prdt_entry[i].dbc = 8 * 1024 - 1;	
 		cmd_tbl->prdt_entry[i].i = 1;
         // 4K words
-		buf += 4 * 1024;	
+		buf += 4 * 1024;	// Move buffer pointer by 8K bytes (4K uint16_t elements)
         // 16 sectors
 		count -= 16;	
 	}
@@ -253,7 +253,6 @@ static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t 
 
 	// Last entry
 	cmd_tbl->prdt_entry[i].dba = (uint32_t) buf;
-
     // 512 bytes per sector
 	cmd_tbl->prdt_entry[i].dbc = (count << 9) - 1;	
 	cmd_tbl->prdt_entry[i].i = 1;
@@ -334,6 +333,7 @@ uint64_t get_total_sectors(uint16_t* identify_buf) {
     bool lba48_supported = identify_buf[83] & (1 << 10);
 
     if (lba48_supported) {
+		// Word 100 = low word, Word 103 = high word
         uint64_t total_sectors =
             ((uint64_t)identify_buf[103] << 48) |
             ((uint64_t)identify_buf[102] << 32) |
@@ -354,13 +354,13 @@ void ahci_identify(HBA_PORT_T* port) {
     FIS_REG_H2D_T fis;
     memset(&fis, 0, sizeof(fis));
     fis.fis_type = FIS_TYPE_REG_H2D;
-    fis.command = ATA_CMD_IDENTIFY;		// 0xEC
+    fis.command = FIS_TYPE_ATA_CMD_IDENTIFY;		// 0xEC
     fis.device = 0;						// Master device
     fis.c = 1;							// Write command register
 
     uint16_t identify_buf[256];
 
-	if(runCommand(FIS_TYPE_REG_H2D, 0, port, 0, 0, 1, identify_buf)){
+	if(runCommand(FIS_TYPE_ATA_CMD_IDENTIFY, 0, port, 0, 0, 1, identify_buf)){
         uint64_t sectors = get_total_sectors(identify_buf);
         uint64_t size_mb = (sectors * 512) / (1024 * 1024);
 

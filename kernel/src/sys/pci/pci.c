@@ -138,16 +138,336 @@ pci_device_t pci_device_detect(uint8_t bus, uint8_t device, uint8_t function) {
     pci_device.base_address_registers[3] = bar3;
     pci_device.base_address_registers[4] = bar4;
     pci_device.base_address_registers[5] = bar5 & 0xFFFFFFF0;   // This is a pointer to the AHCI controller's memory address
-    // pci_device.base_address_registers[6] = bar6; // Not used in this example
+    // pci_device.base_address_registers[6] = bar6;
 
     printf(" [-] PCI: Device found at %d:%d.%d\n", bus, device, function);
-    printf("     Device ID: %x, Vendor ID: %x\n", pci_device.device_id, pci_device.vendor_id);
-    printf("     Class: %x, Subclass: %x, Prog IF: %x, Revision: %d\n",
-           class, subclass, prog_if, pci_device.revision_id);
+    printf("     Device ID: %x, Vendor ID: %x Class: %x, Subclass: %x, Prog IF: %x, Revision: %d\n",
+        pci_device.device_id, pci_device.vendor_id, class, subclass, prog_if, pci_device.revision_id);
 
-    return pci_device;  // Return the populated pci_device_t structure
+    print_device_info((pci_device_t *) &pci_device);
+
+    return pci_device;
 }
 
+
+
+void print_device_info(pci_device_t *device){
+
+    if(device == NULL){
+        return;
+    }
+
+    switch(device->vendor_id){
+        case VENDOR_INTEL:
+            printf("     INTEL");
+            break;
+
+        case VENDOR_REALTEK:
+            printf("     REALTEK");
+            break;
+
+        case VENDOR_BROADCOM:
+            printf("     BROADCOM");
+            break;
+
+        case VENDOR_AMD:
+            printf("     AMD");
+            break;
+
+        case VENDOR_NVIDIA:
+            printf("     Vendor:VENDOR_NVIDIA");
+            break;
+
+        case VENDOR_VIA :
+            printf("     VIA");
+            break;
+
+        case VENDOR_ATT:
+            printf("     ATT");
+            break;
+
+        case VENDOR_QUALCOMM:
+            printf("     QUALCOMM");
+            break;
+
+         case VENDOR_AQUANTIA:
+            printf("     AQUANTIA");
+            break;
+
+        case VENDOR_MELLANOX:
+            printf("     Vendor:VENDOR_MELLANOX");
+            break;
+
+        case VENDOR_VMWARE:
+            printf("     VMWARE");
+            break;
+
+        case VENDOR_VIRTIO:
+            printf("     VIRTIO");
+            break;
+
+        case VENDOR_QEMU:
+            printf("     QEMU");
+            break;
+        
+        default:
+            printf("     Unknown");
+            break;
+    }
+
+    printf(" Device ID: %d", device->device_id);
+
+    switch(device->class_code){
+        case PCI_CLASS_UNCLASSIFIED:
+            printf("   PCI_CLASS_UNCLASSIFIED");
+            switch(device->subclass_code){
+                case PCI_SUBCLASS_NON_VGA:
+                    printf("  NON_VGA\n");
+                    break;
+                case PCI_SUBCLASS_VGA_UNCLASSIFIED:
+                    printf("  VGA_UNCLASSIFIED\n");
+                    break;
+            }
+            break;
+
+        case PCI_CLASS_SERIAL_BUS_CONTROLLER:
+            printf("  SERIAL_BUS_CONTROLLER");
+            switch(device->subclass_code){
+                case PCI_SUBCLASS_FIREWIRE:
+                    printf("  FIREWIRE\n");
+                    break;
+                case PCI_SUBCLASS_ACCESS:
+                    printf("  ACCESS\n");
+                    break;
+                case PCI_SUBCLASS_SSA:
+                    printf("  SSA\n");
+                    break;
+                case PCI_SUBCLASS_USB:
+                    printf("  USB\n");
+                    break;
+                case PCI_SUBCLASS_FIBRE:
+                    printf("  FIBRE\n");
+                    break;
+                case PCI_SUBCLASS_SMBUS:
+                    printf("  SMBUS\n");
+                    break;
+                case PCI_SUBCLASS_INFINI_BAND:
+                    printf("  INFINI_BAND\n");
+                    break;
+                case PCI_SUBCLASS_IPMI:
+                    printf("  IPMI\n");
+                    break;
+                case PCI_SUBCLASS_SERCOS:
+                    printf("  SERCOS\n");
+                    break;
+                case PCI_SUBCLASS_CANBUS:
+                    printf("  FIREWIRE\n");
+                    break;
+                case 0x80:
+                    printf("  OTHER\n");
+                    break;
+                default:
+                    printf("  Unknown\n");
+                    break;
+            }
+
+        case PCI_CLASS_BRIDGE:
+            printf("      BRIDGE");
+            switch(device->subclass_code){
+                case PCI_SUBCLASS_HOST:
+                    printf("  HOST\n");
+                    break;
+                case PCI_SUBCLASS_ISA:
+                    printf("  ISA\n");
+                    break;
+                case PCI_SUBCLASS_EISA:
+                    printf("  EISA\n");
+                    break;
+                case PCI_SUBCLASS_MCA:
+                    printf("  MCA\n");
+                    break;
+                case PCI_SUBCLASS_PCI_TO_PCI_1:
+                    printf("  PCI_TO_PCI_1\n");
+                    break;
+                case PCI_SUBCLASS_PCMCIA:
+                    printf("  PCMCIA\n");
+                    break;
+                case PCI_SUBCLASS_NUBUS:
+                    printf("  NUBUS\n");
+                    break;
+                case PCI_SUBCLASS_CARD_BUS:
+                    printf("  CARD_BUS\n");
+                    break;
+                case PCI_SUBCLASS_RACE_WAY:
+                    printf("  RACE_WAY\n");
+                    break;
+                case PCI_SUBCLASS_PCI_TO_PCI_2:
+                    printf("  PCI_TO_PCI_2\n");
+                    break;
+                case PCI_SUBCLASS_INFINI_BAND_TO_PCI:
+                    printf("  INFINI_BAND_TO_PCI\n");
+                    break;
+                default:
+                    printf("  Unknown\n");
+                    break;
+            }
+
+        case PCI_CLASS_MASS_STORAGE_CONTROLLER:
+            printf("      MASS_STORAGE_CONTROLLER");
+            switch(device->subclass_code){
+                case PCI_SUBCLASS_IDE:
+                    printf("  IDE\n");
+                    break;
+                case PCI_SUBCLASS_FLOPY_DISK:
+                    printf(" FLOPY\n");
+                    break;
+                case PCI_SUBCLASS_IPI_BUS:
+                    printf(" subclass IPI\n");
+                    break;
+                case PCI_SUBCLASS_RAID:
+                    printf(" RAID\n");
+                    break;
+                case PCI_SUBCLASS_ATA:
+                    printf(" ATA\n");
+                    break;
+                case PCI_SUBCLASS_SERIAL_ATA:
+                    printf(" SATA\n");
+                    break;
+                case PCI_SUBCLASS_SCSI:
+                    printf(" SCSI\n");
+                    break;
+                case PCI_SUBCLASS_NON_VOLATILE_MEM:
+                    printf(" NVM\n");
+                    break;
+                default:
+                    printf(" Unknown\n");
+                    break;
+            }
+            break;
+
+        case PCI_CLASS_NETWORK_CONTROLLER:
+            printf("    NETWORK_CONTROLLER");
+            switch(device->subclass_code){
+                case PCI_SUBCLASS_ETHERNET:
+                    printf(" ETHERNET\n");
+                    break;
+                case PCI_SUBCLASS_TOKEN_RING:
+                    printf(" TOKEN RING\n");
+                    break;
+                case PCI_SUBCLASS_FDDI:
+                    printf(" FDDI\n");
+                    break;
+                case PCI_SUBCLASS_ATM:
+                    printf( " ATM\n");
+                    break;
+                case PCI_SUBCLASS_ISDN:
+                    printf(" ISDN\n");
+                    break;
+                case PCI_SUBCLASS_WORLD_FIP:
+                    printf(" WORLD FIP\n");
+                    break;
+                case PCI_SUBCLASS_PIC_MG:
+                    printf(" PIC MG\n");
+                    break;
+                case PCI_SUBCLASS_INFINBAND:
+                    printf( " INFINBAND\n");
+                    break; 
+                case PCI_SUBCLASS_FABRIC:
+                    printf( " FABRIC\n");
+                    break;
+                default:
+                    printf(" Unknown\n");
+            }
+            break;
+
+        case PCI_CLASS_WIRELESS_CONTROLLER:
+            printf("   WIRELESS_CONTROLLER");
+            switch(device->subclass_code){
+                case PCI_SUBCLASS_IRDA:
+                    printf(" IRDA\n");
+                    break;
+                case PCI_SUBCLASS_IR:
+                    printf(" IR\n");
+                    break;
+                case PCI_SUBCLASS_RF:
+                    printf(" RF\n");
+                    break;
+                case PCI_SUBCLASS_BLUETOOTH:
+                    printf(" BLUETOOTH\n");
+                    break;
+                case PCI_SUBCLASS_BROADBAND:
+                    printf(" BROADBAND\n");
+                    break;
+                case PCI_SUBCLASS_ETHERNET_802_1_a:
+                    printf(" ETHERNET_802_1_a\n");
+                    break;
+                case PCI_SUBCLASS_ETHERNET_802_1_b:
+                    printf(" ETHERNET_802_1_b\n");
+                    break;
+                case 0x80:
+                    printf(" Other\n");
+                    break;
+                default:
+                    printf("  Unknown\n");
+                    break;
+            }
+
+        case PCI_CLASS_PROCESSOR:
+            printf("   PROCESSOR");
+            break;
+
+        case PCI_CLASS_DISPLAY_CONTROLLER:
+            printf("     DISPLAY_CONTROLLER");
+            switch(device->subclass_code){
+                case PCI_SUBCLASS_VGA:
+                    printf(" VGA\n");
+                    break;
+                case PCI_SUBCLASS_XGA:
+                    printf(" XGA\n");
+                    break;
+                case PCI_SUBCLASS_3D:
+                    printf(" 3D\n");
+                    break;
+                case 0x80:
+                    printf(" Other\n");
+                    break;
+                default:
+                    printf(" Unknown\n");
+                    break;
+            }
+            break;
+
+        case PCI_CLASS_INPUT_DEVICE_CONTROLLER:
+            printf("  INPUT_DEVICE_CONTROLLER");
+            switch(device->subclass_code){
+                case PCI_SUBCLASS_KEYBOARD:
+                    printf(" Keyboard\n");
+                    break;
+                case PCI_SUBCLASS_DIGITIZER_PEN:
+                    printf(" Digitizer pen\n");
+                    break;
+                case PCI_SUBCLASS_MOUSE:
+                    printf(" mouse\n");
+                    break;
+                case PCI_SUBCLASS_SCANNER:
+                    printf(" scanner\n");
+                    break;
+                case PCI_SUBCLASS_GAMEPORT:
+                    printf(" Gameport\n");
+                    break;
+                case 0x80:
+                    printf(" Other\n");
+                    break;
+                default:
+                    printf(" Unknown\n");
+                    break;
+            }
+
+        default:
+            printf("  Unknown Device\n");
+            break;
+    }
+}
 
 void pci_scan() {
 

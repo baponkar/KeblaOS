@@ -17,7 +17,6 @@
 
 #define ATA_CMD_READ_DMA_EX     0x25
 #define ATA_CMD_WRITE_DMA_EX    0x35
-#define ATA_CMD_IDENTIFY 		0xEC
  
 #define AHCI_DEV_NULL 0
 #define AHCI_DEV_SATA 1
@@ -44,6 +43,7 @@ typedef enum
 	FIS_TYPE_BIST		= 0x58,	// BIST activate FIS - bidirectional
 	FIS_TYPE_PIO_SETUP	= 0x5F,	// PIO setup FIS - device to host
 	FIS_TYPE_DEV_BITS	= 0xA1,	// Set device bits FIS - device to host
+	FIS_TYPE_ATA_CMD_IDENTIFY = 0xEC	// To Identify
 } FIS_TYPE;
 
 struct FIS_REG_H2D
@@ -308,7 +308,7 @@ struct HBA_CMD_TBL
 typedef struct HBA_CMD_TBL HBA_CMD_TBL_T;
 
 
-
+// static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t start_l, uint32_t start_h, uint32_t count, uint16_t* buf);
 
 bool ahci_read(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint32_t count, uint16_t* buf);
 bool ahci_write(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint32_t count, uint16_t* buf);

@@ -195,5 +195,5 @@ void pci_scan();
 
 
 
-
+void print_device_info(pci_device_t *device);
 
