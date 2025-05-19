@@ -9,7 +9,7 @@
 START_TIME := $(shell date +%s)
 
 OS_NAME = KeblaOS
-OS_VERSION = 0.15.0
+OS_VERSION = 0.15.1
 
 LIMINE_DIR = limine-9.2.3
 
@@ -114,18 +114,20 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 
 	cp -v $(BUILD_DIR)/kernel.bin $(ISO_DIR)/boot/
 
+	cp -v limine.conf $(ISO_DIR)/boot/
+
 	mkdir -p $(ISO_DIR)/boot/limine
-	cp -v limine.conf $(LIMINE_DIR)/limine-bios.sys $(LIMINE_DIR)/limine-bios-cd.bin $(LIMINE_DIR)/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
+	cp -v $(LIMINE_DIR)/limine-bios.sys $(LIMINE_DIR)/limine-bios-cd.bin $(LIMINE_DIR)/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
 	
 	mkdir -p $(ISO_DIR)/EFI/BOOT
 	cp -v $(LIMINE_DIR)/BOOTX64.EFI $(ISO_DIR)/EFI/BOOT/
 	cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
 
-	# Creating initrd.cpio module for bootloader. These files can be used for various purposes,
-	#cp -v $(KERNEL_DIR)/src/initrd/initrd.cpio $(ISO_DIR)/boot/initrd.cpio
+	# Copy initrd.cpio module file inside boot directory. These files can be used for various purposes,
+	cp -v initrd/initrd.cpio $(ISO_DIR)/boot/initrd.cpio
 
-	# Copying user_programe.elf 
-	cp -v $(MODULE_DIR)/user_programe.elf $(ISO_DIR)/boot/user_programe.elf 
+	# Copy user_programe.elf file into boot 
+	cp -v $(MODULE_DIR)/user_program.elf $(ISO_DIR)/boot/user_program.elf 
 
 	# Creating KeblaOS-0.11-image.iso file by using xorriso.
 	xorriso \

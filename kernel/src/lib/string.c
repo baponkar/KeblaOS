@@ -278,3 +278,19 @@ void int_to_base_str(unsigned int num, char* buffer, int base) {
     }
 }
 
+
+char* strchr(const char* str, int c) {
+    while (*str) {
+        if (*str == (char)c) {
+            return (char*)str;
+        }
+        str++;
+    }
+
+    // Check for null terminator match (some versions return pointer if c == '\0')
+    if (c == '\0') {
+        return (char*)str;
+    }
+
+    return 0;
+}

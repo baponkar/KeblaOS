@@ -66,14 +66,14 @@ void tsc_tick_handler() {
 
 
 uint64_t get_cpu_freq_msr() {
+
     uint64_t start_tsc, end_tsc;
 
     // Read TSC at the start
     start_tsc = read_tsc();
 
-    // Sleep for 1s
-    // tsc_sleep(1000000000);
-    pit_sleep(1000); // Sleep for 1 second using PIT timer
+    // Sleep for 0.1s
+    pit_sleep(100); // Sleep for 0.1 second using PIT timer
 
     // Read TSC at the end
     end_tsc = read_tsc();
@@ -82,13 +82,14 @@ uint64_t get_cpu_freq_msr() {
     uint64_t tsc_diff = end_tsc - start_tsc;
 
     // Calculate CPU frequency in Hz
-    uint64_t cpu_frequency = (uint64_t) tsc_diff;
+    uint64_t cpu_frequency = (uint64_t) tsc_diff * 10;
 
     return cpu_frequency;
 }
 
 
 void init_tsc(){
+
     cpu_frequency_hz = get_cpu_freq_msr();
 
     printf(" [-] TSC Timer initialized with CPU Frequency %d Hz\n", cpu_frequency_hz);

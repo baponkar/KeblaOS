@@ -5,6 +5,13 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+// Usermode Virtual address
+#define LOWER_HALF_START_ADDR 0x1000                   // 0 MB
+#define LOWER_HALF_END_ADDR   0x00007FFFFFFFFFFF    // 128 TB
+
+// Kernelmode Virtuai address
+#define HIGHER_HALF_START_ADDR 0xFFFF800000001000   // 17 PiB
+#define HIGHER_HALF_END_ADDR   0xFFFFFFFFFFFFFFFF   // 16 EiB
 
 // Start Stack Memory
 extern uint64_t STACK_MEM_SIZE;
@@ -13,13 +20,6 @@ extern uint64_t STACK_MEM_SIZE;
 // LIMINE_PAGING_MODE_X86_64_5LVL = 1
 extern uint64_t paging_mode;
 
-// Lower Half Virtual address
-extern uint64_t LOWER_HALF_START_ADDR;
-extern uint64_t LOWER_HALF_END_ADDR;
-
-// Higher Half Virtual address
-extern uint64_t HIGHER_HALF_START_ADDR;
-extern uint64_t HIGHER_HALF_END_ADDR;
 extern uint64_t HHDM_OFFSET;     // Transform Virtual to Physical Offset Present at Higher Half Memory
 
 

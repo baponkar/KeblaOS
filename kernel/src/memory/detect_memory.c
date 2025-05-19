@@ -60,14 +60,9 @@ uint64_t STACK_MEM_SIZE;
 // LIMINE_PAGING_MODE_X86_64_5LVL = 1
 uint64_t paging_mode;
 
-// Virtual Address
-uint64_t LOWER_HALF_START_ADDR = 0x1000;
-uint64_t LOWER_HALF_END_ADDR = 0x00007FFFFFFFFFFF;
 
-uint64_t HIGHER_HALF_START_ADDR = 0xFFFF800000001000;
-uint64_t HIGHER_HALF_END_ADDR = 0xFFFFFFFFFFFFFFFF;
+
 uint64_t HHDM_OFFSET;     // Transform Virtual to Physical Offset Present at Higher Half Memory
-
 
 // Kernel Address
 uint64_t KERNEL_VIR_BASE;
@@ -181,9 +176,6 @@ void set_usable_mem(){
         }
     }
 
-    // Making finally start and end mem address 4KB aligned
-    USABLE_START_PHYS_MEM = USABLE_START_PHYS_MEM & 0xFFFFFFFFFFFFF000; // 4KB aligned
-    USABLE_END_PHYS_MEM = USABLE_END_PHYS_MEM & 0xFFFFFFFFFFFFF000;     // 4KB aligned
 
     phys_mem_head = USABLE_START_PHYS_MEM; // Set the physical memory head to the start of usable memory
 

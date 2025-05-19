@@ -37,8 +37,9 @@ uint64_t bsp_cr3;
 
 // allocate a page with the free physical frame
 void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
-
-    uint64_t bit_no = free_frame_bit_no(); // idx is now the index of the first free frame.
+    
+    // idx is now the index of the first free frame.
+    uint64_t bit_no = free_frame_bit_no(); 
 
     if (bit_no == (uint64_t)-1) {
         printf("[Error] Paging: No free frames!");
@@ -47,10 +48,10 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
 
     set_frame(bit_no); // Mark the frame as used by passing the frame index
 
-    page->present = 1; // Mark it as present.
-    page->rw = (is_writeable) ? 1 : 0;  // Should the page be writeable?
-    page->user = (is_kernel) ? 0 : 1;   // Should the page be user-mode?
-    phys_mem_head &= 0xFFFFFFFFFFFFF000; // Increment the usable memory pointer
+    page->present = 1;                      // Mark it as present.
+    page->rw = (is_writeable) ? 1 : 0;      // Should the page be writeable?
+    page->user = (is_kernel) ? 0 : 1;       // Should the page be user-mode?
+    phys_mem_head &= 0xFFFFFFFFFFFFF000;    // Increment the usable memory pointer
     page->frame = (uint64_t) (phys_mem_head + (bit_no * FRAME_SIZE)) >> 12;     // Store physical base address
 
     phys_mem_head += FRAME_SIZE;
@@ -101,21 +102,22 @@ void init_paging()
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
     current_pml4 = (pml4_t *) get_cr3_addr();
 
-    // Updating upper half pages
-    // for (uint64_t addr = 0xFFFFFFFF80000000; addr < 0xFFFFFFFF80000000 + 0x40000000; addr += PAGE_SIZE) {
-    //     page_t *page = get_page(addr, 1, current_pml4);
-    //     if (!page) {
-    //         // Handle error: Failed to get the page entry
-    //         printf("[Error] Failed to get page entry for address: %x\n", addr);
-    //         continue;
-    //     }
+    // Updating upper half pages first 1MB
+    for (uint64_t addr = 0x0; addr < 0x100000; addr += PAGE_SIZE) {
+        page_t *page = get_page(addr, 1, current_pml4);
+        if (!page) {
+            // Handle error: Failed to get the page entry
+            printf("[Error] Failed to get page entry for address: %x\n", addr);
+            continue;
+        }
 
-    //     // Clear frame if it's invalid (e.g., above physical memory)
-    //     if (page->frame >= USABLE_END_PHYS_MEM) {
-    //         page->frame = 0;
-    //         page->present = 0;
-    //     }
-    // }
+        // Clear frame if it's invalid (e.g., above physical memory)
+        if (page->frame >= USABLE_END_PHYS_MEM) {
+            page->frame = 0;
+            page->present = 0;
+        }
+
+    }
 
     // Invalidate the TLB for the changes to take effect
     flush_tlb_all();
@@ -125,33 +127,37 @@ void init_paging()
 
 // Initializing Paging for other CPU cores
 void init_core_paging(int core_id) {
+
     set_cr3_addr(bsp_cr3);  // Set the CR3 register to the PML4 address
     printf(" [-] CPU %d: Set CR3 to PML4 address: %x\n", core_id, bsp_cr3);
 
-    // pml4_t * pml4 = (pml4_t *) get_cr3_addr(); // Get the current value of CR3 (the base of the PML4 table)
+    pml4_t * pml4 = (pml4_t *) get_cr3_addr(); // Get the current value of CR3 (the base of the PML4 table)
 
-    // Updating lower half pages
-    // for (uint64_t addr = phys_mem_head; addr < 0x1000000; addr += PAGE_SIZE) {
-    //     page_t *page = get_page(addr, 1, current_pml4);
-    //     if (!page) {
-    //         // Handle error: Failed to get the page entry
-    //         printf("[Error] Failed to get page entry for address: %x\n", addr);
-    //         continue;
-    //     }
+    // Updating lower half pages first 10 MB
+    for (uint64_t addr = 0x0; addr < 0x00A00000; addr += PAGE_SIZE) {
+        page_t *page = get_page(addr, 1, current_pml4);
+        if (!page) {
+            // Handle error: Failed to get the page entry
+            printf("[Error] Failed to get page entry for address: %x\n", addr);
+            continue;
+        }
 
-    //     // Allocate a frame if not already allocated
-    //     if (!page->frame) {
-    //         alloc_frame(page, 0, 1); // page, is_kernel, rw
-    //     }
+        // Allocate a frame if not already allocated
+        if (!page->frame) {
+            alloc_frame(page, 0, 1); // page, is_kernel, rw
+        }
 
-    //     // Set the User flag (0x4 in x86_64) to allow user-level access
-    //     page->present = 1;  // Ensure the page is present
-    //     page->rw = 1;       // Allow read/write access
-    //     page->user = 1;     // Set user-accessible bit
-    // }
+        // Set the User flag (0x4 in x86_64) to allow user-level access
+        page->present = 1;  // Ensure the page is present
+        page->rw = 1;       // Allow read/write access
+        page->user = 1;     // Set user-accessible bit
+    }
 
     flush_tlb_all();        // Flush TLB for the current core
+
+    printf(" [-] Enabling Paging first 1 MB Lower Half Memory address for core %d\n", core_id);
     printf(" [-] Successfully Paging initialized for core %d.\n", core_id);
+    
 }
 
 
@@ -250,8 +256,12 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
 
         // Set up the PML4 entry
         pml4_entry->present = 1;
-        pml4_entry->rw = 1; // Read/write
-        pml4_entry->user = 0; // Kernel mode
+        pml4_entry->rw = 1;         // Read/write
+        if(va >= HIGHER_HALF_START_ADDR){
+            pml4_entry->user = 0;   // Kernel mode
+        }else{
+            pml4_entry->user = 1;   // User mode
+        }
         pml4_entry->base_addr = (uint64_t) pdpt >> 12; // Base address of PDPT
     }
 
@@ -284,7 +294,11 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
         // Set up the PDPT entry
         pdpt_entry->present = 1;
         pdpt_entry->rw = 1; // Read/write
-        pdpt_entry->user = 0; // Kernel mode
+        if(va >= HIGHER_HALF_START_ADDR){
+            pml4_entry->user = 0;   // Kernel mode
+        }else{
+            pml4_entry->user = 1;   // User mode
+        }
         pdpt_entry->base_addr = (uint64_t)pd >> 12; // Base address of PD
     }
 
@@ -316,7 +330,11 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
         // Set up the PD entry
         pd_entry->present = 1;
         pd_entry->rw = 1; // Read/write
-        pd_entry->user = 0; // Kernel mode
+        if(va >= HIGHER_HALF_START_ADDR){
+            pml4_entry->user = 0;   // Kernel mode
+        }else{
+            pml4_entry->user = 1;   // User mode
+        }
         pd_entry->base_addr = (uint64_t)pt >> 12; // Base address of PT
 
     }
@@ -342,8 +360,6 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
     
     return page;
 }
-
-
 
 
 // Function to flush TLB for a specific address

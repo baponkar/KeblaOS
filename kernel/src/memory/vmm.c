@@ -27,7 +27,7 @@ void vm_alloc(uint64_t va) {
         return;
     }
 
-    page_t *page = get_page(va, 1, current_pml4);   // if not present then create the page
+    page_t *page = get_page(va, 1, current_pml4);     // if not present then create the page
 
     if (!page) {
         // Handle error if page creation fails
@@ -42,6 +42,8 @@ void vm_alloc(uint64_t va) {
   
     if(va >= HIGHER_HALF_START_ADDR){   // For kernel page
         alloc_frame(page, 1, 1);        // Kernel-mode, writable by default
+    }else{
+        alloc_frame(page, 0, 1);        // User-mode, writable by default
     }
 
     // Invalidate the TLB for this address

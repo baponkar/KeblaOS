@@ -9,7 +9,7 @@ fields of the bootloader_info_request struct.
 
 In future I will implement a custom bootloader and will use that .
 
-Reference: https://github.com/limine-bootloader/limine/blob/v8.x/PROTOCOL.md#kernel-address-feature
+Reference: https://github.com/limine-bootloader/limine/blob/v9.x/PROTOCOL.md#kernel-address-feature
 */
 
 #include "../lib/string.h"      // memcpy

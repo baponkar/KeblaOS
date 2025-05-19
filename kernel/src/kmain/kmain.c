@@ -1,5 +1,3 @@
-
-
 /*
 Kernel.c
 Build Date  : 16-12-2024
@@ -11,6 +9,8 @@ Reference   : https://wiki.osdev.org/Limine
               https://wiki.osdev.org/SSE
 */
 
+#include "../usr/switch_to_user.h"
+#include "../usr/load_and_parse_elf.h"
 
 #include "../memory/vmm.h"
 #include "../driver/vga/vga_gfx.h"
@@ -20,6 +20,9 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../sys/acpi/acpi.h"                   // init_acpi
 #include "../sys/acpi/descriptor_table/mcfg.h"
 #include "../sys/acpi/descriptor_table/madt.h"
+
+#include "../fs/fat16.h"
+#include "../fs/fat32.h"
 
 #include "../arch/interrupt/apic/apic_interrupt.h"
 #include "../arch/interrupt/apic/apic.h"
@@ -74,9 +77,7 @@ Reference   : https://wiki.osdev.org/Limine
 // Found from detect_memory
 extern uint64_t HHDM_OFFSET; 
 extern volatile uint64_t phys_mem_head;
-extern uint64_t USABLE_START_PHYS_MEM;
-extern uint64_t USABLE_END_PHYS_MEM;
-extern uint64_t USABLE_LENGTH_PHYS_MEM;
+
 
 // Found pci devices from pci_scan
 extern pci_device_t mass_storage_controllers[16];  // Array to store detected mass storage devices
@@ -106,7 +107,6 @@ void kmain(){
     print_cpu_base_frequency();
     get_set_memory();
     get_smp_info();
-    // enable_fpu_and_sse();
 
     // initially starts pic
     gdt_tss_init();         // Initialize GDT and TSS
@@ -130,14 +130,27 @@ void kmain(){
     pci_scan();
 
     uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5]; // Found from pci scan 0xFEBD5000
-
     HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
+    HBA_PORT_T* port = (HBA_PORT_T*) &abar->ports[0];
+
     test_ahci(abar);
-    ahci_identify((HBA_PORT_T *)&abar->ports[0]);
+    ahci_identify(port);
+
+    fat32_init(port);
+    fat32_run_tests(port);
 
     // switch_to_core(3);
 
     // init_user_mode();
+
+    // get_kernel_modules_info();
+    // print_kernel_modules_info();
+    // load_user_elf_and_jump();
+
+    // Testing Virtual Address 0x400000
+    uint64_t *va = (uint64_t *) 0x400000;   // Creating a ptr
+    *va = 0xDEADBEEF;   // Storing a value in the above ptr
+    printf("Content of %x : %x\n", (uint64_t)va, *va);
 
     // start_kshell();
 

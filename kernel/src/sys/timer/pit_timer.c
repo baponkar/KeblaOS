@@ -70,9 +70,9 @@ void pit_timerHandler(registers_t *regs) {
     if(pit_ticks >= MAX_PIT_TICKS) pit_ticks = 0; // Reset pit_ticks value with zero
     pit_ticks++;
 
-    if (pit_ticks % 10 == 0){   // Prints in every in 100 ms = 0.1 sec interval
-        printf("PIT Tick no : %d\n", pit_ticks);
-    }
+    // if (pit_ticks % 10 == 0){   // Prints in every in 100 ms = 0.1 sec interval
+    //     printf("PIT Tick no : %d\n", pit_ticks);
+    // }
 
     send_eoi(PIT_TIMER_IRQ);    // Send End of Interrupt (EOI) to the PIC
 }
@@ -112,4 +112,8 @@ void pit_sleep(uint32_t millisec) {
         asm volatile ("hlt");
     } 
 }
+
+
+
+
 
