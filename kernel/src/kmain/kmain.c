@@ -21,8 +21,10 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../sys/acpi/descriptor_table/mcfg.h"
 #include "../sys/acpi/descriptor_table/madt.h"
 
-#include "../fs/fat16.h"
-#include "../fs/fat32.h"
+// File System
+#include "../fs/kfs.h"      // Kebla File System
+#include "../fs/fat16.h"    // FAT16 File System
+#include "../fs/fat32.h"    // FAT32 File System
 
 #include "../arch/interrupt/apic/apic_interrupt.h"
 #include "../arch/interrupt/apic/apic.h"
@@ -63,8 +65,6 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../driver/mouse/mouse.h"       // mouse driver
 #include "../syscall/syscall_manager.h"
 #include "../syscall/int_syscall_manager.h"
-// #include "../file_system/fat32.h"       // fat32_init
-// #include "../file_system/fs.h"          // test_file_operations()
 #include "../driver/vga/color.h"
 #include "../arch/interrupt/irq_manage.h"
 
@@ -133,11 +133,13 @@ void kmain(){
     HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
     HBA_PORT_T* port = (HBA_PORT_T*) &abar->ports[0];
 
-    test_ahci(abar);
     ahci_identify(port);
+    test_ahci(abar);
 
     fat32_init(port);
     fat32_run_tests(port);
+
+    // kfs_test(port); // Test Kebla File System
 
     // switch_to_core(3);
 
@@ -148,9 +150,9 @@ void kmain(){
     // load_user_elf_and_jump();
 
     // Testing Virtual Address 0x400000
-    uint64_t *va = (uint64_t *) 0x400000;   // Creating a ptr
-    *va = 0xDEADBEEF;   // Storing a value in the above ptr
-    printf("Content of %x : %x\n", (uint64_t)va, *va);
+    // uint64_t *va = (uint64_t *) 0x400000;   // Creating a ptr
+    // *va = 0xDEADBEEF;   // Storing a value in the above ptr
+    // printf("Content of %x : %x\n", (uint64_t)va, *va);
 
     // start_kshell();
 

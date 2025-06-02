@@ -18,6 +18,7 @@ extern cpu_data_t cpu_datas[MAX_CPUS];  // Defined in cpu.c
 
 // This function set data of each cpu_data from cpu_data array
 void set_tss_stack(size_t cpu_id){
+
     // Getting cpu_data pointer from cpu_id
     cpu_data_t temp = cpu_datas[cpu_id];
 

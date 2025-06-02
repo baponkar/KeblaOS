@@ -79,6 +79,7 @@ void print_kernel_modules_info(){
 
 
 void load_user_elf_and_jump() {
+
     void *elf_base = module_request.response->modules[0]->address;
 
     printf("user_program.elf base addr %x\n", (uint64_t) elf_base);
@@ -100,7 +101,6 @@ void load_user_elf_and_jump() {
     uint64_t user_entry = ehdr->e_entry;
     uint64_t user_stack = (uint64_t) uheap_alloc(0x4000); 
     
-
     printf("Switching into usermode: user_entry_addr-%x, user_stack_addr-%x\n",
         user_entry, user_stack);
 

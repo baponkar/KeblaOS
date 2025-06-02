@@ -294,3 +294,42 @@ char* strchr(const char* str, int c) {
 
     return 0;
 }
+
+
+
+static char *next_token = 0;
+
+char *strtok(char *str, const char *delim) {
+    if (str) {
+        next_token = str;
+    } else if (!next_token) {
+        return 0;
+    }
+
+    char *start = next_token;
+
+    // Skip leading delimiters
+    while (*start && strchr(delim, *start)) {
+        start++;
+    }
+
+    if (!*start) {
+        next_token = 0;
+        return 0;
+    }
+
+    char *end = start;
+
+    while (*end && !strchr(delim, *end)) {
+        end++;
+    }
+
+    if (*end) {
+        *end = '\0';
+        next_token = end + 1;
+    } else {
+        next_token = 0;
+    }
+
+    return start;
+}

@@ -173,23 +173,23 @@ build_disk:
 	@echo "Mounted /dev/loop0p1"
 
 	# 5. Copy kernel and Limine files
-	sudo mkdir -p $(DISK_DIR)/mnt/boot/limine
-	sudo mkdir -p $(DISK_DIR)/mnt/EFI/BOOT
-	sudo cp -v $(BUILD_DIR)/kernel.bin $(DISK_DIR)/mnt/boot/
-	sudo cp -v $(MODULE_DIR)/user_programe.elf $(DISK_DIR)/mnt/boot/
-	sudo cp -v limine.conf \
-		$(LIMINE_DIR)/limine-bios.sys \
-		$(LIMINE_DIR)/limine-bios-cd.bin \
-		$(LIMINE_DIR)/limine-uefi-cd.bin \
-		$(DISK_DIR)/mnt/boot/limine/
-	sudo cp -v $(LIMINE_DIR)/BOOTX64.EFI $(DISK_DIR)/mnt/EFI/BOOT/
-	sudo cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(DISK_DIR)/mnt/EFI/BOOT/
-	@echo "Copied Limine and kernel files to mounted disk"
+	#sudo mkdir -p $(DISK_DIR)/mnt/boot/limine
+	#sudo mkdir -p $(DISK_DIR)/mnt/EFI/BOOT
+	#sudo cp -v $(BUILD_DIR)/kernel.bin $(DISK_DIR)/mnt/boot/
+	#sudo cp -v $(MODULE_DIR)/user_program.elf $(DISK_DIR)/mnt/boot/
+	#sudo cp -v limine.conf \
+	#	$(LIMINE_DIR)/limine-bios.sys \
+	#	$(LIMINE_DIR)/limine-bios-cd.bin \
+	#	$(LIMINE_DIR)/limine-uefi-cd.bin \
+	#	$(DISK_DIR)/mnt/boot/limine/
+	#sudo cp -v $(LIMINE_DIR)/BOOTX64.EFI $(DISK_DIR)/mnt/EFI/BOOT/
+	#sudo cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(DISK_DIR)/mnt/EFI/BOOT/
+	#@echo "Copied Limine and kernel files to mounted disk"
 
 	# 6. Install Limine to raw disk image
-	sudo sync
-	sudo $(LIMINE_DIR)/limine bios-install $(DISK_DIR)/disk.img
-	@echo "Installed Limine to disk image"
+	#sudo sync
+	#sudo $(LIMINE_DIR)/limine bios-install $(DISK_DIR)/disk.img
+	#@echo "Installed Limine to disk image"
 
 	# 7. Cleanup
 	sudo umount $(DISK_DIR)/mnt

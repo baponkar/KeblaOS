@@ -20,6 +20,7 @@ typedef struct {
     uint16_t number_of_heads;
     uint32_t hidden_sectors;
     uint32_t total_sectors_32;
+    //extended fat32 stuff
     uint32_t fat_size_32;
     uint16_t ext_flags;
     uint16_t fs_version;
@@ -79,45 +80,52 @@ typedef struct {
 extern fat32_info_t fat32_info;
 
 bool fat32_init(HBA_PORT_T* port);
-bool fat32_read_root_dir();
 
-bool fat32_create_file(const char* filename);
-bool fat32_read_file(const char* filename, uint8_t* buffer, uint32_t max_size);
-bool fat32_write_file(const char* filename, const uint8_t* data, uint32_t size);
-bool fat32_delete_file(const char* filename);
-
-uint32_t fat32_first_data_sector();
-uint32_t fat32_fat_size();
-uint32_t fat32_fat_start_sector();
-uint32_t fat32_data_start_sector();
+char* to_fat32_name(const char* input);
+bool fat32_check_presence(const char* target_name_11, bool is_directory);
 
 uint32_t fat32_cluster_to_sector(uint32_t cluster);
 uint32_t fat32_sector_to_cluster(uint32_t sector);
 
+uint32_t fat32_fat_start_sector();
+uint32_t fat32_data_start_sector();
+uint32_t fat32_first_data_sector();
+uint32_t fat32_fat_size();
+uint32_t fat32_total_sectors();
+uint32_t fat32_bytes_per_sector();
+uint32_t fat32_sectors_per_cluster();
+uint32_t fat32_reserved_sector_count();
+uint32_t fat32_num_fats();
+uint32_t fat32_root_entry_count();
+uint32_t fat32_media();
+
+bool fat32_find_free_entry(uint32_t cluster, DIR_ENTRY* entry);
+
 uint32_t fat32_next_cluster(uint32_t cluster);
 uint32_t fat32_read_cluster(uint32_t cluster, uint8_t* buffer, uint32_t size);
 uint32_t fat32_write_cluster(uint32_t cluster, const uint8_t* buffer, uint32_t size);
-uint32_t fat32_get_file_size(const char* filename);
-uint32_t fat32_get_file_cluster(const char* filename);
-uint32_t fat32_get_file_sector(const char* filename);
-uint32_t fat32_get_file_offset(const char* filename);
-uint32_t fat32_get_file_attributes(const char* filename);
-uint32_t fat32_get_file_first_cluster(const char* filename);
-uint32_t fat32_get_file_first_sector(const char* filename);
-uint32_t fat32_get_file_first_offset(const char* filename); 
-uint32_t fat32_allocate_cluster();
-void     fat32_set_cluster(uint32_t cluster, uint32_t value);
+
+void fat32_set_cluster(uint32_t cluster, uint32_t value);
+
+
+// File Management
+bool fat32_create_file(const char* filename);
+bool fat32_read_file(const char* filename, uint8_t* buffer, uint32_t max_size);
+bool fat32_write_file(const char* filename, const uint8_t* data, uint32_t size);
+bool fat32_delete_file(const char* filename);
 uint32_t fat32_get_file_size(const char* filename);
 
-bool fat32_create_directory(const char* name);
-bool fat32_find_free_entry(uint32_t cluster, DIR_ENTRY* entry);
-bool fat32_write_directory_entry(uint32_t cluster, DIR_ENTRY* entry);
+// Directory Management
 bool fat32_init_directory_cluster(uint32_t cluster, uint32_t parent_cluster);
+bool fat32_read_root_dir();
+bool fat32_create_directory(const char* name);
 bool fat32_delete_directory(uint32_t cluster);
+bool fat32_write_directory_entry(uint32_t cluster, DIR_ENTRY* entry);
 bool fat32_delete_directory_entry(uint32_t cluster, const char* name);
 
 uint32_t fat32_get_directory_cluster(const char* name);
-void     fat32_run_tests(HBA_PORT_T* global_port);
+
+void fat32_run_tests(HBA_PORT_T* global_port);
 
 
 

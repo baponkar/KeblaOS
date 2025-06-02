@@ -112,11 +112,6 @@ void init_paging();
 void init_core_paging(int core_id);
 
 
-static page_t *alloc_page();
-static pt_t* alloc_pt();
-static pd_t* alloc_pd();
-static pdpt_t* alloc_pdpt();
-
 page_t* get_page(uint64_t va, int make, pml4_t* pml4);
 
 bool is_user_page(uint64_t virtual_address);

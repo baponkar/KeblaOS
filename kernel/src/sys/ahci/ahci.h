@@ -12,8 +12,8 @@
 #define	SATA_SIG_SEMB	0xC33C0101	// Enclosure management bridge
 #define	SATA_SIG_PM	    0x96690101	// Port multiplier
 
-#define ATA_DEV_BUSY            0x80
-#define ATA_DEV_DRQ             0x08
+#define ATA_DEV_BUSY    0x80
+#define ATA_DEV_DRQ     0x08
 
 #define ATA_CMD_READ_DMA_EX     0x25
 #define ATA_CMD_WRITE_DMA_EX    0x35
@@ -307,15 +307,9 @@ struct HBA_CMD_TBL
 };
 typedef struct HBA_CMD_TBL HBA_CMD_TBL_T;
 
-
-// static bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t start_l, uint32_t start_h, uint32_t count, uint16_t* buf);
+void ahci_identify(HBA_PORT_T* port);
+void test_ahci(HBA_MEM_T* abar);
 
 bool ahci_read(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint32_t count, uint16_t* buf);
 bool ahci_write(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint32_t count, uint16_t* buf);
-
-void ahci_identify(HBA_PORT_T* port);
-
-void test_ahci(HBA_MEM_T* abar);
-
-
 
