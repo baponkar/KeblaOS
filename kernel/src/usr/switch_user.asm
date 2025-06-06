@@ -4,8 +4,8 @@
 global switch_to_user_mode ; Get extern void switch_to_user_mode(uint64_t stack_addr, uint64_t code_addr) function from c
 
 switch_to_user_mode:
-    cli
-    mov ax, 0x23
+    cli                 ; Clear interrupt
+    mov ax, 0x23        ; 
     mov ds, ax
     mov es, ax
     mov fs, ax 

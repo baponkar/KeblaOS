@@ -1,6 +1,7 @@
 
 /*
 Loading ELF File 
+Loading user_program.elf file by limine.conf
 
 References:
     https://wiki.osdev.org/ELF
@@ -13,6 +14,7 @@ References:
 
 #include "../util/util.h"
 
+#include "../memory/paging.h"
 #include "../memory/Uheap.h"
 
 #include "load_and_parse_elf.h"
@@ -92,7 +94,7 @@ void load_user_elf_and_jump() {
         if (ph->p_type != PT_LOAD) continue;
 
         void *src = (uint8_t *)elf_base + ph->p_offset;
-        void *dst = (void *)ph->p_vaddr;
+        void *dst = (void *)ph->p_vaddr;    // 0x40000000
 
         memcpy(dst, src, ph->p_filesz);
         memset((uint8_t *)dst + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);
@@ -101,8 +103,10 @@ void load_user_elf_and_jump() {
     uint64_t user_entry = ehdr->e_entry;
     uint64_t user_stack = (uint64_t) uheap_alloc(0x4000); 
     
-    printf("Switching into usermode: user_entry_addr-%x, user_stack_addr-%x\n",
-        user_entry, user_stack);
+    printf("Switching into usermode: user_entry_addr-%x, user_stack_addr-%x\n", user_entry, user_stack);
+
+    page_t* page = get_page(0x400000, 0, kernel_pml4);
+    printf("Page: present=%d, rw=%d, user=%d, frame=%x\n", page->present, page->rw, page->user, page->frame);
 
     switch_to_user_mode(user_stack, user_entry);
 }

@@ -98,7 +98,7 @@ typedef struct pml4 {
 } __attribute__((aligned(PAGE_SIZE))) pml4_t;
 
 
-extern pml4_t *current_pml4;
+extern pml4_t *kernel_pml4;
 
 extern uint64_t V_KMEM_UP_BASE;
 extern uint64_t V_KMEM_LOW_BASE;

@@ -31,7 +31,8 @@ extern void disable_paging();   //  present in load_paging.asm
 
 extern volatile uint64_t phys_mem_head;
 
-pml4_t *current_pml4;
+pml4_t *kernel_pml4;
+pml4_t *user_pml4;
 
 uint64_t bsp_cr3;
 
@@ -100,23 +101,31 @@ void init_paging()
     bsp_cr3 = get_cr3_addr(); // Get the current value of CR3 (the base of the PML4 table)
 
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
-    current_pml4 = (pml4_t *) get_cr3_addr();
+    kernel_pml4 = (pml4_t *) get_cr3_addr();
+    if (!kernel_pml4) {
+        printf("[Error] Paging: Kernel PML4 is NULL\n");
+        halt_kernel(); // Halt the kernel if PML4 is not set
+    }
 
-    // Updating upper half pages first 1MB
-    for (uint64_t addr = 0x0; addr < 0x100000; addr += PAGE_SIZE) {
-        page_t *page = get_page(addr, 1, current_pml4);
+
+    // Updating lower half pages first 10 MB
+    for (uint64_t addr = 0x0; addr < 0x00A00000; addr += PAGE_SIZE) {
+        page_t *page = get_page(addr, 1, kernel_pml4);  // get_page will create the page if it doesn't exist
         if (!page) {
             // Handle error: Failed to get the page entry
             printf("[Error] Failed to get page entry for address: %x\n", addr);
             continue;
         }
 
-        // Clear frame if it's invalid (e.g., above physical memory)
-        if (page->frame >= USABLE_END_PHYS_MEM) {
-            page->frame = 0;
-            page->present = 0;
+        // Allocate a frame if not already allocated
+        if (!page->frame) {
+            alloc_frame(page, 0, 1); // page, is_kernel, rw
         }
 
+        // Set the User flag (0x4 in x86_64) to allow user-level access
+        page->present = 1;  // Ensure the page is present
+        page->rw = 1;       // Allow read/write access
+        page->user = 1;     // Set user-accessible bit
     }
 
     // Invalidate the TLB for the changes to take effect
@@ -135,9 +144,8 @@ void init_core_paging(int core_id) {
 
     // Updating lower half pages first 10 MB
     for (uint64_t addr = 0x0; addr < 0x00A00000; addr += PAGE_SIZE) {
-        page_t *page = get_page(addr, 1, current_pml4);
+        page_t *page = get_page(addr, 1, kernel_pml4);
         if (!page) {
-            // Handle error: Failed to get the page entry
             printf("[Error] Failed to get page entry for address: %x\n", addr);
             continue;
         }
@@ -151,6 +159,7 @@ void init_core_paging(int core_id) {
         page->present = 1;  // Ensure the page is present
         page->rw = 1;       // Allow read/write access
         page->user = 1;     // Set user-accessible bit
+
     }
 
     flush_tlb_all();        // Flush TLB for the current core
@@ -560,8 +569,8 @@ void test_paging() {
     printf("Previous content of v_ptr1: %x\n", *v_ptr1);
 
     // Get Page pointer from above virtual pointer address
-    page_t *page1 = (page_t *) get_page((uint64_t)v_ptr1, 1, current_pml4);
-    // page_t *page2 = get_page((uint64_t)v_ptr2, 1, current_pml4);
+    page_t *page1 = (page_t *) get_page((uint64_t)v_ptr1, 1, kernel_pml4);
+    // page_t *page2 = get_page((uint64_t)v_ptr2, 1, kernel_pml4);
 
     debug_page(page1);
     // debug_page(page2);

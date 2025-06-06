@@ -88,7 +88,7 @@ $(BUILD_DIR)/kernel/%.o: $(KERNEL_DIR)/src/%.asm
 linking: $(BUILD_DIR)/kernel.bin
 
 # Rule to link all object files into a single kernel binary
-$(BUILD_DIR)/kernel.bin: $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES) $(MODULE_DIR)/user_programe.o
+$(BUILD_DIR)/kernel.bin: $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES)
 	$(LD) $(LD_FLAG) -T kernel_linker_x86_64.ld -o $@ $^
 
 
@@ -328,10 +328,10 @@ $(BUILD_INFO_FILE):
 
 
 build_user_programe:
-	$(NASM) $(NASM_FLAG) $(MODULE_DIR)/user_programe.asm -o $(MODULE_DIR)/user_programe.o
-	ld -T user_linker_x86_64.ld -o $(MODULE_DIR)/user_programe.elf $(MODULE_DIR)/user_programe.o
+	$(NASM) $(NASM_FLAG) $(MODULE_DIR)/user_program.asm -o $(MODULE_DIR)/user_program.o
+	ld -T $(MODULE_DIR)/user_linker_x86_64.ld -o $(MODULE_DIR)/user_program.elf $(MODULE_DIR)/user_program.o
 
-	@echo "Successfully build user_programe.elf" 
+	@echo "Successfully build user_program.elf" 
 
 
 # This is a phony target, meaning it doesn't correspond to a file.
