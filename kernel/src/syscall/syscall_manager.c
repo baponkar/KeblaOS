@@ -82,3 +82,15 @@ void _syscall(uint64_t num, uint64_t arg1, uint64_t arg2) {
 }
 
 
+void test_syscall() {
+    // Test print syscall
+    _syscall(SYSCALL_PRINT, (uint64_t)"Hello from syscall!\n", 0);
+
+    // Test read syscall
+    // char buffer[100];
+    // _syscall(SYSCALL_READ, (uint64_t)buffer, 100);
+    // printf("Read from syscall: %s\n", buffer);
+
+    // Test exit syscall
+    _syscall(SYSCALL_EXIT, 0, 0);
+}

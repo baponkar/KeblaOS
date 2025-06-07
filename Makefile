@@ -313,6 +313,7 @@ help:
 	@echo "  make build_disk      - Create Format Disk image which will be use in Kernel as disk"
 	@echo "  make disk_run        - Run the Disk Image"
 	@echo "  make help            - Display this help menu"
+	@echo "  make build_user_programe - Build user_program.elf from module/user_program.asm"
 
 
 # Create a file with the current timestamp and custom message

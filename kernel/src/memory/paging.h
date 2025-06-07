@@ -103,25 +103,23 @@ extern pml4_t *kernel_pml4;
 extern uint64_t V_KMEM_UP_BASE;
 extern uint64_t V_KMEM_LOW_BASE;
 
-void debug_page(page_t *page);
+uint64_t get_cr3_addr();
+
 void alloc_frame(page_t *page, int is_kernel, int is_writeable);
 void free_frame(page_t *page);
-uint64_t get_cr3_addr();
 
 void init_paging();
 void init_core_paging(int core_id);
 
-
 page_t* get_page(uint64_t va, int make, pml4_t* pml4);
-
 bool is_user_page(uint64_t virtual_address);
 
 void flush_tlb(uint64_t address);
 void flush_tlb_all();
 
 void map_virtual_memory(void *phys_addr, size_t size, uint64_t flags);
-void map_virtual_memory_1(void *phys_addr, uint64_t vir_addr, size_t size, uint64_t flags);
-
 uint64_t create_new_pml4();
 
-void test_paging();
+
+
+

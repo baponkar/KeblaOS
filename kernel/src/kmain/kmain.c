@@ -143,29 +143,31 @@ void kmain(){
 
     // switch_to_core(3);
 
-    // loading usermode function
-    // init_user_mode();
-
     // Test virtual address 0x400000
-    uint64_t* test_addr = (uint64_t*) 0x400000;
+    uint64_t* test_addr = (uint64_t*) 0x500000; // 4 MB virtual address
+    page_t* page = get_page((uint64_t)test_addr, 1, kernel_pml4); // If not present, it will create a new page
 
     // Check 0x400000 virtual address before writing a value
-    page_t* page_1 = get_page(0x400000, 1, kernel_pml4); // If not present, it will create a new page
     printf("Test Address: %x\n", test_addr);
     printf("Test Value: %d\n", *test_addr);
-    printf("Page: present=%d, rw=%d, user=%d, frame=%x\n", page_1->present, page_1->rw, page_1->user, page_1->frame);
+    printf("Page: present=%d, rw=%d, user=%d, frame=%x\n", page->present, page->rw, page->user, page->frame);
 
     // Check 0x400000 virtual address after writing a value
     *test_addr = 12345; // Write a test value to the address
     printf("Test Address: %x\n", test_addr);
     printf("Test Value: %d\n", *test_addr);
-    page_t* page = get_page(0x400000, 1, kernel_pml4);
     printf("Page: present=%d, rw=%d, user=%d, frame=%x\n", page->present, page->rw, page->user, page->frame);
 
+    init_syscall();
+    test_syscall();
+    
     // Load and parse kernel modules by using limine bootloader
     // get_kernel_modules_info();
     // print_kernel_modules_info();
     // load_user_elf_and_jump();
+
+    // loading usermode function
+    // init_user_mode();
 
     // start_kshell();
 

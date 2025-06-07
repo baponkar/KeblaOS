@@ -21,8 +21,8 @@ user_main:
     ;xor ecx, ecx         ; Divisor = 0
     ;div ecx              ; Triggers #DE exception
     ;mov eax, 0x12345678  ; Some dummy code
-    ;int 170              ; Reading Systemcall
-    ;int 171              ; Printing Systemcall
+    ;int 172              ; Reading Systemcall
+    ;int 173              ; Printing Systemcall
 
 
 loop:
