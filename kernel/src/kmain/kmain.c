@@ -111,7 +111,7 @@ void kmain(){
     // initially starts pic
     gdt_tss_init();         // Initialize GDT and TSS
     init_pmm();             // Initialize Physical Memory Manager
-    init_paging();          // Initialize paging
+    init_bs_paging();       // Initialize paging for the bootstrap core
     pic_int_init();         // Initialize PIC Interrupts
     init_pit_timer(100);    // Initialize PIT Timer
     init_tsc();             // Initialize TSC for the bootstrap core
@@ -143,9 +143,10 @@ void kmain(){
 
     // switch_to_core(3);
 
-    // Test virtual address 0x400000
-    uint64_t* test_addr = (uint64_t*) 0x500000; // 4 MB virtual address
-    page_t* page = get_page((uint64_t)test_addr, 1, kernel_pml4); // If not present, it will create a new page
+    // 0x200000,0x400000,0x600000,0x800000,0xA00000
+    // Test virtual address 0x400000 which is start address in user_linker_x86_64.ld
+    uint64_t* test_addr = (uint64_t*) 0x400000;                     // 4 MB virtual address
+    page_t* page = get_page((uint64_t)test_addr, 1, kernel_pml4);   // If not present, it will create a new page
 
     // Check 0x400000 virtual address before writing a value
     printf("Test Address: %x\n", test_addr);
@@ -157,9 +158,6 @@ void kmain(){
     printf("Test Address: %x\n", test_addr);
     printf("Test Value: %d\n", *test_addr);
     printf("Page: present=%d, rw=%d, user=%d, frame=%x\n", page->present, page->rw, page->user, page->frame);
-
-    init_syscall();
-    test_syscall();
     
     // Load and parse kernel modules by using limine bootloader
     // get_kernel_modules_info();

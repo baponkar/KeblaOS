@@ -54,10 +54,48 @@ uint64_t create_user_function() {
     return (uint64_t)user_code; // Return the user-accessible function pointer
 }
 
+uint64_t create_user_function_1() {
+    void *user_code = (void *) uheap_alloc(0x1000);  // must be mapped with user-mode permissions
+
+    // Machine code:
+    // mov rax, 1                ; syscall number (SYSCALL_PRINT)
+    // mov rdi, addr_of_string   ; arg1 (pointer to string)
+    // syscall
+    // jmp $
+
+    const char *message = "Hello from user syscall!\n";
+
+    uint64_t str_addr = (uint64_t)user_code + 0x100;  // place string after code
+    memcpy((void*)str_addr, message, strlen(message) + 1);
+
+    uint8_t user_program[] = {
+        0x48, 0xB8,              // mov rax, imm64
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // SYSCALL_PRINT = 1
+
+        0x48, 0xBF,              // mov rdi, imm64
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // address of string
+
+        0x0F, 0x05,              // syscall
+
+        0xEB, 0xFE               // jmp $
+    };
+
+    // Fill in the syscall number
+    *(uint64_t *)(user_program + 2) = 1;  // SYSCALL_PRINT
+
+    // Fill in the string address
+    *(uint64_t *)(user_program + 12) = str_addr;
+
+    // Copy program to memory
+    memcpy(user_code, user_program, sizeof(user_program));
+
+    return (uint64_t)user_code;
+}
+
 
 void init_user_mode(){
     
-    uint64_t code_addr = (uint64_t) create_user_function();
+    uint64_t code_addr = (uint64_t) create_user_function_1();
     page_t *code_page = get_page(code_addr, 0, (pml4_t *)get_cr3_addr());
     code_page->rw = 0;          // Making readable only
     code_page->nx = 0;          // Making executable

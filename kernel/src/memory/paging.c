@@ -13,13 +13,13 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 
 */ 
 
-#include "../arch/interrupt/pic/pic.h"
+
 #include "../memory/detect_memory.h"
-#include "kmalloc.h"
-#include  "../lib/string.h"
-#include  "../lib/stdio.h"
+#include "kmalloc.h"                // kmalloc_a, kmalloc, kfree
+#include  "../lib/string.h"         // memset, memcpy, memmove
+#include  "../lib/stdio.h"          // printf
 #include "../lib/assert.h"
-#include "../sys/timer/tsc.h"
+
 #include "pmm.h"
 #include "vmm.h"
 
@@ -27,17 +27,14 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 
 
 extern void enable_paging(uint64_t pml4_address);   // present in load_paging.asm
-extern void disable_paging();                       //  present in load_paging.asm
+extern void disable_paging();                       // present in load_paging.asm
 
 extern volatile uint64_t phys_mem_head;             // Physical memory head pointer, initialized in detect_memory.c
-
 pml4_t *kernel_pml4;
-
-
 uint64_t bsp_cr3;
 
 // allocate a page with the free physical frame
-void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
+void alloc_frame(page_t *page, int user, int is_writeable) {
     
     // idx is now the index of the first free frame.
     uint64_t bit_no = free_frame_bit_no(); 
@@ -50,12 +47,12 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable) {
     set_frame(bit_no); // Mark the frame as used by passing the frame index
 
     page->present = 1;                      // Mark it as present.
-    page->rw = (is_writeable) ? 1 : 0;      // Should the page be writeable?
-    page->user = (is_kernel) ? 0 : 1;       // Should the page be user-mode?
-    phys_mem_head &= 0xFFFFFFFFFFFFF000;    // Increment the usable memory pointer
+    page->rw = is_writeable;                // Should the page be writeable?
+    page->user = user;                      // Should the page be user-mode?
+    phys_mem_head &= 0xFFFFFFFFFFFFF000;    // Align the physical memory head to 4KB boundary
     page->frame = (uint64_t) (phys_mem_head + (bit_no * FRAME_SIZE)) >> 12;     // Store physical base address
 
-    phys_mem_head += FRAME_SIZE;
+    phys_mem_head += FRAME_SIZE;            // Move the physical memory head to the next frame
 }
 
 
@@ -67,7 +64,7 @@ void free_frame(page_t *page)
     {
         uint64_t frame = (uint64_t) page->frame << 12;  // Get the physical address of the frame
 
-        uint64_t bit_no = PHYS_ADDR_TO_BIT_NO(frame);   // Convert the frame address to a bit number
+        uint64_t bit_no = PHYS_ADDR_TO_BIT_NO(frame);   // Convert the physical frame address into a bit number
         
         clear_frame(bit_no);                            // Frame is now free again from bitmap.
 
@@ -94,17 +91,20 @@ void set_cr3_addr(uint64_t cr3) {
 }
 
 // Initialising Paging for bootstrap CPU core
-void init_paging()
+void init_bs_paging()
 {  
+    printf(" [-] Initializing Paging for Bootstrap CPU Core\n");
     assert(phys_mem_head != 0); // Check if physical memory head is initialized
 
-    bsp_cr3 = get_cr3_addr(); // Get the current value of CR3 (the base of the PML4 table)
+    bsp_cr3 = get_cr3_addr();   // Get the current value of CR3 (the base of the PML4 table)
+    // set_cr3_addr(bsp_cr3);      // Set the CR3 register to the PML4 address
 
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
-    kernel_pml4 = (pml4_t *) get_cr3_addr();
+    kernel_pml4 = (pml4_t *) phys_to_vir((uint64_t)get_cr3_addr());
+    printf(" [-] Kernel PML4 address: %x\n", (uint64_t)kernel_pml4);
     if (!kernel_pml4) {
         printf("[Error] Paging: Kernel PML4 is NULL\n");
-        halt_kernel(); // Halt the kernel if PML4 is not set
+        halt_kernel();          // Halt the kernel if PML4 is not set
     }
 
     // Updating lower half pages first 10 MB
@@ -115,15 +115,14 @@ void init_paging()
             continue;
         }
 
-        // Allocate a frame if not already allocated
-        if (!page->frame) {
-            alloc_frame(page, 0, 1); // page, is_kernel, rw
+        if(!page->present) {
+            alloc_frame(page, 1, 1); // page, user, rw
         }
 
-        // Set the User flag (0x4 in x86_64) to allow user-level access
-        page->present = 1;  // Ensure the page is present
-        page->rw = 1;       // Allow read/write access
-        page->user = 1;     // Set user-accessible bit
+        // Allocate a frame if not already allocated
+        if (!page->frame) {
+            alloc_frame(page, 1, 1); // page, user, rw
+        }
     }
 
     // Invalidate the TLB for the changes to take effect
@@ -132,32 +131,32 @@ void init_paging()
     printf(" [-] Successfully Paging initialized.\n");
 }
 
+
 // Initializing Paging for other CPU cores
-void init_core_paging(int core_id) {
+void init_ap_paging(int core_id) {
+    printf(" [-] Initializing Paging for CPU %d\n", core_id);
 
     set_cr3_addr(bsp_cr3);  // Set the CR3 register to the PML4 address
     printf(" [-] CPU %d: Set CR3 to PML4 address: %x\n", core_id, bsp_cr3);
 
-    pml4_t * pml4 = (pml4_t *) get_cr3_addr(); // Get the current value of CR3 (the base of the PML4 table)
+    pml4_t * pml4 = (pml4_t *) phys_to_vir((uint64_t)get_cr3_addr()); // Get the current value of CR3 (the base of the PML4 table)
 
     // Updating lower half pages first 10 MB
     for (uint64_t addr = 0x0; addr < 0x00A00000; addr += PAGE_SIZE) {
         page_t *page = get_page(addr, 1, pml4);
         if (!page) {
-            // Handle error: Failed to get the page entry
             printf("[Error] Failed to get page entry for address: %x\n", addr);
             continue;
         }
 
-        // Allocate a frame if not already allocated
-        if (!page->frame) {
-            alloc_frame(page, 0, 1); // page, is_kernel, rw
+        if(!page->present) {
+            alloc_frame(page, 1, 1); // page, is_kernel, rw
         }
 
-        // Set the User flag (0x4 in x86_64) to allow user-level access
-        page->present = 1;  // Ensure the page is present
-        page->rw = 1;       // Allow read/write access
-        page->user = 1;     // Set user-accessible bit
+        // Allocate a frame if not already allocated
+        if (!page->frame) {
+            alloc_frame(page, 1, 1); // page, is_kernel, rw
+        }
 
     }
 
@@ -168,27 +167,26 @@ void init_core_paging(int core_id) {
     
 }
 
-
+// Function to allocate a new page
 static page_t *alloc_page(){
     page_t *pg = (page_t *) kmalloc_a(sizeof(page_t), 1);
-    if(pg){
-        memset(pg, 0, sizeof(pg));
-    }else{
+        
+    if(!pg){
         printf("[Error] Paging: Failed to allocate page\n");
-        return NULL; // Allocation failed
+        return NULL;            // Allocation failed
     }
+    memset(pg, 0, sizeof(pg));  // Zero out the page structure
     return pg;
 }
 
 // Function to allocate a new page table
 static pt_t* alloc_pt() {
     pt_t* pt = (pt_t*)kmalloc_a(sizeof(pt_t), 1);
-    if (pt) {
-        memset(pt, 0, sizeof(pt_t)); // Zero out the page table
-    }else {
+    if(!pt) {
         printf("[Error] Paging: Failed to allocate PT\n");
-        return NULL; // Allocation failed
+        return NULL;            // Allocation failed
     }
+    memset(pt, 0, sizeof(pt_t)); // Zero out the page table
     return pt;
 }
 
@@ -197,9 +195,9 @@ static pd_t* alloc_pd() {
     pd_t* pd = (pd_t*)kmalloc_a(sizeof(pd_t), 1);
     if (!pd){
         printf("[Error] Paging: Failed to allocate PD\n");
-        return NULL; // Allocation failed
+        return NULL;            // Allocation failed
     }
-    memset(pd, 0, sizeof(pd_t));    // Zero out the page directory
+    memset(pd, 0, sizeof(pd_t)); // Zero out the page directory
     return pd;
 }
 
@@ -209,9 +207,9 @@ static pdpt_t* alloc_pdpt() {
 
     if (!pdpt) {
         printf("[Error] Paging: Failed to allocate PDPT\n");
-        return NULL; // Allocation failed
+        return NULL;                    // Allocation failed
     }
-    memset(pdpt, 0, sizeof(pdpt_t)); // Zero out the PDPT
+    memset(pdpt, 0, sizeof(pdpt_t));    // Zero out the PDPT
     return pdpt;
 }
 
@@ -228,20 +226,24 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
     uint64_t pd_index   = PD_INDEX(va);
     uint64_t pt_index   = PT_INDEX(va);
 
-    dir_entry_t* pml4_entry = &pml4->entry_t[pml4_index];
+    int user = (va >= HIGHER_HALF_START_ADDR) ? 0 : 1; // User mode if the address is in lower half
+
+    dir_entry_t* pml4_entry = (dir_entry_t*) ((uint64_t) &pml4->entries[pml4_index]);
+    // printf("[Debug] Paging: get_page: pml4_entry %x\n", (uint64_t) pml4_entry);
 
     if (!pml4_entry->present) {
         if (!make) return NULL;
-        pdpt_t* pdpt = alloc_pdpt();
+        pdpt_t* pdpt = alloc_pdpt(); 
         if (!pdpt) return NULL;
         pml4_entry->present = 1;
         pml4_entry->rw = 1;
-        pml4_entry->user = (va >= HIGHER_HALF_START_ADDR) ? 0 : 1;
+        pml4_entry->user = user;;
         pml4_entry->base_addr = (uint64_t)pdpt >> 12;
     }
 
-    pdpt_t* pdpt = (pdpt_t*)phys_to_vir(pml4_entry->base_addr << 12);
-    dir_entry_t* pdpt_entry = &pdpt->entry_t[pdpt_index];
+    pdpt_t* pdpt = (pdpt_t*)(pml4_entry->base_addr << 12);
+    dir_entry_t* pdpt_entry = (dir_entry_t*)phys_to_vir((uint64_t) &pdpt->entries[pdpt_index]);
+    // printf("[Debug] Paging: get_page: pdpt_entry %x\n", (uint64_t) pdpt_entry);
 
     if (!pdpt_entry->present) {
         if (!make) return NULL;
@@ -249,11 +251,13 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
         if (!pd) return NULL;
         pdpt_entry->present = 1;
         pdpt_entry->rw = 1;
+        pdpt_entry->user = user;
         pdpt_entry->base_addr = (uint64_t)pd >> 12;
     }
 
-    pd_t* pd = (pd_t*)phys_to_vir(pdpt_entry->base_addr << 12);
-    dir_entry_t* pd_entry = &pd->entry_t[pd_index];
+    pd_t* pd = (pd_t*)(pdpt_entry->base_addr << 12);
+    dir_entry_t* pd_entry = (dir_entry_t*) phys_to_vir((uint64_t)&pd->entries[pd_index]);
+    // printf("[Debug] Paging: get_page: pd_entry %x\n", (uint64_t) pd_entry);
 
     if (!pd_entry->present) {
         if (!make) return NULL;
@@ -261,34 +265,39 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
         if (!pt) return NULL;
         pd_entry->present = 1;
         pd_entry->rw = 1;
+        pd_entry->user = user;
         pd_entry->base_addr = (uint64_t)pt >> 12;
     }
 
-    pt_t* pt = (pt_t*)phys_to_vir(pd_entry->base_addr << 12);
-    page_t* page = &pt->pages[pt_index];
+    pt_t* pt = (pt_t*)(pd_entry->base_addr << 12);
+    page_t* page = (page_t *)phys_to_vir((uint64_t)&pt->pages[pt_index]);
+    // printf("[Debug] Paging: get_page: page %x\n", (uint64_t) page);
 
     if (!page->present) {
-        page->present = 1;
-        page->rw = 1;
-        alloc_frame(page, 0, 1);
+        alloc_frame(page, user, 1);            // kernel space, read-write
         if (!page->frame) return NULL;
-        page->user = (va >= HIGHER_HALF_START_ADDR) ? 0 : 1;
+        page->user = user;
     }
 
     flush_tlb(va);
+    
     return page;
 }
-
-
 
 
 // Function to flush TLB for a specific address
 void flush_tlb(uint64_t va) {
     // page_t *page = get_page(va, 0, (pml4_t *)get_cr3_addr());
-    // Use the invlpg instruction to invalidate the TLB entry for a specific address
+    // if(!page) {
+    //     printf("[Error] Paging: flush_tlb: Page not found for address %x\n", va);
+    //     return;
+    // }
+    // // Use the invlpg instruction to invalidate the TLB entry for a specific address
     // if(page->present) asm volatile("invlpg (%0)" : : "r"(va) : "memory");
+
     asm volatile("invlpg (%0)" : : "r"(va) : "memory");
 }
+
 
 // Function to flush the entire TLB (by writing to cr3)
 void flush_tlb_all() {
@@ -300,19 +309,20 @@ void flush_tlb_all() {
     asm volatile("mov %0, %%cr3" : : "r"(cr3) : "memory");
 }
 
+
 void map_virtual_memory(void *phys_addr, size_t size, uint64_t flags) {
     uint64_t pml4_index, pdpt_index, pd_index, pt_index;
     uint64_t *pml4, *pdpt, *pd, *pt;
 
     // Cast the physical address to a usable form
     uint64_t phys = (uint64_t)phys_addr;
-    uint64_t virt = phys_to_vir(phys);  // Mapping physical to virtual 1:1 for simplicity.
+    uint64_t virt = phys_to_vir(phys);   // HHDM mapping
 
     // Assume we already have the base PML4 loaded in CR3
     pml4 = (uint64_t *)get_cr3_addr();  
 
     // Iterate through the address range to map
-    for (size_t offset = 0; offset < size; offset += 0x1000) {
+    for (size_t offset = 0; offset < size; offset += PAGE_SIZE) {
         uint64_t current_phys = phys + offset;
         uint64_t current_virt = virt + offset;
 
@@ -324,32 +334,32 @@ void map_virtual_memory(void *phys_addr, size_t size, uint64_t flags) {
 
         // Get or create PDPT
         if (!(pml4[pml4_index] & PAGE_PRESENT)) {
-            pdpt = (uint64_t *)kmalloc_a(0x1000, 1);
-            memset(pdpt, 0, 0x1000);
-            pml4[pml4_index] = ((uint64_t)pdpt | flags);
+            pdpt = (uint64_t *)kmalloc_a(PAGE_SIZE, 1);
+            memset(pdpt, 0, PAGE_SIZE);
+            pml4[pml4_index] = ((uint64_t)vir_to_phys((uint64_t)pdpt) | flags);
         } else {
-            pdpt = (uint64_t *)(pml4[pml4_index] & ~0xFFF);
+            pdpt = (uint64_t *)phys_to_vir((uint64_t)pml4[pml4_index] & ~0xFFF);
         }
 
         // Get or create PD
         if (!(pdpt[pdpt_index] & PAGE_PRESENT)) {
-            pd = (uint64_t *)kmalloc_a(0x1000,1);
-            memset(pd, 0, 0x1000);
-            pdpt[pdpt_index] = ((uint64_t)pd | flags);
+            pd = (uint64_t *)kmalloc_a(PAGE_SIZE, 1);
+            memset(pd, 0, PAGE_SIZE);
+            pdpt[pdpt_index] = ((uint64_t)vir_to_phys((uint64_t)pd) | flags);
         } else {
-            pd = (uint64_t *)(pdpt[pdpt_index] & ~0xFFF);
+            pd = (uint64_t *)phys_to_vir((uint64_t)pdpt[pdpt_index] & ~0xFFF);
         }
 
         // Get or create PT
         if (!(pd[pd_index] & PAGE_PRESENT)) {
-            pt = (uint64_t *)kmalloc_a(0x1000,1);
-            memset(pt, 0, 0x1000);
-            pd[pd_index] = ((uint64_t)pt | flags);
+            pt = (uint64_t *)kmalloc_a(PAGE_SIZE, 1);
+            memset(pt, 0, PAGE_SIZE);
+            pd[pd_index] = ((uint64_t)vir_to_phys((uint64_t)pt) | flags);
         } else {
-            pt = (uint64_t *)(pd[pd_index] & ~0xFFF);
+            pt = (uint64_t *)phys_to_vir((uint64_t)pd[pd_index] & ~0xFFF);
         }
 
-        // Map the physical address to the virtual address
+        // Final mapping of the page
         pt[pt_index] = (current_phys | flags);
     }
 
@@ -365,31 +375,10 @@ uint64_t create_new_pml4() {
 
     // Map the PML4 into the page tables
     map_virtual_memory((void*)pml4_ptr_phys, sizeof(pml4_t), PAGE_WRITE | PAGE_PRESENT);
+
     return pml4_ptr_phys;
 }
 
-bool is_user_page(uint64_t virtual_address) {
-    uint64_t cr3 = get_cr3_addr(); // Get PML4 base address
-
-    uint64_t *pml4 = (uint64_t *)(cr3 & ~0xFFF); // Mask to get page-aligned base
-    uint64_t pml4e = pml4[PML4_INDEX(virtual_address)];
-    if (!(pml4e & 1)) return false; // Not present
-
-    uint64_t *pdpt = (uint64_t *)(pml4e & ~0xFFF);
-    uint64_t pdpte = pdpt[PDPT_INDEX(virtual_address)];
-    if (!(pdpte & 1)) return false;
-
-    uint64_t *pd = (uint64_t *)(pdpte & ~0xFFF);
-    uint64_t pde = pd[PD_INDEX(virtual_address)];
-    if (!(pde & 1)) return false;
-
-    uint64_t *pt = (uint64_t *)(pde & ~0xFFF);
-    uint64_t pte = pt[PT_INDEX(virtual_address)];
-    if (!(pte & 1)) return false;
-
-    // Check the user bit (bit 2)
-    return (pte & (1 << 2)) != 0;
-}
 
 
 

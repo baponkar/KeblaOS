@@ -33,7 +33,7 @@ uint64_t kmalloc_a(uint64_t sz, int align)    // page aligned.
     page directory and page table addresses need to be page-aligned: that is, the bottom 12 
     bits need to be zero (otherwise they would interfere with the read/write/protection/accessed bits).
     */
-    if (phys_mem_head >= USABLE_END_PHYS_MEM) return 0; // Check if the memory allocation exceeds the usable memory range
+
 
     if(phys_mem_head >= USABLE_END_PHYS_MEM) {
         printf("kmalloc_a: Out of memory\n");

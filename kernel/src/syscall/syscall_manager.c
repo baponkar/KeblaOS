@@ -55,7 +55,6 @@ void init_syscall() {
 
 
 void syscall_handler(uint64_t syscall_num, uint64_t arg1, uint64_t arg2) {
-
     if(syscall_num == SYSCALL_PRINT){
         const char* str = (const char*)arg1;
         printf(str);  
@@ -64,7 +63,7 @@ void syscall_handler(uint64_t syscall_num, uint64_t arg1, uint64_t arg2) {
         uint64_t size = arg2;
     }else if(syscall_num == SYSCALL_EXIT){
         printf("User requested shell exit.\n");
-        while (1) __asm__("hlt");
+        while (1) asm("hlt");
     }else{
         printf("Unknown syscall: %d\n", (int) syscall_num);
     }
@@ -72,7 +71,7 @@ void syscall_handler(uint64_t syscall_num, uint64_t arg1, uint64_t arg2) {
 
 
 
-void _syscall(uint64_t num, uint64_t arg1, uint64_t arg2) {
+void syscall(uint64_t num, uint64_t arg1, uint64_t arg2) {
     __asm__ volatile (
         "syscall"
         :
@@ -83,14 +82,17 @@ void _syscall(uint64_t num, uint64_t arg1, uint64_t arg2) {
 
 
 void test_syscall() {
+    // Test an unknown syscall
+    syscall(67, 0, 0); 
+
     // Test print syscall
-    _syscall(SYSCALL_PRINT, (uint64_t)"Hello from syscall!\n", 0);
+    syscall(SYSCALL_PRINT, (uint64_t)"Hello from syscall!\n", 0);
 
     // Test read syscall
-    // char buffer[100];
-    // _syscall(SYSCALL_READ, (uint64_t)buffer, 100);
-    // printf("Read from syscall: %s\n", buffer);
+    char buffer[100];
+    syscall(SYSCALL_READ, (uint64_t)buffer, 100);
+    printf("Read from syscall: %s\n", buffer);
 
     // Test exit syscall
-    _syscall(SYSCALL_EXIT, 0, 0);
+    syscall(SYSCALL_EXIT, 0, 0);
 }

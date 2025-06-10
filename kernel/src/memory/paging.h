@@ -20,6 +20,7 @@ CR3 |- Page Directory Pointer Table (PDPT)-|-Page Table (PT) => Pages
     PD has the address of the Page Table (PT).
     PT has the address of the Pages.
 */
+
 #pragma once
 
 #include <stdint.h>
@@ -36,11 +37,11 @@ CR3 |- Page Directory Pointer Table (PDPT)-|-Page Table (PT) => Pages
 #define PAGE_USER    0x4
 
 // Function to extract parts of a virtual address
-#define PML4_INDEX(va)   (((va) >> 39) & 0x1FF)  // Bits 39-47
-#define PDPT_INDEX(va)   (((va) >> 30) & 0x1FF)  // Bits 30-38
-#define PD_INDEX(va)     (((va) >> 21) & 0x1FF)  // Bits 21-29
-#define PT_INDEX(va)     (((va) >> 12) & 0x1FF)  // Bits 12-20
-#define PAGE_OFFSET(va)  ((va) & 0xFFF)          // Bits 0-11
+#define PML4_INDEX(va)   (((va) >> 39) & 0x1FF)  // Bits 39-47 : 9 bits
+#define PDPT_INDEX(va)   (((va) >> 30) & 0x1FF)  // Bits 30-38 : 9 bits
+#define PD_INDEX(va)     (((va) >> 21) & 0x1FF)  // Bits 21-29 : 9 bits
+#define PT_INDEX(va)     (((va) >> 12) & 0x1FF)  // Bits 12-20 : 9 bits
+#define PAGE_OFFSET(va)  ((va) & 0xFFF)          // Bits 0-11  : 12 bits
 
 #define PAGE_ALIGN(addr) (((addr) + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1))
 
@@ -84,17 +85,17 @@ typedef struct pt {
 
 // page directory structure is containg 512 page table entries
 typedef struct pd { 
-    dir_entry_t entry_t[512]; // Each entry have Physical addresses of PTs
+    dir_entry_t entries[512]; // Each entry have Physical addresses of PTs
 } __attribute__((aligned(PAGE_SIZE))) pd_t;
 
 // pdpt structure is containing 512 page directory entries
 typedef struct pdpt { 
-    dir_entry_t entry_t[512]; // Each entry have Physical addresses of PDs
+    dir_entry_t entries[512]; // Each entry have Physical addresses of PDs
 } __attribute__((aligned(PAGE_SIZE))) pdpt_t;
 
 // pml4 structure is containing 512 pdpt directory entries
 typedef struct pml4 { 
-    dir_entry_t entry_t[512]; // Each entry have Physical addresses of PDPTs
+    dir_entry_t entries[512]; // Each entry have Physical addresses of PDPTs
 } __attribute__((aligned(PAGE_SIZE))) pml4_t;
 
 
@@ -105,14 +106,14 @@ extern uint64_t V_KMEM_LOW_BASE;
 
 uint64_t get_cr3_addr();
 
-void alloc_frame(page_t *page, int is_kernel, int is_writeable);
+void alloc_frame(page_t *page, int user, int is_writeable);
 void free_frame(page_t *page);
 
-void init_paging();
-void init_core_paging(int core_id);
+void init_bs_paging();
+void init_ap_paging(int core_id);
 
 page_t* get_page(uint64_t va, int make, pml4_t* pml4);
-bool is_user_page(uint64_t virtual_address);
+
 
 void flush_tlb(uint64_t address);
 void flush_tlb_all();

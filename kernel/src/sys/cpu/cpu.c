@@ -75,7 +75,7 @@ void start_bootstrap_cpu_core() {
 
     parse_madt(madt);           // Parse MADT to get the LAPIC ID and other information
 
-    init_paging();              // Initialize paging for the bootstrap core
+    init_bs_paging();              // Initialize paging for the bootstrap core
 
     init_pmm();                 // Initialize Physical Memory Manager
 
@@ -122,7 +122,7 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
 
     // Initialize Physical Memory Manager
     init_pmm(); 
-    init_core_paging(core_id);
+    init_ap_paging(core_id);
 
     // Initialize the stack for this core
     uint64_t cpu_stack = (uint64_t)kmalloc_a(STACK_SIZE, 1); // Allocate stack for this core
@@ -133,9 +133,6 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
     uint64_t cpu_stack_top = cpu_stack + STACK_SIZE; // Set the stack pointer to the top of the allocated stack
     cpu_datas[core_id].cpu_stack = cpu_stack_top;    // Set the stack pointer to the top of the allocated stack
     set_rsp(cpu_stack_top);                          // Set the stack pointer for this core
-
-    // setting cr3 for this core
-    init_core_paging(core_id);
 
     // Initialize GDT and TSS for this core
     init_gdt_tss_in_cpu(core_id);

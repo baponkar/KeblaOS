@@ -15,8 +15,6 @@ is designed to work with a paging system and includes error handling for various
 #include "vmm.h"
 
 
-
-
 // Allocate a virtual page at the specified virtual address
 void vm_alloc(uint64_t va) {  
 
@@ -39,15 +37,11 @@ void vm_alloc(uint64_t va) {
         // Page is already present and valid
         // printf("[Error] page is present with higher physical frame address asigned by limine!\n");
     }
-  
-    if(va >= HIGHER_HALF_START_ADDR){   // For kernel page
-        alloc_frame(page, 1, 1);        // Kernel-mode, writable by default
-    }else{
-        alloc_frame(page, 0, 1);        // User-mode, writable by default
-    }
+    
+    alloc_frame(page, va >= HIGHER_HALF_START_ADDR ? 1 : 0, 1);
 
-    // Invalidate the TLB for this address
-    asm volatile("invlpg (%0)" ::"r"(va) : "memory");
+
+    flush_tlb(va); // Flush the TLB for the new page
 }
 
 

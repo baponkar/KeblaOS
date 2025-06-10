@@ -8,7 +8,7 @@ syscall_entry:
     push rcx 
     push r11 
 
-    ; Save other registers if needed
+    ; Save other registers
     push rdi
     push rsi
     push rdx
