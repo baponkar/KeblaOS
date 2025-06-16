@@ -21,7 +21,7 @@ switch_to_user_mode:
     
     push 0x1B
     push rsi
-    sti
+    sti             ; Store interrupt
     iretq
 
     

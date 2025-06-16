@@ -31,7 +31,7 @@ void set_frame(uint64_t bit_no) {
     uint64_t bitmap_idx = INDEX_FROM_BIT_NO(bit_no);
     uint64_t bitmap_off = OFFSET_FROM_BIT_NO(bit_no);
 
-    frames[bitmap_idx] |= (0x1ULL << bitmap_off);       // Set the bit
+    frames[bitmap_idx] |= (0x1 << bitmap_off);       // Set the bit
 }
 
 
@@ -83,8 +83,10 @@ uint64_t free_frame_bit_no()
                     found = true;
                     break;
                 }
+                continue; // If the current bit is set, continue to the next bit in the bitmap.
             }
         }
+        continue;   // If all bits in the current bitmap are set, continue to the next bitmap index.
    }
    return free_bit; // Return an invalid frame index to indicate failure.
 }

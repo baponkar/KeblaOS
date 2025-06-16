@@ -45,7 +45,7 @@ uint64_t create_user_function() {
         // 0x31, 0xc9,                     // xor    %ecx,%ecx
         // 0xf7, 0xf1,                     // div    %ecx
         0xb8, 0x78, 0x56, 0x34, 0x12,   // mov $0x12345678,%eax
-        0xcd, 0xac,                     // int $0xac
+        0xcd, 0x1,                     // int $0xac,
         0xeb, 0xfe                      // jmp 0x9
     };
 
@@ -95,7 +95,8 @@ uint64_t create_user_function_1() {
 
 void init_user_mode(){
     
-    uint64_t code_addr = (uint64_t) create_user_function_1();
+    uint64_t code_addr = (uint64_t) create_user_function();
+    printf("User function code address: %x\n", code_addr);
     page_t *code_page = get_page(code_addr, 0, (pml4_t *)get_cr3_addr());
     code_page->rw = 0;          // Making readable only
     code_page->nx = 0;          // Making executable

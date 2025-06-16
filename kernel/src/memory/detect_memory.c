@@ -5,7 +5,7 @@ Getting Memory Information from Limine Bootloader
 Development Date: 19/04/2025
 
 References:
-    https://github.com/limine-bootloader/limine/blob/v8.x/PROTOCOL.md#kernel-address-feature
+    https://github.com/limine-bootloader/limine/blob/v9.x/PROTOCOL.md#kernel-address-feature
     https://wiki.osdev.org/Memory_Map_(x86)
 */
 
@@ -16,13 +16,13 @@ References:
 
 
 __attribute__((used, section(".limine_requests")))
-static volatile LIMINE_BASE_REVISION(0);
+static volatile LIMINE_BASE_REVISION(3);
 
 // Get Stack memory info
 __attribute__((used, section(".requests")))
 static volatile struct limine_stack_size_request stack_size_request = {
     .id = LIMINE_STACK_SIZE_REQUEST,
-    .revision = 0,
+    .revision = 3,
     .stack_size = 16384 // 16KB stack size
 };
 
@@ -30,28 +30,28 @@ static volatile struct limine_stack_size_request stack_size_request = {
 __attribute__((used, section(".requests")))
 static volatile struct limine_paging_mode_request paging_mode_request = {
     .id = LIMINE_PAGING_MODE_REQUEST,
-    .revision = 0
+    .revision = 3
 };
 
 // Get memory map info
 __attribute__((used, section(".requests")))
 static volatile struct limine_memmap_request memmap_request = {
     .id = LIMINE_MEMMAP_REQUEST,
-    .revision = 0
+    .revision = 3
 };
 
 // Get Kernel Load address
 __attribute__((used, section(".requests")))
 static volatile struct limine_kernel_address_request kernel_address_request = {
     .id = LIMINE_KERNEL_ADDRESS_REQUEST,
-    .revision = 0
+    .revision = 3
 };
 
 // Get Higher half direct map offset 
 __attribute__((used, section(".requests")))
 static volatile struct limine_hhdm_request hhdm_request = {
     .id = LIMINE_HHDM_REQUEST,
-    .revision = 0
+    .revision = 3
 };
 
 uint64_t STACK_MEM_SIZE;
@@ -69,7 +69,7 @@ uint64_t KERNEL_VIR_BASE;
 uint64_t KERNEL_PHYS_BASE;
 uint64_t KERNEL_OFFSET;
 
-// Physical Memory Head Address which is updating by kmalloc and 
+// Physical Memory Head Address which is updating by kmalloc and pmm
 volatile uint64_t phys_mem_head; 
 
 // Usable Physical Memory
@@ -84,6 +84,22 @@ uint64_t TOTAL_PHYS_MEMORY;
 size_t mem_entry_count;
 struct limine_memmap_entry **mem_entries;
 
+static const char* get_mem_type(uint64_t type) {
+    switch (type) {
+        case LIMINE_MEMMAP_USABLE: return "USABLE"; // 0
+        case LIMINE_MEMMAP_RESERVED: return "RESERVED"; // 1
+        case LIMINE_MEMMAP_ACPI_RECLAIMABLE: return "ACPI_RECLAIMABLE"; //2
+        case LIMINE_MEMMAP_ACPI_NVS: return "ACPI_NVS"; // 3
+        case LIMINE_MEMMAP_BAD_MEMORY: return "BAD_MEMORY"; // 4
+        case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE: return "BOOTLOADER_RECLAIMABLE"; // 5
+        // case LIMINE_MEMMAP_EXECUTABLE_AND_MODULES: return "EXECUTABLE_AND_MODULES"; // 6
+        case LIMINE_MEMMAP_KERNEL_AND_MODULES: return "KERNEL_AND_MODULES"; // 6 (deprecated, use EXECUTABLE_AND_MODULES)
+        case LIMINE_MEMMAP_FRAMEBUFFER: return "FRAMEBUFFER"; // 7
+
+        default: return "UNKNOWN";
+    }
+}
+
 
 // Getting Start Stack Memory Size
 void get_stack_mem_info(){
@@ -93,7 +109,7 @@ void get_stack_mem_info(){
     }
 
     STACK_MEM_SIZE = stack_size_request.stack_size;
-    printf(" [-] Memory: Start Stack size : %x\n", STACK_MEM_SIZE);
+    printf(" [Memory] Start Stack size : %x\n", STACK_MEM_SIZE);
 }
 
 // What type Paging mode started by limine
@@ -106,9 +122,9 @@ void get_paging_mode(){
     paging_mode = paging_mode_request.response->mode;
 
     if(paging_mode == LIMINE_PAGING_MODE_X86_64_4LVL)
-        printf(" [-] Memory: LIMINE_PAGING_MODE_X86_64_4LVL\n");
+        printf(" [Memory] LIMINE_PAGING_MODE_X86_64_4LVL\n");
     if(paging_mode == LIMINE_PAGING_MODE_X86_64_5LVL)
-        printf(" [-] Memory: LIMINE_PAGING_MODE_X86_64_5LVL\n");
+        printf(" [Memory] LIMINE_PAGING_MODE_X86_64_5LVL\n");
 }
 
 // The Physical and Virtual address where limine put the kernel
@@ -123,7 +139,7 @@ void get_kernel_address(){
 
     KERNEL_OFFSET = KERNEL_VIR_BASE - KERNEL_PHYS_BASE;
 
-    printf(" [-] Memory: Kernel position address: Virtual = %x, Physical = %x\n", KERNEL_VIR_BASE, KERNEL_PHYS_BASE);
+    printf(" [Memory] Kernel position address: Virtual = %x, Physical = %x\n", KERNEL_VIR_BASE, KERNEL_PHYS_BASE);
 }
 
 // Get The Higher Half Direct Map Offset
@@ -151,7 +167,7 @@ void get_phys_mem_map(){
         uint64_t length = mem_entries[i]->length;
         uint64_t type = mem_entries[i]->type;
 
-        printf(" [-] Memory: Physical Base: %x, Length: %x, Type: %d\n", base, length, type);
+        printf(" [Memory] Physical Base: %x, Length: %x, Type: %s\n", base, length, get_mem_type(type));
     }
 }
 
@@ -167,7 +183,7 @@ void set_usable_mem(){
         uint64_t length = mem_entries[i]->length;
         uint64_t type = mem_entries[i]->type;
 
-        if(type == LIMINE_MEMMAP_USABLE ){
+        if(type == LIMINE_MEMMAP_USABLE ){ // LIMINE_MEMMAP_USABLE = 1
             if(length > USABLE_LENGTH_PHYS_MEM){
                 USABLE_START_PHYS_MEM = base;
                 USABLE_LENGTH_PHYS_MEM = length;
@@ -176,13 +192,14 @@ void set_usable_mem(){
         }
     }
 
+    // USABLE_START_PHYS_MEM = 0x100000;
 
     phys_mem_head = USABLE_START_PHYS_MEM; // Set the physical memory head to the start of usable memory
 
     //Final usable_mem_length
     USABLE_LENGTH_PHYS_MEM = USABLE_END_PHYS_MEM - USABLE_START_PHYS_MEM;
 
-    printf(" [-] Memory: Usable Phys. memory => Start: %x, End: %x, Length: %x\n", 
+    printf(" [Memory] Usable Phys. memory => Start: %x, End: %x, Length: %x\n", 
         USABLE_START_PHYS_MEM, USABLE_END_PHYS_MEM, USABLE_END_PHYS_MEM);
 }
 
@@ -204,7 +221,7 @@ void get_total_phys_memory(){
         TOTAL_PHYS_MEMORY += length;
     }
 
-    printf(" [-] Memory: Total Device Memory = %x\n", TOTAL_PHYS_MEMORY);
+    printf(" [Memory] Total Device Memory = %x\n", TOTAL_PHYS_MEMORY);
 }
 
 // Get memory info and set some value for further use
@@ -223,10 +240,10 @@ void get_set_memory(){
         uint64_t kernel_phys_start_addr = HIGHER_HALF_START_ADDR - HHDM_OFFSET;
         uint64_t kernel_phys_end_addr = HIGHER_HALF_END_ADDR - HHDM_OFFSET;
 
-        printf(" [-] Memory: HHDM Offset: %x\n", HHDM_OFFSET);
-        printf(" [-] Memory: Higher Half Start(Virtual): %x and End(Virtual): %x\n", 
+        printf(" [Memory] HHDM Offset: %x\n", HHDM_OFFSET);
+        printf(" [Memory] Higher Half Start(Virtual): %x and End(Virtual): %x\n", 
             HIGHER_HALF_START_ADDR, HIGHER_HALF_END_ADDR);
-        printf(" [-] Memory: Higher Half Start(Physical): %x and End(Physical): %x\n", 
+        printf(" [Memory] Higher Half Start(Physical): %x and End(Physical): %x\n", 
             kernel_phys_start_addr, kernel_phys_end_addr);
     }
 

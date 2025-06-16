@@ -100,23 +100,11 @@ void kmain(){
     get_bootloader_info();
     vga_init();
     print_bootloader_info();
-    printf("[Info] %s - %s\n[Info] Build starts on: %s, Last Update on: %s\n",
+    printf("[%s - %s\n[Info] Build starts on: %s, Last Update on: %s]\n",
         OS_NAME, OS_VERSION, BUILD_DATE, LAST_UPDATE);
-    print_cpu_brand();
-    print_cpu_vendor();
-    print_cpu_base_frequency();
-    get_set_memory();
-    get_smp_info();
-
-    // initially starts pic
-    gdt_tss_init();         // Initialize GDT and TSS
-    init_pmm();             // Initialize Physical Memory Manager
-    init_bs_paging();       // Initialize paging for the bootstrap core
-    pic_int_init();         // Initialize PIC Interrupts
-    init_pit_timer(100);    // Initialize PIT Timer
-    init_tsc();             // Initialize TSC for the bootstrap core
-    printf("[Info] CPU %d with PIC initialized...\n\n", 0);
-
+        
+    
+    init_bs_cpu_core();
 
     // Initialize APIC and IOAPIC
     if(has_apic()){
@@ -125,39 +113,25 @@ void kmain(){
         printf("[Error] This System does not have APIC.\n");
     }
 
-    printf("Hello from CPU %d (BSP)\n", 0);
+    printf("\n[Hello from CPU %d (BSP)]\n", 0);
 
     pci_scan();
 
-    uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5]; // Found from pci scan 0xFEBD5000
-    HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
-    HBA_PORT_T* port = (HBA_PORT_T*) &abar->ports[0];
+    // uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5]; // Found from pci scan 0xFEBD5000
+    // HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
+    // HBA_PORT_T* port = (HBA_PORT_T*) &abar->ports[0];
 
-    ahci_identify(port);
-    test_ahci(abar);
+    // ahci_identify(port);
+    // test_ahci(abar);
 
-    fat32_init(port);
-    fat32_run_tests(port);
+    // fat32_init(port);
+    // fat32_run_tests(port);
 
     // kfs_test(port); // Test Kebla File System
 
     // switch_to_core(3);
 
-    // 0x200000,0x400000,0x600000,0x800000,0xA00000
-    // Test virtual address 0x400000 which is start address in user_linker_x86_64.ld
-    uint64_t* test_addr = (uint64_t*) 0x400000;                     // 4 MB virtual address
-    page_t* page = get_page((uint64_t)test_addr, 1, kernel_pml4);   // If not present, it will create a new page
-
-    // Check 0x400000 virtual address before writing a value
-    printf("Test Address: %x\n", test_addr);
-    printf("Test Value: %d\n", *test_addr);
-    printf("Page: present=%d, rw=%d, user=%d, frame=%x\n", page->present, page->rw, page->user, page->frame);
-
-    // Check 0x400000 virtual address after writing a value
-    *test_addr = 12345; // Write a test value to the address
-    printf("Test Address: %x\n", test_addr);
-    printf("Test Value: %d\n", *test_addr);
-    printf("Page: present=%d, rw=%d, user=%d, frame=%x\n", page->present, page->rw, page->user, page->frame);
+    // start_kshell();
     
     // Load and parse kernel modules by using limine bootloader
     // get_kernel_modules_info();
@@ -167,7 +141,19 @@ void kmain(){
     // loading usermode function
     // init_user_mode();
 
-    // start_kshell();
+    // 0x200000,0x400000,0x600000,0x800000,0xA00000
+    // Test virtual address 0x400000 which is start address in user_linker_x86_64.ld
+    uint64_t* test_addr = (uint64_t*) 0x400001;                     // 4 MB virtual address
+    page_t* page = get_page((uint64_t)test_addr, 1, kernel_pml4);   // If not present, it will create a new page
+
+    // Check test virtual address before writing a value
+    printf("Test Address: %x, Value: %d\n", test_addr, *test_addr);
+    printf("Page: present=%d, rw=%d, user=%d, frame=%x\n", page->present, page->rw, page->user, page->frame << 12);
+
+    // Check test virtual address after writing a value
+    *test_addr = 12345; // Write a test value to the address
+    printf("Test Address: %x, Value: %d\n", test_addr, *test_addr);
+    printf("Page: present=%d, rw=%d, user=%d, frame=%x\n", page->present, page->rw, page->user, page->frame << 12);
 
     halt_kernel();
 }

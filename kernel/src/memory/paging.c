@@ -97,11 +97,10 @@ void init_bs_paging()
     assert(phys_mem_head != 0); // Check if physical memory head is initialized
 
     bsp_cr3 = get_cr3_addr();   // Get the current value of CR3 (the base of the PML4 table)
-    // set_cr3_addr(bsp_cr3);      // Set the CR3 register to the PML4 address
 
     // Paging is enabled by Limine. Get the pml4 table pointer address that Limine set up
     kernel_pml4 = (pml4_t *) phys_to_vir((uint64_t)get_cr3_addr());
-    printf(" [-] Kernel PML4 address: %x\n", (uint64_t)kernel_pml4);
+
     if (!kernel_pml4) {
         printf("[Error] Paging: Kernel PML4 is NULL\n");
         halt_kernel();          // Halt the kernel if PML4 is not set
@@ -115,14 +114,15 @@ void init_bs_paging()
             continue;
         }
 
-        if(!page->present) {
-            alloc_frame(page, 1, 1); // page, user, rw
-        }
+        // If the page is not present and frame address is null, allocate a frame for it
+        // if(!page->present || !page->frame) {
+        //     alloc_frame(page, 0, 1); // page, user, rw
+        // }
 
-        // Allocate a frame if not already allocated
-        if (!page->frame) {
-            alloc_frame(page, 1, 1); // page, user, rw
-        }
+        alloc_frame(page, 1, 1); // page, user, rw
+
+        // printf("[Debug] Page at address %x: present=%d, rw=%d, user=%d, frame=%x\n", 
+            // addr, page->present, page->rw, page->user, page->frame << 12);
     }
 
     // Invalidate the TLB for the changes to take effect
@@ -149,22 +149,15 @@ void init_ap_paging(int core_id) {
             continue;
         }
 
-        if(!page->present) {
+        if(!page->present || !page->frame) {
             alloc_frame(page, 1, 1); // page, is_kernel, rw
         }
-
-        // Allocate a frame if not already allocated
-        if (!page->frame) {
-            alloc_frame(page, 1, 1); // page, is_kernel, rw
-        }
-
     }
 
     flush_tlb_all();        // Flush TLB for the current core
 
     printf(" [-] Enabling Paging first 1 MB Lower Half Memory address for core %d\n", core_id);
     printf(" [-] Successfully Paging initialized for core %d.\n", core_id);
-    
 }
 
 // Function to allocate a new page
@@ -229,7 +222,6 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
     int user = (va >= HIGHER_HALF_START_ADDR) ? 0 : 1; // User mode if the address is in lower half
 
     dir_entry_t* pml4_entry = (dir_entry_t*) ((uint64_t) &pml4->entries[pml4_index]);
-    // printf("[Debug] Paging: get_page: pml4_entry %x\n", (uint64_t) pml4_entry);
 
     if (!pml4_entry->present) {
         if (!make) return NULL;
@@ -243,7 +235,6 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
 
     pdpt_t* pdpt = (pdpt_t*)(pml4_entry->base_addr << 12);
     dir_entry_t* pdpt_entry = (dir_entry_t*)phys_to_vir((uint64_t) &pdpt->entries[pdpt_index]);
-    // printf("[Debug] Paging: get_page: pdpt_entry %x\n", (uint64_t) pdpt_entry);
 
     if (!pdpt_entry->present) {
         if (!make) return NULL;
@@ -257,7 +248,6 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
 
     pd_t* pd = (pd_t*)(pdpt_entry->base_addr << 12);
     dir_entry_t* pd_entry = (dir_entry_t*) phys_to_vir((uint64_t)&pd->entries[pd_index]);
-    // printf("[Debug] Paging: get_page: pd_entry %x\n", (uint64_t) pd_entry);
 
     if (!pd_entry->present) {
         if (!make) return NULL;
@@ -271,7 +261,6 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
 
     pt_t* pt = (pt_t*)(pd_entry->base_addr << 12);
     page_t* page = (page_t *)phys_to_vir((uint64_t)&pt->pages[pt_index]);
-    // printf("[Debug] Paging: get_page: page %x\n", (uint64_t) page);
 
     if (!page->present) {
         alloc_frame(page, user, 1);            // kernel space, read-write

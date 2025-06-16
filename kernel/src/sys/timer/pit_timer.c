@@ -73,9 +73,9 @@ void pit_timerHandler(registers_t *regs) {
     }
     pit_ticks++;
 
-    // if (pit_ticks % 10 == 0){   // Prints in every in 100 ms = 0.1 sec interval
-    //     printf("PIT Tick no : %d\n", pit_ticks);
-    // }
+    if (pit_ticks % 10 == 0){   // Prints in every in 100 ms = 0.1 sec interval
+        printf("PIT Tick no : %d\n", pit_ticks);
+    }
 
 }
 
@@ -99,6 +99,8 @@ void init_pit_timer(uint32_t interval_ms) {
     set_pit_count(divisor);    // Set PIT divisor
 
     asm volatile("sti");
+
+    send_eoi(PIT_TIMER_IRQ);
     
     printf("[Info] PIT Timer initialized with %d ms interval (divisor: %d, frequency: %d Hz)\n", interval_ms, divisor, frequency);
 }

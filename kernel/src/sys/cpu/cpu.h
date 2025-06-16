@@ -27,7 +27,9 @@ typedef struct {
 
 void switch_to_core(uint32_t target_lapic_id);
 
-void start_bootstrap_cpu_core();
+void init_bs_cpu_core();            // pic interrupt, gdt, tss, apic, paging, fpu
+void start_bootstrap_cpu_core();    // apic, gdt, tss, paging, fpu
+
 void start_ap_cpu_cores();
 void init_all_cpu_cores();
 

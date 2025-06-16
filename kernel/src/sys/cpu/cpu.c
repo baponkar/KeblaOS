@@ -12,10 +12,14 @@
 
 #include "../../lib/stdio.h"
 
+#include "smp.h"
+
 #include "../../arch/gdt/gdt.h"
 #include "../../arch/gdt/multi_core_gdt_tss.h"
 
 #include "../../arch/interrupt/pic/pic.h"
+#include "../../arch/interrupt/pic/pic_interrupt.h"
+
 #include "../../arch/interrupt/apic/apic_interrupt.h"
 #include "../../arch/interrupt/apic/apic.h"
 #include "../../arch/interrupt/apic/ioapic.h"
@@ -52,6 +56,24 @@ extern struct limine_smp_response *smp_response;
 
 extern madt_t *madt;
 
+// This function initializes the bootstrap CPU core with PIC
+void init_bs_cpu_core(){
+    print_cpu_brand();
+    print_cpu_vendor();
+    print_cpu_base_frequency();
+    get_set_memory();
+    get_smp_info();
+
+    // initially starts pic
+    gdt_tss_init();         // Initialize GDT and TSS
+    pic_int_init();         // Initialize PIC Interrupts
+    init_pmm();             // Initialize Physical Memory Manager
+    init_bs_paging();       // Initialize paging for the bootstrap core
+    init_pit_timer(100);    // Initialize PIT Timer
+    init_tsc();             // Initialize TSC for the bootstrap core
+
+    printf("[Info] CPU %d (Bootstrap) with PIC initialized...\n\n", 0);
+}
 
 
 void start_bootstrap_cpu_core() {
@@ -75,15 +97,17 @@ void start_bootstrap_cpu_core() {
 
     parse_madt(madt);           // Parse MADT to get the LAPIC ID and other information
 
-    init_bs_paging();              // Initialize paging for the bootstrap core
-
-    init_pmm();                 // Initialize Physical Memory Manager
-
     gdt_tss_init();             // Initialize GDT and TSS for the bootstrap core
 
     init_apic();                // Initialize the APIC & IOAPIC for the bootstrap core
 
     bsp_apic_int_init();        // Initialize APIC Interrupts
+
+    init_pmm();                 // Initialize Physical Memory Manager for the bootstrap core
+
+    init_bs_paging();           // Initialize paging for the bootstrap core
+
+
     int_syscall_init();         // Initialize system calls for the bootstrap core    
     init_ipi();                 // Initialize IPI for inter-processor communication
 
@@ -118,11 +142,8 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
     cpu_datas[core_id].lapic_id = core_id;
     cpu_datas[core_id].smp_info = smp_info;
 
-    get_set_memory();
+    get_set_memory(); // already done in start_bootstrap_cpu_core()
 
-    // Initialize Physical Memory Manager
-    init_pmm(); 
-    init_ap_paging(core_id);
 
     // Initialize the stack for this core
     uint64_t cpu_stack = (uint64_t)kmalloc_a(STACK_SIZE, 1); // Allocate stack for this core
@@ -139,7 +160,11 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
                     
     // Initialize interrupts for this core
     ap_apic_int_init(core_id);
-    init_ipi();    
+    init_ipi();   
+    
+    // Initialize Physical Memory Manager
+    init_pmm(); // Already done in start_bootstrap_cpu_core()
+    init_ap_paging(core_id);
 
     // Initialize the FPU and SSE for this core
     if(has_fpu()){
@@ -152,7 +177,6 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
     asm volatile("sti"); // Enable interrupts
 
     // for(size_t core_id = 0; core_id < smp_response->cpu_count; core_id++) {
-
     //     if(cpu_datas[core_id].is_online == 1){
     //         printf(" [-] CPU %d is online\n", core_id);
     //         tsc_sleep(1000000); // Wait for one second
@@ -206,22 +230,22 @@ void init_all_cpu_cores() {
     start_bootstrap_cpu_core();
 
     // Initialize the application cores
-    start_ap_cpu_cores();
+    // start_ap_cpu_cores();
 
     // Wait for all cores to be online
-    while (1) {
-        int all_online = 1;
-        for (size_t i = 0; i < smp_response->cpu_count; i++) {
-            if (!cpu_datas[i].is_online) {
-                all_online = 0;
-                break;
-            }
-            printf(" [-] CPU %d is online\n", i);
-        }
-        if (all_online) {
-            break;
-        }
-    }
+    // while (1) {
+    //     int all_online = 1;
+    //     for (size_t i = 0; i < smp_response->cpu_count; i++) {
+    //         if (!cpu_datas[i].is_online) {
+    //             all_online = 0;
+    //             break;
+    //         }
+    //         printf(" [-] CPU %d is online\n", i);
+    //     }
+    //     if (all_online) {
+    //         break;
+    //     }
+    // }
     asm volatile("sti");
 
     printf("[Info] All CPU cores initialized and online.\n");

@@ -240,7 +240,7 @@ disk_run:
 	# Running from Disk Image
 	qemu-system-x86_64 \
     -machine q35 \
-    -m 4096 \
+    -m 3072 \
     -smp cores=4,threads=1,sockets=1,maxcpus=4 \
     -boot c \
     -hda $(DISK_DIR)/disk.img \
@@ -249,6 +249,7 @@ disk_run:
     -D $(DEBUG_DIR)/qemu_diskboot.log \
     -vga std \
     -rtc base=utc,clock=host
+	-no-reboot
 
 
 gdb_debug:
