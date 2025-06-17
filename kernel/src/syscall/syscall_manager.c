@@ -56,8 +56,11 @@ void init_syscall() {
 
 void syscall_handler(uint64_t syscall_num, uint64_t arg1, uint64_t arg2) {
     if(syscall_num == SYSCALL_PRINT){
+        printf("SYSCALL_PRINT: arg1 = %x\n", (void*)arg1);
+        printf("SYSCALL_PRINT: first char = %c\n", *(char*)arg1);
+
         const char* str = (const char*)arg1;
-        printf(str);  
+        printf("%s\n", str);  
     }else if(syscall_num == SYSCALL_READ){
         char* user_buf = (char*)arg1;
         uint64_t size = arg2;

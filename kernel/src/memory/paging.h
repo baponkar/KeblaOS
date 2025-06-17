@@ -36,6 +36,9 @@ CR3 |- Page Directory Pointer Table (PDPT)-|-Page Table (PT) => Pages
 #define PAGE_WRITE   0x2
 #define PAGE_USER    0x4
 
+// 512 entries per table
+#define ENTRIES_PER_TABLE 512
+
 // Function to extract parts of a virtual address
 #define PML4_INDEX(va)   (((va) >> 39) & 0x1FF)  // Bits 39-47 : 9 bits
 #define PDPT_INDEX(va)   (((va) >> 30) & 0x1FF)  // Bits 30-38 : 9 bits
@@ -110,6 +113,7 @@ void alloc_frame(page_t *page, int user, int is_writeable);
 void free_frame(page_t *page);
 
 void init_bs_paging();
+void init_bs_paging_with_new_pml4();
 void init_ap_paging(int core_id);
 
 page_t* get_page(uint64_t va, int make, pml4_t* pml4);

@@ -142,4 +142,32 @@ void test_vmm() {
     printf("VMM test complete.\n");
 }
 
+void test_vmm_1(){
+    // Test Higher Half Memory Address
+    uint64_t* high_test_addr = (uint64_t*) (HIGHER_HALF_START_ADDR + 0x400000);                     // 4 MB virtual address
+    page_t* low_page = get_page((uint64_t)high_test_addr, 1, kernel_pml4);   // If not present, it will create a new page
 
+    // Check test virtual address before writing a value
+    printf("Test Address: %x, Value: %d\n", high_test_addr, *high_test_addr);
+    printf("Page: present=%d, rw=%d, user=%d, frame=%x, nx=%d\n", low_page->present, low_page->rw, low_page->user, low_page->frame << 12, low_page->nx);
+
+    // Check test virtual address after writing a value
+    *high_test_addr = 12345; // Write a test value to the address
+    printf("Test Address: %x, Value: %d\n", high_test_addr, *high_test_addr);
+    printf("Page: present=%d, rw=%d, user=%d, frame=%x, nx=%d\n", low_page->present, low_page->rw, low_page->user, low_page->frame << 12, low_page->nx);
+
+    // Test Lowr Half Memory Address
+    // 0x200000,0x400000,0x600000,0x800000,0xA00000
+    // Test virtual address 0x400000 which is start address in user_linker_x86_64.ld
+    uint64_t* low_test_addr = (uint64_t*) (LOWER_HALF_START_ADDR + 0x400000);                     // 4 MB virtual address
+    page_t* page = get_page((uint64_t)low_test_addr, 1, kernel_pml4);   // If not present, it will create a new page
+
+    // Check test virtual address before writing a value
+    printf("Test Address: %x, Value: %d\n", low_test_addr, *low_test_addr);
+    printf("Page: present=%d, rw=%d, user=%d, frame=%x, nx=%d\n", page->present, page->rw, page->user, page->frame << 12, page->nx);
+
+    // Check test virtual address after writing a value
+    *low_test_addr = 12345; // Write a test value to the address
+    printf("Test Address: %x, Value: %d\n", low_test_addr, *low_test_addr);
+    printf("Page: present=%d, rw=%d, user=%d, frame=%x, nx=%d\n", page->present, page->rw, page->user, page->frame << 12, page->nx);
+}

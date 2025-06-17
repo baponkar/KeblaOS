@@ -18,4 +18,4 @@ bool is_phys_addr(uint64_t addr);
 bool is_virt_addr(uint64_t addr);
 
 void test_vmm();
-
+void test_vmm_1();

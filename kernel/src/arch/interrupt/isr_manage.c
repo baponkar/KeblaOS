@@ -70,11 +70,11 @@ void page_fault_handler(registers_t *regs)
 
     // Output an error message with details about the page fault.
     printf("Page fault! ( ");
-    if (present) printf("not present ");
-    if (rw) printf("write ");
-    if (us) printf("user-mode ");
-    if (reserved) printf("reserved ");
-    if (id) printf("instruction fetch ");
+    if (present) printf("Page not present, ");
+    if (rw) printf("Not writable, ");
+    if (us) printf("User-mode, ");
+    if (reserved) printf("Reserved, ");
+    if (id) printf("Instruction fetch, ");
     printf(") at address %x\n", faulting_address);
 
 

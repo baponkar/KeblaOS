@@ -11,22 +11,33 @@
 ;
 
 
-[bits 32]
-global user_main
-extern user_shell.c
+
+
+
+[BITS 64]
+global _start
 
 section .text
+_start:
+    ; syscall(SYSCALL_PRINT, (uint64_t)msg, 0)
+    mov     rax, 1                  ; SYSCALL_PRINT = 1
+    lea     rdi, [rel msg]          ; First argument: pointer to message
+    xor     rsi, rsi                ; Second argument (not used)
+    syscall                         ; Perform syscall
 
-user_main:
-    ;xor ecx, ecx         ; Divisor = 0
-    ;div ecx              ; Triggers #DE exception
-    ;mov eax, 0x12345678  ; Some dummy code
-    ;int 172              ; Reading Systemcall
-    ;int 173              ; Printing Systemcall
+    ; syscall(SYSCALL_EXIT, 0, 0)
+    mov     rax, 3                  ; SYSCALL_EXIT = 3
+    xor     rdi, rdi                ; First argument: exit code 0
+    xor     rsi, rsi                ; Second argument (unused)
+    syscall                         ; Exit syscall
+
+.hang:
+    jmp     .hang                   ; If syscall fails, loop forever
+
+section .data
+msg: db "Hello from user via syscall!", 0
 
 
-loop:
-    jmp loop             ; Stay in user mode forever
 
 
 

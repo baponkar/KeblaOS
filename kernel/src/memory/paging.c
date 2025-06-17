@@ -107,7 +107,7 @@ void init_bs_paging()
     }
 
     // Updating lower half pages first 10 MB
-    for (uint64_t addr = 0x0; addr < 0x00A00000; addr += PAGE_SIZE) {
+    for (uint64_t addr = LOWER_HALF_START_ADDR; addr < (LOWER_HALF_START_ADDR + 0x00A00000); addr += PAGE_SIZE) {
         page_t *page = get_page(addr, 1, kernel_pml4); // If not present, it will create a new page
         if (!page) {
             printf("[Error] Failed to get page entry for address: %x\n", addr);
@@ -116,19 +116,71 @@ void init_bs_paging()
 
         // If the page is not present and frame address is null, allocate a frame for it
         // if(!page->present || !page->frame) {
-        //     alloc_frame(page, 0, 1); // page, user, rw
+        //     printf("[Debug] Already frame address is present for page at address: %x\n", addr);
+        //     page->user = 1; // Set user bit for lower half memory
+        //     continue;
         // }
 
-        alloc_frame(page, 1, 1); // page, user, rw
-
-        // printf("[Debug] Page at address %x: present=%d, rw=%d, user=%d, frame=%x\n", 
-            // addr, page->present, page->rw, page->user, page->frame << 12);
+        alloc_frame(page, 1, 1);    // page, user, rw
+        page->nx = 0;               // Clear the next pointer for the page
     }
 
     // Invalidate the TLB for the changes to take effect
     flush_tlb_all();
     
     printf(" [-] Successfully Paging initialized.\n");
+}
+
+
+void init_bs_paging_with_new_pml4() {
+    printf(" [-] Initializing Paging with new PML4 for Bootstrap CPU Core\n");
+
+    // Create a new PML4 table
+    bsp_cr3 = create_new_pml4();
+    if (bsp_cr3 == 0) {
+        printf("[Error] Failed to create new PML4 table\n");
+        halt_kernel(); // Halt the kernel if PML4 creation failed
+    }
+
+    set_cr3_addr(bsp_cr3);  // Set the CR3 register to the new PML4 address
+    printf(" [-] Set CR3 to new PML4 address: %x\n", bsp_cr3);
+
+    kernel_pml4 = (pml4_t *) phys_to_vir(bsp_cr3); // Get the PML4 table pointer from the new CR3 address
+
+    // Updating Upper Half Memory Address
+    for (uint64_t addr = HIGHER_HALF_START_ADDR; addr < HIGHER_HALF_START_ADDR + 0x100000; addr += PAGE_SIZE) {
+        page_t *page = get_page(addr, 1, kernel_pml4); // If not present, it will create a new page
+        if (!page) {
+            printf("[Error] Failed to get page entry for address: %x\n", addr);
+            continue;
+        }
+
+        if(page->present && page->frame) {
+            printf("[Debug] Page at address %x already present with frame %x\n", addr, page->frame << 12);
+            continue; // Skip if the page is already present
+        }
+        alloc_frame(page, 0, 1); // page, user, rw
+    }
+
+    printf(" [-] Successfully initialized Paging with new PML4 for Higher Half Kernel.\n");
+
+    // Updating lower half pages first 10 MB
+    for (uint64_t addr = LOWER_HALF_START_ADDR; addr < LOWER_HALF_START_ADDR + 0x100000; addr += PAGE_SIZE) {
+        page_t *page = get_page(addr, 1, kernel_pml4); // If not present, it will create a new page
+        if (!page) {
+            printf("[Error] Failed to get page entry for address: %x\n", addr);
+            continue;
+        }
+
+        if(page->present && page->frame) {
+            printf("[Debug] Page at address %x already present with frame %x\n", addr, page->frame << 12);
+            continue; // Skip if the page is already present
+        }
+        alloc_frame(page, 1, 1); // page, user, rw
+    }
+
+    // Invalidate the TLB for the changes to take effect
+    flush_tlb_all();
 }
 
 
@@ -142,7 +194,7 @@ void init_ap_paging(int core_id) {
     pml4_t * pml4 = (pml4_t *) phys_to_vir((uint64_t)get_cr3_addr()); // Get the current value of CR3 (the base of the PML4 table)
 
     // Updating lower half pages first 10 MB
-    for (uint64_t addr = 0x0; addr < 0x00A00000; addr += PAGE_SIZE) {
+    for (uint64_t addr = LOWER_HALF_START_ADDR; addr < (LOWER_HALF_START_ADDR + 0x00A00000); addr += PAGE_SIZE) {
         page_t *page = get_page(addr, 1, pml4);
         if (!page) {
             printf("[Error] Failed to get page entry for address: %x\n", addr);
@@ -151,6 +203,7 @@ void init_ap_paging(int core_id) {
 
         if(!page->present || !page->frame) {
             alloc_frame(page, 1, 1); // page, is_kernel, rw
+            page->nx = 0; // Clear the next pointer for the page
         }
     }
 
@@ -232,6 +285,7 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
         pml4_entry->user = user;;
         pml4_entry->base_addr = (uint64_t)pdpt >> 12;
     }
+    pml4_entry->user = user; // Set user bit for the PML4 entry
 
     pdpt_t* pdpt = (pdpt_t*)(pml4_entry->base_addr << 12);
     dir_entry_t* pdpt_entry = (dir_entry_t*)phys_to_vir((uint64_t) &pdpt->entries[pdpt_index]);
@@ -245,6 +299,7 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
         pdpt_entry->user = user;
         pdpt_entry->base_addr = (uint64_t)pd >> 12;
     }
+    pdpt_entry->user = user; // Set user bit for the PDPT entry
 
     pd_t* pd = (pd_t*)(pdpt_entry->base_addr << 12);
     dir_entry_t* pd_entry = (dir_entry_t*) phys_to_vir((uint64_t)&pd->entries[pd_index]);
@@ -258,6 +313,7 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
         pd_entry->user = user;
         pd_entry->base_addr = (uint64_t)pt >> 12;
     }
+    pd_entry->user = user; // Set user bit for the PD entry
 
     pt_t* pt = (pt_t*)(pd_entry->base_addr << 12);
     page_t* page = (page_t *)phys_to_vir((uint64_t)&pt->pages[pt_index]);
@@ -268,7 +324,7 @@ page_t* get_page(uint64_t va, int make, pml4_t* pml4) {
         page->user = user;
     }
 
-    flush_tlb(va);
+    flush_tlb_all();
     
     return page;
 }
@@ -353,7 +409,7 @@ void map_virtual_memory(void *phys_addr, size_t size, uint64_t flags) {
     }
 
     // Ensure changes to page tables are reflected in the CPU
-    flush_tlb(virt);
+    flush_tlb_all();
 }
 
 

@@ -94,7 +94,8 @@ void load_user_elf_and_jump() {
         if (ph->p_type != PT_LOAD) continue;
 
         void *src = (uint8_t *)elf_base + ph->p_offset;
-        void *dst = (void *)ph->p_vaddr;    // 0x40000000
+        void *dst = (void *)ph->p_vaddr;    // 0x401000
+        
 
         memcpy(dst, src, ph->p_filesz);
         memset((uint8_t *)dst + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);

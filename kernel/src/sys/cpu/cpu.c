@@ -106,6 +106,7 @@ void start_bootstrap_cpu_core() {
     init_pmm();                 // Initialize Physical Memory Manager for the bootstrap core
 
     init_bs_paging();           // Initialize paging for the bootstrap core
+    // init_bs_paging_with_new_pml4();
 
 
     int_syscall_init();         // Initialize system calls for the bootstrap core    

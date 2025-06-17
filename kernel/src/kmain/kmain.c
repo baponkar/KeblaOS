@@ -117,12 +117,12 @@ void kmain(){
 
     pci_scan();
 
-    // uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5]; // Found from pci scan 0xFEBD5000
-    // HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
-    // HBA_PORT_T* port = (HBA_PORT_T*) &abar->ports[0];
+    uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5]; // Found from pci scan 0xFEBD5000
+    HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
+    HBA_PORT_T* port = (HBA_PORT_T*) &abar->ports[0];
 
-    // ahci_identify(port);
-    // test_ahci(abar);
+    ahci_identify(port);
+    test_ahci(abar);
 
     // fat32_init(port);
     // fat32_run_tests(port);
@@ -133,27 +133,21 @@ void kmain(){
 
     // start_kshell();
     
+    test_vmm_1();
+
+    // int_syscall_init();
+    // printf("%s\n", syscall_test(INT_SYSCALL_PRINT));
+
+    init_syscall();
+    // syscall(SYSCALL_PRINT, (uint64_t)"Hello from syscall!\n", 0);
+
     // Load and parse kernel modules by using limine bootloader
-    // get_kernel_modules_info();
-    // print_kernel_modules_info();
-    // load_user_elf_and_jump();
+    get_kernel_modules_info();
+    print_kernel_modules_info();
+    load_user_elf_and_jump();
 
     // loading usermode function
     // init_user_mode();
-
-    // 0x200000,0x400000,0x600000,0x800000,0xA00000
-    // Test virtual address 0x400000 which is start address in user_linker_x86_64.ld
-    uint64_t* test_addr = (uint64_t*) 0x400001;                     // 4 MB virtual address
-    page_t* page = get_page((uint64_t)test_addr, 1, kernel_pml4);   // If not present, it will create a new page
-
-    // Check test virtual address before writing a value
-    printf("Test Address: %x, Value: %d\n", test_addr, *test_addr);
-    printf("Page: present=%d, rw=%d, user=%d, frame=%x\n", page->present, page->rw, page->user, page->frame << 12);
-
-    // Check test virtual address after writing a value
-    *test_addr = 12345; // Write a test value to the address
-    printf("Test Address: %x, Value: %d\n", test_addr, *test_addr);
-    printf("Page: present=%d, rw=%d, user=%d, frame=%x\n", page->present, page->rw, page->user, page->frame << 12);
 
     halt_kernel();
 }
