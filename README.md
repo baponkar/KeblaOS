@@ -19,7 +19,7 @@
 
 ### Project Timeline
 - **Start Date**: 9th June, 2024
-- **Last Update**: 15th March, 2025
+- **Last Update**: 17th June, 2025
 
 ---
 

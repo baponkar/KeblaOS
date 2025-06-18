@@ -106,8 +106,8 @@ void load_user_elf_and_jump() {
     
     printf("Switching into usermode: user_entry_addr-%x, user_stack_addr-%x\n", user_entry, user_stack);
 
-    page_t* page = get_page(0x400000, 0, kernel_pml4);
-    printf("Page: present=%d, rw=%d, user=%d, frame=%x\n", page->present, page->rw, page->user, page->frame);
+    page_t* page = get_page(user_entry, 0, kernel_pml4);
+    printf("V. addr: %x, Page: present=%d, rw=%d, user=%d, frame=%x\n",user_entry, page->present, page->rw, page->user, page->frame << 12);
 
     switch_to_user_mode(user_stack, user_entry);
 }

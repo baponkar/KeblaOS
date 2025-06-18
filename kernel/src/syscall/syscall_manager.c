@@ -5,6 +5,8 @@
     https://wiki.osdev.org/SYSENTER#AMD:_SYSCALL/SYSRET
 */
 
+#include "../sys/cpu/cpu.h"
+#include "../memory/kheap.h"
 
 #include "../lib/stdio.h"
 #include "syscall_manager.h"
@@ -13,6 +15,7 @@
 #define MSR_STAR     0xC0000081
 #define MSR_LSTAR    0xC0000082
 #define MSR_SFMASK   0xC0000084
+#define MSR_KERNEL_GS_BASE 0xC0000102
 
 #define EFER_SCE  (1 << 0)    // Enable SYSCALL/SYSRET
 
@@ -21,6 +24,7 @@
 
 extern void syscall_entry();  // from syscall_entry.asm
 
+extern cpu_data_t cpu_datas[MAX_CPUS];
 
 static inline uint64_t read_msr(uint32_t msr) {
     uint32_t low, high;
@@ -35,7 +39,14 @@ static inline void write_msr(uint32_t msr, uint64_t value) {
 }
 
 
-void init_syscall() {
+void init_syscall(uint64_t cpu_id) {
+
+    cpu_data_t* cpu = &cpu_datas[cpu_id];
+
+
+    // Write IA32_KERNEL_GS_BASE (0xC0000102) to point to this CPU's cpu_data_t
+    write_msr(MSR_KERNEL_GS_BASE, (uint64_t)cpu);
+
     // Enable SYSCALL/SYSRET by setting SCE in IA32_EFER.
     uint64_t efer = read_msr(MSR_EFER);
     efer |= EFER_SCE;

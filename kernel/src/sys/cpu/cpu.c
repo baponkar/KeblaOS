@@ -45,6 +45,8 @@
 
 #include "../../arch/interrupt/apic/ipi.h"
 
+#include "../../syscall/syscall_manager.h"
+
 #include "cpu.h"
 
 
@@ -109,8 +111,10 @@ void start_bootstrap_cpu_core() {
     // init_bs_paging_with_new_pml4();
 
 
-    int_syscall_init();         // Initialize system calls for the bootstrap core    
+    int_syscall_init();         // Initialize int based system calls for the bootstrap core    
     init_ipi();                 // Initialize IPI for inter-processor communication
+
+    init_syscall(0);            // Initialize system calls for the bootstrap core
 
     asm volatile("sti");        // Enable interrupts
 

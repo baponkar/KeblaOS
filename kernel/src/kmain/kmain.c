@@ -133,13 +133,11 @@ void kmain(){
 
     // start_kshell();
     
-    test_vmm_1();
+    // test_vmm_1();
 
     // int_syscall_init();
     // printf("%s\n", syscall_test(INT_SYSCALL_PRINT));
 
-    init_syscall();
-    // syscall(SYSCALL_PRINT, (uint64_t)"Hello from syscall!\n", 0);
 
     // Load and parse kernel modules by using limine bootloader
     get_kernel_modules_info();

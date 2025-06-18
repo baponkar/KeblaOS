@@ -19,17 +19,23 @@ global _start
 
 section .text
 _start:
+    ;xor ecx, ecx         ; Divisor = 0
+    ;div ecx              ; Triggers #DE exception
+    ;mov eax, 0x12345678  ; Some dummy code
+    ;int 172              ; Int. Reading Systemcall
+    ;int 173              ; Int. Printing Systemcall
+
     ; syscall(SYSCALL_PRINT, (uint64_t)msg, 0)
-    mov     rax, 1                  ; SYSCALL_PRINT = 1
-    lea     rdi, [rel msg]          ; First argument: pointer to message
-    xor     rsi, rsi                ; Second argument (not used)
-    syscall                         ; Perform syscall
+    ;mov     rax, 1                  ; SYSCALL_PRINT = 1
+    ;lea     rdi, [rel msg]          ; First argument: pointer to message
+    ;xor     rsi, rsi                ; Second argument (not used)
+    ;syscall                         ; Perform syscall
 
     ; syscall(SYSCALL_EXIT, 0, 0)
-    mov     rax, 3                  ; SYSCALL_EXIT = 3
-    xor     rdi, rdi                ; First argument: exit code 0
-    xor     rsi, rsi                ; Second argument (unused)
-    syscall                         ; Exit syscall
+    ;mov     rax, 3                  ; SYSCALL_EXIT = 3
+    ;xor     rdi, rdi                ; First argument: exit code 0
+    ;xor     rsi, rsi                ; Second argument (unused)
+    ;syscall                         ; Exit syscall
 
 .hang:
     jmp     .hang                   ; If syscall fails, loop forever
