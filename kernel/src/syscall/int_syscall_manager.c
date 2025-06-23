@@ -15,7 +15,7 @@ References:
 extern ring_buffer_t* keyboard_buffer;
 
 registers_t *int_systemcall_handler(registers_t *regs) {
-    switch (regs->int_no) { // syscall number
+    switch (regs->int_no) {                             // syscall number
         case INT_SYSCALL_READ: {
             uint8_t *user_buf = (uint8_t *)regs->rbx;  // user buffer pointer
             size_t size = regs->rcx;                   // max bytes to read
@@ -67,29 +67,24 @@ void int_syscall_init(){
 }
 
 
-char *syscall_test(int syscall_no){
+void syscall_test(int syscall_no){
     switch(syscall_no){
         case(INT_SYSCALL_READ):
             asm volatile("int $172");
-            return NULL;
             break;
 
         case(INT_SYSCALL_PRINT):
             asm volatile("int $173");
-            return NULL;
             break;
 
         case(INT_SYSCALL_EXIT):
             asm volatile("int $174");
-            return NULL;
             break;
 
         default:
-            return NULL;
+            printf("Unknown System Call Number: %d\n", syscall_no);
             break;
     }
-
-    return NULL;
 }
 
 

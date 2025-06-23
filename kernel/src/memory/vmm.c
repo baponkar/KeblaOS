@@ -16,7 +16,7 @@ is designed to work with a paging system and includes error handling for various
 
 
 // Allocate a virtual page at the specified virtual address
-void vm_alloc(uint64_t va) {  
+void vm_alloc(uint64_t va, uint8_t type) {  
 
     pml4_t *current_pml4 = (pml4_t *) get_cr3_addr(); // Get the current PML4 table
     
@@ -39,6 +39,24 @@ void vm_alloc(uint64_t va) {
     }
     
     alloc_frame(page, va >= HIGHER_HALF_START_ADDR ? 1 : 0, 1);
+
+    switch (type) {
+        case ALLOCATE_CODE:
+            page->rw = 0; // Read-only for code
+            page->nx = 1; // No execute for code
+            break;
+        case ALLOCATE_DATA:
+            page->rw = 1; // Read-write for data
+            page->nx = 1; // No execute for data
+            break;
+        case ALLOCATE_STACK:
+            page->rw = 1; // Read-write for stack
+            page->nx = 1; // No execute for stack
+            break;
+        default:
+            printf("[Error] VMM: Invalid allocation type!\n");
+            return;
+    }
 
 
     flush_tlb(va); // Flush the TLB for the new page
@@ -114,7 +132,7 @@ void test_vmm() {
     uint64_t test_va = 0x100000; // 1 MB (example virtual address)
 
     printf("Allocating virtual page at %x\n");
-    vm_alloc(test_va);
+    vm_alloc(test_va, ALLOCATE_DATA);
 
     printf("Writing to the allocated page...\n");
     uint64_t *ptr = (uint64_t *)test_va;

@@ -103,7 +103,6 @@ void kmain(){
     printf("[%s - %s\n[Info] Build starts on: %s, Last Update on: %s]\n",
         OS_NAME, OS_VERSION, BUILD_DATE, LAST_UPDATE);
         
-    
     init_bs_cpu_core();
 
     // Initialize APIC and IOAPIC
@@ -113,44 +112,47 @@ void kmain(){
         printf("[Error] This System does not have APIC.\n");
     }
 
-    printf("\n[Hello from CPU %d (BSP)]\n", 0);
+    // printf("\n[Hello from CPU %d (BSP)]\n", 0);
 
-    pci_scan();
+    // pci_scan();
 
-    uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5]; // Found from pci scan 0xFEBD5000
-    HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
-    HBA_PORT_T* port = (HBA_PORT_T*) &abar->ports[0];
+    // uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5]; // Found from pci scan 0xFEBD5000
+    // HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
+    // HBA_PORT_T* port = (HBA_PORT_T*) &abar->ports[0];
 
-    ahci_identify(port);
-    test_ahci(abar);
+    // ahci_identify(port);
+    // test_ahci(abar);
 
     // fat32_init(port);
     // fat32_run_tests(port);
 
-    // kfs_test(port); // Test Kebla File System
 
     // switch_to_core(3);
 
     // start_kshell();
-    
-    // test_vmm_1();
 
-    // int_syscall_init();
-    // printf("%s\n", syscall_test(INT_SYSCALL_PRINT));
+    // printf("%s\n", *syscall_test(INT_SYSCALL_READ));    // Test Read System Call
+    // printf("%s\n", *syscall_test(INT_SYSCALL_PRINT));   // Test Print System Call
+    // printf("%s\n", *syscall_test(INT_SYSCALL_EXIT));    // Test Exit System Call
 
+    // syscall_test(INT_SYSCALL_PRINT);   // Test Print System Call
+    // syscall_test(INT_SYSCALL_READ);   // Test Print System Call
+    // syscall_test(INT_SYSCALL_EXIT);    // Test Exit System Call
 
     // Load and parse kernel modules by using limine bootloader
-    get_kernel_modules_info();
-    print_kernel_modules_info();
-    load_user_elf_and_jump();
+    // get_kernel_modules_info();
+    // print_kernel_modules_info();
+    // load_user_elf_and_jump();
 
     // loading usermode function
-    // init_user_mode();
+    init_user_mode();
 
     halt_kernel();
 }
 
-
+void test_syscall_entry(uint64_t rcx, uint64_t r11){
+    printf("[Syscall_Entry] rcx: %x, r11: %x\n", rcx, r11);
+}
 
 
 

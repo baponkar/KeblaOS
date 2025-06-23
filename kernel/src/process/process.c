@@ -18,6 +18,7 @@ https://wiki.osdev.org/Brendan%27s_Multi-tasking_Tutorial
 #include "../lib/stdio.h"
 #include "../lib/string.h"
 #include "../memory/kheap.h"
+#include "../memory/vmm.h"
 #include "../util/util.h"
 #include "thread.h"
 #include "types.h"
@@ -42,7 +43,7 @@ void add_process(process_t* proc) {
 // Creating a new process with a null thread
 process_t* create_process(const char* name) {
     
-    process_t* proc = (process_t*) kheap_alloc(sizeof(process_t)); // Allocate memory for the process
+    process_t* proc = (process_t*) kheap_alloc(sizeof(process_t), ALLOCATE_CODE); // Allocate memory for the process
     if (!proc){
         printf("Process Memory allocation Failed!\n");
         return NULL; // Return NULL if memory allocation fails

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hex ↔ Decimal Converter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #f0f0f0;
+      text-align: center;
+      padding: 40px;
+    }
+    input {
+      padding: 10px;
+      margin: 10px;
+      font-size: 1rem;
+      width: 250px;
+      text-align: center;
+      border-radius: 6px;
+      border: none;
+      outline: none;
+    }
+    .input-group {
+      margin-bottom: 20px;
+    }
+    .container {
+      background-color: #1e1e1e;
+      padding: 30px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Hex ↔ Decimal Converter</h1>
+
+    <div class="input-group">
+      <label for="hexInput">Hexadecimal</label>
+      <input type="text" id="hexInput" placeholder="e.g., 1A3F">
+    </div>
+
+    <div class="input-group">
+      <label for="decInput">Decimal</label>
+      <input type="text" id="decInput" placeholder="e.g., 6703">
+    </div>
+  </div>
+
+  <script>
+    const hexInput = document.getElementById("hexInput");
+    const decInput = document.getElementById("decInput");
+
+    hexInput.addEventListener("input", () => {
+      const hex = hexInput.value.trim();
+      if (/^[0-9a-fA-F]*$/.test(hex)) {
+        decInput.value = hex ? parseInt(hex, 16) : "";
+      } else {
+        decInput.value = "Invalid Hex";
+      }
+    });
+
+    decInput.addEventListener("input", () => {
+      const dec = decInput.value.trim();
+      if (/^\d*$/.test(dec)) {
+        hexInput.value = dec ? parseInt(dec, 10).toString(16).toUpperCase() : "";
+      } else {
+        hexInput.value = "Invalid Decimal";
+      }
+    });
+  </script>
+
+</body>
+</html>

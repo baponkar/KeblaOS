@@ -15,6 +15,8 @@
 #define MSR_STAR     0xC0000081
 #define MSR_LSTAR    0xC0000082
 #define MSR_SFMASK   0xC0000084
+#define MSR_FS_BASE  0xC0000100
+#define MSR_GS_BASE  0xC0000101
 #define MSR_KERNEL_GS_BASE 0xC0000102
 
 #define EFER_SCE  (1 << 0)    // Enable SYSCALL/SYSRET
@@ -41,11 +43,16 @@ static inline void write_msr(uint32_t msr, uint64_t value) {
 
 void init_syscall(uint64_t cpu_id) {
 
-    cpu_data_t* cpu = &cpu_datas[cpu_id];
+    cpu_data_t *gs_base = (cpu_data_t *) &cpu_datas[cpu_id];
+
+    write_msr(MSR_FS_BASE, 0); // MSR_FS_BASE — user FS base (dummy OK)
+    write_msr(MSR_GS_BASE, 0); // MSR_GS_BASE — user GS base (dummy OK)
+    write_msr(MSR_KERNEL_GS_BASE, (uint64_t)&cpu_datas[cpu_id]); // MSR_KERNEL_GS_BASE
 
 
-    // Write IA32_KERNEL_GS_BASE (0xC0000102) to point to this CPU's cpu_data_t
-    write_msr(MSR_KERNEL_GS_BASE, (uint64_t)cpu);
+    printf("[CPU %d] Initialized syscall with GS_BASE: %x\n", cpu_id, gs_base);
+    printf("[CPU %d] kernel_stack: %x\n", cpu_id, (uint64_t)gs_base->kernel_stack);
+    printf("[CPU %d] user_stack: %x\n", cpu_id, (uint64_t)gs_base->user_stack);
 
     // Enable SYSCALL/SYSRET by setting SCE in IA32_EFER.
     uint64_t efer = read_msr(MSR_EFER);
@@ -60,26 +67,38 @@ void init_syscall(uint64_t cpu_id) {
     write_msr(MSR_LSTAR, (uint64_t)&syscall_entry);
 
     // SFMASK: mask IF (and maybe other flags) when transitioning.
-    write_msr(MSR_SFMASK, 1 << 9);
+    write_msr(MSR_SFMASK, 0);
+
+    uint64_t kgs = read_msr(MSR_KERNEL_GS_BASE);
+    printf("MSR_KERNEL_GS_BASE = %x\n", (void*)kgs);
+
+    printf("[CPU %d] MSR based Syscall initialized successfully.\n", cpu_id);
 }
 
 
 
 void syscall_handler(uint64_t syscall_num, uint64_t arg1, uint64_t arg2) {
-    if(syscall_num == SYSCALL_PRINT){
-        printf("SYSCALL_PRINT: arg1 = %x\n", (void*)arg1);
-        printf("SYSCALL_PRINT: first char = %c\n", *(char*)arg1);
+    switch(syscall_num) {
+        case SYSCALL_PRINT:
+            // const char* str = (const char*)arg1;
+            // printf("%s\n", str);  
+            printf("Syscall Print\n");
+            break;
 
-        const char* str = (const char*)arg1;
-        printf("%s\n", str);  
-    }else if(syscall_num == SYSCALL_READ){
-        char* user_buf = (char*)arg1;
-        uint64_t size = arg2;
-    }else if(syscall_num == SYSCALL_EXIT){
-        printf("User requested shell exit.\n");
-        while (1) asm("hlt");
-    }else{
-        printf("Unknown syscall: %d\n", (int) syscall_num);
+        case SYSCALL_READ:
+            // Handle read syscall
+            char* user_buf = (char*)arg1;
+            uint64_t size = arg2;
+            // Implement read logic here
+            break;
+
+        case SYSCALL_EXIT:
+            printf("User requested shell exit.\n");
+            break;
+
+        default:
+            printf("Unknown syscall: %d\n", (int) syscall_num);
+            break;
     }
 }
 
@@ -110,3 +129,5 @@ void test_syscall() {
     // Test exit syscall
     syscall(SYSCALL_EXIT, 0, 0);
 }
+
+

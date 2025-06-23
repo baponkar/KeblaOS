@@ -407,7 +407,7 @@ void test_ahci(HBA_MEM_T* abar)
 
 
 	// Create a buffer for the command list
-    uint16_t* buf_1 = (uint16_t*)vir_to_phys((uint64_t)kheap_alloc(0x8000)); // 32 KB buffer (overkill but fine for test)
+    uint16_t* buf_1 = (uint16_t*)vir_to_phys((uint64_t)kheap_alloc(0x8000, ALLOCATE_DATA)); // 32 KB buffer (overkill but fine for test)
     if (buf_1 == NULL) {
         printf(" [AHCI] Buffer_1 Memory allocation failed!\n");
         return;
@@ -427,7 +427,7 @@ void test_ahci(HBA_MEM_T* abar)
     }
 
 
-	uint16_t* buf_2 = (uint16_t*)vir_to_phys((uint64_t)kheap_alloc(0x8000)); // 32 KB buffer (overkill but fine for test)
+	uint16_t* buf_2 = (uint16_t*)vir_to_phys((uint64_t)kheap_alloc(0x8000, ALLOCATE_DATA)); // 32 KB buffer (overkill but fine for test)
     if (buf_2 == NULL) {
         printf(" [AHCI] Buffer_2 Memory allocation failed!\n");
         return;

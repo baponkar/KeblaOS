@@ -13,7 +13,7 @@ enum int_syscall_number{
 
 void int_syscall_init();
 
-char *syscall_test(int syscall_no);
+void syscall_test(int syscall_no);
 
 
 

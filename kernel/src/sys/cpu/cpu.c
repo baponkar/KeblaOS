@@ -35,6 +35,8 @@
 #include "../../memory/kmalloc.h"
 #include "../../memory/paging.h"
 #include "../../memory/pmm.h"
+#include "../../memory/Uheap.h"
+#include "../../memory/vmm.h"
 
 #include "../../util/util.h"
 #include "../acpi/acpi.h"
@@ -77,7 +79,7 @@ void init_bs_cpu_core(){
     printf("[Info] CPU %d (Bootstrap) with PIC initialized...\n\n", 0);
 }
 
-
+// This function initializes the bootstrap CPU core with APIC
 void start_bootstrap_cpu_core() {
 
     if (smp_response == NULL) {
@@ -86,6 +88,13 @@ void start_bootstrap_cpu_core() {
     }
 
     uint32_t bsp_lapic_id = smp_response->bsp_lapic_id;
+
+    // Setting up the CPU data structure for the bootstrap core
+    cpu_datas[bsp_lapic_id].lapic_id = bsp_lapic_id;                        // Set the LAPIC ID for the bootstrap core
+    cpu_datas[bsp_lapic_id].smp_info = smp_response->cpus[bsp_lapic_id];    // Set the SMP info for the bootstrap core 
+    cpu_datas[bsp_lapic_id].is_online = 1;                                  // Mark the bootstrap core as online
+    cpu_datas[bsp_lapic_id].kernel_stack = (uint64_t)kmalloc_a(STACK_SIZE, 1) + STACK_SIZE;  // Set the stack pointer for the bootstrap core
+    cpu_datas[bsp_lapic_id].user_stack = (uint64_t)uheap_alloc(STACK_SIZE, ALLOCATE_STACK) + STACK_SIZE; // Set the user stack pointer for the bootstrap core
 
     asm volatile("cli");        // Disable interrupts
 
@@ -108,13 +117,10 @@ void start_bootstrap_cpu_core() {
     init_pmm();                 // Initialize Physical Memory Manager for the bootstrap core
 
     init_bs_paging();           // Initialize paging for the bootstrap core
-    // init_bs_paging_with_new_pml4();
 
 
     int_syscall_init();         // Initialize int based system calls for the bootstrap core    
     init_ipi();                 // Initialize IPI for inter-processor communication
-
-    init_syscall(0);            // Initialize system calls for the bootstrap core
 
     asm volatile("sti");        // Enable interrupts
 
@@ -123,11 +129,7 @@ void start_bootstrap_cpu_core() {
     init_apic_timer(100);       // Initialize the APIC timer for the bootstrap core
     initKeyboard();             // Initialize the keyboard driver
 
-    // Setting up the CPU data structure for the bootstrap core
-    cpu_datas[bsp_lapic_id].lapic_id = bsp_lapic_id;                        // Set the LAPIC ID for the bootstrap core
-    cpu_datas[bsp_lapic_id].smp_info = smp_response->cpus[bsp_lapic_id];    // Set the SMP info for the bootstrap core 
-    cpu_datas[bsp_lapic_id].is_online = 1;                                  // Mark the bootstrap core as online
-    cpu_datas[bsp_lapic_id].cpu_stack = read_rsp();                         // Set the stack pointer for the bootstrap core
+    init_syscall(bsp_lapic_id);            // Initialize system calls for the bootstrap core
 
     printf("[Info] Bootstrap CPU %d initialized...\n\n", bsp_lapic_id);
 
@@ -157,7 +159,7 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
         return;
     }
     uint64_t cpu_stack_top = cpu_stack + STACK_SIZE; // Set the stack pointer to the top of the allocated stack
-    cpu_datas[core_id].cpu_stack = cpu_stack_top;    // Set the stack pointer to the top of the allocated stack
+    cpu_datas[core_id].kernel_stack = cpu_stack_top;    // Set the stack pointer to the top of the allocated stack
     set_rsp(cpu_stack_top);                          // Set the stack pointer for this core
 
     // Initialize GDT and TSS for this core
@@ -253,7 +255,7 @@ void init_all_cpu_cores() {
     // }
     asm volatile("sti");
 
-    printf("[Info] All CPU cores initialized and online.\n");
+    printf("[Info] All CPU cores initialized and online.\n\n\n");
 }
 
 void switch_to_core(uint32_t target_lapic_id) {

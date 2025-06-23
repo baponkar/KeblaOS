@@ -9,10 +9,10 @@
 
 #define PAGE_SIZE 0x1000
 
-static volatile uint64_t l_va_head = LOWER_HALF_START_ADDR;
+static volatile uint64_t l_va_head = 0x500000 + LOWER_HALF_START_ADDR;
 
 
-void *uheap_alloc(size_t size) {
+void *uheap_alloc(size_t size, uint8_t type) {
     // Align size to page size (4 KiB)
     size = (size + 0xFFF) & ~0xFFF;
 
@@ -26,7 +26,7 @@ void *uheap_alloc(size_t size) {
     uint64_t va = l_va_head;
     
     while (l_va_head < va + size) {
-        vm_alloc(l_va_head);            // allocating by vm_alloc function
+        vm_alloc(l_va_head, type);            // allocating by vm_alloc function
         l_va_head+= PAGE_SIZE;          // Increment by page size (size)
     }
 

@@ -2,6 +2,7 @@
 #include "../lib/string.h"
 #include "../lib/stdio.h"
 #include "../memory/kheap.h"
+#include "../memory/vmm.h"
 #include "process.h"
 #include "types.h"
 #include "../sys/timer/apic_timer.h"
@@ -52,7 +53,7 @@ void add_thread(thread_t* thread) {
 // Creating a new thread and add into parent process
 thread_t* create_thread(process_t* parent, const char* name, void (*function)(void*), void* arg) {
 
-    thread_t* thread = (thread_t*) kheap_alloc(sizeof(thread_t)); // Allocate memory for the thread
+    thread_t* thread = (thread_t*) kheap_alloc(sizeof(thread_t), ALLOCATE_CODE); // Allocate memory for the thread
 
     if (!thread) return NULL;
     memset((void*)thread, 0, sizeof(thread_t)); // Initialize the thread to 0
@@ -68,7 +69,7 @@ thread_t* create_thread(process_t* parent, const char* name, void (*function)(vo
     thread->cpu_time = 0;
 
     // Allocate a stack for the thread
-    void* stack = kheap_alloc(THREAD_STACK_SIZE);
+    void* stack = kheap_alloc(THREAD_STACK_SIZE, ALLOCATE_STACK); // Allocate memory for the thread's stack
 
     if (!stack) {           // If stack allocation fails, free the thread
         kheap_free((void*)thread, sizeof(thread_t));

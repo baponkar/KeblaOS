@@ -12,7 +12,7 @@
 static uint64_t h_va_head = HIGHER_HALF_START_ADDR;
 
 
-void *kheap_alloc(size_t size) {
+void *kheap_alloc(size_t size, uint8_t type) {
     // Align size to page size (4 KiB)
     size = (size + 0xFFF) & ~0xFFF;
 
@@ -26,7 +26,7 @@ void *kheap_alloc(size_t size) {
     uint64_t va = h_va_head;
     
     while (h_va_head < va + size) {
-        vm_alloc(h_va_head);           // allocating by vm_alloc function
+        vm_alloc(h_va_head, type);           // allocating by vm_alloc function
         h_va_head += PAGE_SIZE;        // Increment by page size (size)
     }
 
@@ -60,7 +60,7 @@ void kheap_free(void *ptr, size_t size) {
 void test_kheap(){
 
     // First Creating a virtual pointer and assigning a value to it
-    uint64_t *vir_ptr = kheap_alloc(0x8000);    // Allocate 32 KB
+    uint64_t *vir_ptr = kheap_alloc(0x8000, ALLOCATE_DATA);    // Allocate 32 KB
     *vir_ptr = 0xDEADBEF;                       // Assign a value to the allocated memory
     printf("Allocated memory at: %x, Value: %x\n",(uint64_t) vir_ptr, *vir_ptr); // Allocated memory at: 0xFFFF800000001000, Value: 0xDEABEEF
 

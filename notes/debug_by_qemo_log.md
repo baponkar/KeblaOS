@@ -38,6 +38,8 @@ Here exception v=0xe(decimal 14) Page Fault Exception is occared
 cpl=0 means kernel mode
 Instraction Pointer where problem occared : 0xffffffff80015a40
 
+e=0002 , error flag = 0002
+
 Stack Pointer address: 0000000000001000 
 
 Page Fault occared at address: CR2=0000000000000ff8
@@ -47,7 +49,49 @@ PML4 Directory Address: CR3=000000007ff51000
 ## Inspect elf or binary file with instruction address:
 
 ```
-objdump -d -M intel build/kernel.bin | grep -A20 ffffffff80015a40
+objdump -d -M intel build/kernel.bin | grep -A20 ffffffff8000683e
 ```
 
-Which gives what is causing fault 
+## Output:
+```
+objdump: Warning: Bogus end-of-siblings marker detected at offset 15a93 in .debug_info section
+objdump: Warning: Bogus end-of-siblings marker detected at offset 15a94 in .debug_info section
+objdump: Warning: Bogus end-of-siblings marker detected at offset 15a95 in .debug_info section
+objdump: Warning: Further warnings about bogus end-of-sibling markers suppressed
+ffffffff8000683e:       0f b6 00                movzx  eax,BYTE PTR [rax]
+ffffffff80006841:       84 c0                   test   al,al
+ffffffff80006843:       75 d5                   jne    ffffffff8000681a <print+0xe>
+ffffffff80006845:       90                      nop
+ffffffff80006846:       90                      nop
+ffffffff80006847:       c9                      leave
+ffffffff80006848:       c3                      ret
+
+ffffffff80006849 <get_cursor_pos_x>:
+ffffffff80006849:       55                      push   rbp
+ffffffff8000684a:       48 89 e5                mov    rbp,rsp
+ffffffff8000684d:       8b 05 b5 94 69 00       mov    eax,DWORD PTR [rip+0x6994b5]        # ffffffff8069fd08 <cur_x>
+ffffffff80006853:       48 98                   cdqe
+ffffffff80006855:       5d                      pop    rbp
+ffffffff80006856:       c3                      ret
+
+ffffffff80006857 <get_cursor_pos_y>:
+ffffffff80006857:       55                      push   rbp
+ffffffff80006858:       48 89 e5                mov    rbp,rsp
+ffffffff8000685b:       8b 05 ab 94 69 00       mov    eax,DWORD PTR [rip+0x6994ab]        # ffffffff8069fd0c <cur_y>
+ffffffff80006861:       48 98                   cdqe
+```
+
+Checking what is causing Fault by GDB
+`kernel.bin` should build by `-g` flag.
+
+```
+gdb kernel.bin
+info line *0xffffffff8000683e
+```
+
+## Output:
+```
+Line 229 of "kernel/src/driver/vga/vga_term.c" starts at address 0xffffffff8000683a <print+46>
+   and ends at 0xffffffff80006845 <print+57>.
+```
+

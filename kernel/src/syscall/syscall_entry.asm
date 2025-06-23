@@ -1,42 +1,48 @@
 
 global syscall_entry
 extern syscall_handler
-extern kernel_stack     ; pointer to kernel stack, should be per-core ideally
+
 
 section .text
 syscall_entry:
-    swapgs                    ; switch GS base with KernelGSBase
+    swapgs               ; switch GS base with KernelGSBase
 
-    mov [gs:0x10], rsp       ; Save old kernel RSP
-    mov rsp, [gs:8]            ; Load per-core kernel stack
-    sub rsp, 8*6              ; make room for pushes (align if needed)
+    mov [gs:8], rsp     ; Save current user RSP in [gs:16]
+    mov rsp, [gs:0]      ; Load per-core kernel stack
+    sub rsp, 9*8         ; make room for pushes (align if needed)
 
-    ; Don't touch RCX or R11! They are used by sysretq.
+    ; Saving Registers into kernel stack
     push rcx 
     push r11 
-
-    ; Save other registers
     push rdi
     push rsi
     push rdx
     push rax
+    push r8
+    push r9
+    push r10
 
-    ; Arguments to syscall_handler(syscall_num, arg1)
-    mov rsi, rdi         ; user argument → RSI
-    mov rdi, rax         ; syscall number → RDI
+    ; Arguments to syscall_handler(syscall_num, arg1, arg2)   
+    mov rdi, rax         ; syscall number
+    mov rsi, rdi         ; argument 1
+    mov rdx, rsi         ; argument 2
 
     call syscall_handler
 
-    ; Restore registers
+    ; Restore registers from kernel stack
+    pop r10
+    pop r9
+    pop r8
     pop rax
     pop rdx
     pop rsi
     pop rdi
-
     pop r11 
     pop rcx 
 
-    swapgs
+    mov rsp, [gs:8]      ; Restore user rsp from gs:16
+    swapgs                ; switch GS base with KernelGSBase
 
     ; Return to user — RCX and R11 must still hold original values
     sysretq
+

@@ -16,6 +16,7 @@ References:
 
 #include "../memory/paging.h"
 #include "../memory/Uheap.h"
+#include "../memory/vmm.h"
 
 #include "load_and_parse_elf.h"
 
@@ -84,8 +85,6 @@ void load_user_elf_and_jump() {
 
     void *elf_base = module_request.response->modules[0]->address;
 
-    printf("user_program.elf base addr %x\n", (uint64_t) elf_base);
-
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)elf_base;
     Elf64_Phdr *phdrs = (Elf64_Phdr *)((uint8_t *)elf_base + ehdr->e_phoff);
 
@@ -101,13 +100,10 @@ void load_user_elf_and_jump() {
         memset((uint8_t *)dst + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);
     }
 
-    uint64_t user_entry = ehdr->e_entry;
-    uint64_t user_stack = (uint64_t) uheap_alloc(0x4000); 
+    uint64_t user_entry = (uint64_t) ehdr->e_entry;
+    uint64_t user_stack = (uint64_t) uheap_alloc(0x4000, ALLOCATE_STACK); // Allocate 16KB for user stack
     
     printf("Switching into usermode: user_entry_addr-%x, user_stack_addr-%x\n", user_entry, user_stack);
-
-    page_t* page = get_page(user_entry, 0, kernel_pml4);
-    printf("V. addr: %x, Page: present=%d, rw=%d, user=%d, frame=%x\n",user_entry, page->present, page->rw, page->user, page->frame << 12);
 
     switch_to_user_mode(user_stack, user_entry);
 }

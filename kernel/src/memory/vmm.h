@@ -7,8 +7,13 @@ https://chatgpt.com/share/675fa60d-c044-8001-aef6-d23b3d62ab62
 #include <stdint.h>
 #include <stdbool.h>
 
+enum allocation_type {
+    ALLOCATE_CODE = 0x1,   // Allocate for code
+    ALLOCATE_DATA = 0x2,   // Allocate for data
+    ALLOCATE_STACK = 0x4,  // Allocate for stack
+};
 
-void vm_alloc(uint64_t va);
+void vm_alloc(uint64_t va, uint8_t type);
 void vm_free(uint64_t *ptr);
 
 uint64_t phys_to_vir(uint64_t pa);
