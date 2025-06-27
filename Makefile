@@ -127,7 +127,7 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	cp -v initrd/initrd.cpio $(ISO_DIR)/boot/initrd.cpio
 
 	# Copy user_programe.elf file into boot 
-	cp -v $(MODULE_DIR)/user_program.elf $(ISO_DIR)/boot/user_program.elf 
+	cp -v $(MODULE_DIR)/user_program_c.elf $(ISO_DIR)/boot/user_program_c.elf
 
 	# Creating KeblaOS-0.11-image.iso file by using xorriso.
 	xorriso \

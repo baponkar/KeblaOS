@@ -140,6 +140,7 @@ pci_device_t pci_device_detect(uint8_t bus, uint8_t device, uint8_t function) {
     pci_device.base_address_registers[5] = bar5 & 0xFFFFFFF0;   // This is a pointer to the AHCI controller's memory address
     // pci_device.base_address_registers[6] = bar6;
 
+
     printf(" [-] PCI: Device found at %d:%d.%d\n", bus, device, function);
     printf("     Device ID: %x, Vendor ID: %x Class: %x, Subclass: %x, Prog IF: %x, Revision: %d\n",
         pci_device.device_id, pci_device.vendor_id, class, subclass, prog_if, pci_device.revision_id);

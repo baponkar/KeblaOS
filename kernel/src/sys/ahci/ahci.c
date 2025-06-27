@@ -42,7 +42,7 @@ References:
 
 #include "ahci.h"
 
-
+HBA_PORT_T* g_ahci_port;  // Assume this is your active port
 
 // Checks if a port has a valid, active device attached.
 static int checkType(HBA_PORT_T* port)
@@ -351,6 +351,9 @@ uint64_t get_total_sectors(uint16_t* identify_buf) {
 
 
 void ahci_identify(HBA_PORT_T* port) {
+
+	g_ahci_port = port; // Set the global AHCI port variable
+	
     FIS_REG_H2D_T fis;
     memset(&fis, 0, sizeof(fis));
     fis.fis_type = FIS_TYPE_REG_H2D;
@@ -358,7 +361,11 @@ void ahci_identify(HBA_PORT_T* port) {
     fis.device = 0;						// Master device
     fis.c = 1;							// Write command register
 
-    uint16_t identify_buf[256];
+    uint16_t *identify_buf = (uint16_t *) kmalloc(512); // Allocate 512 bytes for IDENTIFY data
+	if (identify_buf == NULL) {
+		printf(" [AHCI] Memory allocation for IDENTIFY buffer failed!\n");
+		return;
+	}
 
 	if(runCommand(FIS_TYPE_ATA_CMD_IDENTIFY, 0, port, 0, 0, 1, identify_buf)){
         uint64_t sectors = get_total_sectors(identify_buf);

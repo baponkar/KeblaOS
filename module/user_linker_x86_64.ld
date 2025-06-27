@@ -1,16 +1,15 @@
-
 ENTRY(_start)
 
-SECTIONS
-{
+SECTIONS {
     . = 0x401000;
 
     .text : {
-        *(.text)
+        *(.text.user)
+        *(.text*)
     }
 
     .rodata : {
-        *(.rodata)
+        *(.rodata*)
     }
 
     .data : {
@@ -18,8 +17,8 @@ SECTIONS
     }
 
     .bss : {
-        *(.bss)
+        *(.bss COMMON)
     }
+
+    /DISCARD/ : { *(.eh_frame) *(.comment) }
 }
-
-

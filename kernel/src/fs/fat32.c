@@ -54,6 +54,14 @@ bool fat32_init(HBA_PORT_T* port) {
     fat32_info.fat_start_sector      = fat32_info.reserved_sector_count;
     fat32_info.cluster_heap_start_sector = fat32_info.fat_start_sector + fat32_info.num_fats * fat32_info.fat_size;
 
+    printf("Bytes/Sector: %x\n", fat32_info.bytes_per_sector);
+    printf("Sectors/Cluster: %x\n", fat32_info.sectors_per_cluster);
+    printf("Reserved Sectors: %x\n", fat32_info.reserved_sector_count);
+    printf("Number of FATs: %x\n", fat32_info.num_fats);
+    printf("FAT Size: %x\n", fat32_info.fat_size);
+    printf("Root Cluster: %x\n", fat32_info.root_dir_first_cluster);
+
+
     printf("[Info] Successfully initialize FAT32 with bytes per sector: %d\n", fat32_info.bytes_per_sector);
     
     return true;
@@ -120,6 +128,10 @@ uint32_t fat32_find_free_cluster() {
     uint8_t sector[512];
     for (uint32_t i = 2; i < 0x0FFFFFF6; i++) { // 8 TB
         uint32_t fat_offset = i * 4;
+        if (fat32_info.bytes_per_sector == 0) {
+            printf("[FAT32] ERROR: sectors_per_cluster is zero!\n");
+            while(1);
+        }
         uint32_t fat_sector = fat32_info.fat_start_sector + (fat_offset / fat32_info.bytes_per_sector);
         uint32_t entry_offset = fat_offset % fat32_info.bytes_per_sector;
 
@@ -404,7 +416,7 @@ bool fat32_read_root_dir() {
 
     for (int i = 0; i < 512 / sizeof(DIR_ENTRY); i++) {
         if (entries[i].name[0] == 0x00) break; // End of directory
-        printf("  FAT32: File: %s Size: %d\n", entries[i].name, entries[i].fileSize);
+        printf("[FAT32] File: %s Size: %d\n", entries[i].name, entries[i].fileSize);
         fat32_delete_file(entries[i].name); // Delete file for testing
     }
     return true;
@@ -558,7 +570,7 @@ void fat32_run_tests(HBA_PORT_T* global_port) {
     // 2. Create file
     printf(" [FAT32] Creating file: %s\n", filename);
     if (!fat32_create_file(filename)) {
-        printf(" [FAT32] Failed to create file!\n");
+        printf("[FAT32] Failed to create file!\n");
         return;
     }
     printf(" [FAT32] File created successfully.\n");
@@ -566,37 +578,37 @@ void fat32_run_tests(HBA_PORT_T* global_port) {
     // 3. Write to file
     printf(" [FAT32] Writing to file: %s\n", filename);
     if (!fat32_write_file(filename, (const uint8_t*)message, strlen(message))) {
-        printf(" [FAT32] Failed to write to file!\n");
+        printf("[FAT32] Failed to write to file!\n");
         // return;
     }
-    printf(" [FAT32] File written successfully.\n");
+    printf("[FAT32] File written successfully.\n");
 
     // 4. Read back the file
     memset(buffer, 0, sizeof(buffer));  // Clearing the buffer
-    printf(" [FAT32] Reading from file: %s\n", filename);
+    printf("[FAT32] Reading from file: %s\n", filename);
     if (!fat32_read_file(filename, buffer, sizeof(buffer))) {
-        printf(" [FAT32] Failed to read file!\n");
+        printf("[FAT32] Failed to read file!\n");
         return;
     }
-    printf(" [FAT32] File contents: %s\n", buffer);
+    printf("[FAT32] File contents: %s\n", buffer);
     
     // 5. Delete the file
-    printf(" [FAT32] Deleting file: %s\n", filename);
+    printf("[FAT32] Deleting file: %s\n", filename);
     if (!fat32_delete_file(filename)) {
         printf(" [FAT32] Failed to delete file!\n");
         return;
     }
-    printf(" [FAT32] File deleted successfully.\n");
+    printf("[FAT32] File deleted successfully.\n");
 
     // 6. Check presence again
-    printf(" [FAT32] Checking presence of file again: %s\n", filename);
+    printf("[FAT32] Checking presence of file again: %s\n", filename);
     if(fat32_check_presence(filename, false)){
-        printf(" [FAT32] The file %s is still present!\n", filename);
+        printf("[FAT32] The file %s is still present!\n", filename);
     } else {
-        printf(" [FAT32] The file %s is not present anymore.\n", filename);
+        printf("[FAT32] The file %s is not present anymore.\n", filename);
     }
 
-    printf(" [FAT32] All FAT32 tests passed!\n");
+    printf("[FAT32] All FAT32 tests passed!\n");
 }
 
 

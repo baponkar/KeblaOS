@@ -69,15 +69,26 @@ static void retreat_pointer(ring_buffer_t* rb) {
 
 // Push an element into the ring buffer.
 void ring_buffer_push(ring_buffer_t* rb, uint8_t data) {
+    if (!rb || !rb->buffer) {
+        printf("ring_buffer_push: NULL access detected!\n");
+        return;
+    }
     rb->buffer[rb->head] = data;
     advance_pointer(rb);
 }
 
 // Pop an element from the ring buffer. Returns 0 on success, -1 if empty.
 int ring_buffer_pop(ring_buffer_t* rb, uint8_t *data) {
-    if (is_ring_buffer_empty(rb)) {
-        return -1; // Buffer is empty.
+
+    if (!rb || !rb->buffer || !data) {
+        printf("ring_buffer_pop: NULL access detected!\n");
+        return -1;
     }
+
+    if (is_ring_buffer_empty(rb)) {
+        return -1;
+    }
+
     *data = rb->buffer[rb->tail];
     retreat_pointer(rb);
     return 0;

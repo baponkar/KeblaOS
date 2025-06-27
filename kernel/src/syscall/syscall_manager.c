@@ -1,6 +1,6 @@
 
 /*
-    MSR System Call
+    MSR Based System Call
 
     https://wiki.osdev.org/SYSENTER#AMD:_SYSCALL/SYSRET
 */
@@ -80,9 +80,13 @@ void init_syscall(uint64_t cpu_id) {
 void syscall_handler(uint64_t syscall_num, uint64_t arg1, uint64_t arg2) {
     switch(syscall_num) {
         case SYSCALL_PRINT:
-            // const char* str = (const char*)arg1;
-            // printf("%s\n", str);  
-            printf("Syscall Print\n");
+            printf("Print Syscall called\n");
+            if(arg1 == 0) {
+                printf("No string to print.\n");
+                break;
+            }
+            const char* str = (const char*)arg1;
+            printf("%s\n", str);  
             break;
 
         case SYSCALL_READ:
@@ -115,8 +119,6 @@ void syscall(uint64_t num, uint64_t arg1, uint64_t arg2) {
 
 
 void test_syscall() {
-    // Test an unknown syscall
-    syscall(67, 0, 0); 
 
     // Test print syscall
     syscall(SYSCALL_PRINT, (uint64_t)"Hello from syscall!\n", 0);
@@ -125,6 +127,9 @@ void test_syscall() {
     char buffer[100];
     syscall(SYSCALL_READ, (uint64_t)buffer, 100);
     printf("Read from syscall: %s\n", buffer);
+
+    // Test an unknown syscall
+    syscall(67, 0, 0); 
 
     // Test exit syscall
     syscall(SYSCALL_EXIT, 0, 0);

@@ -20,10 +20,10 @@ References:
 #include "switch_to_user.h"
 
 
-#define KERNEL_CS 0x08  // 0x08 | 0
-#define KERNEL_SS 0x10  // 0x10 | 0
-#define USER_CS 0x1B    // 0x18 | 3
-#define USER_SS 0x23    // 0x20 | 3 = 100000 | 11 = 100011 = 0x23
+#define KERNEL_CS 0x08      // 0x08 | 0
+#define KERNEL_SS 0x10      // 0x10 | 0
+#define USER_CS 0x1B        // 0x18 | 3
+#define USER_SS 0x23        // 0x20 | 3 = 100000 | 11 = 100011 = 0x23
 
 #define STACK_SIZE 0x4000   // 16 kb
 
@@ -37,42 +37,114 @@ int is_user_mode() {
 
 
 uint64_t create_user_function() {
-    char *hello_str = (char *)uheap_alloc(24, ALLOCATE_DATA); // "Hello from User Program\n" + '\0'
-    strcpy(hello_str, "Hello from User Program\n");
-    uint64_t str_addr = (uint64_t)hello_str;
 
-    void *user_code = (void *) uheap_alloc(0x1000, ALLOCATE_CODE); // Allocate 4kb for user code
+    void *user_code = (void *) uheap_alloc(0x1000, ALLOCATE_CODE);  // 4KB user code
+    char *prompt_str = (char *)uheap_alloc(32, ALLOCATE_DATA);      // prompt string
+    char *read_buf   = (char *)uheap_alloc(64, ALLOCATE_DATA);      // buffer for user input
 
-    // The machine code determined from user_programe.asm
-    // nasm -f bin module/user_programe.asm -o module/user_programe.bin
-    // objdump -D -b binary -m i386:x86-64 module/user_programe.bin
+    strcpy(prompt_str, "Enter input: ");
+    uint64_t str_addr = (uint64_t)prompt_str;
+    uint64_t read_buf_addr = (uint64_t)read_buf;
+
+    char *filename = (char *)uheap_alloc(32, ALLOCATE_DATA);
+    strcpy(filename, "test.txt");
+    uint64_t filename_ptr = (uint64_t)filename;
+
 
     uint8_t user_program[] = {
-        // mov rbx, <str_addr>
-        0x48, 0xbb,
-        (str_addr >> 0) & 0xff,
-        (str_addr >> 8) & 0xff,
-        (str_addr >> 16) & 0xff,
-        (str_addr >> 24) & 0xff,
-        (str_addr >> 32) & 0xff,
-        (str_addr >> 40) & 0xff,
-        (str_addr >> 48) & 0xff,
-        (str_addr >> 56) & 0xff,
+        // --- PRINT "Enter input: " ---
+        0x48, 0xBB,                            // mov rbx, <str_addr>
+        (str_addr >> 0) & 0xFF,
+        (str_addr >> 8) & 0xFF,
+        (str_addr >> 16) & 0xFF,
+        (str_addr >> 24) & 0xFF,
+        (str_addr >> 32) & 0xFF,
+        (str_addr >> 40) & 0xFF,
+        (str_addr >> 48) & 0xFF,
+        (str_addr >> 56) & 0xFF,
 
-        // mov rax, 0xad
-        // 0xb8, 0xad, 0x00, 0x00, 0x00,
+        0xCD, 0x5A,                                 // int 0x5A (print syscall)
 
-        // int 0xad
-        0xcd, 0xad,
+        // --- READ input into buffer ---
+        0x48, 0xBB,                                 // mov rbx, <read_buf_addr>
+        (read_buf_addr >> 0) & 0xFF,
+        (read_buf_addr >> 8) & 0xFF,
+        (read_buf_addr >> 16) & 0xFF,
+        (read_buf_addr >> 24) & 0xFF,
+        (read_buf_addr >> 32) & 0xFF,
+        (read_buf_addr >> 40) & 0xFF,
+        (read_buf_addr >> 48) & 0xFF,
+        (read_buf_addr >> 56) & 0xFF,
 
-        // jmp $
-        0xeb, 0xfe
+        0x48, 0xC7, 0xC1, 0x40, 0x00, 0x00, 0x00,   // mov rcx, 64
+
+        0xCD, 0x59,                                 // int 0x59 (read syscall)
+
+        // --- PRINT user input buffer ---
+        0x48, 0xBB,                                 // mov rbx, <read_buf_addr>
+        (read_buf_addr >> 0) & 0xFF,
+        (read_buf_addr >> 8) & 0xFF,
+        (read_buf_addr >> 16) & 0xFF,
+        (read_buf_addr >> 24) & 0xFF,
+        (read_buf_addr >> 32) & 0xFF,
+        (read_buf_addr >> 40) & 0xFF,
+        (read_buf_addr >> 48) & 0xFF,
+        (read_buf_addr >> 56) & 0xFF,
+
+        0xCD, 0x5A,                            // int 0xAD (print syscall)
+
+        // --- OPEN "test.txt" ---
+        0x48, 0xBB,                            // mov rbx, <filename_ptr>
+        (filename_ptr >> 0) & 0xFF,
+        (filename_ptr >> 8) & 0xFF,
+        (filename_ptr >> 16) & 0xFF,
+        (filename_ptr >> 24) & 0xFF,
+        (filename_ptr >> 32) & 0xFF,
+        (filename_ptr >> 40) & 0xFF,
+        (filename_ptr >> 48) & 0xFF,
+        (filename_ptr >> 56) & 0xFF,    
+        0xB0, 0x01,                            // mov al, 1 (FA_WRITE | FA_CREATE_ALWAYS)
+        0xCD, 0x33,                            // int 0x33 (open syscall)
+
+        // --- WRITE user input to "test.txt" ---
+        0x48, 0xBB,                            // mov rbx, <read_buf_addr>
+        (read_buf_addr >> 0) & 0xFF,
+        (read_buf_addr >> 8) & 0xFF,
+        (read_buf_addr >> 16) & 0xFF,
+        (read_buf_addr >> 24) & 0xFF,
+        (read_buf_addr >> 32) & 0xFF,
+        (read_buf_addr >> 40) & 0xFF,
+        (read_buf_addr >> 48) & 0xFF,
+        (read_buf_addr >> 56) & 0xFF,
+        0x48, 0xC7, 0xC1, 0x40, 0x00, 0x00, 0x00,   // mov rcx, 64 (size of input)
+        0x48, 0xC7, 0xC2, 0x00, 0x00, 0x00, 0x00,   // mov rdx, 0 (file descriptor)
+        0xCD, 0x36,                                 // int 0x36 (write syscall)  
+
+        // --- CLOSE "test.txt" ---
+        0x48, 0xC7, 0xC2, 0x00, 0x00, 0x00, 0x00,   // mov rdx, 0 (file descriptor)
+        0xCD, 0x34,                                 // int 0x34 (close syscall)      
+
+        // --- PRINT "Data written to test.txt" ---
+        0x48, 0xBB,                            // mov rbx, <str_addr>
+        (str_addr >> 0) & 0xFF,
+        (str_addr >> 8) & 0xFF,
+        (str_addr >> 16) & 0xFF,
+        (str_addr >> 24) & 0xFF,
+        (str_addr >> 32) & 0xFF,
+        (str_addr >> 40) & 0xFF,
+        (str_addr >> 48) & 0xFF,
+        (str_addr >> 56) & 0xFF,
+        0xCD, 0x5A,                                 // int 0x5A (print syscall)
+
+        // --- Infinite loop ---
+        0xEB, 0xFE                             // jmp $
     };
 
-    memcpy(user_code, (void*)&user_program, sizeof(user_program));
+    memcpy(user_code, user_program, sizeof(user_program));
 
-    return (uint64_t)user_code; 
+    return (uint64_t)user_code;
 }
+
 
 
 void init_user_mode(){
@@ -84,5 +156,8 @@ void init_user_mode(){
 
     switch_to_user_mode(stack_top_addr, code_addr);
 }
+
+
+
 
 

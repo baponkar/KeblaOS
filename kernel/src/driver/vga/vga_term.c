@@ -189,7 +189,7 @@ void backspace_manage() {
 
     // Erase the previous character by drawing a blank space
     for (uint64_t row = 0; row < font_height; row++) {
-        for (uint64_t col = 0; col < font_width; col++) {
+        for (uint64_t col = 0; col <= font_width; col++) {
             set_pixel(cur_x + col, cur_y + row, back_color); // Black color (background)
         }
     }

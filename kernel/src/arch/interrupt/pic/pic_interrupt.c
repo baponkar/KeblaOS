@@ -94,14 +94,14 @@ void set_pic_int_descriptor_table(){
     pic_int_set_gate(45, (uint64_t)&irq13, 0x08, 0x8E);   // FPU / Floating-Point Unit (Coprocessor), IRQ13
     pic_int_set_gate(46, (uint64_t)&irq14, 0x08, 0x8E);   // Primary ATA Hard Disk Controller, IRQ14
     pic_int_set_gate(47, (uint64_t)&irq15, 0x08, 0x8E);   // Secondary ATA Hard Disk Controller, IRQ15
-    pic_int_set_gate(48, (uint64_t)&irq16, 0x08, 0x8E);   // APIC Timer, IRQ16
-    pic_int_set_gate(49, (uint64_t)&irq17, 0x08, 0x8E);   // HPET Timer, IRQ17
-    pic_int_set_gate(50, (uint64_t)&irq18, 0x08, 0x8E);   // Available, IRQ18
+    // pic_int_set_gate(48, (uint64_t)&irq16, 0x08, 0x8E);   // APIC Timer, IRQ16
+    // pic_int_set_gate(49, (uint64_t)&irq17, 0x08, 0x8E);   // HPET Timer, IRQ17
+    // pic_int_set_gate(50, (uint64_t)&irq18, 0x08, 0x8E);   // Available, IRQ18
 
     // System Calls
-    pic_int_set_gate(172, (uint64_t)&irq140, 0x08, 0xEE); // Print System Call, IRQ140
-    pic_int_set_gate(173, (uint64_t)&irq141, 0x08, 0xEE); // Read System Call, IRQ141
-    pic_int_set_gate(174, (uint64_t)&irq142, 0x08, 0xEE); // Exit System Call, IRQ142
+    // pic_int_set_gate(89, (uint64_t)&irq57, 0x08, 0xEE); // Print System Call, IRQ140
+    // pic_int_set_gate(90, (uint64_t)&irq58, 0x08, 0xEE); // Read System Call, IRQ141
+    // pic_int_set_gate(91, (uint64_t)&irq59, 0x08, 0xEE); // Exit System Call, IRQ142
 }
 
 

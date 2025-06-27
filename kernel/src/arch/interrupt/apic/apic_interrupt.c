@@ -27,6 +27,8 @@ extern void idt_flush(uint64_t);
 extern int_entry_t int_entries[TOTAL_INT_ENTRIES];
 extern int_ptr_t   int_ptr;
 
+
+
 void apic_int_set_gate(uint8_t index, uint64_t offset, uint16_t selector, uint8_t attr){
     int_entry_t *entry = (int_entry_t *) &int_entries[index];
 
@@ -102,9 +104,49 @@ void set_bsp_apic_int_descriptor_table(){
     apic_int_set_gate(50, (uint64_t)&irq18, 0x08, 0x8E);   // IPI, IRQ18
 
     // System Calls
-    apic_int_set_gate(172, (uint64_t)&irq140, 0x08, 0xEE); // Print System Call, IRQ140
-    apic_int_set_gate(173, (uint64_t)&irq141, 0x08, 0xEE); // Read System Call, IRQ141
-    apic_int_set_gate(174, (uint64_t)&irq142, 0x08, 0xEE); // Exit System Call, IRQ142
+    apic_int_set_gate(51, (uint64_t)&irq19, 0x08, 0xEE);    // Open System Call, IRQ19
+    apic_int_set_gate(52, (uint64_t)&irq20, 0x08, 0xEE);    // Close System Call, IRQ20
+    apic_int_set_gate(53, (uint64_t)&irq21, 0x08, 0xEE);    // Read System Call, IRQ21
+    apic_int_set_gate(54, (uint64_t)&irq22, 0x08, 0xEE);    // Write System Call, IRQ22
+    apic_int_set_gate(55, (uint64_t)&irq23, 0x08, 0xEE);    // Lseek System Call, IRQ23
+    apic_int_set_gate(56, (uint64_t)&irq24, 0x08, 0xEE);    // Truncate System Call, IRQ24
+    apic_int_set_gate(57, (uint64_t)&irq25, 0x08, 0xEE);    // Sync System Call, IRQ25
+    apic_int_set_gate(58, (uint64_t)&irq26, 0x08, 0xEE);    // Forward System Call, IRQ26
+    apic_int_set_gate(59, (uint64_t)&irq27, 0x08, 0xEE);    // Expand System Call, IRQ27
+    apic_int_set_gate(60, (uint64_t)&irq28, 0x08, 0xEE);    // Gets System Call, IRQ28
+    apic_int_set_gate(61, (uint64_t)&irq29, 0x08, 0xEE);    // Puts System Call, IRQ29
+    apic_int_set_gate(62, (uint64_t)&irq30, 0x08, 0xEE);    // Error System Call, IRQ30
+    apic_int_set_gate(63, (uint64_t)&irq31, 0x08, 0xEE);    // FatFs Error System Call, IRQ31
+    apic_int_set_gate(64, (uint64_t)&irq32, 0x08, 0xEE);    // FatFs Open System Call, IRQ32
+    apic_int_set_gate(65, (uint64_t)&irq33, 0x08, 0xEE);    // FatFs Close System Call, IRQ33
+    apic_int_set_gate(66, (uint64_t)&irq34, 0x08, 0xEE);    // FatFs Read System Call, IRQ34
+    apic_int_set_gate(67, (uint64_t)&irq35, 0x08, 0xEE);    // FatFs Write System Call, IRQ35
+    apic_int_set_gate(68, (uint64_t)&irq36, 0x08, 0xEE);    // FatFs Lseek System Call, IRQ36
+    apic_int_set_gate(69, (uint64_t)&irq37, 0x08, 0xEE);    // FatFs Truncate System Call, IRQ37
+    apic_int_set_gate(70, (uint64_t)&irq38, 0x08, 0xEE);    // FatFs Sync System Call, IRQ38
+    apic_int_set_gate(71, (uint64_t)&irq39, 0x08, 0xEE);    // FatFs Forward System Call, IRQ39
+    apic_int_set_gate(72, (uint64_t)&irq40, 0x08, 0xEE);    // FatFs Expand System Call, IRQ40
+    apic_int_set_gate(73, (uint64_t)&irq41, 0x08, 0xEE);    // FatFs Gets System Call, IRQ41
+    apic_int_set_gate(74, (uint64_t)&irq42, 0x08, 0xEE);    // FatFs Puts System Call, IRQ42
+    apic_int_set_gate(75, (uint64_t)&irq43, 0x08, 0xEE);    // FatFs Error System Call, IRQ43
+    apic_int_set_gate(76, (uint64_t)&irq44, 0x08, 0xEE);    // FatFs Stat System Call, IRQ44
+    apic_int_set_gate(77, (uint64_t)&irq45, 0x08, 0xEE);    // FatFs Unlink System Call, IRQ45
+    apic_int_set_gate(78, (uint64_t)&irq46, 0x08, 0xEE);    // FatFs Rename System Call, IRQ46
+    apic_int_set_gate(79, (uint64_t)&irq47, 0x08, 0xEE);    // FatFs MkDir System Call, IRQ47
+    apic_int_set_gate(80, (uint64_t)&irq48, 0x08, 0xEE);    // FatFs ChDir System Call, IRQ48
+    apic_int_set_gate(81, (uint64_t)&irq49, 0x08, 0xEE);    // FatFs ChDrive System Call, IRQ49
+    apic_int_set_gate(82, (uint64_t)&irq50, 0x08, 0xEE);    // FatFs GetFreeSpace System Call, IRQ50
+    apic_int_set_gate(83, (uint64_t)&irq51, 0x08, 0xEE);    // FatFs GetVolumeInfo System Call, IRQ51
+    apic_int_set_gate(84, (uint64_t)&irq52, 0x08, 0xEE);    // FatFs GetFileInfo System Call, IRQ52
+    apic_int_set_gate(85, (uint64_t)&irq53, 0x08, 0xEE);    // FatFs GetDirInfo System Call, IRQ53
+    apic_int_set_gate(86, (uint64_t)&irq54, 0x08, 0xEE);    // FatFs GetFileSystemInfo System Call, IRQ54
+    apic_int_set_gate(87, (uint64_t)&irq55, 0x08, 0xEE);    // FatFs GetFileSystemStatus System Call, IRQ55
+    apic_int_set_gate(88, (uint64_t)&irq56, 0x08, 0xEE);    // FatFs GetFileSystemTime System Call, IRQ56
+
+
+    apic_int_set_gate(89, (uint64_t)&irq57, 0x08, 0xEE); // Print System Call, IRQ140
+    apic_int_set_gate(90, (uint64_t)&irq58, 0x08, 0xEE); // Read System Call, IRQ141
+    apic_int_set_gate(91, (uint64_t)&irq59, 0x08, 0xEE); // Exit System Call, IRQ142
 }
 
 
@@ -183,7 +225,7 @@ void set_ap_descriptor_table(uint64_t core_id){
     // attribute = 1 | 00  | 0 | 1110 (interrupt) | = 0x8E for DPL = 0
     // attribute = 1 | 11  | 0 | 1110 (interrupt) | = 0xEE for DPL = 3
 
-    // Software Interrupts
+    // Hardware Interrupts
     ap_int_set_gate(core_id,  0, (uint64_t)&isr0 ,  0x8, 0x8E);    // Division By Zero
     ap_int_set_gate(core_id,  1, (uint64_t)&isr1 ,  0x8, 0x8E);    // Debug
     ap_int_set_gate(core_id,  2, (uint64_t)&isr2 ,  0x8, 0x8E);    // Non Maskable Interrupt  
@@ -217,14 +259,54 @@ void set_ap_descriptor_table(uint64_t core_id){
     ap_int_set_gate(core_id, 30, (uint64_t)&isr30 , 0x8, 0x8E);    // Reserved
     ap_int_set_gate(core_id, 31, (uint64_t)&isr31 , 0x8, 0x8E);    // Reserved
 
-    // Hardware Interrupts
+    // Software Interrupts
     // Bootstrap Core has already set up the IOAPIC for hardware interrupts
     ap_int_set_gate(core_id, 50, (uint64_t)&irq18, 0x08, 0xEE); // IPI, IRQ18
+    
+    // System Calls
+    ap_int_set_gate(core_id, 51, (uint64_t)&irq19, 0x08, 0xEE);    // Timer Interrupt, IRQ19
+    ap_int_set_gate(core_id, 52, (uint64_t)&irq20, 0x08, 0xEE);    // Keyboard Interrupt, IRQ20
+    ap_int_set_gate(core_id, 53, (uint64_t)&irq21, 0x08, 0xEE);    // Open System Call, IRQ21
+    ap_int_set_gate(core_id, 54, (uint64_t)&irq22, 0x08, 0xEE);    // Close System Call, IRQ22
+    ap_int_set_gate(core_id, 55, (uint64_t)&irq23, 0x08, 0xEE);    // Read System Call, IRQ23
+    ap_int_set_gate(core_id, 56, (uint64_t)&irq24, 0x08, 0xEE);    // Write System Call, IRQ24
+    ap_int_set_gate(core_id, 57, (uint64_t)&irq25, 0x08, 0xEE);    // Lseek System Call, IRQ25
+    ap_int_set_gate(core_id, 58, (uint64_t)&irq26, 0x08, 0xEE);    // Truncate System Call, IRQ26
+    ap_int_set_gate(core_id, 59, (uint64_t)&irq27, 0x08, 0xEE);    // Sync System Call, IRQ27
+    ap_int_set_gate(core_id, 60, (uint64_t)&irq28, 0x08, 0xEE);    // Forward System Call, IRQ28
+    ap_int_set_gate(core_id, 61, (uint64_t)&irq29, 0x08, 0xEE);    // Expand System Call, IRQ29
+    ap_int_set_gate(core_id, 62, (uint64_t)&irq30, 0x08, 0xEE);    // Gets System Call, IRQ30
+    ap_int_set_gate(core_id, 63, (uint64_t)&irq31, 0x08, 0xEE);    // Puts System Call, IRQ31
+    ap_int_set_gate(core_id, 64, (uint64_t)&irq32, 0x08, 0xEE);    // Error System Call, IRQ32
+    ap_int_set_gate(core_id, 65, (uint64_t)&irq33, 0x08, 0xEE);    // FatFs Error System Call, IRQ33
+    ap_int_set_gate(core_id, 66, (uint64_t)&irq34, 0x08, 0xEE);    // FatFs Open System Call, IRQ34
+    ap_int_set_gate(core_id, 67, (uint64_t)&irq35, 0x08, 0xEE);    // FatFs Close System Call, IRQ35
+    ap_int_set_gate(core_id, 68, (uint64_t)&irq36, 0x08, 0xEE);    // FatFs Read System Call, IRQ36
+    ap_int_set_gate(core_id, 69, (uint64_t)&irq37, 0x08, 0xEE);    // FatFs Write System Call, IRQ37
+    ap_int_set_gate(core_id, 70, (uint64_t)&irq38, 0x08, 0xEE);    // FatFs Lseek System Call, IRQ38
+    ap_int_set_gate(core_id, 71, (uint64_t)&irq39, 0x08, 0xEE);    // FatFs Truncate System Call, IRQ39
+    ap_int_set_gate(core_id, 72, (uint64_t)&irq40, 0x08, 0xEE);    // FatFs Sync System Call, IRQ40
+    ap_int_set_gate(core_id, 73, (uint64_t)&irq41, 0x08, 0xEE);    // FatFs Forward System Call, IRQ41
+    ap_int_set_gate(core_id, 74, (uint64_t)&irq42, 0x08, 0xEE);    // FatFs Expand System Call, IRQ42
+    ap_int_set_gate(core_id, 75, (uint64_t)&irq43, 0x08, 0xEE);    // FatFs Gets System Call, IRQ43
+    ap_int_set_gate(core_id, 76, (uint64_t)&irq44, 0x08, 0xEE);    // FatFs Puts System Call, IRQ44
+    ap_int_set_gate(core_id, 77, (uint64_t)&irq45, 0x08, 0xEE);    // FatFs Error System Call, IRQ45
+    ap_int_set_gate(core_id, 78, (uint64_t)&irq46, 0x08, 0xEE);    // FatFs Stat System Call, IRQ46
+    ap_int_set_gate(core_id, 79, (uint64_t)&irq47, 0x08, 0xEE);    // FatFs Unlink System Call, IRQ47
+    ap_int_set_gate(core_id, 80, (uint64_t)&irq48, 0x08, 0xEE);    // FatFs Rename System Call, IRQ48
+    ap_int_set_gate(core_id, 81, (uint64_t)&irq49, 0x08, 0xEE);    // FatFs MkDir System Call, IRQ49
+    ap_int_set_gate(core_id, 82, (uint64_t)&irq50, 0x08, 0xEE);    // FatFs ChDir System Call, IRQ50
+    ap_int_set_gate(core_id, 83, (uint64_t)&irq51, 0x08, 0xEE);    // FatFs ChDrive System Call, IRQ51
+    ap_int_set_gate(core_id, 84, (uint64_t)&irq52, 0x08, 0xEE);    // FatFs GetFreeSpace System Call, IRQ52
+    ap_int_set_gate(core_id, 85, (uint64_t)&irq53, 0x08, 0xEE);    // FatFs GetVolumeInfo System Call, IRQ53
+    ap_int_set_gate(core_id, 86, (uint64_t)&irq54, 0x08, 0xEE);    // FatFs GetFileInfo System Call, IRQ54
+    ap_int_set_gate(core_id, 87, (uint64_t)&irq55, 0x08, 0xEE);    // FatFs GetDirInfo System Call, IRQ55
+    ap_int_set_gate(core_id, 88, (uint64_t)&irq56, 0x08, 0xEE);    // FatFs GetFileSystemInfo System Call, IRQ56
 
     // Software Interrupts for System Calls
-    ap_int_set_gate(core_id, 172, (uint64_t)&irq140, 0x08, 0xEE); // Print System Call, IRQ140
-    ap_int_set_gate(core_id, 173, (uint64_t)&irq141, 0x08, 0xEE); // Read System Call, IRQ141
-    ap_int_set_gate(core_id, 174, (uint64_t)&irq142, 0x08, 0xEE); // Exit System Call, IRQ142
+    ap_int_set_gate(core_id, 89, (uint64_t)&irq57, 0x08, 0xEE);     // Print System Call, IRQ140
+    ap_int_set_gate(core_id, 90, (uint64_t)&irq58, 0x08, 0xEE);     // Read System Call, IRQ141
+    ap_int_set_gate(core_id, 91, (uint64_t)&irq59, 0x08, 0xEE);     // Exit System Call, IRQ142
 }
 
 

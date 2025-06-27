@@ -50,11 +50,13 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../driver/io/serial.h"
 #include "../arch/gdt/gdt.h"           // init_gdt
 #include "../arch/gdt/tss.h"
+
 #include "../memory/pmm.h"               // init_pmm, test_pmm
 #include "../memory/paging.h"            // init_paging, test_paging
 #include "../memory/kmalloc.h"           // test_kmalloc
 #include "../memory/vmm.h"               // test_vmm
 #include "../memory/kheap.h"             // test_kheap
+
 #include "../sys/timer/tsc.h"         // time stamp counter
 #include "../sys/timer/rtc.h"         // RTC
 #include "../sys/timer/pit_timer.h"   // init_timer
@@ -91,6 +93,54 @@ extern void restore_cpu_state(registers_t* registers);
 
 extern tss_t tss;
 
+extern ring_buffer_t* keyboard_buffer;
+
+
+#include "../FatFs-R0.15b/source/ff.h"        // FatFs library header
+#include "../FatFs-R0.15b/source/diskio.h"    // FatFs
+
+void test_fatfs() {
+    printf("[FatFs Test] Starting...\n");
+    FATFS fs;
+    FIL file;
+    char buffer[128];
+    UINT br, bw;
+
+    // Mount the filesystem
+    FRESULT res = f_mount(&fs, "", 1);
+    if (res != FR_OK) {
+        printf("Mount failed: %d\n", res);
+        return;
+    }
+
+    // Create and write to the file
+    if (f_open(&file, "test.txt", FA_WRITE | FA_CREATE_ALWAYS) == FR_OK) {
+        const char* msg = "Hello from KeblaOS!";
+        res = f_write(&file, msg, strlen(msg), &bw);
+        if (res == FR_OK) {
+            printf("Successfully wrote %x bytes to test.txt\n", bw);
+        } else {
+            printf("Write failed: %d\n", res);
+        }
+        f_close(&file);
+    } else {
+        printf("Failed to create file\n");
+    }
+
+    // Reopen the file for reading
+    if (f_open(&file, "test.txt", FA_READ) == FR_OK) {
+        res = f_read(&file, buffer, sizeof(buffer) - 1, &br);
+        if (res == FR_OK) {
+            buffer[br] = 0;
+            printf("Read from file: %s\n", buffer);
+        } else {
+            printf("Read failed: %d\n", res);
+        }
+        f_close(&file);
+    } else {
+        printf("Failed to open file for reading\n");
+    }
+}
 
 
 void kmain(){
@@ -112,7 +162,6 @@ void kmain(){
         printf("[Error] This System does not have APIC.\n");
     }
 
-    // printf("\n[Hello from CPU %d (BSP)]\n", 0);
 
     // pci_scan();
 
@@ -120,8 +169,20 @@ void kmain(){
     // HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
     // HBA_PORT_T* port = (HBA_PORT_T*) &abar->ports[0];
 
+    // printf("[PCI] Mass Storage Controller found at BAR5: %x\n", bar5);
     // ahci_identify(port);
     // test_ahci(abar);
+
+    // Read MBR
+    // uint16_t mbr[256];
+    // ahci_read(port, 0, 0, 1, mbr);
+
+    // Partition entry starts at offset 0x1BE
+    // uint32_t lba_start = *(uint32_t *)((uint8_t *)mbr + 0x1BE + 8);
+    // Use lba_start instead of hardcoded 2048
+    // printf("[MBR] Partition starts at LBA: %d\n", lba_start);
+
+    // test_fatfs();
 
     // fat32_init(port);
     // fat32_run_tests(port);
@@ -131,13 +192,7 @@ void kmain(){
 
     // start_kshell();
 
-    // printf("%s\n", *syscall_test(INT_SYSCALL_READ));    // Test Read System Call
-    // printf("%s\n", *syscall_test(INT_SYSCALL_PRINT));   // Test Print System Call
-    // printf("%s\n", *syscall_test(INT_SYSCALL_EXIT));    // Test Exit System Call
-
-    // syscall_test(INT_SYSCALL_PRINT);   // Test Print System Call
-    // syscall_test(INT_SYSCALL_READ);   // Test Print System Call
-    // syscall_test(INT_SYSCALL_EXIT);    // Test Exit System Call
+    // syscall_test(172);
 
     // Load and parse kernel modules by using limine bootloader
     // get_kernel_modules_info();
@@ -145,14 +200,40 @@ void kmain(){
     // load_user_elf_and_jump();
 
     // loading usermode function
+    if (!keyboard_buffer) {
+        keyboard_buffer = ring_buffer_init(KEYBOARD_BUF_SIZE);
+        if (!keyboard_buffer) {
+            printf("keyboard_buffer init failed!\n");
+            return;
+        }
+    }
+    
     init_user_mode();
+
+
+    // char buf[64];
+    // uint8_t *buffer 
+    // printf("Type something: ");
+    // int len = syscall_read(buf, sizeof(buf));
+    // buf[len] = '\0';
+
+    // printf("You typed: ");
+    // asm volatile (
+    //     "mov %[str], %%rbx\n"
+    //     "int $173\n"
+    //     :
+    //     : [str] "r" (buf)
+    //     : "rbx"
+    // );
+
+
+
+    // shell_main();
 
     halt_kernel();
 }
 
-void test_syscall_entry(uint64_t rcx, uint64_t r11){
-    printf("[Syscall_Entry] rcx: %x, r11: %x\n", rcx, r11);
-}
+
 
 
 
