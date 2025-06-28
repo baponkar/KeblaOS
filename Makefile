@@ -9,7 +9,7 @@
 START_TIME := $(shell date +%s)
 
 OS_NAME = KeblaOS
-OS_VERSION = 0.15.1
+OS_VERSION = 0.16.0
 
 LIMINE_DIR = limine-9.2.3
 

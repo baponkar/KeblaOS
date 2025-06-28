@@ -4,10 +4,10 @@
 
 
 <table>
-  <tr><td colspan="2" align="left"><em>Version - 0.14.2</em></td></tr>
+  <tr><td colspan="2" align="left"><em>Version - 0.16.0</em></td></tr>
   <tr><td><em>Architecture:</em></td><td><em>x86</em></td></tr>
   <tr><td><em>Bit</em></td><td><em>64</em></td></tr>
-  <tr><td><em>Build Date:</em></td><td><code>05.05.2025</code></td></tr>
+  <tr><td><em>Build Date:</em></td><td><code>28.06.2025</code></td></tr>
 </table>
 
 ----
@@ -87,7 +87,7 @@
     * Multitasking by enabling all cores
 
 - [x] Filesystem
-    * FAT32 File System
+    * FAT32 File System from FatFs Library
 
 - [x] Interrupt Based System Call (Software Interrupt)
 
@@ -369,7 +369,7 @@ Screenshot 4
 - [x] xorriso 1.5.4
 - [x] NASM version 2.15.05
 - [x] GNU gdb (Ubuntu 12.1-0ubuntu1~22.04.2) 12.1
-- [x] 
+- [x] [FatFs](https://elm-chan.org/fsw/ff/00index_e.html) R0.15b Library
 - [x] [QEMU emulator](https://www.qemu.org/) version 6.2.0 (Debian 1:6.2+dfsg-2ubuntu6.24)
 - [x] [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) Ubuntu 22.04.4 LTS
 

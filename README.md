@@ -15,16 +15,18 @@
 
 ------------------------------------------------------
 # Kebla OS
+
+## Version: 0.16.0
 ![KeblaOS_icon.bmp](./image/KeblaOS.png)
 
 ### Project Timeline
 - **Start Date**: 9th June, 2024
-- **Last Update**: 17th June, 2025
+- **Last Update**: 28th June, 2025
 
 ---
 
 ### ✅ Current Progress
-- **Bootloader**: Limine Bootloader
+- **Bootloader**: Limine Bootloader-9.2.3
 - **Display**: VGA Framebuffer Initialization
 - **ACPI Components**:
   - RSDP, RSDT/XSDT, FADT, MADT, AHCI, PCI, CMOS, RTC
@@ -40,6 +42,18 @@
   - Kmalloc, PMM, 4-Level 4KB Paging, VMM, KHEAP (Dynamic Kernel Heap Allocation), umalloc, UHEAP
 - **Standard Library**:
   - stdio, stdlib, math, string, assert
+
+- **Jumping into Usermode**
+
+- **Interrupt Based System Call**
+
+- **FAT32 Library FatFs**
+
+- **Building, Loading and Running ELF file by Limine**
+
+
+
+
 
 ![Latest Screenshot](./screenshot/keblaos_screenshot_2.png)
 
