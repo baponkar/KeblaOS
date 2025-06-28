@@ -4,7 +4,7 @@
 */
 
 #include "../lib/stdio.h"
-#include "../../../limine-8.6.0/limine.h"
+#include "../../../limine-9.2.3/limine.h"
 #include "../lib/string.h"
 #include "../bootloader/boot.h"
 #include "../driver/io/ports.h"

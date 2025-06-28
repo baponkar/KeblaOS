@@ -39,7 +39,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include  "../sys/cpu/cpuid.h"              // get_cpu_count, get_cpu_info
 #include "../memory/detect_memory.h"
 #include "../bootloader/firmware.h"
-#include "../../../limine-8.6.0/limine.h"// bootloader info
+#include "../../../limine-9.2.3/limine.h"// bootloader info
 #include "../bootloader/boot.h"         // bootloader info
 #include "../lib/stdio.h"               // printf
 #include "../lib/string.h"
@@ -163,41 +163,29 @@ void kmain(){
     }
 
 
-    // pci_scan();
+    pci_scan();
 
-    // uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5]; // Found from pci scan 0xFEBD5000
-    // HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
-    // HBA_PORT_T* port = (HBA_PORT_T*) &abar->ports[0];
+    uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5]; // Found from pci scan 0xFEBD5000
+    HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
+    HBA_PORT_T* port = (HBA_PORT_T*) &abar->ports[0];
 
-    // printf("[PCI] Mass Storage Controller found at BAR5: %x\n", bar5);
-    // ahci_identify(port);
-    // test_ahci(abar);
+    printf("[PCI] Mass Storage Controller found at BAR5: %x\n", bar5);
+    ahci_identify(port);
+    test_ahci(abar);
 
     // Read MBR
-    // uint16_t mbr[256];
-    // ahci_read(port, 0, 0, 1, mbr);
+    uint16_t mbr[256];
+    ahci_read(port, 0, 0, 1, mbr);
 
     // Partition entry starts at offset 0x1BE
-    // uint32_t lba_start = *(uint32_t *)((uint8_t *)mbr + 0x1BE + 8);
+    uint32_t lba_start = *(uint32_t *)((uint8_t *)mbr + 0x1BE + 8);
     // Use lba_start instead of hardcoded 2048
-    // printf("[MBR] Partition starts at LBA: %d\n", lba_start);
-
-    // test_fatfs();
-
-    // fat32_init(port);
-    // fat32_run_tests(port);
+    printf("[MBR] Partition starts at LBA: %d\n", lba_start);
 
 
     // switch_to_core(3);
 
     // start_kshell();
-
-    // syscall_test(172);
-
-    // Load and parse kernel modules by using limine bootloader
-    // get_kernel_modules_info();
-    // print_kernel_modules_info();
-    // load_user_elf_and_jump();
 
     // loading usermode function
     if (!keyboard_buffer) {
@@ -207,28 +195,13 @@ void kmain(){
             return;
         }
     }
-    
-    init_user_mode();
 
+    // Load and parse kernel modules by using limine bootloader
+    get_kernel_modules_info();
+    print_kernel_modules_info();
+    load_user_elf_and_jump();
 
-    // char buf[64];
-    // uint8_t *buffer 
-    // printf("Type something: ");
-    // int len = syscall_read(buf, sizeof(buf));
-    // buf[len] = '\0';
-
-    // printf("You typed: ");
-    // asm volatile (
-    //     "mov %[str], %%rbx\n"
-    //     "int $173\n"
-    //     :
-    //     : [str] "r" (buf)
-    //     : "rbx"
-    // );
-
-
-
-    // shell_main();
+    // init_user_mode();
 
     halt_kernel();
 }

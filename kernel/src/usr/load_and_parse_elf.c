@@ -31,6 +31,7 @@ static volatile struct limine_module_request module_request = {
 
 extern __attribute__((naked, noreturn)) void switch_to_user_mode(uint64_t stack_addr, uint64_t code_addr);
 
+// Function to get kernel modules information from the limine bootloader
 void get_kernel_modules_info(){
     if(module_request.response != NULL){
         uint64_t revision = module_request.response->revision;

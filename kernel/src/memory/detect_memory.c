@@ -9,7 +9,7 @@ References:
     https://wiki.osdev.org/Memory_Map_(x86)
 */
 
-#include "../../../limine-8.6.0/limine.h" 
+#include "../../../limine-9.2.3/limine.h" 
 #include "../lib/stdio.h"
 
 #include "detect_memory.h"

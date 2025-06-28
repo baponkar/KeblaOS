@@ -6,7 +6,7 @@ References:
     https://wiki.osdev.org/Symmetric_Multiprocessing
 */
 
-#include "../../../../limine-8.6.0/limine.h"
+
 #include "../../lib/stdio.h"
 
 #include "smp.h"

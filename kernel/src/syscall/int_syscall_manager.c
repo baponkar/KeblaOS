@@ -242,7 +242,7 @@ int syscall_print(const char *msg) {
 
     asm volatile (
         "mov %[msg], %%rbx\n"
-        "int $173\n" // Trigger print syscall
+        "int $0x5A\n" // Trigger print syscall
         :
         : [msg] "r" (msg)
         : "rbx"

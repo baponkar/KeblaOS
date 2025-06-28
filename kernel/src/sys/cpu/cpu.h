@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "../../../../limine-8.6.0/limine.h"
+#include "../../../../limine-9.2.3/limine.h"
 #include "../../arch/gdt/gdt.h"
 #include "../../arch/gdt/tss.h"
 

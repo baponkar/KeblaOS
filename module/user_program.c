@@ -1,19 +1,18 @@
 
+const char *msg = "Hello from User Program\n";
 
-
-__attribute__((section(".text.user")))
+__attribute__((section(".text")))
 void _start() {
-    
-    const char *msg = "Hello from User Program\n";
 
     asm volatile (
-        "mov %%rbx, %0\n"
-        "mov $0xad, %%rax\n"
-        "int $0xad\n"
-        "jmp .\n"
+        "mov %[msg], %%rbx\n"
+        "int $0x5A\n"           // Trigger print syscall
+        "1:\n"
+        "jmp 1b\n"             // Infinite loop
         :
-        : "r"(msg)
-        : "rax", "rbx"
+        : [msg] "r" (msg)
+        : "rbx"
     );
+
 }
 

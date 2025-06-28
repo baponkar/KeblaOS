@@ -123,9 +123,6 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	cp -v $(LIMINE_DIR)/BOOTX64.EFI $(ISO_DIR)/EFI/BOOT/
 	cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
 
-	# Copy initrd.cpio module file inside boot directory. These files can be used for various purposes,
-	cp -v initrd/initrd.cpio $(ISO_DIR)/boot/initrd.cpio
-
 	# Copy user_programe.elf file into boot 
 	cp -v $(MODULE_DIR)/user_program_c.elf $(ISO_DIR)/boot/user_program_c.elf
 

@@ -1,22 +1,12 @@
 
 # GCC Compiler
 GCC = /usr/local/x86_64-elf/bin/x86_64-elf-gcc
-GCC_FLAG = -g -Wall \
-	-Wextra -std=gnu11 \
-	-ffreestanding \
-	-fno-stack-protector \
-	-fno-stack-check \
-	-fno-lto -fno-PIC \
-	-m64 \
-	-march=x86-64 \
-	-mno-80387 \
-	-mno-mmx \
-	-mno-sse \
-	-mno-sse2 \
-	-mno-red-zone \
-	-mcmodel=kernel \
-	-msse \
-	-msse2
+GCC_FLAG = -g -Wall -Wextra -std=gnu11 \
+			-m64 \
+			-fno-pie -no-pie \
+			-nostdlib -nostartfiles \
+			-ffreestanding \
+			-O2
 
 # Assembler
 NASM = nasm

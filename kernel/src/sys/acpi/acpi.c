@@ -15,7 +15,7 @@
 
 
 #include "../../driver/io/ports.h"
-#include "../../../../limine-8.6.0/limine.h"
+#include "../../../../limine-9.2.3/limine.h"
 #include "../../lib/string.h"
 #include "../../lib/stdio.h"
 #include "./descriptor_table/fadt.h"
