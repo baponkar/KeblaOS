@@ -14,7 +14,7 @@
 Operating System like Windows, Ubuntu, Android etc are main heart of modern computer system. This is my first effort to build a brand new operating system.
 This notes have written during my learning and building KeblaOS.
 
-
+0. [Installation Process](installation_process.md)
 
 1. [Chapter 01](./chap01-system-setup.md) : System Setup
 
@@ -41,6 +41,10 @@ This notes have written during my learning and building KeblaOS.
 12. [Chapter 12](./gdb_debugging.md) : GDB Debugging
 
 13. [Manage Disk Image](./disk-image-manage.md) : Manging Virtual Disk Image
+
+14. [Debug QEmu Log](./debug_by_qemo_log.md) : Debugging by QEmu Log
+
+15. [Interrput Code](./exception_code.md): Exception and Error Code
 
 100. [References](./Reference.md)
 -------------------------------------------------------
