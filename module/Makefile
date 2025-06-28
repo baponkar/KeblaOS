@@ -19,14 +19,18 @@ LD = /usr/local/x86_64-elf/bin/x86_64-elf-ld
 LD_FLAG = -m elf_x86_64 -nostdlib -static -z max-page-size=0x1000
 LINKER_FILE = user_linker_x86_64.ld
 
-file = user_program.c
+user_cfile = user_program_2
 
-user_program.bin: $(file)
+
+user_program_2.elf: $(user_cfile).elf
 #	$(NASM) $(NASM_FLAG) -o user_program.o $(file)
-	$(GCC) $(GCC_FLAG) -c $(file) -o user_program_c.o
-	$(LD) $(LD_FLAG) -T $(LINKER_FILE) user_program_c.o --oformat=elf64-x86-64 -o user_program_c.elf
+	$(GCC) $(GCC_FLAG) -c $(user_cfile).c -o $(user_cfile).o
+	$(LD) $(LD_FLAG) -T $(LINKER_FILE) $(user_cfile).o --oformat=elf64-x86-64 -o $(user_cfile).elf
+
+	@ echo "Linking completed. Generating binary..."
+	make clean
 	
 clean:
-	rm -f user_program.o user_program.elf user_program.bin
+	rm -f *.o 
 
-
+	@ echo "Cleaned up object files and binaries."

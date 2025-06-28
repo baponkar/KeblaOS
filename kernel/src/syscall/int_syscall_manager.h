@@ -60,7 +60,8 @@ enum int_syscall_number {
     // System Calls
     INT_SYSCALL_READ            = 89,  // 0x59
     INT_SYSCALL_PRINT           = 90,  // 0x5A
-    INT_SYSCALL_EXIT            = 91   // 0x5B
+    INT_SYSCALL_EXIT            = 91,  // 0x5B
+    INT_SYSCALL_PRINT_RAX       = 92   // 0x5C
 };
 
 

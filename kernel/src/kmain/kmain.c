@@ -9,6 +9,7 @@ Reference   : https://wiki.osdev.org/Limine
               https://wiki.osdev.org/SSE
 */
 
+#include "../FatFs-R0.15b/fatfs_test.h"
 #include "../usr/switch_to_user.h"
 #include "../usr/load_and_parse_elf.h"
 
@@ -96,51 +97,7 @@ extern tss_t tss;
 extern ring_buffer_t* keyboard_buffer;
 
 
-#include "../FatFs-R0.15b/source/ff.h"        // FatFs library header
-#include "../FatFs-R0.15b/source/diskio.h"    // FatFs
 
-void test_fatfs() {
-    printf("[FatFs Test] Starting...\n");
-    FATFS fs;
-    FIL file;
-    char buffer[128];
-    UINT br, bw;
-
-    // Mount the filesystem
-    FRESULT res = f_mount(&fs, "", 1);
-    if (res != FR_OK) {
-        printf("Mount failed: %d\n", res);
-        return;
-    }
-
-    // Create and write to the file
-    if (f_open(&file, "test.txt", FA_WRITE | FA_CREATE_ALWAYS) == FR_OK) {
-        const char* msg = "Hello from KeblaOS!";
-        res = f_write(&file, msg, strlen(msg), &bw);
-        if (res == FR_OK) {
-            printf("Successfully wrote %x bytes to test.txt\n", bw);
-        } else {
-            printf("Write failed: %d\n", res);
-        }
-        f_close(&file);
-    } else {
-        printf("Failed to create file\n");
-    }
-
-    // Reopen the file for reading
-    if (f_open(&file, "test.txt", FA_READ) == FR_OK) {
-        res = f_read(&file, buffer, sizeof(buffer) - 1, &br);
-        if (res == FR_OK) {
-            buffer[br] = 0;
-            printf("Read from file: %s\n", buffer);
-        } else {
-            printf("Read failed: %d\n", res);
-        }
-        f_close(&file);
-    } else {
-        printf("Failed to open file for reading\n");
-    }
-}
 
 
 void kmain(){
@@ -171,17 +128,21 @@ void kmain(){
 
     printf("[PCI] Mass Storage Controller found at BAR5: %x\n", bar5);
     ahci_identify(port);
-    test_ahci(abar);
+    // test_ahci(abar);
 
     // Read MBR
-    uint16_t mbr[256];
-    ahci_read(port, 0, 0, 1, mbr);
+    // uint16_t mbr[256];
+    // ahci_read(port, 0, 0, 1, mbr);
 
     // Partition entry starts at offset 0x1BE
-    uint32_t lba_start = *(uint32_t *)((uint8_t *)mbr + 0x1BE + 8);
+    // uint32_t lba_start = *(uint32_t *)((uint8_t *)mbr + 0x1BE + 8);
     // Use lba_start instead of hardcoded 2048
-    printf("[MBR] Partition starts at LBA: %d\n", lba_start);
+    // printf("[MBR] Partition starts at LBA: %d\n", lba_start);
 
+    // test_fatfs();
+
+    printf("Creating myfile.txt: %d\n", create_file("myfile.txt"));
+    
 
     // switch_to_core(3);
 

@@ -141,9 +141,10 @@ void ioapic_route_all_irq(uint8_t lapic_id, uint32_t flags) {
     ioapic_route_irq(56, lapic_id, 88, flags);   // Route IRQ 56 to current LAPIC ID with vector 88
 
 
-    ioapic_route_irq(57, lapic_id, 89, flags);   // Route IRQ 140 to current LAPIC ID with vector 172 : Print System Call
-    ioapic_route_irq(58, lapic_id, 90, flags);   // Route IRQ 141 to current LAPIC ID with vector 173 : Read System Call
-    ioapic_route_irq(59, lapic_id, 91, flags);   // Route IRQ 142 to current LAPIC ID with vector 174 : Exit System Call
+    ioapic_route_irq(57, lapic_id, 89, flags);   // Route IRQ 89 to current LAPIC ID with vector 172 : Print System Call
+    ioapic_route_irq(58, lapic_id, 90, flags);   // Route IRQ 90 to current LAPIC ID with vector 173 : Read System Call
+    ioapic_route_irq(59, lapic_id, 91, flags);   // Route IRQ 91 to current LAPIC ID with vector 174 : Exit System Call
+    ioapic_route_irq(60, lapic_id, 91, flags);   // Route IRQ 92 to current LAPIC ID with vector 174 : Exit System Call
 
     printf(" [-] IOAPIC Hardware IRQs routed to LAPIC ID %d\n", lapic_id);
 }

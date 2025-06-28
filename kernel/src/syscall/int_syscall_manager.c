@@ -22,8 +22,8 @@ References:
 extern ring_buffer_t* keyboard_buffer;
 
 registers_t *int_systemcall_handler(registers_t *regs) {
-    switch (regs->int_no) {                             // syscall number
-        case INT_SYSCALL_READ: {
+    switch (regs->int_no) {                             
+        case INT_SYSCALL_READ: {    // 0x59
             uint8_t *user_buf = (uint8_t *)regs->rbx;  // user buffer pointer
             
             if (!user_buf || regs->rcx == 0) {
@@ -47,7 +47,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             break;
         }
 
-        case INT_SYSCALL_PRINT: {
+        case INT_SYSCALL_PRINT: {   // 0x5A
             if (!regs->rbx) {
                 printf("Invalid string pointer!\n");
                 regs->rax = -1;
@@ -55,37 +55,41 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
 
             const char *str = (const char *)regs->rbx;
-            printf(str);  
+            printf("%s", str);  
             regs->rax = 0;  // success
             break;
         }
 
-        case INT_SYSCALL_EXIT: {
+        case INT_SYSCALL_PRINT_RAX: {  // 0x5C
+            printf("rax: %x\n", regs->rax);
             regs->rax = 0; // success
             break;
         }
 
-        case INT_SYSCALL_FATFS_OPEN: {
-            const char *path = (const char *)regs->rbx;
-            uint8_t mode = (uint8_t)regs->rcx;
+        case INT_SYSCALL_EXIT: {    // 0x5B
+            regs->rax = 0; // success
+            break;
+        }
 
+        case INT_SYSCALL_FATFS_OPEN: {  // 0x33
+            
+            const char *path = (const char *)regs->rbx;
             if (!path) {
-                regs->rax = -1;
+                regs->rax = -1; // Invalid path
                 break;
             }
 
             FIL *file = kheap_alloc(sizeof(FIL), ALLOCATE_DATA);
-            FRESULT res = f_open(file, path, mode);
-            if (res != FR_OK) {
-                kheap_free(file, sizeof(FIL));
-                regs->rax = -1;
-            } else {
-                regs->rax = (uint64_t)file;
+            if (!file) {
+                regs->rax = -1; // Memory allocation failed
+                break;
             }
+            BYTE mode = (BYTE)regs->rcx; // File open mode
+            FRESULT res = f_open(file, path, mode);
             break;
         }
 
-        case INT_SYSCALL_FATFS_CLOSE: {
+        case INT_SYSCALL_FATFS_CLOSE: { // 0x34
             FIL *file = (FIL *)regs->rbx;
             if (!file) {
                 regs->rax = -1;
@@ -93,13 +97,14 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
 
             FRESULT res = f_close(file);
+            
             kheap_free(file, sizeof(FIL));
             regs->rax = (res == FR_OK) ? 0 : -1;
             break;
         }
 
-        case INT_SYSCALL_FATFS_READ: {
-             FIL *file = (FIL *)regs->rbx;
+        case INT_SYSCALL_FATFS_READ: {  // 0x35
+            FIL *file = (FIL *)regs->rbx;
             void *buf = (void *)regs->rcx;
             UINT btr = (UINT)regs->rdx;
             UINT br;
@@ -114,23 +119,23 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             break;
         }
 
-        case INT_SYSCALL_FATFS_WRITE: {
-             FIL *file = (FIL *)regs->rbx;
+        case INT_SYSCALL_FATFS_WRITE: { // 0x36
+            FIL *file = (FIL *)regs->rbx;
             const void *buf = (const void *)regs->rcx;
             UINT btw = (UINT)regs->rdx;
             UINT bw;
 
             if (!file || !buf || btw == 0) {
-                regs->rax = -1;
+                regs->rax = -1; // Invalid parameters
                 break;
             }
 
             FRESULT res = f_write(file, buf, btw, &bw);
-            regs->rax = (res == FR_OK) ? bw : -1;
+            regs->rax = (res == FR_OK) ? bw : -1; // Return number of bytes written
             break;
         }
 
-        case INT_SYSCALL_FATFS_MOUNT: {
+        case INT_SYSCALL_FATFS_MOUNT: { // 0x52
             FATFS *fs = kheap_alloc(sizeof(FATFS), ALLOCATE_DATA);
             FRESULT res = f_mount(fs, "", 1);
             if (res != FR_OK) {
@@ -142,10 +147,10 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             break;
         }
 
-        case INT_SYSCALL_FATFS_OPENDIR: {
+        case INT_SYSCALL_FATFS_OPENDIR: {   // 0x44
             const char *path = (const char *)regs->rbx;
             if (!path) {
-                regs->rax = -1;
+                regs->rax = -1; // Invalid path
                 break;
             }
 
@@ -153,14 +158,14 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             FRESULT res = f_opendir(dir, path);
             if (res != FR_OK) {
                 kheap_free(dir, sizeof(DIR));
-                regs->rax = -1;
+                regs->rax = -1; // Open directory failed
             } else {
-                regs->rax = (uint64_t)dir;
+                regs->rax = (uint64_t)dir; // Return directory pointer
             }
             break;
         }
 
-        case INT_SYSCALL_FATFS_CLOSEDIR: {
+        case INT_SYSCALL_FATFS_CLOSEDIR: {  // 0x45
             DIR *dir = (DIR *)regs->rbx;
             if (!dir) {
                 regs->rax = -1;
@@ -173,7 +178,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             break;
         }
 
-        case INT_SYSCALL_FATFS_READDIR: {
+        case INT_SYSCALL_FATFS_READDIR: {   // 0x46
             DIR *dir = (DIR *)regs->rbx;
             if (!dir) {
                 regs->rax = -1;
@@ -192,7 +197,6 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             break;
         }
 
-        
         default: {
             printf("Unknown System Call!\n");
             regs->rax = -1; // unknown syscall
@@ -206,7 +210,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
 
 
 void int_syscall_init(){
-    for(int i = 19; i <= 59; i++) {
+    for(int i = 19; i <= 60; i++) {
         irq_install(i, (void *)&int_systemcall_handler); 
     }
 
@@ -276,6 +280,9 @@ void syscall_test(){
 
     // Test exit syscall
     syscall_exit();
+
+    // Creating a file
+
 }
 
 
