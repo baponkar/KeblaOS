@@ -12,6 +12,7 @@ References:
 #include "../util/util.h"
 #include "../kshell/ring_buffer.h"
 #include "../memory/kheap.h"
+#include "../memory/uheap.h"
 #include "../memory/paging.h"
 
 #include "../FatFs-R0.15b/source/ff.h"        // FatFs library header
@@ -72,7 +73,6 @@ registers_t *int_systemcall_handler(registers_t *regs) {
         }
 
         case INT_SYSCALL_FATFS_OPEN: {  // 0x33
-            
             const char *path = (const char *)regs->rbx;
             if (!path) {
                 regs->rax = -1; // Invalid path
@@ -81,11 +81,18 @@ registers_t *int_systemcall_handler(registers_t *regs) {
 
             FIL *file = kheap_alloc(sizeof(FIL), ALLOCATE_DATA);
             if (!file) {
+                kheap_free((void *)file, sizeof(FIL));
                 regs->rax = -1; // Memory allocation failed
                 break;
             }
             BYTE mode = (BYTE)regs->rcx; // File open mode
             FRESULT res = f_open(file, path, mode);
+            if (res != FR_OK) {
+                kheap_free((void *)file, sizeof(FIL));
+                regs->rax = -1; // Open file failed
+            } else {
+                regs->rax = (uint64_t)file; // Return file pointer
+            }
             break;
         }
 
@@ -98,7 +105,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
 
             FRESULT res = f_close(file);
             
-            kheap_free(file, sizeof(FIL));
+            kheap_free((void *)file, sizeof(FIL));
             regs->rax = (res == FR_OK) ? 0 : -1;
             break;
         }
@@ -197,6 +204,34 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             break;
         }
 
+        case INT_SYSCALL_FATFS_MKDIR: {    // 0x4E
+            const char *path = (const char *)regs->rbx;
+            if (!path) {
+                regs->rax = -1; // Invalid path
+                break;
+            }
+
+            FRESULT res = f_mkdir(path);
+            regs->rax = (res == FR_OK) ? 0 : -1; // Return success or failure
+            break;
+        }
+
+        case INT_SYSCALL_ALLOC: {
+            size_t size = regs->rbx;
+            uint8_t type = regs->rcx;
+            void *ptr = uheap_alloc(size, type);
+            regs->rax = (uint64_t)ptr;
+            break;
+        }
+
+        case INT_SYSCALL_FREE: {
+            void *ptr = (void *)regs->rbx;
+            size_t size = regs->rcx;
+            uheap_free(ptr, size);
+            regs->rax = 0;
+            break;
+        }
+
         default: {
             printf("Unknown System Call!\n");
             regs->rax = -1; // unknown syscall
@@ -210,7 +245,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
 
 
 void int_syscall_init(){
-    for(int i = 19; i <= 60; i++) {
+    for(int i = 19; i <= 62; i++) {
         irq_install(i, (void *)&int_systemcall_handler); 
     }
 
@@ -282,7 +317,6 @@ void syscall_test(){
     syscall_exit();
 
     // Creating a file
-
 }
 
 

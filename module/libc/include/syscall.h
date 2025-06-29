@@ -1,10 +1,12 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdbool.h>
 #include <stddef.h>
+#include <stdbool.h>
+
 
 enum int_syscall_number {
+
     // FatFs System Calls
     // File Access
     INT_SYSCALL_FATFS_OPEN      = 51,  // 0x33
@@ -56,19 +58,25 @@ enum int_syscall_number {
     INT_SYSCALL_READ            = 89,  // 0x59
     INT_SYSCALL_PRINT           = 90,  // 0x5A
     INT_SYSCALL_EXIT            = 91,  // 0x5B
-    INT_SYSCALL_PRINT_RAX       = 92,  // 0x5C
-
-    INT_SYSCALL_ALLOC           = 93,  // 0x5D
-    INT_SYSCALL_FREE            = 94   // 0x5E
+    INT_SYSCALL_PRINT_RAX       = 92   // 0x5C
 };
 
-void int_syscall_init();
+/* File access mode and open method flags (3rd argument of f_open function) */
+#define	FA_READ				0x01
+#define	FA_WRITE			0x02
+#define	FA_OPEN_EXISTING	0x00
+#define	FA_CREATE_NEW		0x04
+#define	FA_CREATE_ALWAYS	0x08
+#define	FA_OPEN_ALWAYS		0x10
+#define	FA_OPEN_APPEND		0x30
+
 
 int syscall_read(uint8_t *buffer, size_t size);
 int syscall_print(const char *msg);
 int syscall_exit();
+int syscall_print_rax();
 
-void syscall_test();
-
-
-
+uint64_t syscall_fatfs_open(const char *path, uint64_t mode);
+uint64_t syscall_fatfs_close(void *file);
+uint64_t syscall_fatfs_read(void *file, void *buf, uint32_t btr);
+uint64_t syscall_fatfs_write(void *file, const void *buf, uint32_t btw);

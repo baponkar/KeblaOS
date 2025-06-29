@@ -9,7 +9,7 @@ Reference   : https://wiki.osdev.org/Limine
               https://wiki.osdev.org/SSE
 */
 
-#include "../FatFs-R0.15b/fatfs_test.h"
+#include "../FatFs-R0.15b/fatfs.h"
 #include "../usr/switch_to_user.h"
 #include "../usr/load_and_parse_elf.h"
 
@@ -77,32 +77,21 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "kmain.h"
 
-// Found from detect_memory
-extern uint64_t HHDM_OFFSET; 
-extern volatile uint64_t phys_mem_head;
-
 
 // Found pci devices from pci_scan
-extern pci_device_t mass_storage_controllers[16];  // Array to store detected mass storage devices
-extern size_t mass_storage_count;               // Counter for mass storage devices
-extern pci_device_t network_controllers[16];       // Array to store detected network controllers
-extern size_t network_controller_count;        // Counter for network controllers
-extern pci_device_t wireless_controllers[16];      // Array to store detected wireless controllers
-extern size_t wireless_controller_count;       // Counter for wireless controllers
-
-extern void restore_cpu_state(registers_t* registers);
-
-extern tss_t tss;
+extern pci_device_t mass_storage_controllers[16];   // Array to store detected mass storage devices
+extern size_t mass_storage_count;                   // Counter for mass storage devices
+extern pci_device_t network_controllers[16];        // Array to store detected network controllers
+extern size_t network_controller_count;             // Counter for network controllers
+extern pci_device_t wireless_controllers[16];       // Array to store detected wireless controllers
+extern size_t wireless_controller_count;            // Counter for wireless controllers
 
 extern ring_buffer_t* keyboard_buffer;
 
 
-
-
-
 void kmain(){
 
-    serial_init("phys_mem_head : %d\n", phys_mem_head);
+    serial_init("Successfully Serial Printing initialized!\n");
 
     get_bootloader_info();
     vga_init();
@@ -121,29 +110,17 @@ void kmain(){
 
 
     pci_scan();
-
+    
     uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5]; // Found from pci scan 0xFEBD5000
     HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
     HBA_PORT_T* port = (HBA_PORT_T*) &abar->ports[0];
+    ahci_identify(port);
 
     printf("[PCI] Mass Storage Controller found at BAR5: %x\n", bar5);
-    ahci_identify(port);
-    // test_ahci(abar);
 
-    // Read MBR
-    // uint16_t mbr[256];
-    // ahci_read(port, 0, 0, 1, mbr);
-
-    // Partition entry starts at offset 0x1BE
-    // uint32_t lba_start = *(uint32_t *)((uint8_t *)mbr + 0x1BE + 8);
-    // Use lba_start instead of hardcoded 2048
-    // printf("[MBR] Partition starts at LBA: %d\n", lba_start);
-
-    // test_fatfs();
-
-    printf("Creating myfile.txt: %d\n", create_file("myfile.txt"));
+    fatfs_init(port);
+    test_fatfs();
     
-
     // switch_to_core(3);
 
     // start_kshell();
@@ -159,7 +136,7 @@ void kmain(){
 
     // Load and parse kernel modules by using limine bootloader
     get_kernel_modules_info();
-    print_kernel_modules_info();
+    // print_kernel_modules_info();
     load_user_elf_and_jump();
 
     // init_user_mode();

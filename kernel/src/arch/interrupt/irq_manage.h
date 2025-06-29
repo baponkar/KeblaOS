@@ -88,6 +88,8 @@ extern void irq57();   // Print System Call
 extern void irq58();   // Read System Call
 extern void irq59();   // Exit System Call
 extern void irq60();   // Printing rax content system call
+extern void irq61();   // ALLOC system call
+extern void irq62();   // Free system call
 
 
 

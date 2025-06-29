@@ -15,9 +15,10 @@
 #include "diskio.h"		/* Declarations of disk functions */
 #include "../../sys/ahci/ahci.h"  // Include your AHCI driver header
 
-extern HBA_PORT_T* g_ahci_port;  // Assume this is your active port
 
-#define FAT32_PARTITION_LBA 2048  // start of partition in sectors
+HBA_PORT_T* g_ahci_port;  // Assume this is your active port
+
+uint64_t FAT32_PARTITION_LBA = 2048;  // start of partition in sectors
 
 /* Definitions of physical drive number for each drive */
 #define DEV_RAM		0	/* Example: Map Ramdisk to physical drive 0 */
@@ -267,4 +268,9 @@ DRESULT disk_ioctl (
             return RES_PARERR;
     }
 }
+
+
+
+
+
 

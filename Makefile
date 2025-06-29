@@ -124,7 +124,7 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
 
 	# Copy user_programe.elf file into boot 
-	cp -v $(MODULE_DIR)/user_program_2.elf $(ISO_DIR)/boot/user_program_2.elf
+	cp -v $(MODULE_DIR)/build/user_program.elf $(ISO_DIR)/boot/user_program.elf
 
 	# Creating KeblaOS-0.11-image.iso file by using xorriso.
 	xorriso \

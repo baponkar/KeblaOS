@@ -142,3 +142,6 @@ IRQ  57,    89     ; Print System Call Interrupt
 IRQ  58,    90     ; Read System Call Interrupt
 IRQ  59,    91     ; Exit System Call Interrupt
 IRQ  60,    92     ; Printing of RAX content System Call
+IRQ  61,    93     ; Alloc system Call
+IRQ  62,    94     ; Free System Call 
+
