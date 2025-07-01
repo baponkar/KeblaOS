@@ -39,10 +39,6 @@ void fatfs_init(HBA_PORT_T* port) {
 
 void test_fatfs() {
     FATFS fs;
-    FIL file;
-    char buffer[128];
-    UINT br, bw;
-
     // Mount the filesystem
     FRESULT res = f_mount(&fs, "", 1);
     if (res != FR_OK) {
@@ -50,30 +46,35 @@ void test_fatfs() {
         return;
     }
 
+
+    FIL *file = (FIL *)kheap_alloc(sizeof(FIL), ALLOCATE_DATA);
+    char buffer[128];
+    UINT br, bw;
+
     // Create and write to the file
-    if (f_open(&file, "test.txt", FA_WRITE | FA_CREATE_ALWAYS) == FR_OK) {
+    if (f_open(file, "test.txt", FA_WRITE | FA_CREATE_ALWAYS) == FR_OK) {
         const char* msg = "Hello from KeblaOS!";
-        res = f_write(&file, msg, strlen(msg), &bw);
+        res = f_write(file, msg, strlen(msg), &bw);
         if (res == FR_OK) {
             printf("Successfully wrote %x bytes to test.txt\n", bw);
         } else {
             printf("Write failed: %d\n", res);
         }
-        f_close(&file);
+        f_close(file);
     } else {
         printf("Failed to create file\n");
     }
 
     // Reopen the file for reading
-    if (f_open(&file, "test.txt", FA_READ) == FR_OK) {
-        res = f_read(&file, buffer, sizeof(buffer) - 1, &br);
+    if (f_open(file, "test.txt", FA_READ) == FR_OK) {
+        res = f_read(file, buffer, sizeof(buffer) - 1, &br);
         if (res == FR_OK) {
             buffer[br] = 0;
             printf("Read from file: %s\n", buffer);
         } else {
             printf("Read failed: %d\n", res);
         }
-        f_close(&file);
+        f_close(file);
     } else {
         printf("Failed to open file for reading\n");
     }

@@ -11,31 +11,20 @@ const char *file_name = "test.txt";
 
 __attribute__((section(".text")))
 void _start() {
-    // Print the message using the printf function from libc
     printf("%s", msg);
 
-    uint64_t file_handle = syscall_fatfs_open(file_name, FA_READ | FA_WRITE | FA_CREATE_ALWAYS); // Open file in read/write mode
-    printf("Test\n");
-
-    if (file_handle == (uint64_t)-1) {
-        printf("Failed to open file: %s\n", file_name);
+    if (syscall_fatfs_mount("", 0) == FR_OK) {
+        printf("FAT filesystem mounted successfully.\n");
     } else {
-        printf("File opened successfully: %s\n", file_name);
-        
-        // Write some data to the file
-        const char *data = "This is a test data written to the file.\n";
-        int write_result = syscall_fatfs_write((void *)file_handle, data, sizeof(data));
-        if (write_result < 0) {
-            printf("Failed to write to file.\n");
-        } else {
-            printf("Data written successfully to the file.\n");
-        }
-
-        // Close the file
-        syscall_fatfs_close((void *)file_handle);
+        printf("Failed to mount FAT filesystem.\n");
     }
 
-    // Infinite loop to keep the program running
+    if (syscall_fatfs_open(file_name, FA_WRITE | FA_CREATE_ALWAYS) == FR_OK) {
+        printf("File opened successfully: %s\n", file_name);
+    }  else {
+        printf("Failed to open file: %s\n", file_name);
+    }
+
     while (true) {
         // Do nothing, just wait
     }

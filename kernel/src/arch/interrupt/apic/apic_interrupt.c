@@ -144,10 +144,12 @@ void set_bsp_apic_int_descriptor_table(){
     apic_int_set_gate(88, (uint64_t)&irq56, 0x08, 0xEE);    // FatFs GetFileSystemTime System Call, IRQ56
 
 
-    apic_int_set_gate(89, (uint64_t)&irq57, 0x08, 0xEE); // Print System Call, IRQ140
-    apic_int_set_gate(90, (uint64_t)&irq58, 0x08, 0xEE); // Read System Call, IRQ141
-    apic_int_set_gate(91, (uint64_t)&irq59, 0x08, 0xEE); // Exit System Call, IRQ142
-    apic_int_set_gate(92, (uint64_t)&irq60, 0x08, 0xEE); // Print Rax System Call, IRQ142
+    apic_int_set_gate(89, (uint64_t)&irq57, 0x08, 0xEE); // Print System Call, IRQ57
+    apic_int_set_gate(90, (uint64_t)&irq58, 0x08, 0xEE); // Read System Call, IRQ58
+    apic_int_set_gate(91, (uint64_t)&irq59, 0x08, 0xEE); // Exit System Call, IRQ59
+    apic_int_set_gate(92, (uint64_t)&irq60, 0x08, 0xEE); // Print Rax System Call, IRQ60
+    apic_int_set_gate(93, (uint64_t)&irq61, 0x08, 0xEE); // Print Rax System Call, IRQ61
+    apic_int_set_gate(94, (uint64_t)&irq62, 0x08, 0xEE); // Print Rax System Call, IRQ62
 }
 
 

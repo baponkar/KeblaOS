@@ -22,13 +22,15 @@ References:
 
 extern ring_buffer_t* keyboard_buffer;
 
+static FATFS  fatfs;
+
+//  regs->rax is hold success(0) or error(-1) code
 registers_t *int_systemcall_handler(registers_t *regs) {
     switch (regs->int_no) {                             
-        case INT_SYSCALL_READ: {    // 0x59
+        case INT_SYSCALL_READ: {    // 0x59 : Read from keyboard buffer
             uint8_t *user_buf = (uint8_t *)regs->rbx;  // user buffer pointer
             
             if (!user_buf || regs->rcx == 0) {
-                printf("Invalid parameters for read syscall!\n");
                 regs->rax = -1; // error
                 break;
             }
@@ -48,7 +50,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             break;
         }
 
-        case INT_SYSCALL_PRINT: {   // 0x5A
+        case INT_SYSCALL_PRINT: {   // 0x5A : Print a string
             if (!regs->rbx) {
                 printf("Invalid string pointer!\n");
                 regs->rax = -1;
@@ -61,30 +63,32 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             break;
         }
 
-        case INT_SYSCALL_PRINT_RAX: {  // 0x5C
+        case INT_SYSCALL_PRINT_RAX: {  // 0x5C : Print the value of rax
             printf("rax: %x\n", regs->rax);
             regs->rax = 0; // success
             break;
         }
 
         case INT_SYSCALL_EXIT: {    // 0x5B
-            regs->rax = 0; // success
+            regs->rax = 0;          // success
             break;
         }
 
-        case INT_SYSCALL_FATFS_OPEN: {  // 0x33
+        case INT_SYSCALL_FATFS_OPEN: {  // 0x33 : Open a file
+
             const char *path = (const char *)regs->rbx;
             if (!path) {
                 regs->rax = -1; // Invalid path
                 break;
             }
 
-            FIL *file = kheap_alloc(sizeof(FIL), ALLOCATE_DATA);
+            // FIL *file = (FIL *)regs->rcx; // File pointer (output)
+            FIL *file = (FIL *)kheap_alloc(sizeof(FIL), ALLOCATE_DATA);
             if (!file) {
-                kheap_free((void *)file, sizeof(FIL));
                 regs->rax = -1; // Memory allocation failed
                 break;
             }
+
             BYTE mode = (BYTE)regs->rcx; // File open mode
             FRESULT res = f_open(file, path, mode);
             if (res != FR_OK) {
@@ -96,7 +100,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             break;
         }
 
-        case INT_SYSCALL_FATFS_CLOSE: { // 0x34
+        case INT_SYSCALL_FATFS_CLOSE: { // 0x34 : Close a file
             FIL *file = (FIL *)regs->rbx;
             if (!file) {
                 regs->rax = -1;
@@ -110,11 +114,11 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             break;
         }
 
-        case INT_SYSCALL_FATFS_READ: {  // 0x35
+        case INT_SYSCALL_FATFS_READ: {  // 0x35 : Read from a file
             FIL *file = (FIL *)regs->rbx;
             void *buf = (void *)regs->rcx;
-            UINT btr = (UINT)regs->rdx;
-            UINT br;
+            UINT btr = (UINT)regs->rdx; // Bytes to read(input)
+            UINT br; // Bytes read(output)
 
             if (!file || !buf || btr == 0) {
                 regs->rax = -1;
@@ -126,11 +130,11 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             break;
         }
 
-        case INT_SYSCALL_FATFS_WRITE: { // 0x36
+        case INT_SYSCALL_FATFS_WRITE: { // 0x36 : Write to a file
             FIL *file = (FIL *)regs->rbx;
             const void *buf = (const void *)regs->rcx;
-            UINT btw = (UINT)regs->rdx;
-            UINT bw;
+            UINT btw = (UINT)regs->rdx; // Bytes to write(input)
+            UINT bw;    // Bytes written(output)
 
             if (!file || !buf || btw == 0) {
                 regs->rax = -1; // Invalid parameters
@@ -142,14 +146,36 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             break;
         }
 
+        /*
+            "0:" → drive 0 (e.g. primary partition)
+
+            "1:" → drive 1 (e.g. second disk or USB)
+
+            "" → default drive (shortcut for "0:")
+
+            0	Delayed mount — mount is done automatically on first file access
+            1	Immediate mount — mount the volume right now, return result immediately
+        */
         case INT_SYSCALL_FATFS_MOUNT: { // 0x52
-            FATFS *fs = kheap_alloc(sizeof(FATFS), ALLOCATE_DATA);
-            FRESULT res = f_mount(fs, "", 1);
+
+            char *path = (char *)regs->rbx; // Path to mount
+            if (!path) {
+                regs->rax = -1; // Invalid path
+                break;
+            }
+
+            BYTE opt = (BYTE)regs->rcx; // Mount options
+            if (opt > 0xFF) {
+                printf("Invalid mount options!\n");
+                regs->rax = -1; // Invalid options
+                break;
+            }
+
+            FRESULT res = f_mount((FATFS *)&fatfs, path, opt);
             if (res != FR_OK) {
-                kheap_free(fs, sizeof(FATFS));
                 regs->rax = -1;
             } else {
-                regs->rax = (uint64_t)fs;
+                regs->rax = (uint64_t)&fatfs;
             }
             break;
         }
@@ -162,6 +188,11 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
 
             DIR *dir = kheap_alloc(sizeof(DIR), ALLOCATE_DATA);
+            if (!dir) {
+                kheap_free(dir, sizeof(DIR));
+                regs->rax = -1; // Memory allocation failed
+                break;
+            }
             FRESULT res = f_opendir(dir, path);
             if (res != FR_OK) {
                 kheap_free(dir, sizeof(DIR));
@@ -216,19 +247,41 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             break;
         }
 
-        case INT_SYSCALL_ALLOC: {
+        case INT_SYSCALL_ALLOC: { // 0x5D : Allocate memory
             size_t size = regs->rbx;
             uint8_t type = regs->rcx;
-            void *ptr = uheap_alloc(size, type);
+
+            if (size == 0 || type > 0x3) {
+                printf("Invalid type parameters for allocation syscall!\n");
+                regs->rax = -1; // error
+                break;
+            }
+            uint64_t ptr = (uint64_t) uheap_alloc(size, type);
+
+            if(!ptr) {
+                printf("Memory allocation failed!\n");
+                regs->rax = -1; // error
+                break;
+            }
             regs->rax = (uint64_t)ptr;
             break;
         }
 
-        case INT_SYSCALL_FREE: {
+        case INT_SYSCALL_FREE: {    // 0x5E : Free allocated memory
             void *ptr = (void *)regs->rbx;
+            if (!ptr) {
+                printf("Invalid pointer for free syscall!\n");
+                regs->rax = -1; // error
+                break;
+            }
             size_t size = regs->rcx;
+            if (size == 0) {
+                printf("Invalid size for free syscall!\n");
+                regs->rax = -1; // error
+                break;
+            }
             uheap_free(ptr, size);
-            regs->rax = 0;
+            regs->rax = 0; // success
             break;
         }
 

@@ -10,7 +10,7 @@ https://chatgpt.com/share/675fa60d-c044-8001-aef6-d23b3d62ab62
 enum allocation_type {
     ALLOCATE_CODE = 0x1,   // Allocate for code
     ALLOCATE_DATA = 0x2,   // Allocate for data
-    ALLOCATE_STACK = 0x4,  // Allocate for stack
+    ALLOCATE_STACK = 0x3,  // Allocate for stack
 };
 
 void vm_alloc(uint64_t va, uint8_t type);

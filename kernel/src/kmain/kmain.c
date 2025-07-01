@@ -23,14 +23,14 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../sys/acpi/descriptor_table/madt.h"
 
 // File System
-#include "../fs/kfs.h"      // Kebla File System
-#include "../fs/fat16.h"    // FAT16 File System
-#include "../fs/fat32.h"    // FAT32 File System
+#include "../fs/kfs.h"                      // Kebla File System
+#include "../fs/fat16.h"                    // FAT16 File System
+#include "../fs/fat32.h"                    // FAT32 File System
 
 #include "../arch/interrupt/apic/apic_interrupt.h"
 #include "../arch/interrupt/apic/apic.h"
 #include "../arch/interrupt/apic/ioapic.h"
-#include "../arch/interrupt/pic/pic.h"    // init_idt, test_interrupt
+#include "../arch/interrupt/pic/pic.h"      // init_idt, test_interrupt
 #include "../arch/interrupt/pic/pic_interrupt.h"
 
 #include "../sys/ahci/ahci.h"
@@ -40,32 +40,32 @@ Reference   : https://wiki.osdev.org/Limine
 #include  "../sys/cpu/cpuid.h"              // get_cpu_count, get_cpu_info
 #include "../memory/detect_memory.h"
 #include "../bootloader/firmware.h"
-#include "../../../limine-9.2.3/limine.h"// bootloader info
-#include "../bootloader/boot.h"         // bootloader info
-#include "../lib/stdio.h"               // printf
+#include "../../../limine-9.2.3/limine.h"   // bootloader info
+#include "../bootloader/boot.h"             // bootloader info
+#include "../lib/stdio.h"                   // printf
 #include "../lib/string.h"
-#include "../util/util.h"               // registers_t , halt_kernel
+#include "../util/util.h"                   // registers_t , halt_kernel
 #include "../driver/vga/framebuffer.h"
-#include "../driver/vga/vga_term.h"     // vga_init, print_bootloader_info, print_memory_map, display_image
+#include "../driver/vga/vga_term.h"         // vga_init, print_bootloader_info, print_memory_map, display_image
 #include "../driver/image_data.h"
 #include "../driver/io/serial.h"
-#include "../arch/gdt/gdt.h"           // init_gdt
+#include "../arch/gdt/gdt.h"                // init_gdt
 #include "../arch/gdt/tss.h"
 
-#include "../memory/pmm.h"               // init_pmm, test_pmm
-#include "../memory/paging.h"            // init_paging, test_paging
-#include "../memory/kmalloc.h"           // test_kmalloc
-#include "../memory/vmm.h"               // test_vmm
-#include "../memory/kheap.h"             // test_kheap
+#include "../memory/pmm.h"                  // init_pmm, test_pmm
+#include "../memory/paging.h"               // init_paging, test_paging
+#include "../memory/kmalloc.h"              // test_kmalloc
+#include "../memory/vmm.h"                  // test_vmm
+#include "../memory/kheap.h"                // test_kheap
 
-#include "../sys/timer/tsc.h"         // time stamp counter
-#include "../sys/timer/rtc.h"         // RTC
-#include "../sys/timer/pit_timer.h"   // init_timer
-#include "../sys/timer/apic_timer.h"  // apic timer
-#include "../sys/timer/hpet_timer.h"  // hpet timerzz
+#include "../sys/timer/tsc.h"               // time stamp counter
+#include "../sys/timer/rtc.h"               // RTC
+#include "../sys/timer/pit_timer.h"         // init_timer
+#include "../sys/timer/apic_timer.h"        // apic timer
+#include "../sys/timer/hpet_timer.h"        // hpet timerzz
 #include "../kshell/kshell.h"
 #include "../kshell/ring_buffer.h"
-#include "../driver/mouse/mouse.h"       // mouse driver
+#include "../driver/mouse/mouse.h"          // mouse driver
 #include "../syscall/syscall_manager.h"
 #include "../syscall/int_syscall_manager.h"
 #include "../driver/vga/color.h"
@@ -112,11 +112,10 @@ void kmain(){
     pci_scan();
     
     uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5]; // Found from pci scan 0xFEBD5000
+    printf("[PCI] Mass Storage Controller found at BAR5: %x\n", bar5);
     HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
     HBA_PORT_T* port = (HBA_PORT_T*) &abar->ports[0];
     ahci_identify(port);
-
-    printf("[PCI] Mass Storage Controller found at BAR5: %x\n", bar5);
 
     fatfs_init(port);
     test_fatfs();

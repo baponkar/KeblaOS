@@ -2,9 +2,13 @@
 
 #include "../include/stdio.h"
 
-void putc(char c){
-    syscall_print(&c);
+void putc(char c) {
+    char str[2];
+    str[0] = c;
+    str[1] = '\0';
+    syscall_print(str);  // ✅ Safe: null-terminated string
 }
+
 
 void puts(const char* str) {
     if (str) {

@@ -7,13 +7,13 @@
 enum int_syscall_number {
     // FatFs System Calls
     // File Access
-    INT_SYSCALL_FATFS_OPEN      = 51,  // 0x33
-    INT_SYSCALL_FATFS_CLOSE     = 52,  // 0x34
-    INT_SYSCALL_FATFS_READ      = 53,  // 0x35
-    INT_SYSCALL_FATFS_WRITE     = 54,  // 0x36
-    INT_SYSCALL_FATFS_LSEEK     = 55,  // 0x37
-    INT_SYSCALL_FATFS_TRUNCATE  = 56,  // 0x38
-    INT_SYSCALL_FATFS_SYNC      = 57,  // 0x39
+    INT_SYSCALL_FATFS_OPEN      = 51,  // 0x33 : Open a file
+    INT_SYSCALL_FATFS_CLOSE     = 52,  // 0x34 : Close a file
+    INT_SYSCALL_FATFS_READ      = 53,  // 0x35 : Read from a file
+    INT_SYSCALL_FATFS_WRITE     = 54,  // 0x36 : Write to a file
+    INT_SYSCALL_FATFS_LSEEK     = 55,  // 0x37 : Set file position (lseek)
+    INT_SYSCALL_FATFS_TRUNCATE  = 56,  // 0x38 : Truncate a file i.e.
+    INT_SYSCALL_FATFS_SYNC      = 57,  // 0x39 : Synchronize a file with storage
     INT_SYSCALL_FATFS_FORWARD   = 58,  // 0x3A
     INT_SYSCALL_FATFS_EXPAND    = 59,  // 0x3B
     INT_SYSCALL_FATFS_GETS      = 60,  // 0x3C
@@ -58,6 +58,7 @@ enum int_syscall_number {
     INT_SYSCALL_EXIT            = 91,  // 0x5B
     INT_SYSCALL_PRINT_RAX       = 92,  // 0x5C
 
+    // User Memory Allocation
     INT_SYSCALL_ALLOC           = 93,  // 0x5D
     INT_SYSCALL_FREE            = 94   // 0x5E
 };
