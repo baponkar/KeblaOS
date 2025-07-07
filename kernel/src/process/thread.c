@@ -14,10 +14,8 @@
 
 #define KERNEL_CS  0x08
 #define KERNEL_SS  0x10
-
-// Update these to include RPL=3 for user mode
-#define USER_CS    0x1B // (0x18 | 3)
-#define USER_SS    0x23 // (0x20 | 3)
+#define USER_CS    0x1B         // (0x18 | 3)
+#define USER_SS    0x23         // (0x20 | 3)
   
 #define FLAGS      0x202
 
@@ -93,7 +91,8 @@ thread_t* create_thread(process_t* parent, const char* name, void (*function)(vo
         thread->tid, 
         (uint64_t)thread, 
         thread->registers.iret_rip, 
-        thread->registers.iret_rsp);
+        thread->registers.iret_rsp
+    );
 
     return thread;
 }

@@ -307,6 +307,8 @@ struct HBA_CMD_TBL
 };
 typedef struct HBA_CMD_TBL HBA_CMD_TBL_T;
 
+HBA_PORT_T* get_ahci_port(uint32_t bar5);
+
 void ahci_identify(HBA_PORT_T* port);
 void test_ahci(HBA_MEM_T* abar);
 

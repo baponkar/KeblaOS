@@ -26,6 +26,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../fs/kfs.h"                      // Kebla File System
 #include "../fs/fat16.h"                    // FAT16 File System
 #include "../fs/fat32.h"                    // FAT32 File System
+#include "../vfs/vfs.h"
 
 #include "../arch/interrupt/apic/apic_interrupt.h"
 #include "../arch/interrupt/apic/apic.h"
@@ -86,7 +87,7 @@ extern size_t network_controller_count;             // Counter for network contr
 extern pci_device_t wireless_controllers[16];       // Array to store detected wireless controllers
 extern size_t wireless_controller_count;            // Counter for wireless controllers
 
-extern ring_buffer_t* keyboard_buffer;
+extern ring_buffer_t* keyboard_buffer;              // To get the keyboard input
 
 
 void kmain(){
@@ -108,18 +109,24 @@ void kmain(){
         printf("[Error] This System does not have APIC.\n");
     }
 
+    // init_syscall(0);
+    // test_syscall();
+
 
     pci_scan();
     
-    uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5]; // Found from pci scan 0xFEBD5000
-    printf("[PCI] Mass Storage Controller found at BAR5: %x\n", bar5);
-    HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
-    HBA_PORT_T* port = (HBA_PORT_T*) &abar->ports[0];
+    uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5];  // Found from pci scan 0xFEBD5000
+    HBA_PORT_T* port = get_ahci_port(bar5);
     ahci_identify(port);
+
+    uint8_t dump[512];
+    ahci_read(port, 0, 0, 1, (uint16_t *)&dump);
+    printf("Boot sector signature: %x %x\n", dump[510], dump[511]);         // should be 0x55 0xAA
+
 
     fatfs_init(port);
     test_fatfs();
-    
+
     // switch_to_core(3);
 
     // start_kshell();
@@ -133,12 +140,16 @@ void kmain(){
         }
     }
 
+    test_vfs();
+
     // Load and parse kernel modules by using limine bootloader
     get_kernel_modules_info();
     // print_kernel_modules_info();
     load_user_elf_and_jump();
 
     // init_user_mode();
+
+
 
     halt_kernel();
 }

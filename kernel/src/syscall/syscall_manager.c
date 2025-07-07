@@ -80,7 +80,8 @@ void init_syscall(uint64_t cpu_id) {
 void syscall_handler(uint64_t syscall_num, uint64_t arg1, uint64_t arg2) {
     switch(syscall_num) {
         case SYSCALL_PRINT:
-            printf("Print Syscall called\n");
+            printf("Print Syscall called: arg1: %s, arg2: %s\n", (char *)arg1, (char *)arg2);
+            
             if(arg1 == 0) {
                 printf("No string to print.\n");
                 break;

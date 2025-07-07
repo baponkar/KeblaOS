@@ -377,6 +377,19 @@ void ahci_identify(HBA_PORT_T* port) {
 }
 
 
+HBA_PORT_T* get_ahci_port(uint32_t bar5) {
+	HBA_PORT_T* port;
+	
+	if(!bar5){
+		printf("[PCI] Mass Storage Controller not found at BAR5: %x\n", bar5);
+		return NULL;
+	}
+	printf("[PCI] Mass Storage Controller found at BAR5: %x\n", bar5);
+    HBA_MEM_T* abar = (HBA_MEM_T*) bar5;
+    port = (HBA_PORT_T*) &abar->ports[0];
+
+	return port;
+}
 
 
 void test_ahci(HBA_MEM_T* abar)

@@ -100,7 +100,7 @@ enum allocation_type {
     ALLOCATE_STACK = 0x3,  // Allocate for stack
 };
 
-int syscall_read(uint8_t *buffer, size_t size);
+int syscall_keyboard_read(uint8_t *buffer, size_t size);
 int syscall_print(const char *msg);
 int syscall_exit();
 int syscall_print_rax();
@@ -108,11 +108,12 @@ int syscall_print_rax();
 uint64_t syscall_uheap_alloc(size_t size, enum allocation_type type);
 uint64_t uheap_free(void *ptr, size_t size);
 
-uint64_t syscall_fatfs_open(const char *path, uint64_t mode);
-uint64_t syscall_fatfs_close(void *file);
-uint64_t syscall_fatfs_read(void *file, void *buf, uint32_t btr);
-uint64_t syscall_fatfs_write(void *file, const void *buf, uint32_t btw);
+uint64_t syscall_mount(char *path, uint8_t opt);
+uint64_t syscall_open(const char *path, uint64_t mode);
+uint64_t syscall_close(void *file);
+uint64_t syscall_read(void *file, void *buf, uint32_t btr);
+uint64_t syscall_write(void *file, void *buf, uint32_t btw);
+uint64_t syscall_lseek(void *file, uint32_t offs);
 
-uint64_t syscall_fatfs_mount(char *path, uint8_t opt);
 
 
