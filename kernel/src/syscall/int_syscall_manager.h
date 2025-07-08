@@ -65,11 +65,9 @@ enum int_syscall_number {
 
 void int_syscall_init();
 
-int syscall_read(uint8_t *buffer, size_t size);
-int syscall_print(const char *msg);
-int syscall_exit();
-
-void syscall_test();
+// rax store system call number
+// arguments in rdi, rsi, rdx, r10, r8, r9 
+uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t r10, uint64_t r8, uint64_t r9);
 
 
 

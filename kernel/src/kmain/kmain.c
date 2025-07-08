@@ -143,9 +143,9 @@ void kmain(){
     test_vfs();
 
     // Load and parse kernel modules by using limine bootloader
-    get_kernel_modules_info();
+    // get_kernel_modules_info();
     // print_kernel_modules_info();
-    load_user_elf_and_jump();
+    // load_user_elf_and_jump();
 
     // init_user_mode();
 

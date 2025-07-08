@@ -55,10 +55,14 @@ enum int_syscall_number {
     INT_SYSCALL_FATFS_SETCP     = 88,  // 0x58
 
     // System Calls
-    INT_SYSCALL_READ            = 89,  // 0x59
+    INT_SYSCALL_KEYBOARD_READ   = 89,  // 0x59
     INT_SYSCALL_PRINT           = 90,  // 0x5A
     INT_SYSCALL_EXIT            = 91,  // 0x5B
-    INT_SYSCALL_PRINT_RAX       = 92   // 0x5C
+    INT_SYSCALL_PRINT_RAX       = 92,  // 0x5C
+
+    // User Memory Allocation
+    INT_SYSCALL_ALLOC           = 93,  // 0x5D
+    INT_SYSCALL_FREE            = 94   // 0x5E
 };
 
 

@@ -73,19 +73,7 @@ static uint64_t fatfs_lseek(vfs_node_t *node, uint64_t offset) {
 
 // -- new functins
 
-static uint64_t fatfs_truncate(vfs_node_t *node){
-    if ( !node || !node->fs_data) return -1;
-    FRESULT res = f_truncate((FIL *)node->fs_data);
 
-    return (res == FR_OK) ? 0 : -1;
-}
-
-static uint64_t fatfs_sync(vfs_node_t *node){
-    if ( !node || !node->fs_data) return -1;
-    FRESULT res = f_sync((FIL *)node->fs_data);
-
-    return (res == FR_OK) ? 0 : -1;
-}
 
 
 

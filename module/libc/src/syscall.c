@@ -3,6 +3,28 @@
 
 #include "../include/syscall.h"
 
+// Userside system call function to manage all system call
+static uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t r10, uint64_t r8, uint64_t r9){
+    
+    uint64_t out;
+
+    asm volatile (
+        "mov %[_rax], %%rax\n"   // System Call Number
+        "mov %[_rdi], %%rdi\n"   // Argument 1
+        "mov %[_rsi], %%rsi\n"   // Argument 2
+        "mov %[_rdx], %%rdx\n"   // Argument 3
+        "mov %[_r10], %%r10\n"   // Argument 4
+        "mov %[_r8], %%r8\n"     // Argument 5
+        "mov %[_r9], %%r9\n"     // Argument 6
+        "int $0x80\n"            // Trigger System Call Interrupt
+        "mov %%rax, %[_out]\n"   // Storing Output
+        : [_out] "=r" (out)
+        : [_rax] "r" (rax), [_rdi] "r" (rdi), [_rsi] "r" (rsi), [_rdx] "r" (rdx), [_r10] "r" (r10), [_r8] "r" (r8), [_r9] "r" (r9)
+        : "rax", "rdi", "rsi", "rdx", "r10", "r8", "r9"   // Clobber registers
+    );
+
+    return out;
+}
 
 
 
@@ -11,66 +33,34 @@ int syscall_keyboard_read(uint8_t *buffer, size_t size) {
         return -1; // Invalid parameters
     }
 
-    size_t bytes_read = 0;
-
-    asm volatile (
-        "mov %[buf], %%rbx\n"
-        "mov %[size], %%rcx\n"
-        "int $172\n" // Trigger read syscall
-        "mov %%rax, %[bytes]\n"
-        : [bytes] "=r" ((uint64_t)bytes_read)
-        : [buf] "r" ((uint64_t)buffer), [size] "r" ((uint64_t)size)
-        : "rbx", "rcx", "rax"
-    );
-
-    return bytes_read;
+    return system_call((uint64_t) INT_SYSCALL_KEYBOARD_READ, (uint64_t) buffer, (uint64_t) size, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
+
 
 int syscall_print(const char *msg) {
     if (!msg) {
         return -1; // Invalid message
     }
 
-    asm volatile (
-        "mov %[msg], %%rbx\n"
-        "int $0x5A\n" // Trigger print syscall
-        :
-        : [msg] "r" ((uint64_t)msg)
-        : "rbx"
-    );
-
-    return 0; // success
+    return system_call((uint64_t) INT_SYSCALL_PRINT, (uint64_t) msg, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
 int syscall_exit() {
-    asm volatile ("int $174"); // Trigger exit syscall
-    return 0; // This will not be reached, but for consistency
+    return system_call((uint64_t) INT_SYSCALL_EXIT, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);    
 }
 
 int syscall_print_rax() {
-    asm volatile ("int $0x5C"); // Trigger print rax syscall
-    return 0; // This will not be reached, but for consistency
+
+    return system_call((uint64_t) INT_SYSCALL_PRINT_RAX, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
 }
+
 
 uint64_t syscall_uheap_alloc(size_t size, enum allocation_type type) {
     if (size == 0) {
         return 0;
     }
 
-    uint64_t ptr;
-
-    asm volatile (
-        "mov %[sz], %%rbx\n"      /* size → rbx */
-        "mov %[tp], %%rcx\n"      /* type → rcx */
-        "int $0x5D\n"             /* INT_SYSCALL_ALLOC */
-        "mov %%rax, %[out]\n"     /* rax → ptr */
-        : [out] "=r" (ptr)
-        : [sz]  "r" ((uint64_t)size),
-          [tp]  "r" ((uint64_t)type)
-        : "rbx", "rcx", "rax"     /* only clobber what we actually use */
-    );
-
-    return ptr;
+    return system_call((uint64_t) INT_SYSCALL_ALLOC, (uint64_t) size, (uint64_t) type, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
 }
 
 
@@ -79,19 +69,7 @@ uint64_t uheap_free(void *ptr, size_t size) {
         return -1; // Invalid pointer
     }
 
-    uint64_t result;
-
-    asm volatile (
-        "mov %[ptr], %%rbx\n"
-        "mov %[size], %%rcx\n"
-        "int $0x5E\n" // Trigger uheap free syscall
-        "mov %%rax, %[result]\n"
-        : [result] "=r" (result)
-        : [ptr] "r" ((uint64_t)ptr), [size] "r" ((uint64_t)size)
-        : "rbx", "rax"
-    );
-
-    return result;
+    return system_call((uint64_t) INT_SYSCALL_FREE, (uint64_t) ptr, (uint64_t) size, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
 }
 
 // FatFs functions used
@@ -109,19 +87,7 @@ uint64_t uheap_free(void *ptr, size_t size) {
 
 
 uint64_t syscall_mount(char *path, uint8_t opt) {
-    uint64_t result;
-
-    asm volatile (
-        "mov %[path], %%rbx\n"
-        "mov %[opt], %%rcx\n"
-        "int $0x52\n" // Trigger mount syscall
-        "mov %%rax, %[result]\n"
-        : [result] "=r" (result)
-        : [path] "r" ((uint64_t)path), [opt] "r" ((uint64_t)opt)
-        : "rbx", "rcx", "rax"
-    );
-
-    return result;
+    return system_call((uint64_t) INT_SYSCALL_FATFS_MOUNT, (uint64_t) path, (uint64_t) opt, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
 }
 
 
@@ -131,19 +97,8 @@ uint64_t syscall_open(const char *path, uint64_t mode) {
         return -1;                  // Invalid path
     }
 
-    uint64_t fil_ptr;
-
-    asm volatile (
-        "mov %[path], %%rbx\n"      // path pointer store into rbx
-        "mov %[mode], %%rcx\n"      // Store mode into rdx
-        "int $0x33\n"
-        "mov %%rax, %[fil]\n"
-        : [fil] "=r" (fil_ptr)
-        : [path] "r" ((uint64_t)path), [mode] "r" (mode)
-        : "rbx", "rcx", "rax"
-    );
-
-    return fil_ptr;
+    return system_call((uint64_t) INT_SYSCALL_FATFS_OPEN, (uint64_t) path, (uint64_t) mode, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    
 }
 
 
@@ -152,18 +107,7 @@ uint64_t syscall_close(void *file) {
         return -1; // Invalid file pointer
     }
 
-    uint64_t result;
-
-    asm volatile (
-        "mov %[file], %%rbx\n"
-        "int $0x34\n"
-        "mov %%rax, %[result]\n"
-        : [result] "=r" (result)
-        : [file] "r" ((uint64_t)file)
-        : "rbx", "rax"
-    );
-
-    return result;
+    return system_call((uint64_t) INT_SYSCALL_FATFS_CLOSE, (uint64_t) file, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
 uint64_t syscall_read(void *file, void *buf, uint32_t btr) {
@@ -172,20 +116,7 @@ uint64_t syscall_read(void *file, void *buf, uint32_t btr) {
         return -1; // Invalid parameters
     }
 
-    uint64_t bytes_read;
-
-    asm volatile (
-        "mov %[file], %%rbx\n"      // Storing file pointer in rbx
-        "mov %[buf], %%rcx\n"       // Storing buffer pointer in rcx
-        "mov %[btr], %%rdx\n"
-        "int $0x35\n"
-        "mov %%rax, %[bytes]\n"
-        : [bytes] "=r" (bytes_read)
-        : [file] "r" ((uint64_t)file), [buf] "r" ((uint64_t)buf), [btr] "r" ((uint64_t)btr)
-        : "rbx", "rcx", "rdx", "rax"
-    );
-
-    return bytes_read;
+    return system_call((uint64_t) INT_SYSCALL_FATFS_READ, (uint64_t) buf, (uint64_t) btr, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
 uint64_t syscall_write(void *file, void *buf, uint32_t btw) {
@@ -194,20 +125,7 @@ uint64_t syscall_write(void *file, void *buf, uint32_t btw) {
         return (uint64_t)-1;    // Invalid parameters
     }
 
-    uint64_t bytes_written;
-
-    asm volatile (
-        "mov %[file], %%rbx\n"  // fil  pointer
-        "mov %[buf], %%rcx\n"   // buffer pointer
-        "mov %[btw], %%rdx\n"   // bytes to write
-        "int $0x36\n"           // Trigger system call
-        "mov %%rax, %[bytes]\n" // Written bytes
-        : [bytes] "=r" (bytes_written)
-        : [file] "r" ((uint64_t)file), [buf] "r" ((uint64_t)buf), [btw] "r" ((uint64_t)btw)
-        : "rbx", "rcx", "rdx", "rax"
-    );
-
-    return bytes_written;
+    return system_call((uint64_t) INT_SYSCALL_FATFS_WRITE, (uint64_t) file, (uint64_t) buf, (uint64_t) btw, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
 
@@ -216,16 +134,5 @@ uint64_t syscall_lseek(void *file, uint32_t offs) {
         return -1;                  // Invalid parameters
     }
 
-    uint64_t output;
-    asm volatile (
-        "mov %[file], %%rbx\n"      // fil  pointer
-        "mov %[offs], %%rcx\n"      // offset 
-        "int $0x37\n"               // Trigger system call
-        "mov %%rax, %[out]\n"   
-        : [out] "=a" (output)
-        : [file] "r" ((uint64_t)file), [offs] "r" ((uint64_t)offs)
-        : "rbx", "rcx"
-    );
-
-    return output;
+    return system_call((uint64_t) INT_SYSCALL_FATFS_LSEEK, (uint64_t) file, (uint64_t) offs, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
