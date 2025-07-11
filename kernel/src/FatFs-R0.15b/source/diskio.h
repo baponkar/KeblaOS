@@ -3,7 +3,7 @@
 /-----------------------------------------------------------------------*/
 
 
-#include "../../sys/ahci/ahci.h"  // Include your AHCI driver header
+#include "../../driver/disk/ahci/ahci.h" // Include your AHCI driver header
 
 #ifndef _DISKIO_DEFINED
 #define _DISKIO_DEFINED

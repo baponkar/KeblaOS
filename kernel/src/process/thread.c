@@ -19,13 +19,11 @@
   
 #define FLAGS      0x202
 
-
-
 size_t next_free_tid = 0;
 
 
 // Adding the thread in threads
-void add_thread(thread_t* thread) {
+static void add_thread(thread_t* thread) {
     if (!thread || !thread->parent) return; // If the given thread is null then return from here 
 
     process_t* parent = thread->parent;
@@ -46,6 +44,39 @@ void add_thread(thread_t* thread) {
     }
     parent->current_thread = thread;        // Set parent's current thread with given last thread
 }
+
+
+// Remove the thread from the process's thread list
+static void remove_thread(thread_t* thread) {
+    if (!thread){
+        return;
+    } 
+
+    process_t* parent = thread->parent;
+    if (!parent){
+        return;;
+    }
+
+    while (true) {
+        if (parent->threads == thread) {            // If thread is equal to first thread
+            parent->threads = thread->next;         // Remove the given thread from linked list of threads
+            break;
+        } else {                                    // If thread is not equal to the first thread
+            thread_t* current = parent->threads;    // Set current with first thread from threads 
+            while (current) {                       // If current is not equal null
+                if (current->next == thread) {      // If next thread of current thread is equal to the given thread
+                    current->next = thread->next;   // Remove the given thread from linked list
+                    break;
+                }
+                current = current->next;            // Loop to all threads
+            }
+        }
+        break;
+    }
+    thread->next = NULL;                            // Clear the next pointer of the removed thread
+    thread->parent = NULL;                          // Clear the parent pointer   
+}
+
 
 
 // Creating a new thread and add into parent process
@@ -96,40 +127,6 @@ thread_t* create_thread(process_t* parent, const char* name, void (*function)(vo
 
     return thread;
 }
-
-
-
-// Remove the thread from the process's thread list
-void remove_thread(thread_t* thread) {
-    if (!thread){
-        return;
-    } 
-
-    process_t* parent = thread->parent;
-    if (!parent){
-        return;;
-    }
-
-    while (true) {
-        if (parent->threads == thread) {            // If thread is equal to first thread
-            parent->threads = thread->next;         // Remove the given thread from linked list of threads
-            break;
-        } else {                                    // If thread is not equal to the first thread
-            thread_t* current = parent->threads;    // Set current with first thread from threads 
-            while (current) {                       // If current is not equal null
-                if (current->next == thread) {      // If next thread of current thread is equal to the given thread
-                    current->next = thread->next;   // Remove the given thread from linked list
-                    break;
-                }
-                current = current->next;            // Loop to all threads
-            }
-        }
-        break;
-    }
-    thread->next = NULL;                            // Clear the next pointer of the removed thread
-    thread->parent = NULL;                          // Clear the parent pointer   
-}
-
 
 
 void delete_thread(thread_t* thread) {

@@ -26,6 +26,8 @@ static uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t r
     return out;
 }
 
+// ------------------------------- General System Call -------------------------
+
 
 
 int syscall_keyboard_read(uint8_t *buffer, size_t size) {
@@ -50,7 +52,6 @@ int syscall_exit() {
 }
 
 int syscall_print_rax() {
-
     return system_call((uint64_t) INT_SYSCALL_PRINT_RAX, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
 }
 
@@ -64,7 +65,7 @@ uint64_t syscall_uheap_alloc(size_t size, enum allocation_type type) {
 }
 
 
-uint64_t uheap_free(void *ptr, size_t size) {
+uint64_t syscall_uheap_free(void *ptr, size_t size) {
     if (!ptr || size == 0) {
         return -1; // Invalid pointer
     }
@@ -72,22 +73,43 @@ uint64_t uheap_free(void *ptr, size_t size) {
     return system_call((uint64_t) INT_SYSCALL_FREE, (uint64_t) ptr, (uint64_t) size, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
 }
 
-// FatFs functions used
-
- /*
-    "0:" → drive 0 (e.g. primary partition)
-
-    "1:" → drive 1 (e.g. second disk or USB)
-
-    "" → default drive (shortcut for "0:")
-
-    0	Delayed mount — mount is done automatically on first file access
-    1	Immediate mount — mount the volume right now, return result immediately
-*/
 
 
+
+// ------------------------------- Process Manage --------------------
+
+void *syscall_create_process(char* process_name){
+    return (void *) system_call((uint64_t) INT_CREATE_PROCESS , (uint64_t) process_name, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
+}
+
+void *syscall_delete_process(void *process){
+    return (void *) system_call((uint64_t) INT_DELETE_PROCESS , (uint64_t) process, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
+}
+
+void *syscall_get_process_from_pid(size_t pid){
+    return (void *) system_call((uint64_t) INT_GET_PROCESS_FROM_PID, (uint64_t) pid, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
+}
+
+void *syscall_get_current_process(){
+    return (void *) system_call((uint64_t) INT_GET_CURRENT_PROCESS, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
+}
+
+
+
+// ---------------------------- Thread Manage --------------------------------
+void *syscall_create_thread(void* parent, const char* thread_name, void (*function)(void*), void* arg){
+    return (void *) system_call((uint64_t) INT_CREATE_THREAD, (uint64_t) parent, (uint64_t) thread_name, (uint64_t) function, (uint64_t) arg, (uint64_t) 0, (uint64_t) 0);
+}
+
+void *syscall_delete_thread(void *thread){
+    return (void *) system_call((uint64_t) INT_DELETE_THREAD, (uint64_t) thread, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+
+
+
+// ------------------------------- FatFs Manage ------------------------
 uint64_t syscall_mount(char *path, uint8_t opt) {
-    return system_call((uint64_t) INT_SYSCALL_FATFS_MOUNT, (uint64_t) path, (uint64_t) opt, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
+    return system_call((uint64_t) INT_SYSCALL_MOUNT, (uint64_t) path, (uint64_t) opt, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
 }
 
 
@@ -97,7 +119,7 @@ uint64_t syscall_open(const char *path, uint64_t mode) {
         return -1;                  // Invalid path
     }
 
-    return system_call((uint64_t) INT_SYSCALL_FATFS_OPEN, (uint64_t) path, (uint64_t) mode, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_OPEN, (uint64_t) path, (uint64_t) mode, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
     
 }
 
@@ -107,7 +129,7 @@ uint64_t syscall_close(void *file) {
         return -1; // Invalid file pointer
     }
 
-    return system_call((uint64_t) INT_SYSCALL_FATFS_CLOSE, (uint64_t) file, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_CLOSE, (uint64_t) file, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
 uint64_t syscall_read(void *file, void *buf, uint32_t btr) {
@@ -116,7 +138,7 @@ uint64_t syscall_read(void *file, void *buf, uint32_t btr) {
         return -1; // Invalid parameters
     }
 
-    return system_call((uint64_t) INT_SYSCALL_FATFS_READ, (uint64_t) buf, (uint64_t) btr, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_READ, (uint64_t) file, (uint64_t) buf, (uint64_t) btr, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
 uint64_t syscall_write(void *file, void *buf, uint32_t btw) {
@@ -125,7 +147,7 @@ uint64_t syscall_write(void *file, void *buf, uint32_t btw) {
         return (uint64_t)-1;    // Invalid parameters
     }
 
-    return system_call((uint64_t) INT_SYSCALL_FATFS_WRITE, (uint64_t) file, (uint64_t) buf, (uint64_t) btw, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_WRITE, (uint64_t) file, (uint64_t) buf, (uint64_t) btw, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
 
@@ -134,5 +156,43 @@ uint64_t syscall_lseek(void *file, uint32_t offs) {
         return -1;                  // Invalid parameters
     }
 
-    return system_call((uint64_t) INT_SYSCALL_FATFS_LSEEK, (uint64_t) file, (uint64_t) offs, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_LSEEK, (uint64_t) file, (uint64_t) offs, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+
+uint64_t syscall_truncate(char *path, uint32_t offset) {
+    if (!path) {
+        return -1;                  // Invalid parameters
+    }
+
+    return system_call((uint64_t) INT_SYSCALL_TRUNCATE, (uint64_t) path, (uint64_t) offset, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+
+uint64_t syscall_opendir(const char *path){
+    if(!path) {
+        return -1;
+    }
+
+    return system_call((uint64_t) INT_SYSCALL_OPENDIR, (uint64_t) path, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+
+uint64_t syscall_closedir(void * dir_ptr){
+    if(!dir_ptr){
+        return -1;
+    }
+    return system_call((uint64_t) INT_SYSCALL_CLOSEDIR, (uint64_t) dir_ptr, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+
+
+uint64_t syscall_readdir(void * dir_ptr){
+    if(!dir_ptr){
+        return -1;
+    }
+    return system_call((uint64_t) INT_SYSCALL_READDIR, (uint64_t) dir_ptr, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+
+uint64_t syscall_mkdir(void * dir_ptr){
+    if(!dir_ptr){
+        return -1;
+    }
+    return system_call((uint64_t) INT_SYSCALL_MKDIR, (uint64_t) dir_ptr, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }

@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "../sys/ahci/ahci.h" // contains ahci_read/ahci_write and HBA_PORT_T
+#include "../driver/disk/ahci/ahci.h" // contains ahci_read/ahci_write and HBA_PORT_T
 
 typedef struct {
     uint8_t  jump_boot[3];

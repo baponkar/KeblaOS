@@ -13,7 +13,7 @@
 
 #include "ff.h"			/* Obtains integer types */
 #include "diskio.h"		/* Declarations of disk functions */
-#include "../../sys/ahci/ahci.h"  // Include your AHCI driver header
+
 
 
 HBA_PORT_T* g_ahci_port;  // Assume this is your active port

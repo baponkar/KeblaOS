@@ -21,3 +21,4 @@ void hpet_init(hpet_t* hpet);
 void hpet_sleep_us(uint64_t microseconds);
 void hpet_enable_periodic_irq(uint8_t irq_number, uint64_t period_fs);
 
+

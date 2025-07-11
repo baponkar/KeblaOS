@@ -32,11 +32,33 @@ process_t *current_process;         // Current running process
 process_t *processes_list = NULL;   // List of all processes
 
 // Adding Process into process_list
-void add_process(process_t* proc) {
+static void add_process(process_t* proc) {
     if (!proc) return;
 
     proc->next = processes_list; // add the head of process list
     processes_list = proc;       // change into process list with new process
+}
+
+// Removing process from process_list
+static void remove_process(process_t* proc) {
+    if (!proc) return;
+
+    // Remove the process from the global process list
+    process_t* prev = NULL;
+    process_t* current = processes_list;
+
+    while (current) { // If current is not null
+        if (current == proc) { // If given proc is equal to current
+            if (prev) {     // If the previous process of current is not null
+                prev->next = current->next; // Removing current process from linked list
+            } else {        // If the current is head of process_list
+                processes_list = current->next; // Removing First Process from linked list
+            }
+            break;
+        }
+        prev = current;          // Store the previous process before shifting next process
+        current = current->next; // going from head to tail
+    }
 }
 
 
@@ -65,29 +87,6 @@ process_t* create_process(const char* name) {
     printf("Created Process: %s (PID: %d)\n", proc->name, proc->pid);
 
     return proc;
-}
-
-
-// Removing process from process_list
-void remove_process(process_t* proc) {
-    if (!proc) return;
-
-    // Remove the process from the global process list
-    process_t* prev = NULL;
-    process_t* current = processes_list;
-
-    while (current) { // If current is not null
-        if (current == proc) { // If given proc is equal to current
-            if (prev) {     // If the previous process of current is not null
-                prev->next = current->next; // Removing current process from linked list
-            } else {        // If the current is head of process_list
-                processes_list = current->next; // Removing First Process from linked list
-            }
-            break;
-        }
-        prev = current;          // Store the previous process before shifting next process
-        current = current->next; // going from head to tail
-    }
 }
 
 
@@ -149,18 +148,6 @@ registers_t* schedule(registers_t* registers) {
     return (registers_t *)(uintptr_t) &current_process->current_thread->registers;
 }
 
-
-
-void print_process_list() {
-    process_t* current = processes_list;
-    printf("Current Running Process:\n");
-    while (current) {
-        printf("PID: %d, Name: %s, Status: %d\n", current->pid, current->name, current->status);
-        current = current->next;
-    }
-}
-
-
 process_t* get_process_by_pid(size_t pid) {
     process_t* current = processes_list;
     while (current) {
@@ -177,5 +164,12 @@ process_t * get_current_process() {
 }
 
 
-
+void print_process_list() {
+    process_t* current = processes_list;
+    printf("Current Running Process:\n");
+    while (current) {
+        printf("PID: %d, Name: %s, Status: %d\n", current->pid, current->name, current->status);
+        current = current->next;
+    }
+}
 

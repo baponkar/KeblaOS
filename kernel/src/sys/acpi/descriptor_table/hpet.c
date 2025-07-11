@@ -13,6 +13,9 @@ HPET(High Precision Event Timer)
 
 #include "hpet.h"
 
+
+
+
 #define HPET_GENERAL_CAPS      0x000 // R - 64-bit
 #define HPET_GENERAL_CONFIG    0x010 // RW - 32-bit
 #define HPET_MAIN_COUNTER      0x0F0 // RW - 64-bit
@@ -25,11 +28,9 @@ static uint64_t hpet_frequency_hz = 0;
 
 hpet_t *hpet;
 
-
-
 void hpet_init(hpet_t* hpet) {
     if (!hpet || hpet->base_address.AddressSpace != 0) {
-        // HPET must be memory-mapped (AddressSpace = 0)
+        printf("[HPET] hpet: %x, hpet->base_address.AddressSpace\n", (uint64_t)hpet, (uint64_t)hpet->base_address.AddressSpace);
         return;
     }
 
@@ -81,9 +82,7 @@ void hpet_sleep_us(uint64_t microseconds) {
 
 extern void irq_install(int irq_no, void (*handler)(registers_t *r));
 
-void my_hpet_timer_handler(registers_t *regs) {
-    // Acknowledge and handle your tick
-    // e.g., increment system time, schedule processes, etc.
+static void my_hpet_timer_handler(registers_t *regs) {
     printf("HPET Timer Interrupt\n");
 }
 
@@ -121,6 +120,8 @@ void hpet_enable_periodic_irq(uint8_t irq_number, uint64_t period_fs) {
 
     // Install IRQ handler
     irq_install(irq_number, my_hpet_timer_handler);
+
+    printf("[HPET] : Successfully Enabling Periodic IRQ\n");
 }
 
 

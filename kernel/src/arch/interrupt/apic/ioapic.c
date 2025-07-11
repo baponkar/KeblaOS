@@ -60,8 +60,6 @@ void enable_ioapic_mode() {
     16	    Mask	            0 = Enabled, 1 = Disabled
 */
 
-
- 
 void ioapic_route_irq(uint8_t irq_no, uint8_t apic_id, uint8_t vector_no, uint32_t flags) {
     uint32_t reg_low  = IOAPICREDTBL + irq_no * 2;
     uint32_t reg_high = reg_low + 1;
@@ -79,7 +77,7 @@ void ioapic_route_irq(uint8_t irq_no, uint8_t apic_id, uint8_t vector_no, uint32
 
 
 void ioapic_route_all_irq(uint8_t lapic_id, uint32_t flags) {
-    ioapic_route_irq(0, lapic_id, 32, flags);      // Route IRQ 1 to current LAPIC ID with vector 32 : Timer interrupt
+    ioapic_route_irq(0, lapic_id, 32, flags);      // Route IRQ 0 to current LAPIC ID with vector 32 : Timer interrupt
     ioapic_route_irq(1, lapic_id, 33, flags);      // Route IRQ 1 to current LAPIC ID with vector 33 : Keyboard interrupt
     // ioapic_route_irq(2, lapic_id, 34, flags);      // Route IRQ 2 to current LAPIC ID with vector 34 : Mouse interrupt
     ioapic_route_irq(3, lapic_id, 35, flags);      // Route IRQ 3 to current LAPIC ID with vector 35 : Cascade interrupt
@@ -89,20 +87,21 @@ void ioapic_route_all_irq(uint8_t lapic_id, uint32_t flags) {
     ioapic_route_irq(7, lapic_id, 39, flags);      // Route IRQ 7 to current LAPIC ID with vector 39 : Parallel Port 1 interrupt
     ioapic_route_irq(8, lapic_id, 40, flags);      // Route IRQ 8 to current LAPIC ID with vector 40 : Real-Time Clock interrupt
     ioapic_route_irq(9, lapic_id, 41, flags);      // Route IRQ 9 to current LAPIC ID with vector 41 : ACPI interrupt
-    ioapic_route_irq(10,lapic_id, 42, flags);     // Route IRQ 10 to current LAPIC ID with vector 42 : Available interrupt
-    ioapic_route_irq(11,lapic_id, 43, flags);     // Route IRQ 11 to current LAPIC ID with vector 43 : Available interrupt
-    ioapic_route_irq(12,lapic_id, 44, flags);     // Route IRQ 12 to current LAPIC ID with vector 44 : PS/2 Mouse interrupt
-    ioapic_route_irq(13,lapic_id, 45, flags);     // Route IRQ 13 to current LAPIC ID with vector 45 : FPU interrupt
-    ioapic_route_irq(14,lapic_id, 46, flags);     // Route IRQ 14 to current LAPIC ID with vector 46 : Primary ATA Hard Disk interrupt
-    ioapic_route_irq(15,lapic_id, 47, flags);     // Route IRQ 15 to current LAPIC ID with vector 47 : Secondary ATA Hard Disk interrupt
-    ioapic_route_irq(16,lapic_id, 48, flags);     // Route IRQ 16 to current LAPIC ID with vector 48 : APIC Timer interrupt
-    ioapic_route_irq(17,lapic_id, 49, flags);     // Route IRQ 17 to current LAPIC ID with vector 49 : HPET Timer interrupt
+    ioapic_route_irq(10,lapic_id, 42, flags);      // Route IRQ 10 to current LAPIC ID with vector 42 : Available interrupt
+    ioapic_route_irq(11,lapic_id, 43, flags);      // Route IRQ 11 to current LAPIC ID with vector 43 : Available interrupt
+    ioapic_route_irq(12,lapic_id, 44, flags);      // Route IRQ 12 to current LAPIC ID with vector 44 : PS/2 Mouse interrupt
+    ioapic_route_irq(13,lapic_id, 45, flags);      // Route IRQ 13 to current LAPIC ID with vector 45 : FPU interrupt
+    ioapic_route_irq(14,lapic_id, 46, flags);      // Route IRQ 14 to current LAPIC ID with vector 46 : Primary ATA Hard Disk interrupt
+    ioapic_route_irq(15,lapic_id, 47, flags);      // Route IRQ 15 to current LAPIC ID with vector 47 : Secondary ATA Hard Disk interrupt
+    ioapic_route_irq(16,lapic_id, 48, flags);      // Route IRQ 16 to current LAPIC ID with vector 48 : APIC Timer interrupt
+    ioapic_route_irq(17,lapic_id, 49, flags);      // Route IRQ 17 to current LAPIC ID with vector 49 : HPET Timer interrupt
     
-    ioapic_route_irq(18,lapic_id, 50, flags);     // Route IRQ 18 to current LAPIC ID with vector 50 : Available interrupt
+    ioapic_route_irq(18,lapic_id, 50, flags);      // Route IRQ 18 to current LAPIC ID with vector 50 : Available interrupt
 
     
     // Custom System Calls(51-256)
-    ioapic_route_irq(96, lapic_id, 128, flags);  // To Manage System Call
+    ioapic_route_irq(19, lapic_id, 51, flags);
+    ioapic_route_irq(96, lapic_id, 128, flags);   // To Manage System Call
 
     printf(" [-] IOAPIC Hardware IRQs routed to LAPIC ID %d\n", lapic_id);
 }

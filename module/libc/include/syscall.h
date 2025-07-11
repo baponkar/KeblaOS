@@ -9,50 +9,50 @@ enum int_syscall_number {
 
     // FatFs System Calls
     // File Access
-    INT_SYSCALL_FATFS_OPEN      = 51,  // 0x33
-    INT_SYSCALL_FATFS_CLOSE     = 52,  // 0x34
-    INT_SYSCALL_FATFS_READ      = 53,  // 0x35
-    INT_SYSCALL_FATFS_WRITE     = 54,  // 0x36
-    INT_SYSCALL_FATFS_LSEEK     = 55,  // 0x37
-    INT_SYSCALL_FATFS_TRUNCATE  = 56,  // 0x38
-    INT_SYSCALL_FATFS_SYNC      = 57,  // 0x39
-    INT_SYSCALL_FATFS_FORWARD   = 58,  // 0x3A
-    INT_SYSCALL_FATFS_EXPAND    = 59,  // 0x3B
-    INT_SYSCALL_FATFS_GETS      = 60,  // 0x3C
-    INT_SYSCALL_FATFS_PUTC      = 61,  // 0x3D
-    INT_SYSCALL_FATFS_PUTS      = 62,  // 0x3E
-    INT_SYSCALL_FATFS_PRINTF    = 63,  // 0x3F
-    INT_SYSCALL_FATFS_TELL      = 64,  // 0x40
-    INT_SYSCALL_FATFS_EOF       = 65,  // 0x41
-    INT_SYSCALL_FATFS_SIZE      = 66,  // 0x42
-    INT_SYSCALL_FATFS_ERROR     = 67,  // 0x43
+    INT_SYSCALL_OPEN      = 51,  // 0x33
+    INT_SYSCALL_CLOSE     = 52,  // 0x34
+    INT_SYSCALL_READ      = 53,  // 0x35
+    INT_SYSCALL_WRITE     = 54,  // 0x36
+    INT_SYSCALL_LSEEK     = 55,  // 0x37
+    INT_SYSCALL_TRUNCATE  = 56,  // 0x38
+    INT_SYSCALL_SYNC      = 57,  // 0x39
+    INT_SYSCALL_FORWARD   = 58,  // 0x3A
+    INT_SYSCALL_EXPAND    = 59,  // 0x3B
+    INT_SYSCALL_GETS      = 60,  // 0x3C
+    INT_SYSCALL_PUTC      = 61,  // 0x3D
+    INT_SYSCALL_PUTS      = 62,  // 0x3E
+    INT_SYSCALL_PRINTF    = 63,  // 0x3F
+    INT_SYSCALL_TELL      = 64,  // 0x40
+    INT_SYSCALL_EOF       = 65,  // 0x41
+    INT_SYSCALL_SIZE      = 66,  // 0x42
+    INT_SYSCALL_ERROR     = 67,  // 0x43
 
     // Directory Access
-    INT_SYSCALL_FATFS_OPENDIR   = 68,  // 0x44
-    INT_SYSCALL_FATFS_CLOSEDIR  = 69,  // 0x45
-    INT_SYSCALL_FATFS_READDIR   = 70,  // 0x46
-    INT_SYSCALL_FATFS_FINDFIRST = 71,  // 0x47
-    INT_SYSCALL_FATFS_FINDNEXT  = 72,  // 0x48
+    INT_SYSCALL_OPENDIR   = 68,  // 0x44
+    INT_SYSCALL_CLOSEDIR  = 69,  // 0x45
+    INT_SYSCALL_READDIR   = 70,  // 0x46
+    INT_SYSCALL_FINDFIRST = 71,  // 0x47
+    INT_SYSCALL_FINDNEXT  = 72,  // 0x48
 
     // File and Directory Management
-    INT_SYSCALL_FATFS_STAT      = 73,  // 0x49
-    INT_SYSCALL_FATFS_UNLINK    = 74,  // 0x4A
-    INT_SYSCALL_FATFS_RENAME    = 75,  // 0x4B
-    INT_SYSCALL_FATFS_CHMOD     = 76,  // 0x4C
-    INT_SYSCALL_FATFS_UTIME     = 77,  // 0x4D
-    INT_SYSCALL_FATFS_MKDIR     = 78,  // 0x4E
-    INT_SYSCALL_FATFS_CHDIR     = 79,  // 0x4F
-    INT_SYSCALL_FATFS_CHDRIVE   = 80,  // 0x50
-    INT_SYSCALL_FATFS_GETCWD    = 81,  // 0x51
+    INT_SYSCALL_STAT      = 73,  // 0x49
+    INT_SYSCALL_UNLINK    = 74,  // 0x4A
+    INT_SYSCALL_RENAME    = 75,  // 0x4B
+    INT_SYSCALL_CHMOD     = 76,  // 0x4C
+    INT_SYSCALL_UTIME     = 77,  // 0x4D
+    INT_SYSCALL_MKDIR     = 78,  // 0x4E
+    INT_SYSCALL_CHDIR     = 79,  // 0x4F
+    INT_SYSCALL_CHDRIVE   = 80,  // 0x50
+    INT_SYSCALL_GETCWD    = 81,  // 0x51
 
     // Volume Management and System Configuration
-    INT_SYSCALL_FATFS_MOUNT     = 82,  // 0x52
-    INT_SYSCALL_FATFS_MKFS      = 83,  // 0x53
-    INT_SYSCALL_FATFS_FDISK     = 84,  // 0x54
-    INT_SYSCALL_FATFS_GETFREE   = 85,  // 0x55
-    INT_SYSCALL_FATFS_GETLABEL  = 86,  // 0x56
-    INT_SYSCALL_FATFS_SETLABEL  = 87,  // 0x57
-    INT_SYSCALL_FATFS_SETCP     = 88,  // 0x58
+    INT_SYSCALL_MOUNT     = 82,  // 0x52
+    INT_SYSCALL_MKFS      = 83,  // 0x53
+    INT_SYSCALL_FDISK     = 84,  // 0x54
+    INT_SYSCALL_GETFREE   = 85,  // 0x55
+    INT_SYSCALL_GETLABEL  = 86,  // 0x56
+    INT_SYSCALL_SETLABEL  = 87,  // 0x57
+    INT_SYSCALL_SETCP     = 88,  // 0x58
 
     // System Calls
     INT_SYSCALL_KEYBOARD_READ   = 89,  // 0x59
@@ -62,7 +62,17 @@ enum int_syscall_number {
 
     // User Memory Allocation
     INT_SYSCALL_ALLOC           = 93,  // 0x5D
-    INT_SYSCALL_FREE            = 94   // 0x5E
+    INT_SYSCALL_FREE            = 94,   // 0x5E
+
+    // Process Management
+    INT_CREATE_PROCESS          = 95,   // 0x5F
+    INT_DELETE_PROCESS          = 96,   // 0x60
+    INT_GET_PROCESS_FROM_PID    = 97,   // 0x61
+    INT_GET_CURRENT_PROCESS     = 98,   // 0x62
+
+    // Thread Management
+    INT_CREATE_THREAD           = 99,   // 0x63
+    INT_DELETE_THREAD           = 100   // 0x64
 };
 
 
@@ -110,8 +120,10 @@ int syscall_exit();
 int syscall_print_rax();
 
 uint64_t syscall_uheap_alloc(size_t size, enum allocation_type type);
-uint64_t uheap_free(void *ptr, size_t size);
+uint64_t syscall_uheap_free(void *ptr, size_t size);
 
+
+// FatFs File Manage
 uint64_t syscall_mount(char *path, uint8_t opt);
 uint64_t syscall_open(const char *path, uint64_t mode);
 uint64_t syscall_close(void *file);
@@ -119,5 +131,19 @@ uint64_t syscall_read(void *file, void *buf, uint32_t btr);
 uint64_t syscall_write(void *file, void *buf, uint32_t btw);
 uint64_t syscall_lseek(void *file, uint32_t offs);
 
+// FatFs Directory Manage
+uint64_t syscall_opendir(const char *path);
+uint64_t syscall_closedir(void * dir_ptr);
+uint64_t syscall_readdir(void * dir_ptr);
+uint64_t syscall_mkdir(void * dir_ptr);
 
+// Process Manage
+void *syscall_create_process(char* process_name);
+void *syscall_delete_process(void *process);
+void *syscall_get_process_from_pid(size_t pid);
+void *syscall_get_current_process();
+
+// Thread Manage
+void *syscall_create_thread(void* parent, const char* thread_name, void (*function)(void*), void* arg);
+void *syscall_delete_thread(void *thread);
 

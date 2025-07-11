@@ -102,9 +102,10 @@ void set_bsp_apic_int_descriptor_table(){
     apic_int_set_gate(49, (uint64_t)&irq17, 0x08, 0x8E);   // HPET Timer, IRQ17
     
     apic_int_set_gate(50, (uint64_t)&irq18, 0x08, 0x8E);   // IPI, IRQ18
+    apic_int_set_gate(51, (uint64_t)&irq19, 0x08, 0xEE);   // IPI, IRQ19
 
     // System Calls
-    apic_int_set_gate(128, (uint64_t)&irq96, 0x08, 0xEE); //  System Call
+    apic_int_set_gate(128, (uint64_t)&irq96, 0x08, 0xEE);  // System Call
 }
 
 
@@ -220,6 +221,7 @@ void set_ap_descriptor_table(uint64_t core_id){
     // Software Interrupts
     // Bootstrap Core has already set up the IOAPIC for hardware interrupts
     ap_int_set_gate(core_id, 50, (uint64_t)&irq18, 0x08, 0xEE); // IPI, IRQ18
+    ap_int_set_gate(core_id, 51, (uint64_t)&irq19, 0x08, 0xEE); // IPI, IRQ18
     
     // System Calls
     ap_int_set_gate(core_id, 128, (uint64_t)&irq96, 0x08, 0xEE);    //  System Call

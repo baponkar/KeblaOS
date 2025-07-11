@@ -12,7 +12,7 @@
     Developer Name : Bapon Kar
 */
 
-#include "../ahci/ahci.h"
+#include "../../driver/disk/ahci/ahci.h"
 #include "../../driver/io/ports.h"
 #include "../../lib/stdio.h"
 #include "../../lib/string.h"
@@ -54,6 +54,7 @@ PCI CONFIG
 | Enable Bit   | Reserved	   | Bus Number	 |  Device Number |	 Function Number |	Register Offset1 |  00         |
 |______________|_______________|_____________|________________|__________________|___________________|_____________|
 */
+
 
 uint32_t pci_read(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset) {
     uint32_t address = (1 << 31) | (bus << 16) | (device << 11) | (function << 8) | (offset & 0xFC);
@@ -109,12 +110,12 @@ pci_device_t pci_device_detect(uint8_t bus, uint8_t device, uint8_t function) {
     pci_device.class_code = class;
     pci_device.subclass_code = subclass;
     pci_device.prog_if = prog_if;
-    pci_device.revision_id = class_subclass_prog_if & 0xFF;          // lower 8 bit
+    pci_device.revision_id = class_subclass_prog_if & 0xFF;      // lower 8 bit
 
     // Read the BIST, header type, latency timer, and cache line size
     uint32_t bist_header_latency_cache_line = pci_read(bus, device, function, BIST_HEADER_LATENCY_CACHE_LINE_OFFSET);
-    uint8_t bist = (bist_header_latency_cache_line >> 24) & 0xFF;         // upper 8 bit
-    uint8_t header_type = (bist_header_latency_cache_line >> 16) & 0xFF;   // middle 8 bit
+    uint8_t bist = (bist_header_latency_cache_line >> 24) & 0xFF;           // upper 8 bit
+    uint8_t header_type = (bist_header_latency_cache_line >> 16) & 0xFF;    // middle 8 bit
     uint8_t latency_timer = (bist_header_latency_cache_line >> 8) & 0xFF;   // lower 8 bit
     uint8_t cache_line_size = bist_header_latency_cache_line & 0xFF;        // lower 8 bit
 
@@ -469,6 +470,7 @@ void print_device_info(pci_device_t *device){
             break;
     }
 }
+
 
 void pci_scan() {
 

@@ -63,6 +63,7 @@ void find_acpi_table_pointer(){
     }
 }
 
+
 void validate_rsdp_table(rsdp_t *rsdp){
     if(rsdp){
         uint64_t acpi_version = (rsdp->revision >= 2) ? 2 : 1;
@@ -138,15 +139,31 @@ void acpi_enable() {
 void init_acpi(){
     
     find_acpi_table_pointer();
+    
     validate_rsdp_table(rsdp);
     parse_rsdt_table(rsdp);
 
-    if(!is_acpi_enabled())
+    if(!is_acpi_enabled()){
         acpi_enable();
-
+    }else {
+        printf("[ACPI] : ACPI is already enabled!\n");
+    }
+        
+    // FADT
     parse_fadt(fadt);
-    // hpet
+
+    // HPET
+    // parse_hpet(hpet);
+    if(!hpet){
+        printf("HPET is NULL!\n");
+    }
+    hpet_init(hpet);
+    hpet_enable_periodic_irq(17, 1);
+
+    // MADT
     parse_madt(madt);
+
+    // MCFG
     // parse_mcfg(mcfg);    // PCIe Scan
 
     printf(" [-] Successfully ACPI Enabled\n");

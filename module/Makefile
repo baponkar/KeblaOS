@@ -1,3 +1,5 @@
+FILE_NAME = user_program
+
 # ====== Compiler & Linker ======
 GCC = /usr/local/x86_64-elf/bin/x86_64-elf-gcc
 GCC_FLAG = -g -Wall -Wextra -std=gnu11 -m64 \
@@ -23,9 +25,9 @@ $(BUILD_DIR)/%.o: %.c
 	$(GCC) $(GCC_FLAG) -c $< -o $@
 
 # Linking
-linking: $(BUILD_DIR)/user_program.elf
+linking: $(BUILD_DIR)/$(FILE_NAME).elf
 
-$(BUILD_DIR)/user_program.elf: $(OBJ_FILES)
+$(BUILD_DIR)/$(FILE_NAME).elf: $(OBJ_FILES)
 	@mkdir -p $(BUILD_DIR)
 	$(LD) $(LD_FLAG) -T $(LINKER_FILE) -o $@ $^
 	@echo "Linked object files into $@"

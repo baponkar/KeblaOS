@@ -40,8 +40,9 @@ extern process_t *processes_list;   // List of all processes
 process_t* create_process(const char* name);
 void delete_process(process_t* proc);
 
+process_t* get_process_by_pid(size_t pid);
+process_t* get_current_process();
+
 registers_t* schedule(registers_t* registers);
 
-process_t* get_process_by_pid(size_t pid);
-process_t * get_current_process();
 void print_process_list();

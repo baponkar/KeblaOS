@@ -26,46 +26,13 @@ static inline uint64_t rdmsr(uint32_t msr) {
     return ((uint64_t)high << 32) | low;
 }
 
-
-uint64_t read_tsc() {
+static uint64_t read_tsc() {
     uint32_t low, high;
     asm volatile ("rdtsc" : "=a"(low), "=d"(high)); // Read TSC
     return ((uint64_t)high << 32) | low;
 }
 
-
-void tsc_sleep(uint64_t microseconds) {
-
-    asm volatile("cli");                            // Prevent interruptions
-    uint64_t start = read_tsc();
-    
-    // freq cycles in 1 s; 1 cycle = 1/freq s; x µs = x/1000000 s; no. of cycle in x µs = x*freq/1000000
-    uint64_t cycles_to_wait = (microseconds * cpu_frequency_hz) / 1000000; // Adjust based on CPU frequency
-
-    while ((read_tsc() - start) < cycles_to_wait);  // Wait in loop to perform all loops
-    asm volatile("sti");                            // Re-enable interrupts 
-}
-
-
-void tsc_tick_handler() {
-    static uint64_t last_tsc = 0;
-    uint64_t current_tsc = read_tsc();
-    
-    // Calculate elapsed ticks
-    uint64_t elapsed_tsc = current_tsc - last_tsc;
-
-    // Convert to milliseconds: elapsed_tsc / (cpu_frequency_hz / 1000)
-    uint64_t elapsed_ms = (elapsed_tsc * 1000) / cpu_frequency_hz;
-
-    if (elapsed_ms >= 100) {    // Print every 100ms
-        tsc_ticks++;
-        printf("TSC Tick: %d\n", tsc_ticks);
-        last_tsc = current_tsc;  // Update the last TSC checkpoint
-    }
-}
-
-
-uint64_t get_cpu_freq_msr() {
+static uint64_t get_cpu_freq_msr() {
 
     uint64_t start_tsc, end_tsc;
 
@@ -87,6 +54,17 @@ uint64_t get_cpu_freq_msr() {
     return cpu_frequency;
 }
 
+void tsc_sleep(uint64_t microseconds) {
+
+    asm volatile("cli");                            // Prevent interruptions
+    uint64_t start = read_tsc();
+    
+    // freq cycles in 1 s; 1 cycle = 1/freq s; x µs = x/1000000 s; no. of cycle in x µs = x*freq/1000000
+    uint64_t cycles_to_wait = (microseconds * cpu_frequency_hz) / 1000000; // Adjust based on CPU frequency
+
+    while ((read_tsc() - start) < cycles_to_wait);  // Wait in loop to perform all loops
+    asm volatile("sti");                            // Re-enable interrupts 
+}
 
 void init_tsc(){
 

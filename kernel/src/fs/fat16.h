@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "../sys/ahci/ahci.h"
+#include "../driver/disk/ahci/ahci.h"
 
 typedef struct {
     uint8_t jump_boot[3];

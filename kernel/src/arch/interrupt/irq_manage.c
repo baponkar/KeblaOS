@@ -6,7 +6,7 @@ Interrupt Request(IRQ)
 
 #include "../../driver/io/ports.h"
 #include "../../sys/cpu/cpuid.h"    //has_apic
-#include "apic/apic.h" // apic_send_eoi
+#include "apic/apic.h"              // apic_send_eoi
 #include "../../lib/stdio.h"
 
 #include "irq_manage.h"
@@ -15,9 +15,9 @@ Interrupt Request(IRQ)
 #define PIC_COMMAND_SLAVE 0xA0
 #define PIC_DATA_MASTER 0x21
 #define PIC_DATA_SLAVE 0xA1
-#define PIC_EOI 0x20 // End of Interrupt
+#define PIC_EOI 0x20                // End of Interrupt
 
-#define TOTAL_IRQ 224   // 256 - 32
+#define TOTAL_IRQ 224               // 256 - 32
 
 void (*irq_routines[TOTAL_IRQ])(registers_t *) = {0};   // This hold all irq routines
 

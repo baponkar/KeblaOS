@@ -16,7 +16,7 @@
 
 #include "../sys/cpu/cpuid.h" // CPU information functions
 
-#include "ring_buffer.h"  // Include your ring buffer header
+#include "../driver/keyboard/ring_buffer.h"  // Include your ring buffer header
 
 #include "../sys/acpi/descriptor_table/fadt.h" // for acpi_poweroff and acpi_reboot
 

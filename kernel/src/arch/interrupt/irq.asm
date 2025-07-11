@@ -96,6 +96,7 @@ IRQ  15,    47
 IRQ  16,    48      ; APIC Timer Interrupt
 IRQ  17,    49      ; HPET Timer Interrupt
 IRQ  18,    50      ; IPI
+IRQ  19,    51
 
 ; Custom System Call
 IRQ  96,    128    ; System Call

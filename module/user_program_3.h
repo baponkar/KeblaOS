@@ -2,6 +2,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-void _start();
+void _start_1();
 
 

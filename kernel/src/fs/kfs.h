@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "../sys/ahci/ahci.h"
+#include "../driver/disk/ahci/ahci.h"
 
 
 #define MAX_FILES      64

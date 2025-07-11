@@ -8,7 +8,7 @@
 #include "../lib/string.h"
 #include "../bootloader/boot.h"
 #include "../driver/io/ports.h"
-#include "../sys/ahci/ahci.h"
+#include "../driver/disk/ahci/ahci.h"
 
 
 #include "sysinfo.h"

@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <stdint.h>
@@ -11,7 +12,7 @@ enum int_syscall_number {
     INT_SYSCALL_CLOSE     = 52,  // 0x34 : Close a file
     INT_SYSCALL_READ      = 53,  // 0x35 : Read from a file
     INT_SYSCALL_WRITE     = 54,  // 0x36 : Write to a file
-    INT_SYSCALL_LSEEK     = 55,  // 0x37 : Set file position (lseek)
+    INT_SYSCALL_LSEEK     = 55,  // 0x37 : Set file pointer position (lseek)
     INT_SYSCALL_TRUNCATE  = 56,  // 0x38 : Truncate a file i.e.
     INT_SYSCALL_SYNC      = 57,  // 0x39 : Synchronize a file with storage
     INT_SYSCALL_FORWARD   = 58,  // 0x3A
@@ -60,14 +61,23 @@ enum int_syscall_number {
 
     // User Memory Allocation
     INT_SYSCALL_ALLOC           = 93,  // 0x5D
-    INT_SYSCALL_FREE            = 94   // 0x5E
+    INT_SYSCALL_FREE            = 94,  // 0x5E
+
+    // Process Management
+    INT_CREATE_PROCESS          = 95,   // 0x5F
+    INT_DELETE_PROCESS          = 96,   // 0x60
+    INT_GET_PROCESS_FROM_PID    = 97,   // 0x61
+    INT_GET_CURRENT_PROCESS     = 98,   // 0x62
+
+    // Thread Management
+    INT_CREATE_THREAD           = 99,   // 0x63
+    INT_DELETE_THREAD           = 100   // 0x64
 };
 
 void int_syscall_init();
 
 // rax store system call number
 // arguments in rdi, rsi, rdx, r10, r8, r9 
-uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t r10, uint64_t r8, uint64_t r9);
-
+static uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t r10, uint64_t r8, uint64_t r9);
 
 

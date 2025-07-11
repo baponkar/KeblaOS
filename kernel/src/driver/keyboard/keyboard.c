@@ -11,7 +11,7 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_K
 #include "../../lib/stdlib.h"
 #include "../../lib/string.h"
 #include "../../lib/stdio.h"
-#include "../../kshell/ring_buffer.h"
+#include "ring_buffer.h"
 #include "../../driver/speaker/speaker.h"
 #include "../../driver/io/ports.h"
 #include "../../driver/vga/vga_term.h"
@@ -226,20 +226,31 @@ void keyboardHandler(registers_t *regs){
     key_ctrl(scanCode,  press);
     
     if(press && keyboard_buffer){
-        ring_buffer_push(keyboard_buffer, scanCodeToChar(scanCode));    // Storing character into keyboard_buffer
+        char c = scanCodeToChar(scanCode);
+        ring_buffer_push(keyboard_buffer, c);    // Storing character into keyboard_buffer
     }
+
+    apic_send_eoi();
 }
 
 
 void initKeyboard(){
     asm volatile("cli");
-    
-    // uint32_t flag = IOAPIC_EDGE_TRIG | IOAPIC_HIGH_ACTIVE | IOAPIC_FIXED | IOAPIC_UNMASKED;
-    // ioapic_route_irq(KEYBOARD_IRQ, 0, KEYBOARD_INT_VECTOR, flag );
-
     enableKeyboard();
     asm volatile("sti");
+
+    const size_t capacity = 2048;
+    keyboard_buffer = ring_buffer_init(capacity);
+    if (!keyboard_buffer) {
+        printf( "Failed to initialize Keyboard ring buffer!\n");
+    }else{
+        printf("Successfully initialized ring buffer with capacity %d\n", capacity);
+    }
+
+    apic_send_eoi();
+
     printf(" [-] Successfully KEYBOARD initialized.\n");
+
 }
 
 void enableKeyboard(){

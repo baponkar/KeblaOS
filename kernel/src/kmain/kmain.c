@@ -34,7 +34,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../arch/interrupt/pic/pic.h"      // init_idt, test_interrupt
 #include "../arch/interrupt/pic/pic_interrupt.h"
 
-#include "../sys/ahci/ahci.h"
+#include "../driver/disk/ahci/ahci.h"
 #include "../sys/pci/pci.h"
 #include "../bootloader/sysinfo.h"
 #include "../sys/cpu/cpu.h"                 // target_cpu_task, switch_to_core
@@ -64,8 +64,8 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../sys/timer/pit_timer.h"         // init_timer
 #include "../sys/timer/apic_timer.h"        // apic timer
 #include "../sys/timer/hpet_timer.h"        // hpet timerzz
-#include "../kshell/kshell.h"
-#include "../kshell/ring_buffer.h"
+#include "../kshell/kshell.h"               // Kernel shell
+#include "../driver/keyboard/ring_buffer.h" // Hold keyboard input
 #include "../driver/mouse/mouse.h"          // mouse driver
 #include "../syscall/syscall_manager.h"
 #include "../syscall/int_syscall_manager.h"
@@ -82,8 +82,10 @@ Reference   : https://wiki.osdev.org/Limine
 // Found pci devices from pci_scan
 extern pci_device_t mass_storage_controllers[16];   // Array to store detected mass storage devices
 extern size_t mass_storage_count;                   // Counter for mass storage devices
+
 extern pci_device_t network_controllers[16];        // Array to store detected network controllers
 extern size_t network_controller_count;             // Counter for network controllers
+
 extern pci_device_t wireless_controllers[16];       // Array to store detected wireless controllers
 extern size_t wireless_controller_count;            // Counter for wireless controllers
 
@@ -97,8 +99,6 @@ void kmain(){
     get_bootloader_info();
     vga_init();
     print_bootloader_info();
-    printf("[%s - %s\n[Info] Build starts on: %s, Last Update on: %s]\n",
-        OS_NAME, OS_VERSION, BUILD_DATE, LAST_UPDATE);
         
     init_bs_cpu_core();
 
@@ -108,6 +108,8 @@ void kmain(){
     }else{
         printf("[Error] This System does not have APIC.\n");
     }
+
+    asm volatile("int $49");
 
     // init_syscall(0);
     // test_syscall();
@@ -125,45 +127,27 @@ void kmain(){
 
 
     fatfs_init(port);
-    test_fatfs();
+    // test_fatfs();
 
     // switch_to_core(3);
 
     // start_kshell();
 
-    // loading usermode function
-    if (!keyboard_buffer) {
-        keyboard_buffer = ring_buffer_init(KEYBOARD_BUF_SIZE);
-        if (!keyboard_buffer) {
-            printf("keyboard_buffer init failed!\n");
-            return;
-        }
-    }
+    // test_vfs();
+    // system_call_test();
 
-    test_vfs();
+    printf("Testing Keyboard Interrut\n");
+    asm volatile("int $33");
 
     // Load and parse kernel modules by using limine bootloader
-    // get_kernel_modules_info();
+    get_kernel_modules_info();
     // print_kernel_modules_info();
-    // load_user_elf_and_jump();
+    load_user_elf_and_jump();
 
     // init_user_mode();
 
-
-
     halt_kernel();
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -7,30 +7,31 @@ https://en.wikipedia.org/wiki/Circular_buffer
 https://embedjournal.com/implementing-circular-buffer-embedded-c/
 */
 
-#include "../memory/kheap.h"
-#include "../lib/stdio.h"
-#include "../memory/vmm.h"
+#include "../../memory/kheap.h"
+#include "../../memory/vmm.h"
+#include "../../lib/stdio.h"
 
 #include "ring_buffer.h"
 
+extern ring_buffer_t* keyboard_buffer;
 
 // Initialize the ring buffer with given capacity.
 ring_buffer_t* ring_buffer_init(size_t capacity) {
 
-    ring_buffer_t* rb = kheap_alloc(sizeof(ring_buffer_t), ALLOCATE_DATA);
-    if (!rb) return NULL;
+    keyboard_buffer = (ring_buffer_t *) kheap_alloc(sizeof(ring_buffer_t), ALLOCATE_DATA);
+    if (!keyboard_buffer) return NULL;
 
-    rb->buffer = kheap_alloc(capacity * sizeof(uint8_t), ALLOCATE_DATA);
-    if (!rb->buffer) {
-        kheap_free((void *)rb,sizeof(ring_buffer_t));
+    keyboard_buffer->buffer = kheap_alloc(capacity * sizeof(uint8_t), ALLOCATE_DATA);
+    if (!keyboard_buffer->buffer) {
+        kheap_free((void *)keyboard_buffer, sizeof(ring_buffer_t));
         return NULL;
     }
 
-    rb->max = capacity;
-    rb->head = 0;
-    rb->tail = 0;
-    rb->full = false;
-    return rb;
+    keyboard_buffer->max = capacity;
+    keyboard_buffer->head = 0;
+    keyboard_buffer->tail = 0;
+    keyboard_buffer->full = false;
+    return keyboard_buffer;
 }
 
 // Free the allocated ring buffer.
@@ -93,6 +94,7 @@ int ring_buffer_pop(ring_buffer_t* rb, uint8_t *data) {
     retreat_pointer(rb);
     return 0;
 }
+
 
 // Example usage.
 void uses_of_ring_buffer() {

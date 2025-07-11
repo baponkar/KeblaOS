@@ -71,6 +71,13 @@ static uint64_t fatfs_lseek(vfs_node_t *node, uint64_t offset) {
     return (res == FR_OK) ? 0 : -1;
 }
 
+static uint64_t fatfs_truncate(vfs_node_t *node) {
+    if ( !node || !node->fs_data) return -1;
+    FRESULT res = f_truncate((FIL *)node->fs_data);
+
+    return (res == FR_OK) ? 0 : -1;
+}
+
 // -- new functins
 
 
@@ -102,7 +109,10 @@ uint64_t vfs_lseek(vfs_node_t *node, uint64_t offset) {
     return node->lseek(node, offset);
 }
 
-
+uint64_t vfs_truncate(vfs_node_t *node, uint64_t offset) {
+    node->lseek(node, offset);  // Set Pointer first
+    return node->truncate(node);    // Truncate the file with current file pointer.
+}
 
 
 void test_vfs() {

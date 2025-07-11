@@ -12,7 +12,7 @@
 #include "./source/ff.h"        // FatFs library header
 #include "./source/diskio.h"    // FatFs
 
-#include "../sys/ahci/ahci.h"
+#include "../driver/disk/ahci/ahci.h"
 
 void fatfs_init(HBA_PORT_T* port);
 void test_fatfs();

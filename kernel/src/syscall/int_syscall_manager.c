@@ -8,9 +8,12 @@ References:
 #include "../lib/string.h"  // for size_t
 #include "../lib/stdio.h"
 
+#include "../process/process.h"
+#include "../process/thread.h"
+
 #include "../arch/interrupt/irq_manage.h"
 #include "../util/util.h"
-#include "../kshell/ring_buffer.h"
+#include "../driver/keyboard/ring_buffer.h"
 #include "../memory/kheap.h"
 #include "../memory/uheap.h"
 #include "../memory/paging.h"
@@ -27,46 +30,72 @@ extern ring_buffer_t* keyboard_buffer;
 
 extern FATFS  *fatfs;
 
-void strcpy_from_user(char *dst, const char *user_src, size_t max_len) {
-    size_t i = 0;
-    while (i < max_len - 1) {
-        char c = *((volatile char *)user_src + i);  // or use memory checking
-        dst[i] = c;
-        if (c == '\0') break;
-        i++;
-    }
-    dst[i] = '\0'; // Ensure null termination
+// rax, rdi, rsi, rdx, r10, r8, r9 
+static uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t r10, uint64_t r8, uint64_t r9){
+    
+    uint64_t out;
+
+    asm volatile (
+        "mov %[_rax], %%rax\n"   // System Call Number
+        "mov %[_rdi], %%rdi\n"   // Argument 1
+        "mov %[_rsi], %%rsi\n"   // Argument 2
+        "mov %[_rdx], %%rdx\n"   // Argument 3
+        "mov %[_r10], %%r10\n"   // Argument 4
+        "mov %[_r8], %%r8\n"     // Argument 5
+        "mov %[_r9], %%r9\n"     // Argument 6
+        "int $0x80\n"            // Trigger System Call Interrupt
+        "mov %%rax, %[_out]\n"   // Storing Output
+        : [_out] "=r" (out)
+        : [_rax] "r" (rax), [_rdi] "r" (rdi), [_rsi] "r" (rsi), [_rdx] "r" (rdx), [_r10] "r" (r10), [_r8] "r" (r8), [_r9] "r" (r9)
+        : "rax", "rdi", "rsi", "rdx", "r10", "r8", "r9"   // Clobber registers
+    );
+
+    return out;
 }
+
 
 //  regs->rax is hold success(0) or error(-1) code
 registers_t *int_systemcall_handler(registers_t *regs) {
-
     if(regs->int_no == 128){
-
+        
         switch (regs->rax) { 
+            
+            case INT_SYSCALL_KEYBOARD_READ: {
+                uint8_t *user_buf = (uint8_t *)regs->rdi;
+                size_t size = regs->rsi;
 
-            case INT_SYSCALL_KEYBOARD_READ: {    // 0x59 : Read from keyboard buffer
-                uint8_t *user_buf = (uint8_t *)regs->rdi;  // user buffer pointer
-                
-                if (!user_buf || regs->rsi == 0) {
-                    regs->rax = (uint64_t)(-1); // error
+                if (!user_buf || size == 0) {
+                    regs->rax = (uint64_t)(-1);
                     break;
                 }
-                size_t size = regs->rsi;                   // max bytes to read
+
                 size_t read_count = 0;
 
-                while (read_count < size) {
+                while (read_count < size - 1) {
                     uint8_t ch;
+
+                    // Wait for input in ring buffer
+                    while (is_ring_buffer_empty(keyboard_buffer)) {
+                        asm volatile("sti");
+                        asm volatile("hlt");  // Sleep CPU until next interrupt
+                    }
+
                     if (ring_buffer_pop(keyboard_buffer, &ch) == 0) {
                         user_buf[read_count++] = ch;
-                    } else {
-                        break;          // buffer empty
+
+                        // Stop reading when newline is encountered
+                        if (ch == '\n' ||  ch == '\r') {
+                            break;
+                        }
                     }
                 }
 
-                regs->rax = read_count; // Return number of bytes read
+                user_buf[read_count] = '\0';        // Null-terminate string
+                regs->rax = (uint64_t)read_count;   // Return number of bytes read
                 break;
             }
+
+
 
             case INT_SYSCALL_PRINT: {   // 0x5A : Print a string
                 if (!regs->rdi) {
@@ -130,17 +159,98 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                 break;
             }
 
-            /*
-                "0:" → drive 0 (e.g. primary partition)
+            // ------------------------- Process Manage ----------------------------
+            case INT_CREATE_PROCESS: {
+                const char* process_name = (const char *)regs->rdi;
 
-                "1:" → drive 1 (e.g. second disk or USB)
+                if(!process_name){
+                    regs->rax = (uint64_t)(-1); // error
+                    break;
+                }
 
-                "" → default drive (shortcut for "0:")
+                process_t* process = create_process(process_name);
 
-                Mount Option
-                0	Delayed mount — mount is done automatically on first file access
-                1	Immediate mount — mount the volume right now, return result immediately
-            */
+                regs->rax = (process != NULL) ? (uint64_t) process : -1;
+                break;
+            }
+
+            case INT_DELETE_PROCESS: {
+                process_t* process = (process_t *)regs->rdi;
+
+                if(!process){
+                    regs->rax = (uint64_t)(-1); // error
+                    break;
+                }
+
+                delete_process(process);
+
+                regs->rax = 0;
+                break;
+            }
+
+            case INT_GET_PROCESS_FROM_PID: {
+                size_t pid = (size_t) regs->rdi;
+
+                process_t *process = (process_t *)get_process_by_pid(pid);
+
+                if(process == NULL){
+                    regs->rax = -1;
+                    break;
+                }
+
+                regs->rax = (process != NULL) ? (uint64_t)process : -1;
+                break;
+            }
+
+            case INT_GET_CURRENT_PROCESS: {
+                process_t *process = get_current_process();
+
+                if(process == NULL){
+                    regs->rax = -1;
+                    break;
+                }
+
+                regs->rax = (process != NULL) ? (uint64_t) process : -1;
+            }
+
+            // ------------------------- Thread Manage -----------------------------
+            case INT_CREATE_THREAD: {
+                process_t *parent = (process_t *) regs->rdi;
+                const char* thread_name = (const char*) regs->rsi;
+                void *function = (void *)regs->rdx;
+                void *arg = (void *) regs->r10;
+
+                if(!parent || !thread_name || !function || !arg){
+                    regs->rax = -1;
+                    break;
+                }
+
+                thread_t *thread = create_thread(parent, thread_name, function, arg);
+
+                if(!thread){
+                    regs->rax = -1;
+                    break;
+                }
+
+                regs->rax = (uint64_t)thread;
+                break;
+
+            }
+
+            case INT_DELETE_THREAD: {
+                thread_t *thread = (thread_t *)regs->rdi;
+
+                if(!thread){
+                    regs->rax = -1;
+                    break;
+                }
+
+                delete_thread(thread);
+                regs->rax = 0;
+                break;
+            }
+
+            // --------------------------FATFS File Manages--------------------------
 
             case INT_SYSCALL_MOUNT: { // 0x52
                 // Mount root FatFs volume to /
@@ -207,6 +317,28 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                 break;
             }
 
+            case INT_SYSCALL_TRUNCATE: {
+                char *path = (char *)regs->rdi;
+                uint64_t offset = (uint64_t) regs->rsi;
+                
+                if(!path){
+                    regs->rax = (uint64_t)(-1);
+                    break;
+                }
+
+
+                vfs_node_t *node = vfs_open(path, FA_OPEN_EXISTING);
+                
+                FRESULT res = vfs_truncate(node, offset);
+                regs->rax = (res == FR_OK) ? 0 : -1;
+            }
+
+            case INT_SYSCALL_UNLINK: {
+                vfs_node_t *node = (vfs_node_t *)regs->rdi;
+            }
+            
+            // ------------------- FATFS Directory Manage ------------------------------------
+
             case INT_SYSCALL_OPENDIR: {   // 0x44
                 const char *path = (const char *)regs->rdi;
                 if (!path) {
@@ -231,7 +363,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
 
             case INT_SYSCALL_CLOSEDIR: {  // 0x45
-                DIR *dir = (DIR *)regs->rbx;
+                DIR *dir = (DIR *)regs->rdi;
                 if (!dir) {
                     regs->rax = (uint64_t)(-1);
                     break;
@@ -244,7 +376,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
 
             case INT_SYSCALL_READDIR: {   // 0x46
-                DIR *dir = (DIR *)regs->rbx;
+                DIR *dir = (DIR *)regs->rdi;
                 if (!dir) {
                     regs->rax = (uint64_t)(-1);
                     break;
@@ -263,7 +395,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
 
             case INT_SYSCALL_MKDIR: {    // 0x4E
-                const char *path = (const char *)regs->rbx;
+                const char *path = (const char *)regs->rdi;
                 if (!path) {
                     regs->rax = (uint64_t)(-1); // Invalid path
                     break;
@@ -275,7 +407,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
 
             default: {
-                printf("Unknown System Call!\n");
+                printf("Unknown System Call! %d\n", regs->rax);
                 regs->rax = (uint64_t)(-1); // unknown syscall
                 break;
             }
@@ -286,38 +418,13 @@ registers_t *int_systemcall_handler(registers_t *regs) {
 }
 
 
-
 void int_syscall_init(){
-    irq_install(128, (void *)&int_systemcall_handler);     
+    irq_install(19, (void *)&int_systemcall_handler); 
+    irq_install(96, (void *)&int_systemcall_handler);     
 
+    asm volatile("sti");
     printf(" [-] Interrupt Based System Call initialized!\n");
 }
-
-// rax, rdi, rsi, rdx, r10, r8, r9 
-
-uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t r10, uint64_t r8, uint64_t r9){
-    
-    uint64_t out;
-
-    asm volatile (
-        "mov %[_rax], %%rax\n"   // System Call Number
-        "mov %[_rdi], %%rdi\n"   // Argument 1
-        "mov %[_rsi], %%rsi\n"   // Argument 2
-        "mov %[_rdx], %%rdx\n"   // Argument 3
-        "mov %[_r10], %%r10\n"   // Argument 4
-        "mov %[_r8], %%r8\n"     // Argument 5
-        "mov %[_r9], %%r9\n"     // Argument 6
-        "int $0x80\n"            // Trigger System Call Interrupt
-        "mov %%rax, %[_out]\n"   // Storing Output
-        : [_out] "=r" (out)
-        : [_rax] "r" (rax), [_rdi] "r" (rdi), [_rsi] "r" (rsi), [_rdx] "r" (rdx), [_r10] "r" (r10), [_r8] "r" (r8), [_r9] "r" (r9)
-        : "rax", "rdi", "rsi", "rdx", "r10", "r8", "r9"   // Clobber registers
-    );
-
-    return out;
-}
-
-
 
 
 
