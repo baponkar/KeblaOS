@@ -34,17 +34,22 @@ int tokenize(char *input, char *argv[]) {
     return argc;
 }
 
+static inline int is_fs_error(uint64_t res) {
+    return (res == (uint64_t)-1) || (res == (uint64_t)0xFFFFFFFF);
+}
+
 void handle_command(int argc, char *argv[]) {
     if (argc == 0) return;
 
     if (strcmp(argv[0], "exit") == 0) {
         syscall_exit();
+
     } else if (strcmp(argv[0], "echo") == 0) {
         for (int i = 1; i < argc; i++) {
-            printf(argv[i]);
-            printf(" ");
+            printf("%s ", argv[i]);
         }
         printf("\n");
+
     } else if (strcmp(argv[0], "ls") == 0) {
         void *dir = (void*)syscall_opendir(argc > 1 ? argv[1] : "/");
         if (!dir) {
@@ -55,19 +60,18 @@ void handle_command(int argc, char *argv[]) {
         while (true) {
             uint64_t res = syscall_readdir(dir);
             if (res == 0) break;
-            printf((char*)res); // Assuming syscall returns pointer to filename
-            printf("\n");
+            printf("%s\n", (char*)res);
         }
-
         syscall_closedir(dir);
+
     } else if (strcmp(argv[0], "cat") == 0) {
         if (argc < 2) {
             printf("Usage: cat <file>\n");
             return;
         }
-
         void *file = (void*)syscall_open(argv[1], FA_READ);
-        if (!file) {
+        
+        if ((uint64_t)file == (uint64_t)-1 || (uint64_t)file == 0xFFFFFFFF) {
             printf("Cannot open file\n");
             return;
         }
@@ -76,29 +80,104 @@ void handle_command(int argc, char *argv[]) {
         uint64_t read_bytes;
         while ((read_bytes = syscall_read(file, buffer, sizeof(buffer) - 1)) > 0) {
             buffer[read_bytes] = '\0';
-            printf(buffer);
+            printf("%s", buffer);
         }
-
         syscall_close(file);
+
     } else if (strcmp(argv[0], "mkdir") == 0) {
         if (argc < 2) {
             printf("Usage: mkdir <dir>\n");
             return;
         }
         syscall_mkdir((void*)argv[1]);
-    } else if (strcmp(argv[0], "run") == 0) {
+
+    } else if (strcmp(argv[0], "rm") == 0){
+        if(argc < 2){
+            printf("Usage: rm <file>\n");
+            return;
+        }
+        uint64_t result = syscall_unlink(argv[1]);
+
+        if(!is_fs_error(result)){
+            printf("Remove %s failed!\n", argv[1]);
+            return;
+        }
+        printf("Successfully Removed %s\n", argv[1]);
+        
+    }else if (strcmp(argv[0], "run") == 0) {
         if (argc < 2) {
             printf("Usage: run <program>\n");
             return;
         }
         void *proc = syscall_create_process(argv[1]);
         if (!proc) printf("Failed to run process\n");
+
+    } else if (strcmp(argv[0], "touchreadwrite") == 0) {
+        if (argc < 2) {
+            printf("Usage: touchreadwrite <filename>\n");
+            return;
+        }
+
+        char *filename = argv[1];
+        char buffer[128];
+        uint64_t read_bytes = 0;
+
+        void *file_node = (void*) syscall_open(filename, FA_OPEN_EXISTING | FA_READ | FA_WRITE);
+
+        if (!is_fs_error((uint64_t)file_node)) {
+            printf("%s file already present.\n", filename);
+
+            if (!is_fs_error(syscall_lseek(file_node, 0)))
+                printf("Lseek is success\n");
+
+            read_bytes = syscall_read(file_node, buffer, sizeof(buffer) - 1);
+            if ((int64_t)read_bytes <= 0) {
+                printf("File is empty or read failed\n");
+            } else {
+                buffer[read_bytes] = '\0';
+                printf("Read file content: %s\n", buffer);
+            }
+
+        } else {
+            printf("Creating new file: %s\n", filename);
+            file_node = (void*) syscall_open(filename, FA_CREATE_ALWAYS | FA_READ | FA_WRITE);
+            if (is_fs_error((uint64_t)file_node)) {
+                printf("Failed to create file\n");
+                return;
+            }
+
+            char *str = "Hello from user_shell.c";
+            if (is_fs_error(syscall_write(file_node, str, strlen(str)))) {
+                printf("Writing failed\n");
+            } else {
+                syscall_lseek(file_node, 0);
+                read_bytes = syscall_read(file_node, buffer, sizeof(buffer) - 1);
+                if ((int64_t)read_bytes > 0) {
+                    buffer[read_bytes] = '\0';
+                    printf("File created and read back: %s\n", buffer);
+                }
+            }
+        }
+
+        uint64_t close_res = syscall_close(file_node);
+        if (close_res == 0){
+            printf("File closed successfully\n");
+        }else{
+            printf("Failed to close file\n");
+        }
+
+        // uint64_t unlink_res = syscall_unlink(filename);
+        // if (unlink_res == 0){
+        //     printf("File deleted successfully\n");
+        // }else {
+        //     printf("Failed to delete file\n");
+        // }
+
     } else {
-        printf("Unknown command: ");
-        printf(argv[0]);
-        printf("\n");
+        printf("\nUnknown command: %s\n", argv[0]);
     }
 }
+
 
 __attribute__((section(".text")))
 void _start() {

@@ -82,8 +82,8 @@ void *syscall_create_process(char* process_name){
     return (void *) system_call((uint64_t) INT_CREATE_PROCESS , (uint64_t) process_name, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
 }
 
-void *syscall_delete_process(void *process){
-    return (void *) system_call((uint64_t) INT_DELETE_PROCESS , (uint64_t) process, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
+int syscall_delete_process(void *process){
+    return system_call((uint64_t) INT_DELETE_PROCESS , (uint64_t) process, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
 }
 
 void *syscall_get_process_from_pid(size_t pid){
@@ -113,6 +113,7 @@ uint64_t syscall_mount(char *path, uint8_t opt) {
 }
 
 
+// Opening a file by path name
 uint64_t syscall_open(const char *path, uint64_t mode) {
 
     if (!path) {
@@ -167,6 +168,14 @@ uint64_t syscall_truncate(char *path, uint32_t offset) {
     return system_call((uint64_t) INT_SYSCALL_TRUNCATE, (uint64_t) path, (uint64_t) offset, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
+uint64_t syscall_unlink(char *path){
+    if(!path){
+        return (uint64_t)-1;
+    }
+
+    return system_call((uint64_t)INT_SYSCALL_UNLINK, (uint64_t)path, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+
 uint64_t syscall_opendir(const char *path){
     if(!path) {
         return -1;
@@ -196,3 +205,13 @@ uint64_t syscall_mkdir(void * dir_ptr){
     }
     return system_call((uint64_t) INT_SYSCALL_MKDIR, (uint64_t) dir_ptr, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
+
+
+
+
+
+
+
+
+
+

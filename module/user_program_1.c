@@ -19,7 +19,7 @@ static inline int is_fs_error(uint64_t res) {
 
 
 __attribute__((section(".text")))
-void _star_1t() {
+void _start_1() {
 
     printf("%s", msg);
     

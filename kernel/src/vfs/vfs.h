@@ -13,6 +13,7 @@ static uint64_t fatfs_write(vfs_node_t *node, const void *buf, uint64_t size);
 static uint64_t fatfs_close(vfs_node_t *node);
 static uint64_t fatfs_lseek(vfs_node_t *node, uint64_t offset);
 static uint64_t fatfs_truncate(vfs_node_t *node);
+static uint64_t fatfs_unlink(const char *path);
 
 struct vfs_node {
     char name[256];
@@ -35,6 +36,7 @@ uint64_t vfs_write(vfs_node_t *node, void *buf, uint64_t size);
 uint64_t vfs_close(vfs_node_t *node);
 uint64_t vfs_lseek(vfs_node_t *node, uint64_t offset);
 uint64_t vfs_truncate(vfs_node_t *node, uint64_t offset);
+uint64_t vfs_unlink(char *path);
 
 void test_vfs();
 

@@ -1,4 +1,6 @@
-FILE_NAME = user_program
+
+FILE_NAME = user_shell
+
 
 # ====== Compiler & Linker ======
 GCC = /usr/local/x86_64-elf/bin/x86_64-elf-gcc
@@ -46,3 +48,7 @@ clean:
 	# rm -rf $(BUILD_DIR)/*
 
 	@echo "Cleaned object files and empty directories."
+
+
+
+

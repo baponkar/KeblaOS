@@ -5,9 +5,9 @@
 #include <cpuid.h>
 
 #define OS_NAME "KeblaOS"
-#define OS_VERSION "0.16.0"
+#define OS_VERSION "0.17.0"
 #define BUILD_DATE "26/01/2025"
-#define LAST_UPDATE "28/06/2025"
+#define LAST_UPDATE "11/07/2025"
 
 
 extern uint8_t core_id;

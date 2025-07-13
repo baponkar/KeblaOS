@@ -130,6 +130,7 @@ uint64_t syscall_close(void *file);
 uint64_t syscall_read(void *file, void *buf, uint32_t btr);
 uint64_t syscall_write(void *file, void *buf, uint32_t btw);
 uint64_t syscall_lseek(void *file, uint32_t offs);
+uint64_t syscall_unlink(char *path);
 
 // FatFs Directory Manage
 uint64_t syscall_opendir(const char *path);
@@ -139,7 +140,7 @@ uint64_t syscall_mkdir(void * dir_ptr);
 
 // Process Manage
 void *syscall_create_process(char* process_name);
-void *syscall_delete_process(void *process);
+int syscall_delete_process(void *process);
 void *syscall_get_process_from_pid(size_t pid);
 void *syscall_get_current_process();
 

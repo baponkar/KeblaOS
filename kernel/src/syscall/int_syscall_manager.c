@@ -26,9 +26,22 @@ References:
 
 #include "int_syscall_manager.h"
 
+#define MAX_PATH_LEN 256
+
 extern ring_buffer_t* keyboard_buffer;
 
 extern FATFS  *fatfs;
+
+// Helper: Copy string from user space to kernel buffer
+static int copy_from_user(char *kernel_dst, const char *user_src, size_t max_len) {
+  for (size_t i = 0; i < max_len; i++) {
+    // Safely copy byte-by-byte (implement safe memory access here)
+    kernel_dst[i] = user_src[i];
+    if (user_src[i] == '\0') break; // Stop at null terminator
+  }
+  kernel_dst[max_len - 1] = '\0'; // Ensure termination
+  return 0;
+}
 
 // rax, rdi, rsi, rdx, r10, r8, r9 
 static uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t r10, uint64_t r8, uint64_t r9){
@@ -54,6 +67,8 @@ static uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t r
 }
 
 
+
+
 //  regs->rax is hold success(0) or error(-1) code
 registers_t *int_systemcall_handler(registers_t *regs) {
     if(regs->int_no == 128){
@@ -75,18 +90,18 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                     uint8_t ch;
 
                     // Wait for input in ring buffer
-                    while (is_ring_buffer_empty(keyboard_buffer)) {
+                    while (is_ring_buffer_empty(keyboard_buffer)){
                         asm volatile("sti");
                         asm volatile("hlt");  // Sleep CPU until next interrupt
                     }
 
-                    if (ring_buffer_pop(keyboard_buffer, &ch) == 0) {
-                        user_buf[read_count++] = ch;
+                    if (ring_buffer_pop(keyboard_buffer, &ch) == 0){
 
                         // Stop reading when newline is encountered
                         if (ch == '\n' ||  ch == '\r') {
                             break;
                         }
+                        user_buf[read_count++] = ch;
                     }
                 }
 
@@ -94,8 +109,6 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                 regs->rax = (uint64_t)read_count;   // Return number of bytes read
                 break;
             }
-
-
 
             case INT_SYSCALL_PRINT: {   // 0x5A : Print a string
                 if (!regs->rdi) {
@@ -262,10 +275,17 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
 
             case INT_SYSCALL_OPEN: { // 0x51
-                char *user_path = (char *)regs->rdi;
+                char *path = (char *)regs->rdi;
                 BYTE mode = (BYTE)regs->rsi;
 
-                vfs_node_t* node = vfs_open(user_path, mode);
+                // Copy path to kernel-space buffer
+                char kernel_path[MAX_PATH_LEN]; // MAX_PATH_LEN = 256
+                if (copy_from_user(kernel_path, path, MAX_PATH_LEN) != 0) {
+                    regs->rax = -1;             // Copy failed
+                    break;
+                }
+
+                vfs_node_t* node = vfs_open(kernel_path, mode);
 
                 regs->rax = (node != NULL) ? (uint64_t) node : -1;
                 break;
@@ -299,6 +319,10 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             case INT_SYSCALL_CLOSE: {  // 0x34
                 vfs_node_t *node = (vfs_node_t *)regs->rdi;
 
+                if(!node){
+                    regs->rax = (-1);
+                }
+
                 regs->rax = vfs_close(node);
                 break;
             }
@@ -326,15 +350,36 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                     break;
                 }
 
+                // Copy path to kernel-space buffer
+                char kernel_path[MAX_PATH_LEN]; // e.g., MAX_PATH_LEN = 256
+                if (copy_from_user(kernel_path, path, MAX_PATH_LEN) != 0) {
+                    regs->rax = -1; // Copy failed
+                    break;
+                }
 
-                vfs_node_t *node = vfs_open(path, FA_OPEN_EXISTING);
+                vfs_node_t *node = vfs_open(kernel_path, FA_OPEN_EXISTING);
                 
                 FRESULT res = vfs_truncate(node, offset);
                 regs->rax = (res == FR_OK) ? 0 : -1;
             }
 
             case INT_SYSCALL_UNLINK: {
-                vfs_node_t *node = (vfs_node_t *)regs->rdi;
+                char *path = (char *)regs->rdi;
+
+                if(!path) {
+                    regs->rax = (uint64_t)-1;
+                    break;
+                }
+
+                // Copy path to kernel-space buffer
+                char kernel_path[MAX_PATH_LEN]; // e.g., MAX_PATH_LEN = 256
+                if (copy_from_user(kernel_path, path, MAX_PATH_LEN) != 0) {
+                    regs->rax = -1; // Copy failed
+                    break;
+                }
+
+                regs->rax = vfs_unlink(kernel_path);
+                break;
             }
             
             // ------------------- FATFS Directory Manage ------------------------------------

@@ -9,7 +9,7 @@
 START_TIME := $(shell date +%s)
 
 OS_NAME = KeblaOS
-OS_VERSION = 0.16.0
+OS_VERSION = 0.17.3
 
 LIMINE_DIR = limine-9.2.3
 
@@ -27,6 +27,8 @@ HOST_HOME = /home/baponkar
 
 MODULE_DIR = module
 
+
+USER_PROGRAM_NAME = user_shell
 
 # GCC Compiler
 GCC = /usr/local/x86_64-elf/bin/x86_64-elf-gcc
@@ -124,7 +126,7 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
 
 	# Copy user_programe.elf file into boot 
-	cp -v $(MODULE_DIR)/build/user_shell.elf $(ISO_DIR)/boot/user_shell.elf
+	cp -v $(MODULE_DIR)/build/$(USER_PROGRAM_NAME).elf $(ISO_DIR)/boot/$(USER_PROGRAM_NAME).elf
 
 	# Creating KeblaOS-0.11-image.iso file by using xorriso.
 	xorriso \
@@ -173,7 +175,7 @@ build_disk:
 	#sudo mkdir -p $(DISK_DIR)/mnt/boot/limine
 	#sudo mkdir -p $(DISK_DIR)/mnt/EFI/BOOT
 	#sudo cp -v $(BUILD_DIR)/kernel.bin $(DISK_DIR)/mnt/boot/
-	#sudo cp -v $(MODULE_DIR)/user_program.elf $(DISK_DIR)/mnt/boot/
+	#sudo cp -v $(MODULE_DIR)/$(USER_PROGRAM_NAME).elf $(DISK_DIR)/mnt/boot/
 	#sudo cp -v limine.conf \
 	#	$(LIMINE_DIR)/limine-bios.sys \
 	#	$(LIMINE_DIR)/limine-bios-cd.bin \
@@ -309,7 +311,7 @@ help:
 	@echo "  make gdb_debug       - Debugging By GDB"
 	@echo "  make clean           - Clean up build artifacts"
 	@echo "  make build_disk      - Create Format Disk image which will be use in Kernel as disk"
-	@echo "  make disk_run        - Run the Disk Image"
+	@echo "  make disk_run        - Run OS by using Disk Image"
 	@echo "  make help            - Display this help menu"
 	@echo "  make build_user_programe - Build user_program.elf from module/user_program.asm"
 
@@ -327,8 +329,8 @@ $(BUILD_INFO_FILE):
 
 
 build_user_programe:
-	$(NASM) $(NASM_FLAG) $(MODULE_DIR)/user_program.asm -o $(MODULE_DIR)/user_program.o
-	ld -T $(MODULE_DIR)/user_linker_x86_64.ld -o $(MODULE_DIR)/user_program.elf $(MODULE_DIR)/user_program.o
+# $(NASM) $(NASM_FLAG) $(MODULE_DIR)/user_program.asm -o $(MODULE_DIR)/user_program.o
+	ld -T $(MODULE_DIR)/user_linker_x86_64.ld -o $(MODULE_DIR)/(USER_PROGRAM_NAME).elf $(MODULE_DIR)/$(USER_PROGRAM_NAME).o
 
 	@echo "Successfully build user_program.elf" 
 

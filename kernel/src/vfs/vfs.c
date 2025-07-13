@@ -78,11 +78,11 @@ static uint64_t fatfs_truncate(vfs_node_t *node) {
     return (res == FR_OK) ? 0 : -1;
 }
 
-// -- new functins
-
-
-
-
+static uint64_t fatfs_unlink(const char *path) {  // Use signed return type
+    if (!path) return (uint64_t) -1;
+    FRESULT res = f_unlink(path);
+    return (res == FR_OK) ? 0 : (uint64_t)res;  // Return actual error code
+}
 
 void vfs_init() {
     uint64_t res = (uint64_t) f_mount(fatfs, "", 1);  // Assume fatfs is a global FATFS
@@ -112,6 +112,10 @@ uint64_t vfs_lseek(vfs_node_t *node, uint64_t offset) {
 uint64_t vfs_truncate(vfs_node_t *node, uint64_t offset) {
     node->lseek(node, offset);  // Set Pointer first
     return node->truncate(node);    // Truncate the file with current file pointer.
+}
+
+uint64_t vfs_unlink(char *path) {  // Match signed type
+    return (uint64_t) fatfs_unlink(path);
 }
 
 

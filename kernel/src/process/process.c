@@ -144,7 +144,7 @@ registers_t* schedule(registers_t* registers) {
     next_thread->status = RUNNING;
     current_process->current_thread = next_thread;
 
-    // __asm__ volatile("sti");   // Starting Interrupt
+    asm volatile("sti");   // Starting Interrupt
     return (registers_t *)(uintptr_t) &current_process->current_thread->registers;
 }
 

@@ -122,8 +122,6 @@ void start_bootstrap_cpu_core() {
     int_syscall_init();         // Initialize int based system calls for the bootstrap core    
     init_ipi();                 // Initialize IPI for inter-processor communication
 
-    asm volatile("sti");        // Enable interrupts
-
     enable_fpu_and_sse();       // Enable FPU and SSE for the bootstrap core
 
     init_apic_timer(100);       // Initialize the APIC timer for the bootstrap core
@@ -133,7 +131,7 @@ void start_bootstrap_cpu_core() {
 
     printf("[Info] Bootstrap CPU %d initialized...\n\n", bsp_lapic_id);
 
-    asm volatile("sti");
+    asm volatile("sti");        // Enable interrupts
 }
 
 
@@ -183,18 +181,6 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
 
     asm volatile("sti"); // Enable interrupts
 
-    // for(size_t core_id = 0; core_id < smp_response->cpu_count; core_id++) {
-    //     if(cpu_datas[core_id].is_online == 1){
-    //         printf(" [-] CPU %d is online\n", core_id);
-    //         tsc_sleep(1000000); // Wait for one second
-    //     }
-
-    //     if(core_id == 3 && cpu_datas[core_id].is_online == 1){
-    //         printf(" Hello from CPU %d (AP)\n", core_id);
-    //         tsc_sleep(1000000); // Wait for one second
-    //     }
-    // }
-
     // Halt the AP as we have nothing else to do currently
     for (;;) {
         asm volatile("hlt");
@@ -237,22 +223,8 @@ void init_all_cpu_cores() {
     start_bootstrap_cpu_core();
 
     // Initialize the application cores
-    // start_ap_cpu_cores();
+    start_ap_cpu_cores();
 
-    // Wait for all cores to be online
-    // while (1) {
-    //     int all_online = 1;
-    //     for (size_t i = 0; i < smp_response->cpu_count; i++) {
-    //         if (!cpu_datas[i].is_online) {
-    //             all_online = 0;
-    //             break;
-    //         }
-    //         printf(" [-] CPU %d is online\n", i);
-    //     }
-    //     if (all_online) {
-    //         break;
-    //     }
-    // }
     asm volatile("sti");
 
     printf("[Info] All CPU cores initialized and online.\n\n\n");

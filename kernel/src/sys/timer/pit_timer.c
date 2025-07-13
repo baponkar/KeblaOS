@@ -47,6 +47,8 @@ uint16_t read_pit_count(void) {
 	
 	count = inb(CHANEL0_DATA_PORT);		        // Low byte
 	count |= inb(CHANEL0_DATA_PORT) << 8;		// High byte
+
+    asm volatile("sti");
 	
 	return count;
 }
@@ -59,6 +61,8 @@ void set_pit_count(unsigned count) {
 	// Set low byte
 	outb(CHANEL0_DATA_PORT, count & 0xFF);		    // Low byte of divisor
 	outb(CHANEL0_DATA_PORT, (count & 0xFF00) >> 8);	// High byte of divisor
+
+    asm volatile("sti");
     
 	return;
 }

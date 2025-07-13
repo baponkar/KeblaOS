@@ -109,8 +109,6 @@ void kmain(){
         printf("[Error] This System does not have APIC.\n");
     }
 
-    asm volatile("int $49");
-
     // init_syscall(0);
     // test_syscall();
 
@@ -135,9 +133,6 @@ void kmain(){
 
     // test_vfs();
     // system_call_test();
-
-    printf("Testing Keyboard Interrut\n");
-    asm volatile("int $33");
 
     // Load and parse kernel modules by using limine bootloader
     get_kernel_modules_info();

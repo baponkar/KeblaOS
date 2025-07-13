@@ -107,10 +107,11 @@ void key_ctrl(uint32_t scanCode, bool keyPress){
         case 0x00000608: // Extra scan code returning
             break;
         case UNKNOWN:
-        case ESC:     // ESC Key
+            break;
+        case ESC:       // ESC Key
             // beep();
             break;
-        case ENTER:  // Enter Key Manage
+        case ENTER:     // Enter Key Manage
             // handel_enter_key(keyPress);
             entered_keys = 0; 
             break;
@@ -140,6 +141,7 @@ void key_ctrl(uint32_t scanCode, bool keyPress){
             break;
         case DELETE:    // DELETEete key
             handel_del_key(keyPress);
+            break;
         case F11:       // F11
             break;
         case F12:       // F12
@@ -237,8 +239,7 @@ void keyboardHandler(registers_t *regs){
 void initKeyboard(){
     asm volatile("cli");
     enableKeyboard();
-    asm volatile("sti");
-
+    
     const size_t capacity = 2048;
     keyboard_buffer = ring_buffer_init(capacity);
     if (!keyboard_buffer) {
@@ -248,6 +249,8 @@ void initKeyboard(){
     }
 
     apic_send_eoi();
+
+    asm volatile("sti");
 
     printf(" [-] Successfully KEYBOARD initialized.\n");
 
