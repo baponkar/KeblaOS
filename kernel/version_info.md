@@ -88,6 +88,8 @@
 
 - [x] Filesystem
     * FAT32 File System from FatFs Library
+    * ext2 Filesystem
+    * VFS Layer
 
 - [x] Interrupt Based System Call (Software Interrupt)
 

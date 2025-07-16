@@ -16,12 +16,12 @@
 ------------------------------------------------------
 # Kebla OS
 
-## Version: 0.16.0
+## Version: 0.17.4
 ![KeblaOS_icon.bmp](./image/KeblaOS.png)
 
 ### Project Timeline
 - **Start Date**: 9th June, 2024
-- **Last Update**: 28th June, 2025
+- **Last Update**: 17th July, 2025
 
 ---
 
