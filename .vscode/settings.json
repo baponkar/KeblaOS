@@ -21,7 +21,11 @@
         "thread.h": "c",
         "pic.h": "c",
         "apic_interrupt.h": "c",
-        "apic.h": "c"
+        "apic.h": "c",
+        "kheap.h": "c",
+        "ff.h": "c",
+        "ahci.h": "c",
+        "fatfs.h": "c"
     },
     "cmake.sourceDirectory": "B:/Git-Projects/GitHub/baponkar/KeblaOS/lvgl-9.2.2"
 }

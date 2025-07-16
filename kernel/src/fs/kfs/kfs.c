@@ -4,8 +4,8 @@ Kebla File System (KFS)
 
 */
 
-#include "../lib/stdio.h"
-#include "../lib/string.h"
+#include "../../lib/stdio.h"
+#include "../../lib/string.h"
 
 #include "kfs.h"
 

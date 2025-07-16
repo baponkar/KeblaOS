@@ -157,14 +157,16 @@ build_disk:
 
 	# 2. Partition the Disk Image
 	parted $(DISK_DIR)/disk.img --script -- mklabel msdos
-	parted $(DISK_DIR)/disk.img --script -- mkpart primary fat32 1MiB 100%
+	# parted $(DISK_DIR)/disk.img --script -- mkpart primary fat32 1MiB 100%
+	parted $(DISK_DIR)/disk.img --script mkpart primary ext2 1MiB 100%
 	@echo "Disk image Partitioned"
 
 	# 3. Setup loop device and partition mapping
 	sudo losetup -Pf $(DISK_DIR)/disk.img # Automatically creates /dev/loop0 and /dev/loop0p1
 	sleep 1                               # Wait a bit to let /dev/loop0p1 appear
-	sudo mkfs.vfat -F 32 /dev/loop0p1
-	@echo "Formatted loop0p1 as FAT32"
+	# sudo mkfs.vfat -F 32 /dev/loop0p1	  # To Create FAT Filesystem
+	sudo mkfs.ext2 /dev/loop0p1           # To Create EXT2 Filesystem
+	@echo "Formatted loop0p1 as EXT2"
 
 	# 4. Mount partition
 	mkdir -p $(DISK_DIR)/mnt
@@ -190,7 +192,13 @@ build_disk:
 	#sudo $(LIMINE_DIR)/limine bios-install $(DISK_DIR)/disk.img
 	#@echo "Installed Limine to disk image"
 
-	# 7. Cleanup
+	# 7. Create testfile and testdirectory
+	# Create test files
+	echo "root test file" | sudo tee $(DISK_DIR)/mnt/testfile.txt
+	sudo mkdir -p $(DISK_DIR)/mnt/subdir
+	echo "nested test file" | sudo tee $(DISK_DIR)/mnt/subdir/nested.txt
+
+	# 8. Cleanup
 	sudo umount $(DISK_DIR)/mnt
 	sudo losetup -d /dev/loop0
 	@echo "Disk image is ready and bootable"

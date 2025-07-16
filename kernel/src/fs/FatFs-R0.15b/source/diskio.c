@@ -10,13 +10,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "../../../memory/vmm.h"
 
 #include "ff.h"			/* Obtains integer types */
 #include "diskio.h"		/* Declarations of disk functions */
 
 
 
-HBA_PORT_T* g_ahci_port;  // Assume this is your active port
+extern HBA_PORT_T* port;  // Assume this is your active port
 
 uint64_t FAT32_PARTITION_LBA = 2048;  // start of partition in sectors
 
@@ -150,8 +151,8 @@ DRESULT disk_read (
 
 	// return RES_PARERR;
 
-	// bool ahci_read(HBA_PORT_T* port, uint32_t start_l, uint32_t start_h, uint32_t count, uint16_t* buf);
-	if (!ahci_read(g_ahci_port, (uint32_t)( FAT32_PARTITION_LBA + sector), 0, count, (uint16_t*)buff)) {
+
+	if (!ahci_read(port, (uint32_t)( FAT32_PARTITION_LBA + sector), 0, count, (void *)buff)) {
         return RES_ERROR;
     }
     return RES_OK;
@@ -208,7 +209,7 @@ DRESULT disk_write (
 	#if FF_FS_READONLY
 		return RES_WRPRT;
 	#else
-		if (!ahci_write(g_ahci_port, (uint32_t)( FAT32_PARTITION_LBA + sector), 0, count, (uint16_t*)buff)) {
+		if (!ahci_write(port, (uint32_t)( FAT32_PARTITION_LBA + sector), 0, count, (void *)buff)) {
 			return RES_ERROR;
 		}
 		return RES_OK;

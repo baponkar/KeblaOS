@@ -18,8 +18,8 @@ References:
 #include "../memory/uheap.h"
 #include "../memory/paging.h"
 
-#include "../FatFs-R0.15b/source/ff.h"        // FatFs library header
-#include "../FatFs-R0.15b/source/diskio.h"    // FatFs
+#include "../fs/FatFs-R0.15b/source/ff.h"        // FatFs library header
+#include "../fs/FatFs-R0.15b/source/diskio.h"    // FatFs
 
 #include "../vfs/vfs.h"
 
@@ -422,6 +422,8 @@ registers_t *int_systemcall_handler(registers_t *regs) {
 
             case INT_SYSCALL_READDIR: {   // 0x46
                 DIR *dir = (DIR *)regs->rdi;
+                static char static_fname[256];  // Static buffer
+                
                 if (!dir) {
                     regs->rax = (uint64_t)(-1);
                     break;
@@ -429,12 +431,12 @@ registers_t *int_systemcall_handler(registers_t *regs) {
 
                 FILINFO fno;
                 FRESULT res = f_readdir(dir, &fno);
-                if (res != FR_OK) {
-                    regs->rax = (uint64_t)(-1);
+                if (res != FR_OK || fno.fname[0] == 0) {
+                    regs->rax = 0; // No more entries
                 } else {
-                    // Return file name length and pointer to name
-                    regs->rax = (uint64_t)fno.fname; // Pointer to file name
-                    regs->rcx = fno.fname[0] ? strlen(fno.fname) : 0; // Length of file name
+                    strcpy(static_fname, fno.fname);
+                    regs->rax = (uint64_t)static_fname;
+                    regs->rcx = strlen(static_fname);
                 }
                 break;
             }

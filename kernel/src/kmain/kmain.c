@@ -9,9 +9,11 @@ Reference   : https://wiki.osdev.org/Limine
               https://wiki.osdev.org/SSE
 */
 
-#include "../FatFs-R0.15b/fatfs.h"
+#include "../fs/FatFs-R0.15b/fatfs.h"
 #include "../usr/switch_to_user.h"
 #include "../usr/load_and_parse_elf.h"
+
+#include "../fs/ext2/ext2.h"
 
 #include "../memory/vmm.h"
 #include "../driver/vga/vga_gfx.h"
@@ -23,9 +25,9 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../sys/acpi/descriptor_table/madt.h"
 
 // File System
-#include "../fs/kfs.h"                      // Kebla File System
-#include "../fs/fat16.h"                    // FAT16 File System
-#include "../fs/fat32.h"                    // FAT32 File System
+#include "../fs/kfs/kfs.h"                      // Kebla File System
+#include "../fs/fat/fat16.h"                    // FAT16 File System
+#include "../fs/fat/fat32.h"                    // FAT32 File System
 #include "../vfs/vfs.h"
 
 #include "../arch/interrupt/apic/apic_interrupt.h"
@@ -35,7 +37,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../arch/interrupt/pic/pic_interrupt.h"
 
 #include "../driver/disk/ahci/ahci.h"
-#include "../sys/pci/pci.h"
+#include "../driver/pci/pci.h"
 #include "../bootloader/sysinfo.h"
 #include "../sys/cpu/cpu.h"                 // target_cpu_task, switch_to_core
 #include  "../sys/cpu/cpuid.h"              // get_cpu_count, get_cpu_info
@@ -79,15 +81,7 @@ Reference   : https://wiki.osdev.org/Limine
 #include "kmain.h"
 
 
-// Found pci devices from pci_scan
-extern pci_device_t mass_storage_controllers[16];   // Array to store detected mass storage devices
-extern size_t mass_storage_count;                   // Counter for mass storage devices
 
-extern pci_device_t network_controllers[16];        // Array to store detected network controllers
-extern size_t network_controller_count;             // Counter for network controllers
-
-extern pci_device_t wireless_controllers[16];       // Array to store detected wireless controllers
-extern size_t wireless_controller_count;            // Counter for wireless controllers
 
 extern ring_buffer_t* keyboard_buffer;              // To get the keyboard input
 
@@ -98,7 +92,9 @@ void kmain(){
 
     get_bootloader_info();
     vga_init();
-    print_bootloader_info();
+    // print_bootloader_info();
+
+    get_set_memory();
         
     init_bs_cpu_core();
 
@@ -109,37 +105,35 @@ void kmain(){
         printf("[Error] This System does not have APIC.\n");
     }
 
-    // init_syscall(0);
-    // test_syscall();
-
+    // Memory management Test
+    test_kmalloc();
+    test_kheap();
 
     pci_scan();
-    
-    uint32_t bar5 = mass_storage_controllers[0].base_address_registers[5];  // Found from pci scan 0xFEBD5000
-    HBA_PORT_T* port = get_ahci_port(bar5);
-    ahci_identify(port);
 
-    uint8_t dump[512];
-    ahci_read(port, 0, 0, 1, (uint16_t *)&dump);
-    printf("Boot sector signature: %x %x\n", dump[510], dump[511]);         // should be 0x55 0xAA
+    // Initializing Disk
+    ahci_init();
+    test_ahci();
 
+    ext2_test();
 
-    fatfs_init(port);
+    // initializing fatfs file system
+    // fatfs_init();
     // test_fatfs();
+    // list_dir("/");
 
     // switch_to_core(3);
 
     // start_kshell();
 
     // test_vfs();
-    // system_call_test();
-
-    // Load and parse kernel modules by using limine bootloader
-    get_kernel_modules_info();
-    // print_kernel_modules_info();
-    load_user_elf_and_jump();
 
     // init_user_mode();
+
+    // Load and parse kernel modules by using limine bootloader
+    // get_kernel_modules_info();
+    // print_kernel_modules_info();
+    // load_user_elf_and_jump();
 
     halt_kernel();
 }

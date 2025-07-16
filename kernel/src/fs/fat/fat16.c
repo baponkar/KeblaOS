@@ -1,6 +1,6 @@
 
-#include "../lib/stdio.h"
-#include "../lib/string.h"
+#include "../../lib/stdio.h"
+#include "../../lib/string.h"
 
 #include "fat16.h"
 

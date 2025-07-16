@@ -65,7 +65,6 @@ void init_bs_cpu_core(){
     print_cpu_brand();
     print_cpu_vendor();
     print_cpu_base_frequency();
-    get_set_memory();
     get_smp_info();
 
     // initially starts pic

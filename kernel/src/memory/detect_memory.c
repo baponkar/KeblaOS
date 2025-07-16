@@ -167,7 +167,7 @@ void get_phys_mem_map(){
         uint64_t length = mem_entries[i]->length;
         uint64_t type = mem_entries[i]->type;
 
-        printf(" [Memory] Physical Base: %x, Length: %x, Type: %s\n", base, length, get_mem_type(type));
+        // printf(" [Memory] Physical Base: %x, Length: %x, Type: %s\n", base, length, get_mem_type(type));
     }
 }
 

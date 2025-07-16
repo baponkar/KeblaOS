@@ -7,13 +7,13 @@ https://wiki.osdev.org/FAT
 */
 
 
-#include "../lib/stdio.h"
-#include "../lib/string.h"
-#include "../lib/ctype.h"
+#include "../../lib/stdio.h"
+#include "../../lib/string.h"
+#include "../../lib/ctype.h"
 
-#include "../memory/kheap.h"
-#include "../memory/kmalloc.h"
-#include "../memory/vmm.h"
+#include "../../memory/kheap.h"
+#include "../../memory/kmalloc.h"
+#include "../../memory/vmm.h"
 
 #include "fat32.h"
 

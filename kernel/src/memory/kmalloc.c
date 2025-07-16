@@ -136,16 +136,19 @@ uint64_t kmalloc_aligned(uint64_t sz, uint64_t alignment) {
 void test_kmalloc(){
     printf("Test of kmalloc\n");
 
-    uint64_t ptr1 = kmalloc(64);
+    uint64_t *ptr1 = (uint64_t *) kmalloc(64);
     printf("ptr1 : %x\n", ptr1);
 
-    uint64_t ptr2 = kmalloc_a(43, 1);
+    *ptr1 = 0x1234;
+    printf("ptr1:%x, *ptr1 = %x\n", (uint64_t)ptr1, (uint64_t)*ptr1);
+
+    uint64_t *ptr2 = (uint64_t *) kmalloc_a(43, 1);
     printf("ptr2 : %x\n", ptr2);
 
-    uint64_t ptr3 = kmalloc_p(26,&ptr2);
+    uint64_t *ptr3 = (uint64_t *) kmalloc_p(26, (void *) ptr2);
     printf("ptr3 : %x\n", (uint64_t)ptr3);
 
-    uint64_t ptr4 = kmalloc_ap(23, 1, &ptr1);
+    uint64_t *ptr4 = (uint64_t *) kmalloc_ap(23, 1, (void *)ptr1);
     printf("ptr4 : %x\n", ptr4);
 }
 

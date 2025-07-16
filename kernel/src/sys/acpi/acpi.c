@@ -157,8 +157,8 @@ void init_acpi(){
     if(!hpet){
         printf("HPET is NULL!\n");
     }
-    hpet_init(hpet);
-    hpet_enable_periodic_irq(17, 1);
+    // hpet_init(hpet);
+    // hpet_enable_periodic_irq(17, 1);
 
     // MADT
     parse_madt(madt);
