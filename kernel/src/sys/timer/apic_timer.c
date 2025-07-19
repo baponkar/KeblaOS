@@ -23,6 +23,7 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/08_Timer
 #include "../../util/util.h"
 
 #include "tsc.h"
+#include "pit_timer.h"
 
 #include "apic_timer.h"
 
@@ -43,24 +44,22 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/08_Timer
 #define APIC_LVT_INT_MASKED          (1 << 16)  // Mask interrupt
 
 // Divider values
-#define DIV_BY_2    0b000
-#define DIV_BY_4    0b001
-#define DIV_BY_8    0b010
-#define DIV_BY_16   0b011
-#define DIV_BY_32   0b100
-#define DIV_BY_64   0b101
-#define DIV_BY_128  0b110
-#define DIV_BY_1    0b111
+#define DIV_BY_2    0b000   // 0x0
+#define DIV_BY_4    0b001   // 0x1
+#define DIV_BY_8    0b010   // 0x2
+#define DIV_BY_16   0b011   // 0x3
+#define DIV_BY_32   0b100   // 0x4
+#define DIV_BY_64   0b101   // 0x5
+#define DIV_BY_128  0b110   // 0x6
+#define DIV_BY_1    0b111   // 0x7
  
 #define MAX_CPUS 256
 volatile uint64_t apic_ticks[MAX_CPUS] = {0};
 
-
 volatile bool apic_calibrated = false;
 volatile uint64_t apic_timer_ticks_per_ms = 0;
 
-
-uint64_t get_core_id() { return get_lapic_id(); }
+uint8_t get_core_id() { return get_lapic_id(); }
 
 
 void calibrate_apic_timer_tsc() {
@@ -94,6 +93,37 @@ void calibrate_apic_timer_tsc() {
 }
 
 
+void calibrate_apic_timer_pit() {
+
+    // Ensure the Local APIC is enabled
+    apic_write(LAPIC_TPR_REGISTER, 0x0); // Accept all interrupts
+
+    // Set Divisor 16
+    apic_write(APIC_TIMER_DIV_REGISTER, DIV_BY_16);
+
+    // Reset APIC timer to max count
+    apic_write(APIC_TIMER_INITCNT_REGISTER, 0xFFFFFFFF);
+
+    pit_sleep(1000);    // Wait for 1000 ms i.e 1 s
+
+    // Read remaining APIC timer count
+    uint32_t end_count = apic_read(APIC_TIMER_CURRCNT_REGISTER); 
+
+    // Calculate elapsed APIC ticks
+    uint32_t elapsed_apic_ticks = 0xFFFFFFFF - end_count;
+
+    // APIC Timer Frequency (ticks per second)
+    uint64_t apic_timer_frequency = (uint64_t)elapsed_apic_ticks;
+
+    // Calculate APIC Timer ticks per millisecond
+    apic_timer_ticks_per_ms = apic_timer_frequency / 1000;
+
+    apic_calibrated = true;
+
+    printf(" [-] APIC Timer Frequency: %d ticks/ms\n", apic_timer_ticks_per_ms);
+}
+
+
 void apic_start_oneshot_timer(uint32_t initial_count) {
     // Ensure the Local APIC is enabled
     apic_write(LAPIC_TPR_REGISTER, 0x0); // Accept all interrupts
@@ -114,15 +144,17 @@ void apic_timer_handler(registers_t *regs) {
 
     uint32_t cpu_id = get_core_id(); // Implement this using APIC ID or CPU-local ID
 
-    if(apic_ticks[cpu_id] >= MAX_APIC_TICKS) apic_ticks[cpu_id] = 0;
+    if(apic_ticks[cpu_id] >= MAX_APIC_TICKS) {
+        apic_ticks[cpu_id] = 0;     // Starts Recount
+    }
 
-    apic_ticks[cpu_id]++;
+    apic_ticks[cpu_id] += apic_timer_ticks_per_ms;
+
+    // printf("apic_ticks[%d]: %d\n", cpu_id, apic_ticks[cpu_id]);
+
+    
 
     apic_send_eoi();
-
-    if(apic_ticks[cpu_id] % 100 == 0){
-        // printf("apic ticks: %d in CPU %d\n", apic_ticks[cpu_id], cpu_id);
-    }
 }
 
 
@@ -145,18 +177,19 @@ void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large cou
     apic_start_oneshot_timer(0xFFFFFFFF);   // Set APIC timer to max count
     
     if(apic_timer_ticks_per_ms == 0) {
-        calibrate_apic_timer_tsc();         // Calibrate APIC timer using TSC
-    
+        // calibrate_apic_timer_tsc();         // Calibrate APIC timer using TSC
+        calibrate_apic_timer_pit();         // Calibrate APIC timer using PIT
+
         while (!apic_calibrated);           // Wait for calibration to complete
         printf(" [-] APIC Timer calibrated with %d ticks/ms\n", apic_timer_ticks_per_ms);
-    } 
+    }
 
     uint32_t apic_count = apic_timer_ticks_per_ms * interval_ms;
     
     // Set APIC Timer for periodic interrupts
     apic_write(APIC_LVT_TIMER_REGISTER, APIC_TIMER_VECTOR | APIC_LVT_TIMER_MODE_PERIODIC);  // Vector 48, Periodic Mode
-    apic_write(APIC_TIMER_DIV_REGISTER , DIV_BY_16);                                        // Set divisor by 16
-    apic_write(APIC_TIMER_INITCNT_REGISTER, apic_count);                                    // Set initial count for timer
+    apic_write(APIC_TIMER_DIV_REGISTER , DIV_BY_1);                                        // Set divisor by 16
+    apic_write(APIC_TIMER_INITCNT_REGISTER, apic_timer_ticks_per_ms);                       // Set initial count for timer
 
     asm volatile("sti");
 
@@ -166,16 +199,18 @@ void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large cou
 
 
 void apic_delay(uint32_t milliseconds) {  
-    uint32_t cpu_id = get_core_id();  
-    uint64_t start_ticks = *apic_ticks;
-    uint64_t target_ticks = start_ticks + ((uint64_t) milliseconds * apic_timer_ticks_per_ms) / 1000; 
+    uint32_t cpu_id = get_core_id(); 
 
-    while (*apic_ticks < target_ticks) {
-        asm volatile ("hlt");
+    uint64_t start_ticks = apic_ticks[cpu_id];
+    uint64_t target_ticks = start_ticks +  milliseconds * apic_timer_ticks_per_ms; 
+
+    while (apic_ticks[cpu_id] < target_ticks) {
+        asm volatile("hlt");
+        // printf("Inside of apic_delay: ticks = %d, start_ticks: %d, target_ticks: %d\n",
+        // apic_ticks[cpu_id], start_ticks, target_ticks);
+        // printf("%x\n", apic_timer_ticks_per_ms);
     }
 }
-
-
 
 
 

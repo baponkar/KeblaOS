@@ -76,7 +76,7 @@ void test_fatfs() {
     }
 }
 
-void list_dir(const char *path) {
+void fatfs_list_dir(const char *path) {
     DIR dir;
     FILINFO fno;
 

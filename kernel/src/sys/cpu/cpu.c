@@ -60,6 +60,7 @@ extern struct limine_smp_response *smp_response;
 
 extern madt_t *madt;
 
+
 // This function initializes the bootstrap CPU core with PIC
 void init_bs_cpu_core(){
     print_cpu_brand();
@@ -74,6 +75,7 @@ void init_bs_cpu_core(){
     init_bs_paging();       // Initialize paging for the bootstrap core
     init_pit_timer(100);    // Initialize PIT Timer
     init_tsc();             // Initialize TSC for the bootstrap core
+    calibrate_apic_timer_pit();
 
     printf("[Info] CPU %d (Bootstrap) with PIC initialized...\n\n", 0);
 }
@@ -97,10 +99,6 @@ void start_bootstrap_cpu_core() {
 
     asm volatile("cli");        // Disable interrupts
 
-    disable_pic();              // Disable PIC interrupts
-
-    disable_pit_timer();        // Disable PIT timer interrupts
-
     get_set_memory();           // Get memory information and set usable memory map
 
     init_acpi();                // Initialize ACPI
@@ -123,14 +121,14 @@ void start_bootstrap_cpu_core() {
 
     enable_fpu_and_sse();       // Enable FPU and SSE for the bootstrap core
 
-    init_apic_timer(100);       // Initialize the APIC timer for the bootstrap core
     initKeyboard();             // Initialize the keyboard driver
-
-    init_syscall(bsp_lapic_id);            // Initialize system calls for the bootstrap core
 
     printf("[Info] Bootstrap CPU %d initialized...\n\n", bsp_lapic_id);
 
     asm volatile("sti");        // Enable interrupts
+    init_apic_timer(100);       // Initialize the APIC timer for the bootstrap core with 100 ms/ 0.1 s interval
+    disable_pic();              // Disable PIC interrupts
+    disable_pit_timer();        // Disable PIT timer interrupts
 }
 
 
@@ -145,6 +143,8 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
 
     cpu_datas[core_id].lapic_id = core_id;
     cpu_datas[core_id].smp_info = smp_info;
+
+    asm volatile("cli");        // Disable interrupts
 
     get_set_memory(); // already done in start_bootstrap_cpu_core()
 
@@ -174,6 +174,8 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
     if(has_fpu()){
         enable_fpu_and_sse();
     }
+
+    init_apic_timer(100);       // Initialize the APIC timer for the bootstrap core with 100 ms/ 0.1 s interval
 
     cpu_datas[core_id].is_online = 1; // Mark this core as online
     printf(" [-] CPU %d (LAPIC ID: %x) is online\n", core_id, core_id);

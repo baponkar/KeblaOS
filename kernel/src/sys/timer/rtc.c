@@ -2,6 +2,8 @@
 
 #include "../../lib/stdio.h"
 #include "../../driver/io/ports.h"
+#include "../../arch/interrupt/apic/apic.h"
+#include "../../memory/kheap.h"
 
 #include "rtc.h"
 
@@ -24,7 +26,7 @@
 
 volatile uint32_t rtc_ticks = 0;
 
-
+rtc_time_t *rtc_time;
 
 void rtc_enable() {
     outb(RTC_COMMAND_PORT, RTC_REG_B);  
@@ -73,12 +75,19 @@ void rtc_interrupt_handler() {
     if (rtc_ticks % 100 == 0) {
         printf("RTC Tick: %u\n", rtc_ticks);
     }
+
+    apic_send_eoi();
 }
 
 void rtc_init() {
     rtc_set_frequency(6);   // Set frequency to 1024 Hz
     rtc_enable();           // Enable RTC periodic interrupt
-    enable_rtc_irq();       // Enable IRQ 8 in PIC
+    // enable_rtc_irq();       // Enable IRQ 8 in PIC
+
+    rtc_time = (rtc_time_t *) kheap_alloc(sizeof(rtc_time_t), ALLOCATE_DATA);
+    if(!rtc_time){
+        printf("rtc_time allocation failed!\n");
+    }
 
     printf("[Info] RTC Timer initialized\n");
 }
@@ -117,8 +126,33 @@ void print_current_time() {
     // RTC only provides the last two digits of the year, assume 20xx
    //  year += 2000;
 
-    // Print the time in HH:MM:SS DD/MM/YYYY format
+    // Print the UTC time in HH:MM:SS DD/MM/YYYY format
     printf("Current Time: %d:%d:%d %d/%d/%d\n", hours, minutes, seconds, day, month, year);
 }
+
+// Store Current RTC time into year, mon, day, hour, min and sec variables
+rtc_time_t *get_rtc_time(){
+    uint8_t seconds = read_rtc_register(RTC_SECONDS);
+    uint8_t minutes = read_rtc_register(RTC_MINUTES);
+    uint8_t hours   = read_rtc_register(RTC_HOURS);
+    uint8_t day     = read_rtc_register(RTC_DAY);
+    uint8_t month   = read_rtc_register(RTC_MONTH);
+    uint8_t year    = read_rtc_register(RTC_YEAR);
+
+    // Convert BCD to binary (RTC typically uses BCD format)
+    rtc_time->seconds = bcd_to_bin(seconds);
+    rtc_time->minutes = bcd_to_bin(minutes);
+    rtc_time->hours = bcd_to_bin(hours);
+    rtc_time->days  = bcd_to_bin(day);
+    rtc_time->months = bcd_to_bin(month);
+    rtc_time->years = bcd_to_bin(year);
+
+    return rtc_time;
+}
+
+
+
+
+
 
 

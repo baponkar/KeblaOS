@@ -17,6 +17,6 @@
 
 void fatfs_init();
 void test_fatfs();
-void list_dir(const char *path);
-void list_dir_1(const char *path);
+void fatfs_list_dir(const char *path);
+
 

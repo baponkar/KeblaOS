@@ -5,8 +5,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "../sys/timer/time.h"
+
 typedef struct vfs_node vfs_node_t;
-typedef struct time time_t;
 
 static uint64_t fatfs_read(vfs_node_t *node, void *buf, uint64_t size);
 static uint64_t fatfs_write(vfs_node_t *node, const void *buf, uint64_t size);

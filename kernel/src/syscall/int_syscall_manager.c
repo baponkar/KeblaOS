@@ -23,6 +23,8 @@ References:
 
 #include "../vfs/vfs.h"
 
+#include "../sys/timer/time.h"
+
 
 #include "int_syscall_manager.h"
 
@@ -31,6 +33,8 @@ References:
 extern ring_buffer_t* keyboard_buffer;
 
 extern FATFS  *fatfs;
+
+extern uint8_t get_core_id();
 
 // Helper: Copy string from user space to kernel buffer
 static int copy_from_user(char *kernel_dst, const char *user_src, size_t max_len) {
@@ -74,6 +78,21 @@ registers_t *int_systemcall_handler(registers_t *regs) {
     if(regs->int_no == 128){
         
         switch (regs->rax) { 
+
+            case INT_SYSCALL_GET_TIME: {
+                uint64_t time = (uint64_t) get_time();
+                if(!time){
+                    printf("[INT SYSCALL] : time: %d", time);
+                    regs->rax = (uint64_t)(-1);
+                }
+                regs->rax = time;
+            }
+
+            case INT_SYSCALL_GET_UP_TIME: {
+                uint8_t cpu_id = get_core_id();
+                uint64_t uptime = (uint64_t) get_uptime_seconds(cpu_id);
+                regs->rax = uptime;
+            }
             
             case INT_SYSCALL_KEYBOARD_READ: {
                 uint8_t *user_buf = (uint8_t *)regs->rdi;

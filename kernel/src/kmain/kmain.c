@@ -13,8 +13,6 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../usr/switch_to_user.h"
 #include "../usr/load_and_parse_elf.h"
 
-#include "../fs/ext2/ext2.h"
-
 #include "../memory/vmm.h"
 #include "../driver/vga/vga_gfx.h"
 #include "../driver/vga/framebuffer.h"
@@ -29,6 +27,9 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../fs/fat/fat16.h"                    // FAT16 File System
 #include "../fs/fat/fat32.h"                    // FAT32 File System
 #include "../vfs/vfs.h"
+#include "../fs/ext2/ext2.h"
+#include "../fs/ext2/ext2_1.h"
+
 
 #include "../arch/interrupt/apic/apic_interrupt.h"
 #include "../arch/interrupt/apic/apic.h"
@@ -61,11 +62,14 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../memory/vmm.h"                  // test_vmm
 #include "../memory/kheap.h"                // test_kheap
 
+// Timer
 #include "../sys/timer/tsc.h"               // time stamp counter
 #include "../sys/timer/rtc.h"               // RTC
 #include "../sys/timer/pit_timer.h"         // init_timer
 #include "../sys/timer/apic_timer.h"        // apic timer
-#include "../sys/timer/hpet_timer.h"        // hpet timerzz
+#include "../sys/timer/hpet_timer.h"        // hpet timer
+#include "../sys/timer/time.h"
+
 #include "../kshell/kshell.h"               // Kernel shell
 #include "../driver/keyboard/ring_buffer.h" // Hold keyboard input
 #include "../driver/mouse/mouse.h"          // mouse driver
@@ -106,16 +110,31 @@ void kmain(){
     }
 
     // Memory management Test
-    test_kmalloc();
-    test_kheap();
+    // test_kmalloc();
+    // test_kheap();
 
     pci_scan();
 
     // Initializing Disk
     ahci_init();
-    test_ahci();
+    // test_ahci();
 
-    ext2_test();
+    
+    rtc_init();
+    print_current_time();
+
+    printf("UTC TIME(start): %d\n" , get_time());
+
+    apic_delay(1000);  // Delay 1 second
+    printf("UP Time: %d\n", get_uptime_seconds(0)); // Should print UP Time: 0
+
+    apic_delay(1000);  // Delay 1 second
+    printf("UP Time: %d\n", get_uptime_seconds(0)); // Should print UP Time: 1
+
+    printf("UTC TIME(END): %d\n" , get_time());
+
+    // ext2_test();
+    // ext2_test_1();
 
     // initializing fatfs file system
     // fatfs_init();

@@ -6,6 +6,11 @@
 #include <stddef.h>
 
 enum int_syscall_number {
+
+    // Time Management
+    INT_SYSCALL_GET_TIME = 49,
+    INT_SYSCALL_GET_UP_TIME = 50,
+
     // FatFs System Calls
     // File Access
     INT_SYSCALL_OPEN      = 51,  // 0x33 : Open a file

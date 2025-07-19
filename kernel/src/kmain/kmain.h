@@ -5,8 +5,8 @@
 #include <cpuid.h>
 
 #define OS_NAME "KeblaOS"
-#define OS_VERSION "0.17.4"
-#define BUILD_DATE "26/01/2025"
+#define OS_VERSION "0.17.5"
+#define BUILD_DATE "17/07/2025"
 #define LAST_UPDATE "17/07/2025"
 
 

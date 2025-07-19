@@ -39,30 +39,33 @@ References:
 #define EXT2_SUPERBLOCK_OFFSET 1024
 #define EXT2_SUPERBLOCK_SECTOR (EXT2_SUPERBLOCK_OFFSET / SECTOR_SIZE)
 
-#define EXT2_S_IFMASK 0xF000
-#define EXT2_S_IFDIR  0x4000  // Directory
-#define EXT2_S_IFREG  0x8000  // Regular file
+// Types Flags
+#define EXT2_S_IFMASK 0xF000            // MASK
+#define EXT2_S_FIFO          0x1000     // FIFO
+#define EXT2_S_CHARACTER_DEVICE 0X2000  // Character Device
+#define EXT2_S_IFDIR  0x4000            // Directory
+#define EXT2_S_BLOCK_DEVICE 0x6000      // Block Device
+#define EXT2_S_IFREG  0x8000            // Regular file
+#define EXT2_S_SYMBOLIC_LINK 0xA000     // Symbolic Link
+#define EXT2_S_UNIX_SOCKET 0xC000       // Unix Socket
+
+#define EXT2_NAME_LEN 255
 
 
 extern HBA_PORT_T *port;
 static ext2_info_t fs;
 
-static void read_disk(uint32_t lba, uint32_t count, void *buf) {
+
+static void ext2_read_disk(uint32_t lba, uint32_t count, void *buf) {
     ahci_read(port, PARTITION_LBA_OFFSET + lba, 0, count, buf);
 }
 
-bool ext2_init() {
-
-    if (!port) return false;
-
-    ext2_read_superblock();
-    return true;
-}
 
 void ext2_read_superblock() {
+    // Creating a buffer which will hold the LBA content from Disk via AHCI read
     uint8_t *buf = (uint8_t *) kheap_alloc(1024, ALLOCATE_DATA);
 
-    read_disk(2, 2, (void *)buf); // Read sector 2 (LBA=2) → 1024 bytes
+    ext2_read_disk(2, 2, (void *)buf); // Read sector 2 (LBA=2) → 1024 bytes
 
     fs.inodes_count = *(uint32_t *)(buf + 0);
     fs.blocks_count = *(uint32_t *)(buf + 4);
@@ -70,6 +73,7 @@ void ext2_read_superblock() {
     fs.block_size = 1024 << log_block_size;
     fs.inodes_per_group = *(uint32_t *)(buf + 40);
     fs.blocks_per_group = *(uint32_t *)(buf + 32);
+
     fs.first_inode = *(uint32_t *)(buf + 84);
     fs.inode_size = *(uint16_t *)(buf + 88);
 
@@ -81,7 +85,6 @@ void ext2_read_superblock() {
 
     kheap_free(buf, 1024);
 }
-
 
 static void ext2_read_block(uint32_t block_num, void *buffer) {
     uint32_t lba = (block_num * fs.block_size) / SECTOR_SIZE;
@@ -118,6 +121,15 @@ ext2_inode_t ext2_read_inode(uint32_t inode_id) {
     return inode;
 }
 
+bool ext2_init() {
+
+    if (!port) return false;
+
+    ext2_read_superblock();
+
+    return true;
+}
+
 static int find_free_bit(uint8_t *bitmap, uint32_t size) {
     for (uint32_t byte = 0; byte < size; byte++) {
         if (bitmap[byte] != 0xFF) {
@@ -131,56 +143,6 @@ static int find_free_bit(uint8_t *bitmap, uint32_t size) {
     return -1;
 }
 
-
-static uint32_t ext2_allocate_inode() {
-    void *gd_buf = kheap_alloc(fs.block_size, ALLOCATE_DATA);
-    ext2_read_block((fs.block_size == 1024) ? 2 : 1, gd_buf);
-
-    uint32_t inode_bitmap_block = *(uint32_t *)(gd_buf + 0);
-    kheap_free(gd_buf, fs.block_size);
-
-    void *bitmap = (void *)kheap_alloc(fs.block_size, ALLOCATE_DATA);
-    char *bitmap_data = (char *) bitmap;
-    ext2_read_block(inode_bitmap_block, bitmap);
-
-    int inode_index = find_free_bit(bitmap, fs.block_size);
-    if (inode_index == -1) return 0;
-
-    bitmap_data[inode_index / 8] |= (1 << (inode_index % 8));
-    // Write updated bitmap back
-    ahci_write(port, PARTITION_LBA_OFFSET + (inode_bitmap_block * fs.block_size / SECTOR_SIZE), 0, fs.block_size / 512, bitmap);
-
-    kheap_free(bitmap, fs.block_size);
-
-    return inode_index + 1; // Inode numbers are 1-based
-}
-
-static void ext2_create_inode(uint32_t inode_id, uint16_t mode, uint32_t block_ptr) {
-    uint32_t group = (inode_id - 1) / fs.inodes_per_group;
-    uint32_t index = (inode_id - 1) % fs.inodes_per_group;
-
-    void *gd_buf = kheap_alloc(fs.block_size, ALLOCATE_DATA);
-    ext2_read_block((fs.block_size == 1024) ? 2 : 1, gd_buf);
-    uint32_t inode_table_block = *(uint32_t *)(gd_buf + group * 32 + 8);
-    kheap_free(gd_buf, fs.block_size);
-
-    uint32_t inodes_per_block = fs.block_size / fs.inode_size;
-    uint32_t block_offset = index / inodes_per_block;
-    uint32_t offset_in_block = index % inodes_per_block;
-
-    void *block_buf = kheap_alloc(fs.block_size, ALLOCATE_DATA);
-    ext2_read_block(inode_table_block + block_offset, block_buf);
-
-    ext2_inode_t *inode = (ext2_inode_t *)(block_buf + offset_in_block * fs.inode_size);
-    memset(inode, 0, sizeof(ext2_inode_t));
-    inode->mode = mode;
-    inode->size = fs.block_size;
-    inode->block[0] = block_ptr;
-    inode->blocks = fs.block_size / 512;
-
-    ahci_write(port, PARTITION_LBA_OFFSET + ((inode_table_block + block_offset) * fs.block_size / 512), 0, fs.block_size / 512, block_buf);
-    kheap_free(block_buf, fs.block_size);
-}
 
 
 static void ext2_add_dir_entry(uint32_t parent_inode_id, uint32_t new_inode_id, const char *name, uint8_t file_type) {
@@ -252,6 +214,183 @@ void ext2_list_dir(uint32_t inode_id) {
     kheap_free(block, fs.block_size);
 }
 
+
+
+
+void ext2_read_file(uint32_t inode_id) {
+    ext2_inode_t inode = ext2_read_inode(inode_id);
+
+    if ((inode.mode & EXT2_S_IFMASK) != EXT2_S_IFREG){  // not a regular file
+        printf("Not a regular file\n");
+        return;
+    }
+
+    uint32_t bytes_read = 0;
+    void *buf = (void *) kheap_alloc(fs.block_size, ALLOCATE_DATA);
+    char *data = (char *)buf;
+
+    for (int i = 0; i < 12 && inode.block[i]; i++) {
+        ext2_read_block(inode.block[i], buf);
+
+        uint32_t bytes_to_read = fs.block_size;
+        if (bytes_read + fs.block_size > inode.size) {
+            bytes_to_read = inode.size - bytes_read;
+        }
+
+        for (uint32_t j = 0; j < bytes_to_read; j++) {
+            putc(data[j]);
+        }
+
+        bytes_read += bytes_to_read;
+    }
+
+    kheap_free(buf, fs.block_size);
+}
+
+
+static uint32_t ext2_find_entry_in_dir(uint32_t parent_inode_id, const char *name) {
+    ext2_inode_t parent = ext2_read_inode(parent_inode_id);
+
+    if ((parent.mode & EXT2_S_IFMASK) != EXT2_S_IFDIR) {
+        printf("EXT2: Parent inode %d is not a directory.\n", parent_inode_id);
+        return 0; // Not a directory
+    }
+
+    void *block = (void *)kheap_alloc(fs.block_size, ALLOCATE_DATA);
+    if (!block) {
+        printf("EXT2: Failed to allocate block for directory search\n");
+        return 0;
+    }
+
+    // Iterate through direct blocks of the directory inode
+    for (int i = 0; i < 12 && parent.block[i]; i++) {
+        ext2_read_block(parent.block[i], block);
+
+        uint32_t offset = 0;
+        while (offset < fs.block_size) {
+            ext2_dir_entry_t *entry = (ext2_dir_entry_t *)(block + offset);
+            if (entry->inode == 0) { // End of valid entries in this block
+                break;
+            }
+
+            // Extract the name from the directory entry
+            char entry_name[EXT2_NAME_LEN + 1]; // Assuming EXT2_NAME_LEN is max name length (255)
+            if (entry->name_len > EXT2_NAME_LEN) {
+                entry->name_len = EXT2_NAME_LEN; // Prevent buffer overflow
+            }
+            memcpy(entry_name, entry->name, entry->name_len);
+            entry_name[entry->name_len] = '\0'; // Null-terminate
+
+            // Compare names
+            if (strcmp(entry_name, name) == 0) {
+                uint32_t found_inode = entry->inode;
+                kheap_free(block, fs.block_size);
+                return found_inode;
+            }
+
+            offset += entry->rec_len;
+        }
+    }
+
+    kheap_free(block, fs.block_size);
+    return 0; // Not found
+}
+
+uint32_t ext2_path_to_inode(const char *path) {
+    if (!path || path[0] != '/') {
+        printf("EXT2: Invalid path: %s\n", path);
+        return 0;
+    }
+
+    // Start from root directory (inode 2 in ext2)
+    uint32_t current_inode = 2;
+
+    // Skip leading '/'
+    const char *p = path;
+    while (*p == '/') p++;
+
+    char component[EXT2_NAME_LEN + 1];
+
+    while (*p) {
+        // Extract next component
+        int len = 0;
+        while (*p && *p != '/') {
+            if (len < EXT2_NAME_LEN) {
+                component[len++] = *p;
+            }
+            p++;
+        }
+        component[len] = '\0';
+
+        // Skip multiple slashes
+        while (*p == '/') p++;
+
+        if (len > 0) {
+            // Find this component in the current directory
+            uint32_t next_inode = ext2_find_entry_in_dir(current_inode, component);
+            if (!next_inode) {
+                printf("EXT2: Path component '%s' not found under inode %d\n", component, current_inode);
+                return 0; // Not found
+            }
+            current_inode = next_inode;
+        }
+    }
+
+    return current_inode;
+}
+
+// ---------------Problematic functions-------------------------------------
+
+static uint32_t ext2_allocate_inode() {
+    void *gd_buf = kheap_alloc(fs.block_size, ALLOCATE_DATA);
+    ext2_read_block((fs.block_size == 1024) ? 2 : 1, gd_buf);
+
+    uint32_t inode_bitmap_block = *(uint32_t *)(gd_buf + 0);
+    kheap_free(gd_buf, fs.block_size);
+
+    void *bitmap = (void *)kheap_alloc(fs.block_size, ALLOCATE_DATA);
+    char *bitmap_data = (char *) bitmap;
+    ext2_read_block(inode_bitmap_block, bitmap);
+
+    int inode_index = find_free_bit(bitmap, fs.block_size);
+    if (inode_index == -1) return 0;
+
+    bitmap_data[inode_index / 8] |= (1 << (inode_index % 8));
+    // Write updated bitmap back
+    ahci_write(port, PARTITION_LBA_OFFSET + (inode_bitmap_block * fs.block_size / SECTOR_SIZE), 0, fs.block_size / 512, bitmap);
+
+    kheap_free(bitmap, fs.block_size);
+
+    return inode_index + 1; // Inode numbers are 1-based
+}
+
+static void ext2_create_inode(uint32_t inode_id, uint16_t mode, uint32_t block_ptr) {
+    uint32_t group = (inode_id - 1) / fs.inodes_per_group;
+    uint32_t index = (inode_id - 1) % fs.inodes_per_group;
+
+    void *gd_buf = kheap_alloc(fs.block_size, ALLOCATE_DATA);
+    ext2_read_block((fs.block_size == 1024) ? 2 : 1, gd_buf);
+    uint32_t inode_table_block = *(uint32_t *)(gd_buf + group * 32 + 8);
+    kheap_free(gd_buf, fs.block_size);
+
+    uint32_t inodes_per_block = fs.block_size / fs.inode_size;
+    uint32_t block_offset = index / inodes_per_block;
+    uint32_t offset_in_block = index % inodes_per_block;
+
+    void *block_buf = kheap_alloc(fs.block_size, ALLOCATE_DATA);
+    ext2_read_block(inode_table_block + block_offset, block_buf);
+
+    ext2_inode_t *inode = (ext2_inode_t *)(block_buf + offset_in_block * fs.inode_size);
+    memset(inode, 0, sizeof(ext2_inode_t));
+    inode->mode = mode;
+    inode->size = fs.block_size;
+    inode->block[0] = block_ptr;
+    inode->blocks = fs.block_size / 512;
+
+    ahci_write(port, PARTITION_LBA_OFFSET + ((inode_table_block + block_offset) * fs.block_size / 512), 0, fs.block_size / 512, block_buf);
+    kheap_free(block_buf, fs.block_size);
+}
+
 void ext2_create_file(uint32_t parent_inode_id, const char *name) {
     uint32_t inode_id = ext2_allocate_inode();
     if (!inode_id) {
@@ -259,7 +398,7 @@ void ext2_create_file(uint32_t parent_inode_id, const char *name) {
         return;
     }
 
-    ext2_create_inode(inode_id, EXT2_S_IFREG | 0x1FF, 0); // 0777
+    ext2_create_inode(inode_id, EXT2_S_IFREG | 0x1FF, 0);   // 0777
     ext2_add_dir_entry(parent_inode_id, inode_id, name, 1); // EXT2_FT_REG_FILE
 }
 
@@ -296,46 +435,31 @@ void ext2_create_dir(uint32_t parent_inode_id, const char *name) {
     ext2_add_dir_entry(parent_inode_id, inode_id, name, 2); // EXT2_FT_DIR
 }
 
-
-void ext2_read_file(uint32_t inode_id) {
-    ext2_inode_t inode = ext2_read_inode(inode_id);
-
-    if ((inode.mode & EXT2_S_IFMASK) != EXT2_S_IFREG){  // not a regular file
-        printf("Not a regular file\n");
-        return;
-    }
-
-    uint32_t bytes_read = 0;
-    void *buf = (void *) kheap_alloc(fs.block_size, ALLOCATE_DATA);
-    char *data = (char *)buf;
-
-    for (int i = 0; i < 12 && inode.block[i]; i++) {
-        ext2_read_block(inode.block[i], buf);
-
-        uint32_t bytes_to_read = fs.block_size;
-        if (bytes_read + fs.block_size > inode.size) {
-            bytes_to_read = inode.size - bytes_read;
-        }
-
-        for (uint32_t j = 0; j < bytes_to_read; j++) {
-            putc(data[j]);
-        }
-
-        bytes_read += bytes_to_read;
-    }
-
-    kheap_free(buf, fs.block_size);
-}
-
-
-
 void ext2_test(){
     ext2_init();
-    ext2_list_dir(2);         // List root directory
-    ext2_read_file(12);       // Print testfile.txt content of inode 12
-    ext2_list_dir(40961);     // List a subdirectory
-    ext2_read_file(40962);     // Print nested.txt file content of 49154 
 
-    // ext2_create_file(2, "myfile.txt");  // Creating myfile.txt file inside of rootdir
-    // ext2_create_dir(2, "mydir");        // Creating a subdirectory in rootdir  
+    ext2_list_dir(2);         // List root directory
+
+    ext2_read_file(12);       // Print testfile.txt content of inode 12
+
+    ext2_list_dir(24577);     // List a subdirectory
+    
+    ext2_read_file(24578);     // Print nested.txt file content of 49154 
+
+    const char *path = "/subdir/nested.txt";
+    uint32_t inode_id = ext2_path_to_inode(path);
+    if (inode_id) {
+        printf("EXT2: Inode for %s is %d\n", path, inode_id);
+        ext2_read_file(inode_id);
+    } else {
+        printf("EXT2: Path not found: %s\n", path);
+    }
+
+    // ext2_create_file(2, "/myfile.txt");  // Creating myfile.txt file inside of rootdir
+    // ext2_create_dir(2, "/mydir");        // Creating a subdirectory in rootdir  
 }
+
+
+
+
+
