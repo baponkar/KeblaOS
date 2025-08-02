@@ -23,6 +23,9 @@ void print_hex(uint64_t n);
 
 void printf(const char* format, ...);
 
+int sprintf(char *str, const char *format, ...);
+void snprintf(char *str, size_t size, const char *format, ...);
+
 void acquire(spinlock_t* lock);
 void release(spinlock_t* lock);
 

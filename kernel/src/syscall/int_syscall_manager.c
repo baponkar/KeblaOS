@@ -449,6 +449,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                 }
 
                 FILINFO fno;
+                memset(&fno, 0, sizeof(FILINFO));
                 FRESULT res = f_readdir(dir, &fno);
                 if (res != FR_OK || fno.fname[0] == 0) {
                     regs->rax = 0; // No more entries

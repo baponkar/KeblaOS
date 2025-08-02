@@ -127,8 +127,11 @@ void start_bootstrap_cpu_core() {
 
     asm volatile("sti");        // Enable interrupts
     init_apic_timer(100);       // Initialize the APIC timer for the bootstrap core with 100 ms/ 0.1 s interval
-    disable_pic();              // Disable PIC interrupts
+    
+    asm volatile("cli");  
     disable_pit_timer();        // Disable PIT timer interrupts
+    disable_pic();              // Disable PIC interrupts
+    asm volatile("sti");  
 }
 
 

@@ -142,7 +142,7 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	$(LIMINE_DIR)/limine bios-install $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
 
 
-build_disk:
+build_ext2_disk:
 	# Ensure disk directory exists
 	mkdir -p $(DISK_DIR)
 
@@ -202,6 +202,60 @@ build_disk:
 	sudo umount $(DISK_DIR)/mnt
 	sudo losetup -d /dev/loop0
 	@echo "Disk image is ready and bootable"
+
+build_fat_disk:
+	# Ensure disk directory exists
+	mkdir -p $(DISK_DIR)
+
+	# Clean previous mounts and loop device
+	sudo umount $(DISK_DIR)/mnt || true
+	sudo umount /dev/loop0p1 || true
+	sudo losetup -d /dev/loop0 || true
+
+	# 1. Create Disk Image (1024 MiB)
+	dd if=/dev/zero of=$(DISK_DIR)/disk.img bs=1M count=1024
+	@echo "Created blank Disk image"
+
+	# 2. Partition the Disk Image as FAT32
+	parted $(DISK_DIR)/disk.img --script -- mklabel msdos
+	parted $(DISK_DIR)/disk.img --script -- mkpart primary fat32 1MiB 100%
+	@echo "Disk image Partitioned (FAT32)"
+
+	# 3. Setup loop device and partition mapping
+	sudo losetup -Pf $(DISK_DIR)/disk.img
+	sleep 1
+
+	# 4. Format the partition as FAT32
+	sudo mkfs.vfat -F 32 /dev/loop0p1
+	@echo "Formatted loop0p1 as FAT32"
+
+	# 5. Mount partition
+	mkdir -p $(DISK_DIR)/mnt
+	sudo mount /dev/loop0p1 $(DISK_DIR)/mnt
+	@echo "Mounted /dev/loop0p1"
+
+	# 6. Copy files (optional - enable for real usage)
+	#sudo mkdir -p $(DISK_DIR)/mnt/boot/limine
+	#sudo mkdir -p $(DISK_DIR)/mnt/EFI/BOOT
+	#sudo cp -v $(BUILD_DIR)/kernel.bin $(DISK_DIR)/mnt/boot/
+	#sudo cp -v limine.conf \
+	#	$(LIMINE_DIR)/limine-bios.sys \
+	#	$(LIMINE_DIR)/limine-bios-cd.bin \
+	#	$(LIMINE_DIR)/limine-uefi-cd.bin \
+	#	$(DISK_DIR)/mnt/boot/limine/
+	#sudo cp -v $(LIMINE_DIR)/BOOTX64.EFI $(DISK_DIR)/mnt/EFI/BOOT/
+	#sudo cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(DISK_DIR)/mnt/EFI/BOOT/
+	#@echo "Copied Limine and kernel files to mounted disk"
+
+	# 7. Create test files and directories
+	echo "FAT32 root test file" | sudo tee $(DISK_DIR)/mnt/TESTFILE.TXT
+	sudo mkdir -p $(DISK_DIR)/mnt/SUBDIR
+	echo "FAT32 nested test file" | sudo tee $(DISK_DIR)/mnt/SUBDIR/NESTED.TXT
+
+	# 8. Cleanup
+	sudo umount $(DISK_DIR)/mnt
+	sudo losetup -d /dev/loop0
+	@echo "Disk image is ready and FAT32-formatted"
 
 
 # To Convert the disk image into vmdk which can be used in Vmwire
@@ -318,7 +372,8 @@ help:
 	@echo "  make uefi_run        - UEFI Run the target"
 	@echo "  make gdb_debug       - Debugging By GDB"
 	@echo "  make clean           - Clean up build artifacts"
-	@echo "  make build_disk      - Create Format Disk image which will be use in Kernel as disk"
+	@echo "  make build_ext2_disk - Create EXT2 Format Disk image which will be use in Kernel as disk"
+	@echo "  make build_fat_disk  - Create FAT Format Disk image which will be use in Kernel as disk"
 	@echo "  make disk_run        - Run OS by using Disk Image"
 	@echo "  make help            - Display this help menu"
 	@echo "  make build_user_programe - Build user_program.elf from module/user_program.asm"

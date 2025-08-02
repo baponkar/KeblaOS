@@ -11,15 +11,16 @@
 #include <stdbool.h>
 
 #include "../../../memory/vmm.h"
+#include "../../../driver/disk/disk.h"
 
 #include "ff.h"			/* Obtains integer types */
 #include "diskio.h"		/* Declarations of disk functions */
 
 
+extern block_device_t *g_block_devices[MAX_DISKS];
+extern int g_block_device_count;
 
-extern HBA_PORT_T* port;  // Assume this is your active port
-
-uint64_t FAT32_PARTITION_LBA = 2048;  // start of partition in sectors
+extern uint64_t FAT32_PARTITION_LBA;  // start of partition in sectors
 
 /* Definitions of physical drive number for each drive */
 #define DEV_RAM		0	/* Example: Map Ramdisk to physical drive 0 */
@@ -62,7 +63,7 @@ DSTATUS disk_status (
 	// }
 	// return STA_NOINIT;
 
-	return 0; // Assume always OK
+	return disk_status_1((int)pdrv) ? RES_OK : RES_ERROR;
 }
 
 
@@ -101,7 +102,9 @@ DSTATUS disk_initialize (
 	// 	return stat;
 	// }
 	// return STA_NOINIT;
-	return 0; // Already initialized via AHCI
+
+	return init_disks((int)pdrv) ? RES_OK : RES_ERROR;
+
 }
 
 
@@ -152,10 +155,10 @@ DRESULT disk_read (
 	// return RES_PARERR;
 
 
-	if (!ahci_read(port, (uint32_t)( FAT32_PARTITION_LBA + sector), 0, count, (void *)buff)) {
-        return RES_ERROR;
-    }
-    return RES_OK;
+	if(disk_read_1(g_block_devices[(int)pdrv], (uint32_t)( FAT32_PARTITION_LBA + sector), count, buff)) {
+		return RES_OK;
+	} 
+    return RES_ERROR;
 }
 
 
@@ -209,10 +212,10 @@ DRESULT disk_write (
 	#if FF_FS_READONLY
 		return RES_WRPRT;
 	#else
-		if (!ahci_write(port, (uint32_t)( FAT32_PARTITION_LBA + sector), 0, count, (void *)buff)) {
-			return RES_ERROR;
-		}
-		return RES_OK;
+		if(disk_write_1(g_block_devices[(int)pdrv], (uint32_t)( FAT32_PARTITION_LBA + sector), count, buff)) {
+			return RES_OK;
+		} 
+    	return RES_ERROR;
 	#endif
 }
 

@@ -1,3 +1,13 @@
+/*
+
+Standard Input Output library
+
+Last Updated : 26/07/2025
+Author       : Baponkar
+
+*/
+
+
 #include "stdlib.h"
 
 
@@ -72,4 +82,68 @@ int atoi(const char* str) {
     }
 
     return result * sign;
+}
+
+
+char* itoa(int value, char* str, int base) {
+    char *ptr = str, *ptr1 = str, tmp_char;
+    int tmp_value;
+    int is_negative = 0;
+
+    if (value == 0) {
+        *ptr++ = '0';
+        *ptr = '\0';
+        return str;
+    }
+
+    if (value < 0 && base == 10) {
+        is_negative = 1;
+        value = -value;
+    }
+
+    while (value != 0) {
+        tmp_value = value % base;
+        *ptr++ = (tmp_value < 10) ? (tmp_value + '0') : (tmp_value - 10 + 'a');
+        value /= base;
+    }
+
+    if (is_negative)
+        *ptr++ = '-';
+
+    *ptr-- = '\0';
+
+    while (ptr1 < ptr) {
+        tmp_char = *ptr;
+        *ptr-- = *ptr1;
+        *ptr1++ = tmp_char;
+    }
+
+    return str;
+}
+
+char *utoa(unsigned int value, char* str, int base) {
+    char *ptr = str, *ptr1 = str, tmp_char;
+    unsigned int tmp_value;
+
+    if (value == 0) {
+        *ptr++ = '0';
+        *ptr = '\0';
+        return str;
+    }
+
+    while (value != 0) {
+        tmp_value = value % base;
+        *ptr++ = (tmp_value < 10) ? (tmp_value + '0') : (tmp_value - 10 + 'a');
+        value /= base;
+    }
+
+    *ptr-- = '\0';
+
+    while (ptr1 < ptr) {
+        tmp_char = *ptr;
+        *ptr-- = *ptr1;
+        *ptr1++ = tmp_char;
+    }
+
+    return str;
 }

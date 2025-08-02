@@ -172,7 +172,16 @@ void handle_command(int argc, char *argv[]) {
         // }else {
         //     printf("Failed to delete file\n");
         // }
-
+    } else if (strcmp(argv[0], "help") == 0) {
+        printf("Available commands:\n");
+        printf("  exit - Exit the shell\n");
+        printf("  echo <text> - Print text to the console\n");
+        printf("  ls [dir] - List files in directory (default is current)\n");
+        printf("  cat <file> - Display file content\n");
+        printf("  mkdir <dir> - Create a new directory\n");
+        printf("  rm <file> - Remove a file\n");
+        printf("  run <program> - Run a user program\n");
+        printf("  touchreadwrite <filename> - Create or read/write a file\n");
     } else {
         printf("\nUnknown command: %s\n", argv[0]);
     }

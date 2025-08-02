@@ -113,7 +113,7 @@
 */
 
 
-#define FF_USE_LFN		0       // Use static LFN buffer (more reliable in OS kernels)
+#define FF_USE_LFN		1       // Use static LFN buffer (more reliable in OS kernels)
 #define FF_MAX_LFN		255     // // Set max LFN length
 /* The FF_USE_LFN switches the support for LFN (long file name).
 /

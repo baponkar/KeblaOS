@@ -203,6 +203,29 @@ int strnlen(const char* str, size_t maxlen){
     return len;
 }
 
+
+
+// Find the last occurrence of character `c` in string `str`
+// Returns a pointer to the found character or NULL if not found
+char *strrchr(const char *str, int c) {
+    const char *last = NULL;
+
+    while (*str) {
+        if (*str == (char)c) {
+            last = str; // Update last when a match is found
+        }
+        str++;
+    }
+
+    // Also check if the character to find is '\0'
+    if (c == '\0') {
+        return (char *)str;
+    }
+
+    return (char *)last;
+}
+
+
 void clear_buffer(char *buffer, int size) {
     memset(buffer, '\0', size);  // Set entire buffer to '\0'
 }

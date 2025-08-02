@@ -25,6 +25,7 @@ char* strncat(char* dest, const char* src, size_t n);
 int strnlen(const char* str, size_t maxlen);
 char* strchr(const char* str, int c);
 char *strtok(char *str, const char *delim);
+char *strrchr(const char *str, int c);
 
 void clear_buffer(char *buffer, int size);
 void int_to_str(int num, char* buffer);

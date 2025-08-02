@@ -9,7 +9,7 @@ Reference   : https://wiki.osdev.org/Limine
               https://wiki.osdev.org/SSE
 */
 
-#include "../fs/FatFs-R0.15b/fatfs.h"
+
 #include "../usr/switch_to_user.h"
 #include "../usr/load_and_parse_elf.h"
 
@@ -27,17 +27,19 @@ Reference   : https://wiki.osdev.org/Limine
 #include "../fs/fat/fat16.h"                    // FAT16 File System
 #include "../fs/fat/fat32.h"                    // FAT32 File System
 #include "../vfs/vfs.h"
-#include "../fs/ext2/ext2.h"
-#include "../fs/ext2/ext2_1.h"
+#include "../fs/FatFs-R0.15b/fatfs.h"
+#include "../fs/FatFs-R0.15b/fatfs_test.h"
 
 
 #include "../arch/interrupt/apic/apic_interrupt.h"
 #include "../arch/interrupt/apic/apic.h"
 #include "../arch/interrupt/apic/ioapic.h"
-#include "../arch/interrupt/pic/pic.h"      // init_idt, test_interrupt
+#include "../arch/interrupt/pic/pic.h"          // init_idt, test_interrupt
 #include "../arch/interrupt/pic/pic_interrupt.h"
 
 #include "../driver/disk/ahci/ahci.h"
+#include "../driver/disk/disk.h"                // block_device_t
+
 #include "../driver/pci/pci.h"
 #include "../bootloader/sysinfo.h"
 #include "../sys/cpu/cpu.h"                 // target_cpu_task, switch_to_core
@@ -109,37 +111,41 @@ void kmain(){
         printf("[Error] This System does not have APIC.\n");
     }
 
-    // Memory management Test
-    // test_kmalloc();
-    // test_kheap();
-
     pci_scan();
 
-    // Initializing Disk
-    ahci_init();
-    // test_ahci();
-
-    
-    rtc_init();
-    print_current_time();
-
-    printf("UTC TIME(start): %d\n" , get_time());
-
-    apic_delay(1000);  // Delay 1 second
-    printf("UP Time: %d\n", get_uptime_seconds(0)); // Should print UP Time: 0
-
-    apic_delay(1000);  // Delay 1 second
-    printf("UP Time: %d\n", get_uptime_seconds(0)); // Should print UP Time: 1
-
-    printf("UTC TIME(END): %d\n" , get_time());
-
-    // ext2_test();
-    // ext2_test_1();
 
     // initializing fatfs file system
-    // fatfs_init();
-    // test_fatfs();
-    // list_dir("/");
+    fatfs_init();
+    test_fatfs();
+    fatfs_list_dir("/");
+    
+    // rtc_init();
+    // print_current_time();
+
+    // printf("UTC TIME(start): %d\n" , get_time());
+
+    // apic_delay(1000);  // Delay 1 second
+    // printf("UP Time: %d\n", get_uptime_seconds(0)); // Should print UP Time: 0
+
+    // apic_delay(1000);  // Delay 1 second
+    // printf("UP Time: %d\n", get_uptime_seconds(0)); // Should print UP Time: 1
+
+    // printf("UTC TIME(END): %d\n" , get_time());
+
+    // init_ext2_fs();
+    // list_directory("/"); // List root directory
+
+    // bool dir_exists = check_directory_exists("/home");
+
+    // printf("Checking if directory /home exists: %s\n", dir_exists ? "Yes" : "No");
+
+    // if(dir_exists) {
+    //     printf("Directory /home already exists.\n");
+    // } else {
+    //     printf("Directory /home does not exist.\n");
+    //     create_directory("/home", EXT2_S_IFDIR | 0755);
+    //     printf("Created directory /home.\n");
+    // }
 
     // switch_to_core(3);
 
@@ -150,9 +156,9 @@ void kmain(){
     // init_user_mode();
 
     // Load and parse kernel modules by using limine bootloader
-    // get_kernel_modules_info();
-    // print_kernel_modules_info();
-    // load_user_elf_and_jump();
+    get_kernel_modules_info();
+    print_kernel_modules_info();
+    load_user_elf_and_jump();
 
     halt_kernel();
 }

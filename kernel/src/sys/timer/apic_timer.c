@@ -188,7 +188,7 @@ void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large cou
     
     // Set APIC Timer for periodic interrupts
     apic_write(APIC_LVT_TIMER_REGISTER, APIC_TIMER_VECTOR | APIC_LVT_TIMER_MODE_PERIODIC);  // Vector 48, Periodic Mode
-    apic_write(APIC_TIMER_DIV_REGISTER , DIV_BY_1);                                        // Set divisor by 16
+    apic_write(APIC_TIMER_DIV_REGISTER , DIV_BY_16);                                        // Set divisor by 16
     apic_write(APIC_TIMER_INITCNT_REGISTER, apic_timer_ticks_per_ms);                       // Set initial count for timer
 
     asm volatile("sti");
