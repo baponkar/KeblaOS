@@ -25,7 +25,8 @@
         "kheap.h": "c",
         "ff.h": "c",
         "ahci.h": "c",
-        "fatfs.h": "c"
+        "fatfs.h": "c",
+        "eng_8x16.h": "c"
     },
     "cmake.sourceDirectory": "B:/Git-Projects/GitHub/baponkar/KeblaOS/lvgl-9.2.2"
 }

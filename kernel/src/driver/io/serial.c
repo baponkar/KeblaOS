@@ -4,6 +4,19 @@
 
 #include "serial.h"
 
+#define SERIAL_LOG_SIZE 8192  // adjust as needed (8 KB)
+
+static char serial_log[SERIAL_LOG_SIZE]; // This Buffer will store all serial data
+static size_t serial_log_index = 0;
+
+
+char *get_serial_log() {
+    if (serial_log_index >= SERIAL_LOG_SIZE)
+        serial_log_index = SERIAL_LOG_SIZE - 1;
+    serial_log[serial_log_index] = '\0';
+    return serial_log;
+}
+
 
 
 void serial_init() {
@@ -22,6 +35,12 @@ void serial_init() {
 void serial_putchar(char c) {
     while ((inb(0x3F8 + 5) & 0x20) == 0); // Wait until buffer is empty
     outb(0x3F8, c);
+
+     // Log character into buffer
+    if (serial_log_index < SERIAL_LOG_SIZE - 1) {
+        serial_log[serial_log_index++] = c;
+        serial_log[serial_log_index] = '\0'; // keep it null-terminated
+    }
 }
 
 

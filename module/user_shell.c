@@ -51,18 +51,7 @@ void handle_command(int argc, char *argv[]) {
         printf("\n");
 
     } else if (strcmp(argv[0], "ls") == 0) {
-        void *dir = (void*)syscall_opendir(argc > 1 ? argv[1] : "/");
-        if (!dir) {
-            printf("Failed to open directory\n");
-            return;
-        }
-
-        while (true) {
-            uint64_t res = syscall_readdir(dir);
-            if (res == 0) break;
-            printf("%s\n", (char*)res);
-        }
-        syscall_closedir(dir);
+        int res = syscall_list_dir("/");
 
     } else if (strcmp(argv[0], "cat") == 0) {
         if (argc < 2) {
@@ -78,7 +67,7 @@ void handle_command(int argc, char *argv[]) {
 
         char buffer[128];
         uint64_t read_bytes;
-        while ((read_bytes = syscall_read(file, buffer, sizeof(buffer) - 1)) > 0) {
+        while ((read_bytes = syscall_read(file, 0, (void *)buffer, sizeof(buffer) - 1)) > 0) {
             buffer[read_bytes] = '\0';
             printf("%s", buffer);
         }
@@ -130,7 +119,7 @@ void handle_command(int argc, char *argv[]) {
             if (!is_fs_error(syscall_lseek(file_node, 0)))
                 printf("Lseek is success\n");
 
-            read_bytes = syscall_read(file_node, buffer, sizeof(buffer) - 1);
+            read_bytes = syscall_read(file_node, 0, buffer, sizeof(buffer) - 1);
             if ((int64_t)read_bytes <= 0) {
                 printf("File is empty or read failed\n");
             } else {
@@ -147,11 +136,11 @@ void handle_command(int argc, char *argv[]) {
             }
 
             char *str = "Hello from user_shell.c";
-            if (is_fs_error(syscall_write(file_node, str, strlen(str)))) {
+            if (is_fs_error(syscall_write(file_node, 0, str, strlen(str)))) {
                 printf("Writing failed\n");
             } else {
                 syscall_lseek(file_node, 0);
-                read_bytes = syscall_read(file_node, buffer, sizeof(buffer) - 1);
+                read_bytes = syscall_read(file_node, 0, buffer, sizeof(buffer) - 1);
                 if ((int64_t)read_bytes > 0) {
                     buffer[read_bytes] = '\0';
                     printf("File created and read back: %s\n", buffer);
@@ -166,12 +155,12 @@ void handle_command(int argc, char *argv[]) {
             printf("Failed to close file\n");
         }
 
-        // uint64_t unlink_res = syscall_unlink(filename);
-        // if (unlink_res == 0){
-        //     printf("File deleted successfully\n");
-        // }else {
-        //     printf("Failed to delete file\n");
-        // }
+        uint64_t unlink_res = syscall_unlink(filename);
+        if (unlink_res == 0){
+            printf("File deleted successfully\n");
+        }else {
+            printf("Failed to delete file\n");
+        }
     } else if (strcmp(argv[0], "help") == 0) {
         printf("Available commands:\n");
         printf("  exit - Exit the shell\n");
@@ -199,6 +188,7 @@ void _start() {
         memset(input, 0, sizeof(input));
         read_input(input, sizeof(input));
         int argc = tokenize(input, argv);
+        printf("\n");   // Creating a new line
         handle_command(argc, argv);
     }
 

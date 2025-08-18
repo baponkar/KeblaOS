@@ -4,8 +4,19 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "../include/time.h"
+
 
 enum int_syscall_number {
+
+     // Time Management
+    INT_TIME = 1,
+    INT_CLOCK_GETTIME = 2,
+    INT_CLOCK_GETTIMEOFDAY = 3,
+    INT_TIMES = 4,
+
+    INT_SYSCALL_GET_TIME = 49,
+    INT_SYSCALL_GET_UP_TIME = 50,
 
     // FatFs System Calls
     // File Access
@@ -72,7 +83,9 @@ enum int_syscall_number {
 
     // Thread Management
     INT_CREATE_THREAD           = 99,   // 0x63
-    INT_DELETE_THREAD           = 100   // 0x64
+    INT_DELETE_THREAD           = 100,  // 0x64
+
+    INT_SYSCALL_LIST            = 101 
 };
 
 
@@ -124,19 +137,23 @@ uint64_t syscall_uheap_free(void *ptr, size_t size);
 
 
 // FatFs File Manage
-uint64_t syscall_mount(char *path, uint8_t opt);
-uint64_t syscall_open(const char *path, uint64_t mode);
+uint64_t syscall_mount(char *path);
+uint64_t syscall_open(const char *path, uint64_t flags);
 uint64_t syscall_close(void *file);
-uint64_t syscall_read(void *file, void *buf, uint32_t btr);
-uint64_t syscall_write(void *file, void *buf, uint32_t btw);
+uint64_t syscall_read(void *file, uint64_t offset, void *buf, uint32_t size);
+uint64_t syscall_write(void *file, uint64_t offset, void *buf, uint32_t btw);
+
+
 uint64_t syscall_lseek(void *file, uint32_t offs);
 uint64_t syscall_unlink(char *path);
+
 
 // FatFs Directory Manage
 uint64_t syscall_opendir(const char *path);
 uint64_t syscall_closedir(void * dir_ptr);
 uint64_t syscall_readdir(void * dir_ptr);
 uint64_t syscall_mkdir(void * dir_ptr);
+int syscall_list_dir(const char* path);
 
 // Process Manage
 void *syscall_create_process(char* process_name);
@@ -147,4 +164,16 @@ void *syscall_get_current_process();
 // Thread Manage
 void *syscall_create_thread(void* parent, const char* thread_name, void (*function)(void*), void* arg);
 void *syscall_delete_thread(void *thread);
+
+
+
+// Time Manage
+time_t syscall_time(time_t *t);
+int syscall_clock_gettime(int clk_id, struct timespec *tp);
+int syscall_gettimeofday(struct timeval *tv, struct timezone *tz);
+clock_t syscall_times(struct tms *buf);
+uint64_t syscall_get_uptime(void);
+
+
+
 

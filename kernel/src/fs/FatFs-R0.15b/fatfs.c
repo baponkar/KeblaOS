@@ -13,8 +13,9 @@ void fatfs_init() {
     fatfs = (FATFS *)kheap_alloc(sizeof(FATFS), ALLOCATE_DATA);
     memset((void *)fatfs, 0, sizeof(FATFS));
 
+    char *default_disk = "0:";  // Default disk number
     // Initialize the FatFs library
-	FRESULT res = f_mount(fatfs, "", 1);
+	FRESULT res = f_mount(fatfs, (const TCHAR*)default_disk, 1);
 	if (res != FR_OK) {
 		printf("[FATFS] Error mounting FatFs: %d\n", res);
 		return;

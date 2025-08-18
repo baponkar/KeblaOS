@@ -14,47 +14,58 @@ Author       : Baponkar
 
 #include "stdio.h"
 
+typedef struct {
+    bool locked;
+} spinlock_t;
+
 
 spinlock_t serial_lock;
 
-void putc(char c) {
-    putchar(c);
+
+static void acquire(spinlock_t* lock) {
+    while (true) {
+        if (lock->locked == false) {
+            lock->locked = true;
+            return;
+        }
+    }
 }
 
-void puts(const char* str) {
-    print(str);
-    putchar('\n');
+static void release(spinlock_t* lock) {
+    lock->locked = false;
 }
 
-// Outputs a decimal number to the screen.
-void print_dec(uint64_t n){
-    if (n == 0)
-    {
+static void print_udec(uint64_t value) {
+    char buf[32];
+    int i = 0;
+
+    if (value == 0) {
         putchar('0');
         return;
     }
 
-    if(n < 0){
-        putchar('-');
-        n *= -1;
-        return;
+    while (value > 0) {
+        buf[i++] = '0' + (value % 10);
+        value /= 10;
     }
-
-    char buffer[48]; // Enough for a 64-bit integer
-    int i = 0;
-
-    while (n > 0)
-    {
-        buffer[i++] = '0' + (n % 10); // get the last digit
-        n /= 10;                      // remove the last digit
-    }
-
-    // Digits are in reverse order, so print them backwards
-    for (int j = i - 1; j >= 0; j--)
-    {
-        putchar(buffer[j]);
+    while (i > 0) {
+        putchar(buf[--i]);
     }
 }
+
+
+// Outputs a decimal number to the screen.
+static void print_dec(int64_t value) {
+    if (value < 0) {
+        putchar('-');
+        value = -value;
+    }
+    print_udec((unsigned long long)value); // Reuse unsigned printer
+}
+
+
+
+
 
 // Helper function to print floating-point numbers
 void print_float(double num, int precision) {
@@ -78,7 +89,8 @@ void print_float(double num, int precision) {
     }
 }
 
-void print_bin(uint64_t value) {
+
+static void print_bin(uint64_t value) {
     if (value == 0) {
         print("0");
         return;
@@ -100,7 +112,7 @@ void print_bin(uint64_t value) {
     print(buffer);
 }
 
-void print_hex(uint64_t n) {
+static void print_hex(uint64_t n) {
     char hex_chars[] = "0123456789ABCDEF";
     print("0x");
 
@@ -115,215 +127,372 @@ void print_hex(uint64_t n) {
     }
 }
 
+// Print a Character 
+void putc(char c) {
+    putchar(c);
+}
 
+
+// Print a string 
+void puts(const char* str) {
+    print(str);
+    putchar('\n');
+}
+
+
+void vprintf(const char* format, va_list args) {
+    for (const char* ptr = format; *ptr != '\0'; ptr++) {
+        if (*ptr == '%') {
+            ptr++;
+
+            // Handle long/long long modifiers
+            if (*ptr == 'l') {
+                ptr++;
+                if (*ptr == 'd') {
+                    print_dec((long)va_arg(args, long));
+                } 
+                else if (*ptr == 'u') {
+                    print_udec((unsigned long)va_arg(args, unsigned long));
+                } 
+                else if (*ptr == 'l') { // long long
+                    ptr++;
+                    if (*ptr == 'd') {
+                        print_dec((long long)va_arg(args, long long));
+                    } 
+                    else if (*ptr == 'u') {
+                        print_udec((unsigned long long)va_arg(args, unsigned long long));
+                    } 
+                    else {
+                        putchar('%');
+                        putchar('l');
+                        putchar('l');
+                        putchar(*ptr);
+                    }
+                } 
+                else {
+                    putchar('%');
+                    putchar('l');
+                    putchar(*ptr);
+                }
+            }
+            else {
+                // Handle single-character specifiers
+                switch (*ptr) {
+                    case 'd':
+                        print_dec((int)va_arg(args, int));
+                        break;
+                    case 'u':
+                        print_udec((unsigned int)va_arg(args, unsigned int));
+                        break;
+                    case 'x':
+                        print_hex(va_arg(args, uint64_t));
+                        break;
+                    case 'b':
+                        print_bin(va_arg(args, uint64_t));
+                        break;
+                    case 'c':
+                        putchar((char)va_arg(args, int));
+                        break;
+                    case 's':
+                        print(va_arg(args, const char*));
+                        break;
+                    case 'f':
+                        print_float(va_arg(args, double), 6); // Default precision: 6
+                        break;
+                    default:
+                        putchar('%');
+                        putchar(*ptr);
+                        break;
+                }
+            }
+        } 
+        else {
+            putchar(*ptr);
+        }
+    }
+}
+
+// printing string ,character, numbers etc
 void printf(const char* format, ...) {
     acquire(&serial_lock);
     va_list args;
     va_start(args, format);
 
-    for (const char* ptr = format; *ptr != '\0'; ptr++) {
-        if (*ptr == '%') {
-            ptr++;
-            switch (*ptr) {
-                case 'd':
-                    print_dec(va_arg(args, uint64_t));
-                    break;
-                case 'x':
-                    print_hex(va_arg(args, uint64_t));
-                    break;
-                case 'b':
-                    print_bin(va_arg(args, uint64_t));
-                    break;
-                case 'c':
-                    putchar((char)va_arg(args, int));
-                    break;
-                case 's':
-                    print(va_arg(args, const char*));
-                    break;
-                case 'f':
-                    print_float(va_arg(args, double), 6); // Default precision: 6
-                    break;
-                default:
-                    putchar('%');
-                    putchar(*ptr);
-                    break;
-            }
-        } else {
-            putchar(*ptr);
-        }
-    }
-    
+    vprintf(format, args);
+
     va_end(args);
     release(&serial_lock);
 }
 
-int sprintf(char *str, const char *format, ...) {
+
+static char* sprint_char(char* buffer, char c) {
+    *buffer++ = c;
+    return buffer;
+}
+
+static char* sprint_str(char* buffer, const char* s) {
+    while (*s) {
+        *buffer++ = *s++;
+    }
+    return buffer;
+}
+
+void vsprintf(char* buf, const char* format, va_list args) {
+    char* out = buf;
+
+    for (const char* ptr = format; *ptr != '\0'; ptr++) {
+        if (*ptr == '%') {
+            ptr++;
+
+            if (*ptr == 'l') {
+                ptr++;
+                if (*ptr == 'd') {
+                    long val = va_arg(args, long);
+                    char tmp[32];
+                    int i = 0;
+                    if (val < 0) {
+                        *out++ = '-';
+                        val = -val;
+                    }
+                    do {
+                        tmp[i++] = '0' + (val % 10);
+                        val /= 10;
+                    } while (val > 0);
+                    while (i > 0) *out++ = tmp[--i];
+                }
+                else if (*ptr == 'u') {
+                    unsigned long val = va_arg(args, unsigned long);
+                    char tmp[32];
+                    int i = 0;
+                    do {
+                        tmp[i++] = '0' + (val % 10);
+                        val /= 10;
+                    } while (val > 0);
+                    while (i > 0) *out++ = tmp[--i];
+                }
+                else if (*ptr == 'l') { // long long
+                    ptr++;
+                    if (*ptr == 'd') {
+                        long long val = va_arg(args, long long);
+                        char tmp[32];
+                        int i = 0;
+                        if (val < 0) {
+                            *out++ = '-';
+                            val = -val;
+                        }
+                        do {
+                            tmp[i++] = '0' + (val % 10);
+                            val /= 10;
+                        } while (val > 0);
+                        while (i > 0) *out++ = tmp[--i];
+                    }
+                    else if (*ptr == 'u') {
+                        unsigned long long val = va_arg(args, unsigned long long);
+                        char tmp[32];
+                        int i = 0;
+                        do {
+                            tmp[i++] = '0' + (val % 10);
+                            val /= 10;
+                        } while (val > 0);
+                        while (i > 0) *out++ = tmp[--i];
+                    }
+                }
+            }
+            else {
+                switch (*ptr) {
+                    case 'd': {
+                        int val = va_arg(args, int);
+                        char tmp[32];
+                        int i = 0;
+                        if (val < 0) {
+                            *out++ = '-';
+                            val = -val;
+                        }
+                        do {
+                            tmp[i++] = '0' + (val % 10);
+                            val /= 10;
+                        } while (val > 0);
+                        while (i > 0) *out++ = tmp[--i];
+                        break;
+                    }
+                    case 'u': {
+                        unsigned int val = va_arg(args, unsigned int);
+                        char tmp[32];
+                        int i = 0;
+                        do {
+                            tmp[i++] = '0' + (val % 10);
+                            val /= 10;
+                        } while (val > 0);
+                        while (i > 0) *out++ = tmp[--i];
+                        break;
+                    }
+                    case 'c':
+                        *out++ = (char)va_arg(args, int);
+                        break;
+                    case 's':
+                        out = sprint_str(out, va_arg(args, const char*));
+                        break;
+                    default:
+                        *out++ = '%';
+                        *out++ = *ptr;
+                        break;
+                }
+            }
+        }
+        else {
+            *out++ = *ptr;
+        }
+    }
+
+    *out = '\0'; // null terminate
+}
+
+void sprintf(char* buf, const char* format, ...) {
     va_list args;
     va_start(args, format);
-    char *buf_ptr = str;
-    const char *fmt_ptr = format;
-
-    while (*fmt_ptr) {
-        if (*fmt_ptr != '%') {
-            *buf_ptr++ = *fmt_ptr++;
-            continue;
-        }
-
-        fmt_ptr++; // Skip '%'
-        switch (*fmt_ptr) {
-            case 'd': {
-                int val = va_arg(args, int);
-                char tmp[32];
-                itoa(val, tmp, 10);
-                for (char *s = tmp; *s; s++) *buf_ptr++ = *s;
-                break;
-            }
-            case 'u': {
-                unsigned int val = va_arg(args, unsigned int);
-                char tmp[32];
-                itoa((int)val, tmp, 10); // same logic
-                for (char *s = tmp; *s; s++) *buf_ptr++ = *s;
-                break;
-            }
-            case 'x': {
-                unsigned int val = va_arg(args, unsigned int);
-                char tmp[32];
-                itoa((int)val, tmp, 16);
-                for (char *s = tmp; *s; s++) *buf_ptr++ = *s;
-                break;
-            }
-            case 'c': {
-                char c = (char)va_arg(args, int);
-                *buf_ptr++ = c;
-                break;
-            }
-            case 's': {
-                const char *s = va_arg(args, const char*);
-                while (*s) *buf_ptr++ = *s++;
-                break;
-            }
-            default:
-                *buf_ptr++ = '%';
-                *buf_ptr++ = *fmt_ptr;
-                break;
-        }
-        fmt_ptr++;
-    }
-
-    *buf_ptr = '\0';
+    vsprintf(buf, format, args);
     va_end(args);
-    return (buf_ptr - str);
 }
 
 
-int vsnprintf(char *str, size_t size, const char *format, va_list args) {
-    char *buf_ptr = str;
-    const char *fmt_ptr = format;
-    size_t written = 0;
+static char* sprint_char_limit(char* buffer, char c, size_t* remaining) {
+    if (*remaining > 1) { // leave space for null terminator
+        *buffer++ = c;
+        (*remaining)--;
+    }
+    return buffer;
+}
 
-    while (*fmt_ptr && written + 1 < size) {
-        if (*fmt_ptr != '%') {
-            *buf_ptr++ = *fmt_ptr++;
-            written++;
-            continue;
+static char* sprint_str_limit(char* buffer, const char* s, size_t* remaining) {
+    while (*s && *remaining > 1) {
+        *buffer++ = *s++;
+        (*remaining)--;
+    }
+    return buffer;
+}
+
+void vsnprintf(char* buf, size_t size, const char* format, va_list args) {
+    char* out = buf;
+    size_t remaining = size;
+
+    for (const char* ptr = format; *ptr != '\0'; ptr++) {
+        if (*ptr == '%') {
+            ptr++;
+
+            if (*ptr == 'l') {
+                ptr++;
+                if (*ptr == 'd') {
+                    long val = va_arg(args, long);
+                    char tmp[32];
+                    int i = 0;
+                    if (val < 0) {
+                        out = sprint_char_limit(out, '-', &remaining);
+                        val = -val;
+                    }
+                    do {
+                        tmp[i++] = '0' + (val % 10);
+                        val /= 10;
+                    } while (val > 0);
+                    while (i > 0) out = sprint_char_limit(out, tmp[--i], &remaining);
+                }
+                else if (*ptr == 'u') {
+                    unsigned long val = va_arg(args, unsigned long);
+                    char tmp[32];
+                    int i = 0;
+                    do {
+                        tmp[i++] = '0' + (val % 10);
+                        val /= 10;
+                    } while (val > 0);
+                    while (i > 0) out = sprint_char_limit(out, tmp[--i], &remaining);
+                }
+                else if (*ptr == 'l') { // long long
+                    ptr++;
+                    if (*ptr == 'd') {
+                        long long val = va_arg(args, long long);
+                        char tmp[32];
+                        int i = 0;
+                        if (val < 0) {
+                            out = sprint_char_limit(out, '-', &remaining);
+                            val = -val;
+                        }
+                        do {
+                            tmp[i++] = '0' + (val % 10);
+                            val /= 10;
+                        } while (val > 0);
+                        while (i > 0) out = sprint_char_limit(out, tmp[--i], &remaining);
+                    }
+                    else if (*ptr == 'u') {
+                        unsigned long long val = va_arg(args, unsigned long long);
+                        char tmp[32];
+                        int i = 0;
+                        do {
+                            tmp[i++] = '0' + (val % 10);
+                            val /= 10;
+                        } while (val > 0);
+                        while (i > 0) out = sprint_char_limit(out, tmp[--i], &remaining);
+                    }
+                }
+            }
+            else {
+                switch (*ptr) {
+                    case 'd': {
+                        int val = va_arg(args, int);
+                        char tmp[32];
+                        int i = 0;
+                        if (val < 0) {
+                            out = sprint_char_limit(out, '-', &remaining);
+                            val = -val;
+                        }
+                        do {
+                            tmp[i++] = '0' + (val % 10);
+                            val /= 10;
+                        } while (val > 0);
+                        while (i > 0) out = sprint_char_limit(out, tmp[--i], &remaining);
+                        break;
+                    }
+                    case 'u': {
+                        unsigned int val = va_arg(args, unsigned int);
+                        char tmp[32];
+                        int i = 0;
+                        do {
+                            tmp[i++] = '0' + (val % 10);
+                            val /= 10;
+                        } while (val > 0);
+                        while (i > 0) out = sprint_char_limit(out, tmp[--i], &remaining);
+                        break;
+                    }
+                    case 'c':
+                        out = sprint_char_limit(out, (char)va_arg(args, int), &remaining);
+                        break;
+                    case 's':
+                        out = sprint_str_limit(out, va_arg(args, const char*), &remaining);
+                        break;
+                    default:
+                        out = sprint_char_limit(out, '%', &remaining);
+                        out = sprint_char_limit(out, *ptr, &remaining);
+                        break;
+                }
+            }
         }
-
-        fmt_ptr++; // Skip '%'
-
-        switch (*fmt_ptr) {
-            case 'd': {
-                int val = va_arg(args, int);
-                char tmp[32];
-                itoa(val, tmp, 10);
-                for (char *s = tmp; *s && written + 1 < size; s++) {
-                    *buf_ptr++ = *s;
-                    written++;
-                }
-                break;
-            }
-            case 'u': {
-                unsigned int val = va_arg(args, unsigned int);
-                char tmp[32];
-                utoa(val, tmp, 10);
-                for (char *s = tmp; *s && written + 1 < size; s++) {
-                    *buf_ptr++ = *s;
-                    written++;
-                }
-                break;
-            }
-            case 'x': {
-                unsigned int val = va_arg(args, unsigned int);
-                char tmp[32];
-                utoa(val, tmp, 16);
-                for (char *s = tmp; *s && written + 1 < size; s++) {
-                    *buf_ptr++ = *s;
-                    written++;
-                }
-                break;
-            }
-            case 'c': {
-                char c = (char)va_arg(args, int);
-                if (written + 1 < size) {
-                    *buf_ptr++ = c;
-                    written++;
-                }
-                break;
-            }
-            case 's': {
-                const char *s = va_arg(args, const char*);
-                while (*s && written + 1 < size) {
-                    *buf_ptr++ = *s++;
-                    written++;
-                }
-                break;
-            }
-            case '%': {
-                if (written + 1 < size) {
-                    *buf_ptr++ = '%';
-                    written++;
-                }
-                break;
-            }
-            default: {
-                if (written + 2 < size) {
-                    *buf_ptr++ = '%';
-                    *buf_ptr++ = *fmt_ptr;
-                    written += 2;
-                }
-                break;
-            }
+        else {
+            out = sprint_char_limit(out, *ptr, &remaining);
         }
-        fmt_ptr++;
     }
 
-    *buf_ptr = '\0';
-    return written;
+    if (remaining > 0) {
+        *out = '\0';
+    } else if (size > 0) {
+        buf[size - 1] = '\0';
+    }
 }
 
-
-void snprintf(char *str, size_t size, const char *format, ...) {
+void snprintf(char* buf, size_t size, const char* format, ...) {
     va_list args;
     va_start(args, format);
-    int len = vsnprintf(str, size, format, args);
+    vsnprintf(buf, size, format, args);
     va_end(args);
-
-    if (len < 0 || (size_t)len >= size) {
-        str[size - 1] = '\0'; // Ensure null termination
-    }
 }
 
 
-void acquire(spinlock_t* lock) {
-    while (true) {
-        if (lock->locked == false) {
-            lock->locked = true;
-            return;
-        }
-    }
-}
-
-void release(spinlock_t* lock) {
-    lock->locked = false;
-}
 
 

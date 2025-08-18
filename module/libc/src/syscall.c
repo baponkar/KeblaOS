@@ -26,9 +26,33 @@ static uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t r
     return out;
 }
 
+// ------------------------------- Time Manage System Call -------------------------------
+
+time_t syscall_time(time_t *t) {
+    time_t now = (time_t) system_call((uint64_t)INT_TIME, (uint64_t)t, (uint64_t)0, (uint64_t)0,  (uint64_t)0,(uint64_t)0, (uint64_t)0);
+    if (t) *t = now;
+    return now;
+}
+
+int syscall_clock_gettime(int clk_id, struct timespec *tp) {
+    return (int) system_call((uint64_t)INT_CLOCK_GETTIME, (uint64_t)clk_id, (uint64_t)tp, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0);
+}
+
+int syscall_gettimeofday(struct timeval *tv, struct timezone *tz) {
+    return (int) system_call((uint64_t)INT_CLOCK_GETTIMEOFDAY, (uint64_t)tv, (uint64_t)tz, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0);
+}
+
+clock_t syscall_times(struct tms *buf) {
+    return (clock_t) system_call((uint64_t)INT_TIMES, (uint64_t)buf, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0);
+}
+
+uint64_t syscall_get_uptime(void) {
+    return system_call((uint64_t)INT_SYSCALL_GET_UP_TIME, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0);
+}
+
+
+
 // ------------------------------- General System Call -------------------------
-
-
 
 int syscall_keyboard_read(uint8_t *buffer, size_t size) {
     if (!buffer || size == 0) {
@@ -64,7 +88,6 @@ uint64_t syscall_uheap_alloc(size_t size, enum allocation_type type) {
     return system_call((uint64_t) INT_SYSCALL_ALLOC, (uint64_t) size, (uint64_t) type, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
 }
 
-
 uint64_t syscall_uheap_free(void *ptr, size_t size) {
     if (!ptr || size == 0) {
         return -1; // Invalid pointer
@@ -87,6 +110,9 @@ int syscall_delete_process(void *process){
 }
 
 void *syscall_get_process_from_pid(size_t pid){
+    if(pid < 0){
+        return NULL;
+    }
     return (void *) system_call((uint64_t) INT_GET_PROCESS_FROM_PID, (uint64_t) pid, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
 }
 
@@ -107,20 +133,20 @@ void *syscall_delete_thread(void *thread){
 
 
 
-// ------------------------------- FatFs Manage ------------------------
-uint64_t syscall_mount(char *path, uint8_t opt) {
-    return system_call((uint64_t) INT_SYSCALL_MOUNT, (uint64_t) path, (uint64_t) opt, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
+// ------------------------------- VFS Manage ------------------------
+uint64_t syscall_mount(char *disk_path) {
+
+    return system_call((uint64_t) INT_SYSCALL_MOUNT, (uint64_t) disk_path, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
 }
 
-
 // Opening a file by path name
-uint64_t syscall_open(const char *path, uint64_t mode) {
+uint64_t syscall_open(const char *path, uint64_t flags) {
 
     if (!path) {
         return -1;                  // Invalid path
     }
 
-    return system_call((uint64_t) INT_SYSCALL_OPEN, (uint64_t) path, (uint64_t) mode, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_OPEN, (uint64_t) path, (uint64_t) flags, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
     
 }
 
@@ -133,24 +159,23 @@ uint64_t syscall_close(void *file) {
     return system_call((uint64_t) INT_SYSCALL_CLOSE, (uint64_t) file, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
-uint64_t syscall_read(void *file, void *buf, uint32_t btr) {
+uint64_t syscall_read(void *file, uint64_t offset, void *buf, uint32_t size) {
     
-    if (!file || !buf || btr == 0) {
+    if (!file || !buf || size == 0) {
         return -1; // Invalid parameters
     }
 
-    return system_call((uint64_t) INT_SYSCALL_READ, (uint64_t) file, (uint64_t) buf, (uint64_t) btr, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_READ, (uint64_t) file, (uint64_t) offset, (uint64_t) buf, (uint64_t) size, (uint64_t) 0, (uint64_t) 0);
 }
 
-uint64_t syscall_write(void *file, void *buf, uint32_t btw) {
+uint64_t syscall_write(void *file, uint64_t offset, void *buf, uint32_t btw) {
     
     if (!file || !buf || btw == 0) {
         return (uint64_t)-1;    // Invalid parameters
     }
 
-    return system_call((uint64_t) INT_SYSCALL_WRITE, (uint64_t) file, (uint64_t) buf, (uint64_t) btw, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_WRITE, (uint64_t) file, (uint64_t) offset, (uint64_t) buf, (uint64_t) btw, (uint64_t) 0, (uint64_t) 0);
 }
-
 
 uint64_t syscall_lseek(void *file, uint32_t offs) {
     if (!file) {
@@ -207,7 +232,12 @@ uint64_t syscall_mkdir(void * dir_ptr){
 }
 
 
-
+int syscall_list_dir(const char* path){
+    if(!path){
+        return -1;
+    }
+    return system_call((uint64_t)INT_SYSCALL_LIST, (uint64_t)path, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
 
 
 

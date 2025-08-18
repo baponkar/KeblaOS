@@ -8,8 +8,7 @@ It handles basic mouse movement and drawing a cursor on the screen.
 
 #include "../../sys/cpu/cpu.h"
 #include "../vga/framebuffer.h"
-#include "../vga/vga_term.h"     // vga_init, print_bootloader_info, print_memory_map, display_image
-#include "../vga/vga_gfx.h"
+#include "../vga/vga.h"     // vga_init, print_bootloader_info, print_memory_map, display_image
 #include "../vga/color.h"
 
 #include "../../arch/interrupt/apic/apic.h"        // APIC interrupt support
@@ -36,8 +35,8 @@ It handles basic mouse movement and drawing a cursor on the screen.
 #define MOUSE_CMD_PORT 0x64
 #define MOUSE_DATA_PORT 0x60
 
-extern uint64_t fb_width;
-extern uint64_t fb_height;
+extern uint64_t fb0_width;
+extern uint64_t fb0_height;
 
 
 volatile int mouse_x = 40; // Initial cursor x position
@@ -77,12 +76,13 @@ uint8_t mouse_read() {
 
 // Draws the mouse cursor at its current position.
 void draw_mouse_cursor(int mouse_x, int mouse_y, uint32_t color) {
-    fill_rectangle(mouse_x, mouse_y, CURSOR_WIDTH, CURSOR_HEIGHT, color);
+    draw_rectangle(mouse_x, mouse_y, CURSOR_WIDTH, CURSOR_HEIGHT, color);
+    
 }
 
 // Erases the mouse cursor at the given old position.
 void erase_mouse_cursor(int old_x, int old_y) {
-    fill_rectangle(old_x, old_y, CURSOR_WIDTH, CURSOR_HEIGHT, CURSOR_BG_COLOR);
+    draw_rectangle(old_x, old_y, CURSOR_WIDTH, CURSOR_HEIGHT, CURSOR_BG_COLOR);
 }
 
 
@@ -109,8 +109,8 @@ void mouse_handler() {
         // Clamp to screen boundaries
         if (mouse_x < 0) mouse_x = 0;
         if (mouse_y < 0) mouse_y = 0;
-        if (mouse_x > (int) fb_width) mouse_x = (int) fb_width;
-        if (mouse_y > (int) fb_height) mouse_y = (int) fb_height;
+        if (mouse_x > (int) fb0_width) mouse_x = (int) fb0_width;
+        if (mouse_y > (int) fb0_height) mouse_y = (int) fb0_height;
 
         draw_mouse_cursor(mouse_x, mouse_y, CURSOR_BG_COLOR);
     }

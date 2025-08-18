@@ -30,6 +30,7 @@
 #include "../../sys/timer/tsc.h"
 #include "../../sys/timer/pit_timer.h"
 #include "../../sys/timer/apic_timer.h"
+#include "../../sys/timer/rtc.h"
 
 #include "../../memory/detect_memory.h"
 #include "../../memory/kmalloc.h"
@@ -77,6 +78,7 @@ void init_bs_cpu_core(){
     init_tsc();             // Initialize TSC for the bootstrap core
     calibrate_apic_timer_pit();
 
+    rtc_init();
     printf("[Info] CPU %d (Bootstrap) with PIC initialized...\n\n", 0);
 }
 

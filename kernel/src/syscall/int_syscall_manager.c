@@ -7,6 +7,8 @@ References:
 
 #include "../lib/string.h"  // for size_t
 #include "../lib/stdio.h"
+#include "../lib/errno.h"
+#include "../lib/time.h"
 
 #include "../process/process.h"
 #include "../process/thread.h"
@@ -23,7 +25,7 @@ References:
 
 #include "../vfs/vfs.h"
 
-#include "../sys/timer/time.h"
+#include "../lib/time.h"
 
 
 #include "int_syscall_manager.h"
@@ -46,6 +48,7 @@ static int copy_from_user(char *kernel_dst, const char *user_src, size_t max_len
   kernel_dst[max_len - 1] = '\0'; // Ensure termination
   return 0;
 }
+
 
 // rax, rdi, rsi, rdx, r10, r8, r9 
 static uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t r10, uint64_t r8, uint64_t r9){
@@ -75,9 +78,82 @@ static uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t r
 
 //  regs->rax is hold success(0) or error(-1) code
 registers_t *int_systemcall_handler(registers_t *regs) {
+
     if(regs->int_no == 128){
-        
         switch (regs->rax) { 
+
+           case INT_TIME: {
+                time_t *t = (time_t *)regs->rdi;   
+                time_t now = get_time();
+                if (t) {
+                    *t = now;
+                }
+                regs->rax = (uint64_t)now;
+                break;
+            }
+
+            case INT_CLOCK_GETTIME: {
+                int clk_id = (int)regs->rdi;
+                struct timespec *tp = (struct timespec *)regs->rsi;
+
+                if (!tp) {
+                    regs->rax = -EINVAL;
+                    break;
+                }
+
+                if (clk_id == CLOCK_REALTIME) {
+                    time_t now = get_time();
+                    tp->tv_sec = now;
+                    tp->tv_nsec = 0;
+                    regs->rax = 0;
+                } else if (clk_id == CLOCK_MONOTONIC) {
+                    tp->tv_sec = get_uptime_seconds(0);
+                    tp->tv_nsec = 0;
+                    regs->rax = 0;
+                } else {
+                    regs->rax = -EINVAL; // Unknown clock id
+                }
+                break; // ✅
+            }
+
+            case INT_CLOCK_GETTIMEOFDAY: {
+                struct timeval *tv = (struct timeval *)regs->rdi;
+                struct timezone *tz = (struct timezone *)regs->rsi; // Optional
+
+                if (!tv) {
+                    regs->rax = -EINVAL;
+                    break;
+                }
+
+                time_t now = get_time();
+                tv->tv_sec = now;
+                tv->tv_usec = 0;            // No microsecond precision yet
+
+                if (tz) {
+                    tz->tz_minuteswest = 0;  // UTC for now
+                    tz->tz_dsttime = 0;
+                }
+
+                regs->rax = 0;
+                break;
+            }
+
+            case INT_TIMES: {
+                struct tms *buf = (struct tms *)regs->rdi;
+                if (!buf) {
+                    regs->rax = -EINVAL;
+                    break;
+                }
+
+                // In a real OS: fill process CPU usage
+                buf->tms_utime  = 0; // user CPU time
+                buf->tms_stime  = 0; // system CPU time
+                buf->tms_cutime = 0; // user CPU time of children
+                buf->tms_cstime = 0; // system CPU time of children
+
+                regs->rax = get_uptime_seconds(0) * CLOCKS_PER_SEC; // Return ticks since boot
+                break;
+            }
 
             case INT_SYSCALL_GET_TIME: {
                 uint64_t time = (uint64_t) get_time();
@@ -282,194 +358,109 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                 break;
             }
 
-            // --------------------------FATFS File Manages--------------------------
+            // --------------------------VFS File Manages--------------------------
 
             case INT_SYSCALL_MOUNT: { // 0x52
-                // Mount root FatFs volume to /
-                char *path = (char *)regs->rdi; // Path to mount (unused in FatFs)
-                BYTE opt = (BYTE)regs->rsi;     // Mount option
-                FRESULT res = f_mount(fatfs, "", opt); // "" = default drive
-                regs->rax = (res == FR_OK) ? 0 : -1;
+                vfs_node_t *root_node = vfs_get_root();
+                char *disk = (char *)regs->rdi;
+                int res = vfs_mount(root_node, disk);
+                regs->rax = (int64_t)res;
                 break;
             }
 
             case INT_SYSCALL_OPEN: { // 0x51
                 char *path = (char *)regs->rdi;
-                BYTE mode = (BYTE)regs->rsi;
-
-                // Copy path to kernel-space buffer
-                char kernel_path[MAX_PATH_LEN]; // MAX_PATH_LEN = 256
-                if (copy_from_user(kernel_path, path, MAX_PATH_LEN) != 0) {
-                    regs->rax = -1;             // Copy failed
-                    break;
-                }
-
-                vfs_node_t* node = vfs_open(kernel_path, mode);
-
-                regs->rax = (node != NULL) ? (uint64_t) node : -1;
+                uint64_t flags = regs->rsi;
+                vfs_node_t *node = vfs_open(path, flags);
+                regs->rax = (uint64_t) node;
                 break;
             }
 
             case INT_SYSCALL_READ: {  // 0x35
-                vfs_node_t *node = (vfs_node_t *)regs->rdi;
-                void *buf = (void *)regs->rsi;
-                uint64_t size = regs->rdx;
 
-                uint64_t out = vfs_read(node, buf, size);
+                vfs_node_t *node = (vfs_node_t *) regs->rdi;
+                uint64_t offset = regs->rsi;
+                void *buf = (void *)regs->rdx;
+                uint64_t size = regs->r10;
 
-                regs->rax = (out > 0) ? out : -1;
-
+                int res = vfs_read(node, offset, buf, size);
+                regs->rax = (int64_t) res;
                 break;
 
             }
 
             case INT_SYSCALL_WRITE: {  // 0x36
                 vfs_node_t *node = (vfs_node_t *)regs->rdi;
-                void *buf = (const void *)regs->rsi;
-                uint64_t size = regs->rdx;
-
-                uint64_t out = vfs_write(node, buf, size);
-
-                regs->rax = (out > 0) ? out : -1;
-                
+                uint64_t offset = regs->rsi;
+                const void* buf = (const void*)regs->rdx;
+                uint64_t size = regs->r10;
+                int res = vfs_write(node, offset, buf, size);
+                regs->rax = (int64_t) res;
                 break;
             }
 
             case INT_SYSCALL_CLOSE: {  // 0x34
-                vfs_node_t *node = (vfs_node_t *)regs->rdi;
-
-                if(!node){
-                    regs->rax = (-1);
-                }
-
-                regs->rax = vfs_close(node);
+                vfs_node_t *node = (vfs_node_t *) regs->rdi;
+                int res = vfs_close(node);
+                regs->rax = (int64_t)res;
                 break;
             }
 
             case INT_SYSCALL_LSEEK: { // 0x37
                 vfs_node_t *node = (vfs_node_t *)regs->rdi;
-                FSIZE_t offset = (FSIZE_t) regs->rsi;
-
-                if(!node){
-                    regs->rax = (uint64_t)(-1);
-                    break;
-                }
-        
-                FRESULT res =  vfs_lseek( node, offset);
-                regs->rax = (res == FR_OK) ? 0 : -1;
+                uint64_t offset = regs->rsi;
+                regs->rax = vfs_lseek(node, offset);
                 break;
             }
 
             case INT_SYSCALL_TRUNCATE: {
-                char *path = (char *)regs->rdi;
-                uint64_t offset = (uint64_t) regs->rsi;
-                
-                if(!path){
-                    regs->rax = (uint64_t)(-1);
-                    break;
-                }
-
-                // Copy path to kernel-space buffer
-                char kernel_path[MAX_PATH_LEN]; // e.g., MAX_PATH_LEN = 256
-                if (copy_from_user(kernel_path, path, MAX_PATH_LEN) != 0) {
-                    regs->rax = -1; // Copy failed
-                    break;
-                }
-
-                vfs_node_t *node = vfs_open(kernel_path, FA_OPEN_EXISTING);
-                
-                FRESULT res = vfs_truncate(node, offset);
-                regs->rax = (res == FR_OK) ? 0 : -1;
+                break;
             }
 
             case INT_SYSCALL_UNLINK: {
-                char *path = (char *)regs->rdi;
-
-                if(!path) {
-                    regs->rax = (uint64_t)-1;
-                    break;
-                }
-
-                // Copy path to kernel-space buffer
-                char kernel_path[MAX_PATH_LEN]; // e.g., MAX_PATH_LEN = 256
-                if (copy_from_user(kernel_path, path, MAX_PATH_LEN) != 0) {
-                    regs->rax = -1; // Copy failed
-                    break;
-                }
-
-                regs->rax = vfs_unlink(kernel_path);
+                const char *file_path = (const char *)regs->rdi;
+                regs->rax = vfs_unlink(file_path);
                 break;
             }
             
-            // ------------------- FATFS Directory Manage ------------------------------------
+            // ------------------- VFS Directory Manage ------------------------------------
 
-            case INT_SYSCALL_OPENDIR: {   // 0x44
-                const char *path = (const char *)regs->rdi;
-                if (!path) {
-                    regs->rax = (uint64_t)(-1); // Invalid path
-                    break;
-                }
+            case INT_SYSCALL_LIST: {
+                const char* path = (const char *)regs->rdi;
+                vfs_listdir(path);
 
-                DIR *dir = kheap_alloc(sizeof(DIR), ALLOCATE_DATA);
-                if (!dir) {
-                    kheap_free(dir, sizeof(DIR));
-                    regs->rax = (uint64_t)(-1); // Memory allocation failed
-                    break;
-                }
-                FRESULT res = f_opendir(dir, path);
-                if (res != FR_OK) {
-                    kheap_free(dir, sizeof(DIR));
-                    regs->rax = (uint64_t)(-1); // Open directory failed
-                } else {
-                    regs->rax = (uint64_t)dir; // Return directory pointer
-                }
+                regs->rax = 0;
+                break;
+            }
+
+            case INT_SYSCALL_OPENDIR: {   // 0x4
+                char *path = (const char *)regs->rdi;
+                uint64_t flags = regs->rsi;
+                vfs_node_t *node = vfs_opendir(path, flags);
+
+                regs->rax = (uint64_t) node;
+
                 break;
             }
 
             case INT_SYSCALL_CLOSEDIR: {  // 0x45
-                DIR *dir = (DIR *)regs->rdi;
-                if (!dir) {
-                    regs->rax = (uint64_t)(-1);
-                    break;
-                }
-
-                FRESULT res = f_closedir(dir);
-                kheap_free(dir, sizeof(DIR));
-                regs->rax = (res == FR_OK) ? 0 : (uint64_t)(-1);
                 break;
             }
 
             case INT_SYSCALL_READDIR: {   // 0x46
-                DIR *dir = (DIR *)regs->rdi;
-                static char static_fname[256];  // Static buffer
-                
-                if (!dir) {
-                    regs->rax = (uint64_t)(-1);
-                    break;
-                }
+                vfs_node_t *dir_node = (vfs_node_t *) regs->rdi;
+                vfs_node_t ***children = (vfs_node_t ***) regs->rsi;
+                uint64_t *child_count = (uint64_t *)regs->rdx;
+                int res = vfs_read_dir(dir_node, children, child_count);
 
-                FILINFO fno;
-                memset(&fno, 0, sizeof(FILINFO));
-                FRESULT res = f_readdir(dir, &fno);
-                if (res != FR_OK || fno.fname[0] == 0) {
-                    regs->rax = 0; // No more entries
-                } else {
-                    strcpy(static_fname, fno.fname);
-                    regs->rax = (uint64_t)static_fname;
-                    regs->rcx = strlen(static_fname);
-                }
+                regs->rax  = res;
                 break;
             }
 
             case INT_SYSCALL_MKDIR: {    // 0x4E
-                const char *path = (const char *)regs->rdi;
-                if (!path) {
-                    regs->rax = (uint64_t)(-1); // Invalid path
-                    break;
-                }
-
-                FRESULT res = f_mkdir(path);
-                regs->rax = (res == FR_OK) ? 0 : (uint64_t)(-1); // Return success or failure
+                char *path = (char *)regs->rdi;
+                int res = vfs_mkdir(path);
+                regs->rax = res;
                 break;
             }
 
@@ -495,7 +486,68 @@ void int_syscall_init(){
 
 
 
+void int_syscall_test(){
 
+    printf(".......System Call Test Start\n");
+
+    // VFS Test
+    char *disk = "0:";
+    uint64_t res = system_call(INT_SYSCALL_MOUNT, (uint64_t)disk , (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    if(res == 0){
+        printf("Successfully Mounted\n");
+    }else{
+        printf("Disk Mount Failed with Error Code %d\n", res);
+    }
+
+    printf("Listing root directory /\n");
+
+    // List Directory
+    const char *root_dir = "/";
+    system_call(INT_SYSCALL_LIST, (uint64_t) root_dir, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+
+
+    printf("Opening file /TESRFILE.TXT\n");
+
+    // Open File
+    char *path = "/TESTFILE.TXT";
+    uint64_t flags = FA_READ | FA_WRITE | FA_OPEN_ALWAYS;
+
+    uint64_t opened_file = system_call(INT_SYSCALL_OPEN, (uint64_t) path, (uint64_t) flags, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    if(opened_file == 0){
+        printf("File Open Failed\n");
+    }else{
+        printf("Successfully open file %s\n", path);
+    }
+
+    printf("Updating pointer position\n");
+
+    // LSEEK: Changing Pointer position in opened_file
+    int lseek_res = system_call(INT_SYSCALL_LSEEK, (uint64_t) opened_file, (uint64_t) 8, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    printf("lseek: %d\n", lseek_res);
+
+    printf("Writing data into /TESTFILE.TXT\n");
+
+    // Writing data string into opened_file
+    const char* data = "Lala test string.\n";
+    size_t write = system_call(INT_SYSCALL_WRITE, (uint64_t) opened_file, (uint64_t) 0, (uint64_t) data, (uint64_t) 128, (uint64_t) 0, (uint64_t) 0);
+
+    if(write > -1){
+        printf("Successfully wrote %d bytes\n", write);
+    }
+    
+    printf("Reading File /TESTFILE.TXT\n");
+
+    // Reading 
+    char buffer[128];
+    size_t bytes = system_call(INT_SYSCALL_READ, (uint64_t) opened_file, (uint64_t) 0, (uint64_t) buffer, (uint64_t) 128, (uint64_t) 0, (uint64_t) 0);
+
+    if (bytes > 0) {
+        buffer[bytes] = '\0';           // Null terminate if text
+        printf("Content of /TESTFILE.TXT: %s\n", buffer);
+    }
+
+    printf(".....Successfully all systemcall tests passed!\n");
+}
 
 
 

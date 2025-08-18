@@ -1,27 +1,29 @@
-
-
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
 
-extern uint64_t framebuffer_revision;
-extern uint64_t framebuffer_count;
-extern struct limine_framebuffer **framebuffers;
+#include "../../../../limine-9.2.3/limine.h"
 
-extern uint32_t *fb_address;
+void init_framebuffer();
 
-extern uint64_t fb_width;
-extern uint64_t fb_height;
-extern uint64_t fb_pitch;
-extern uint16_t fb_bpp; // Bits per pixel
+uint64_t get_fb_revision();
+uint64_t get_fb_count();
+struct limine_framebuffer **get_all_fb_ptr();
+struct limine_framebuffer *get_first_fb_ptr();
 
-extern uint64_t fb_size;
+void *get_fb0_address();
+uint64_t get_fb0_width();
+uint64_t get_fb0_height();
+uint64_t get_fb0_pitch();
+uint16_t get_fb0_bpp();
+void *get_fb0_unused_ptr();
+uint64_t get_fb0_edid_size();
+void *get_fb0_edid();
 
-void get_fb_info();
 
-uint64_t get_fb_width();
-uint64_t get_fb_height();
-uint64_t get_fb_pitch();
+
 
 
 

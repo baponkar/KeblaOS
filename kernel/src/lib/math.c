@@ -47,12 +47,11 @@ double fmod(double x, double y) {
 
 
 
-// Define PI (more accurate version)
-#define PI 3.14159265358979323846
+
 
 // Helper: convert degrees to radians
 double to_radians(double degrees) {
-    return degrees * (PI / 180.0);
+    return degrees * (M_PI / 180.0);
 }
 
 // Helper: factorial (for Taylor series)

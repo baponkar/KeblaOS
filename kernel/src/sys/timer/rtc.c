@@ -28,7 +28,7 @@ volatile uint32_t rtc_ticks = 0;
 
 rtc_time_t *rtc_time;
 
-void rtc_enable() {
+static void rtc_enable() {
     outb(RTC_COMMAND_PORT, RTC_REG_B);  
     uint8_t prev = inb(RTC_DATA_PORT);   // Read current value of Register B
     outb(RTC_COMMAND_PORT, RTC_REG_B);  
@@ -48,7 +48,7 @@ Rate    |   Frequency (Hz)
 */
 
 // rtc_set_frequency(6); for 1024 Hz.
-void rtc_set_frequency(uint8_t rate) {
+static void rtc_set_frequency(uint8_t rate) {
     outb(RTC_COMMAND_PORT, RTC_REG_A);
     uint8_t prev = inb(RTC_DATA_PORT);
 
@@ -56,14 +56,14 @@ void rtc_set_frequency(uint8_t rate) {
     outb(RTC_DATA_PORT, (prev & 0xF0) | (rate & 0x0F));  // Set new frequency
 }
 
-void enable_rtc_irq() {
+static void enable_rtc_irq() {
     outb(0x21, inb(0x21) & ~(1 << 2));  // Unmask IRQ 2 (RTC cascaded via PIC)
     outb(0xA1, inb(0xA1) & ~(1 << 8));  // Unmask IRQ 8 (RTC IRQ)
 }
 
 
 
-void rtc_interrupt_handler() {
+static void rtc_interrupt_handler() {
     // Acknowledge the interrupt
     outb(RTC_COMMAND_PORT, RTC_REG_C);
     inb(RTC_DATA_PORT);  // Read Register C to acknowledge the interrupt
@@ -94,41 +94,17 @@ void rtc_init() {
 
 
 // Helper function to read a byte from the RTC
-uint8_t read_rtc_register(uint8_t reg) {
+static uint8_t read_rtc_register(uint8_t reg) {
     outb(RTC_COMMAND_PORT, reg);  // Write register number to RTC command port
     return inb(RTC_DATA_PORT);    // Read the value from the data port
 }
 
 
 // Convert BCD to binary (if needed)
-uint8_t bcd_to_bin(uint8_t value) {
+static uint8_t bcd_to_bin(uint8_t value) {
     return ((value >> 4) * 10) + (value & 0x0F);
 }
 
-
-// Function to read and print the current time
-void print_current_time() {
-    uint8_t seconds = read_rtc_register(RTC_SECONDS);
-    uint8_t minutes = read_rtc_register(RTC_MINUTES);
-    uint8_t hours   = read_rtc_register(RTC_HOURS);
-    uint8_t day     = read_rtc_register(RTC_DAY);
-    uint8_t month   = read_rtc_register(RTC_MONTH);
-    uint8_t year    = read_rtc_register(RTC_YEAR);
-
-    // Convert BCD to binary (RTC typically uses BCD format)
-    seconds = bcd_to_bin(seconds);
-    minutes = bcd_to_bin(minutes);
-    hours   = bcd_to_bin(hours);
-    day     = bcd_to_bin(day);
-    month   = bcd_to_bin(month);
-    year    = bcd_to_bin(year);
-
-    // RTC only provides the last two digits of the year, assume 20xx
-   //  year += 2000;
-
-    // Print the UTC time in HH:MM:SS DD/MM/YYYY format
-    printf("Current Time: %d:%d:%d %d/%d/%d\n", hours, minutes, seconds, day, month, year);
-}
 
 // Store Current RTC time into year, mon, day, hour, min and sec variables
 rtc_time_t *get_rtc_time(){
@@ -151,8 +127,21 @@ rtc_time_t *get_rtc_time(){
 }
 
 
+// Function to read and print the current time
+void print_current_time() {
+    rtc_time_t *time = get_rtc_time();
+    uint8_t seconds = time->seconds;
+    uint8_t minutes = time->minutes;
+    uint8_t hours   = time->hours;
+    uint8_t day     = time->days;
+    uint8_t month   = time->months;
+    uint8_t year    = time->years;
 
+    // RTC only provides the last two digits of the year, assume 20xx
+    // year += 2000; // make uint16_t year
 
-
+    // Print the UTC time in HH:MM:SS DD/MM/YYYY format
+    printf("Current Time(UTC): %d:%d:%d %d/%d/%d\n", hours, minutes, seconds, day, month, year);
+}
 
 

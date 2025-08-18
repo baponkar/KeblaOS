@@ -4,11 +4,9 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-void vga_init();
 void swap_buffers();
 
 
-void set_pixel(int x, int y, uint32_t color);
 void clear_screen();
 void draw_char(int x, int y, char c, uint32_t color);
 void scroll_up();

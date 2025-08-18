@@ -265,7 +265,6 @@ build_fat_disk:
 
 # Running by qemu
 uefi_run:
-	
 	# UEFI Boot
 	qemu-system-x86_64 \
 		-machine q35 \
