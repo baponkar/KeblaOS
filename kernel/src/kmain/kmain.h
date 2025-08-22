@@ -34,8 +34,6 @@
 #include "../fs/kfs/kfs.h"                      // Kebla File System
 #include "../fs/fat/fat16.h"                    // FAT16 File System
 #include "../fs/fat/fat32.h"                    // FAT32 File System
-#include "../fs/FatFs-R0.15b/fatfs.h"
-#include "../fs/FatFs-R0.15b/fatfs_test.h"
 
 // Virtual File System
 #include "../vfs/fatfs_wrapper.h"
@@ -109,7 +107,7 @@
 
 
 #define OS_NAME "KeblaOS"
-#define OS_VERSION "0.17.5"
+#define OS_VERSION "0.17.6"
 #define BUILD_DATE "17/07/2025"
 #define LAST_UPDATE "10/08/2025"
 

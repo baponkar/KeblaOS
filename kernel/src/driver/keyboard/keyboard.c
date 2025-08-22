@@ -49,6 +49,7 @@ const uint32_t lowercase[128] = {
     UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,
     UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN
 };
+
 const uint32_t uppercase[128] = {
     UNKNOWN,ESC,'!','@','#','$','%','^','&','*',
     '(',')','_','+','\b','\t','Q','W','E','R',
@@ -66,16 +67,22 @@ const uint32_t uppercase[128] = {
 };
 
 
-int getScanCode(){
+
+bool is_printable(char ch) {
+    return (ch >= 32 && ch <= 126);
+}
+
+
+static int getScanCode(){
     return inb(0x60) & 0x7F;
 }
 
 
-bool getKeyState(){
+static bool getKeyState(){
     char key_state = (char) inb(0x60) & 0x80;    // Press down return 0x0000000, or released return 0xffffff80
 
     // Key Released
-    if(key_state == 0xFFFFFF80){
+    if((uint64_t)key_state == 0xFFFFFF80){
        return false;
     }
     // Key Pressed
@@ -85,7 +92,7 @@ bool getKeyState(){
 }
 
 
-char scanCodeToChar(uint32_t scanCode) {
+static char scanCodeToChar(uint32_t scanCode) {
     if(scanCode == 0xE0){
         scanCode = (scanCode | 0x100); // Example: Combine with a base to indicate extended
     } 
@@ -99,8 +106,40 @@ char scanCodeToChar(uint32_t scanCode) {
     }
 }
 
+static void handel_enter_key(bool keyPressed){
+    if(keyPressed == false){
+        create_newline();
+    }
+}
 
-void key_ctrl(uint32_t scanCode, bool keyPress){
+static void handel_shift_key(bool keyPressed){
+    shift = keyPressed;
+    capsLock = !capsLock;
+}
+
+static void handel_caps_lock_key(bool keyPressed){
+    if(keyPressed == true){
+        capsLock = !capsLock;
+    }
+}
+
+static void handel_backspace_key(bool keyPressed){
+    if(keyPressed == true && entered_keys > 0){
+        backspace_manage();
+        entered_keys--;
+    }
+}
+
+static void handel_del_key(bool keyPressed){
+    int cur_pos_col;
+    if(keyPressed == true){
+        //del_manage();   // updating screen
+        cur_pos_col = get_cursor_pos_x() - 2; // 2 for cursor size
+    }
+}
+
+
+static void key_ctrl(uint32_t scanCode, bool keyPress){
     switch(scanCode){
         case 0x00000060: // Extra scan code returning
             break;
@@ -189,40 +228,9 @@ void key_ctrl(uint32_t scanCode, bool keyPress){
 }
 
 
-void handel_enter_key(bool keyPressed){
-    if(keyPressed == false){
-        create_newline();
-    }
-}
-
-void handel_shift_key(bool keyPressed){
-    shift = keyPressed;
-    capsLock = !capsLock;
-}
-
-void handel_caps_lock_key(bool keyPressed){
-    if(keyPressed == true){
-        capsLock = !capsLock;
-    }
-}
-
-void handel_backspace_key(bool keyPressed){
-    if(keyPressed == true && entered_keys > 0){
-        backspace_manage();
-        entered_keys--;
-    }
-}
-
-void handel_del_key(bool keyPressed){
-    int cur_pos_col;
-    if(keyPressed == true){
-        //del_manage();   // updating screen
-        cur_pos_col = get_cursor_pos_x() - 2; // 2 for cursor size
-    }
-}
 
 
-void keyboardHandler(registers_t *regs){
+static void keyboardHandler(registers_t *regs){
     scanCode =  getScanCode();  // What key is pressed
     press = getKeyState();      // Manage Key Pressed or Released by changing bool variable press
     key_ctrl(scanCode,  press);

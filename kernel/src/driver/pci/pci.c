@@ -35,14 +35,14 @@
 #define VENDOR_ID_OFFSET 0x0
 
 
-pci_device_t mass_storage_controllers[16];  // Array to store detected mass storage devices
-size_t mass_storage_count = 0;              // Counter for mass storage devices
+pci_device_t* mass_storage_controllers;  // Array to store detected mass storage devices
+size_t mass_storage_count = 0;           // Counter for mass storage devices
 
-pci_device_t network_controllers[16];       // Array to store detected network controllers
-size_t network_controller_count = 0;        // Counter for network controllers
+pci_device_t *network_controllers;       // Array to store detected network controllers
+size_t network_controller_count = 0;     // Counter for network controllers
 
-pci_device_t wireless_controllers[16];      // Array to store detected wireless controllers
-size_t wireless_controller_count = 0;       // Counter for wireless controllers
+pci_device_t *wireless_controllers;      // Array to store detected wireless controllers
+size_t wireless_controller_count = 0;    // Counter for wireless controllers
 
 
 
@@ -272,6 +272,7 @@ void print_device_info(pci_device_t *device){
                     printf("  Unknown\n");
                     break;
             }
+            break;
 
         case PCI_CLASS_BRIDGE:
             printf("      BRIDGE");
@@ -313,6 +314,7 @@ void print_device_info(pci_device_t *device){
                     printf("  Unknown\n");
                     break;
             }
+            break;
 
         case PCI_CLASS_MASS_STORAGE_CONTROLLER:
             printf("      MASS_STORAGE_CONTROLLER");
@@ -413,6 +415,7 @@ void print_device_info(pci_device_t *device){
                     printf("  Unknown\n");
                     break;
             }
+            break;
 
         case PCI_CLASS_PROCESSOR:
             printf("   PROCESSOR");
@@ -464,6 +467,7 @@ void print_device_info(pci_device_t *device){
                     printf(" Unknown\n");
                     break;
             }
+            break;
 
         default:
             printf("  Unknown Device\n");
@@ -473,6 +477,20 @@ void print_device_info(pci_device_t *device){
 
 
 void pci_scan() {
+    mass_storage_controllers = (pci_device_t *) kheap_alloc(sizeof(pci_device_t)*16, ALLOCATE_DATA);
+    if(!mass_storage_controllers ){
+        return;
+    }
+
+    network_controllers = (pci_device_t *) kheap_alloc(sizeof(pci_device_t)*16, ALLOCATE_DATA);
+    if(!network_controllers ){
+        return;
+    }
+    
+    wireless_controllers = (pci_device_t *) kheap_alloc(sizeof(pci_device_t)*16, ALLOCATE_DATA);
+    if(!wireless_controllers ){
+        return;
+    }
 
     printf("[PCI] Scanning PCI devices... \n");
 

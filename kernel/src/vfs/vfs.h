@@ -31,6 +31,9 @@ struct vfs_fs {
     // more functions added
     int (*listdir)(const char *path);
     int (*lseek)(vfs_node_t *node, uint64_t offset);
+    int (*getcwd)(void *buf, size_t size);
+    int (*chdir)(const char *path);
+    int (*chdrive)(const char *path);
 };
 
 
@@ -76,6 +79,10 @@ int vfs_mkdir(char *path);
 vfs_node_t *vfs_opendir(char *path, uint64_t flags);
 int vfs_listdir(const char *path);
 int vfs_read_dir(vfs_node_t *dir_node, vfs_node_t ***children, uint64_t *child_count);
+
+int vfs_getcwd(void *buf, size_t size);
+int vfs_chdir(const char *path);
+int vfs_chdrive(const char *path);
 
 void vfs_write_log(char *log_buffer);
 

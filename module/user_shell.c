@@ -41,19 +41,45 @@ static inline int is_fs_error(uint64_t res) {
 void handle_command(int argc, char *argv[]) {
     if (argc == 0) return;
 
-    if (strcmp(argv[0], "exit") == 0) {
+    if (strcmp(argv[0], "exit") == 0) {         // ✅
         syscall_exit();
 
-    } else if (strcmp(argv[0], "echo") == 0) {
+    } else if (strcmp(argv[0], "echo") == 0) {  // ✅
         for (int i = 1; i < argc; i++) {
             printf("%s ", argv[i]);
         }
         printf("\n");
 
-    } else if (strcmp(argv[0], "ls") == 0) {
-        int res = syscall_list_dir("/");
+    } else if (strcmp(argv[0], "ls") == 0) {    // ✅
+        if(argc < 2){
+            char cwd[128];
+            int r = syscall_getcwd(cwd, sizeof(cwd));
+            if(r==0){
+                int res = syscall_list_dir(cwd);
+            }
+        }else{
+            int res = syscall_list_dir(argv[1]);
+        }
 
-    } else if (strcmp(argv[0], "cat") == 0) {
+    } else if(strcmp(argv[0], "cd") == 0){
+        if(argc < 2){
+
+        }else{
+            char *path = argv[1];
+
+            if(path == ".."){
+
+            }
+            int res = syscall_chdir(path);
+            if(res){
+                printf("Failed Change directory into %s!\n", path);
+            }
+        }
+    } else if(strcmp(argv[0], "cwd") == 0){
+        char buf[256];
+        syscall_getcwd(buf, (sizeof(buf)-1));
+        printf("%s\n", buf);
+    } else if (strcmp(argv[0], "cat") == 0) {  // ❌
         if (argc < 2) {
             printf("Usage: cat <file>\n");
             return;
@@ -73,14 +99,14 @@ void handle_command(int argc, char *argv[]) {
         }
         syscall_close(file);
 
-    } else if (strcmp(argv[0], "mkdir") == 0) {
+    } else if (strcmp(argv[0], "mkdir") == 0) { // ❌
         if (argc < 2) {
             printf("Usage: mkdir <dir>\n");
             return;
         }
         syscall_mkdir((void*)argv[1]);
 
-    } else if (strcmp(argv[0], "rm") == 0){
+    } else if (strcmp(argv[0], "rm") == 0){     // ❌
         if(argc < 2){
             printf("Usage: rm <file>\n");
             return;
@@ -93,7 +119,7 @@ void handle_command(int argc, char *argv[]) {
         }
         printf("Successfully Removed %s\n", argv[1]);
         
-    }else if (strcmp(argv[0], "run") == 0) {
+    }else if (strcmp(argv[0], "run") == 0) {    // ❌
         if (argc < 2) {
             printf("Usage: run <program>\n");
             return;
@@ -101,7 +127,7 @@ void handle_command(int argc, char *argv[]) {
         void *proc = syscall_create_process(argv[1]);
         if (!proc) printf("Failed to run process\n");
 
-    } else if (strcmp(argv[0], "touchreadwrite") == 0) {
+    } else if (strcmp(argv[0], "touchreadwrite") == 0) {    // ❌
         if (argc < 2) {
             printf("Usage: touchreadwrite <filename>\n");
             return;
@@ -161,7 +187,7 @@ void handle_command(int argc, char *argv[]) {
         }else {
             printf("Failed to delete file\n");
         }
-    } else if (strcmp(argv[0], "help") == 0) {
+    } else if (strcmp(argv[0], "help") == 0) {  // ✅
         printf("Available commands:\n");
         printf("  exit - Exit the shell\n");
         printf("  echo <text> - Print text to the console\n");
@@ -171,7 +197,10 @@ void handle_command(int argc, char *argv[]) {
         printf("  rm <file> - Remove a file\n");
         printf("  run <program> - Run a user program\n");
         printf("  touchreadwrite <filename> - Create or read/write a file\n");
-    } else {
+        printf("  cd <path> - Change Directory.\n");
+        printf("  cwd - Current Working Directory.\n");
+
+    } else {    // ✅
         printf("\nUnknown command: %s\n", argv[0]);
     }
 }
@@ -192,7 +221,7 @@ void _start() {
         handle_command(argc, argv);
     }
 
-    while (true) {} // Halt
+    while (true) {}     // Halt
 }
 
 

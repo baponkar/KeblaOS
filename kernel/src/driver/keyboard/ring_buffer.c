@@ -92,6 +92,7 @@ int ring_buffer_pop(ring_buffer_t* rb, uint8_t *data) {
 
     *data = rb->buffer[rb->tail];
     retreat_pointer(rb);
+    
     return 0;
 }
 

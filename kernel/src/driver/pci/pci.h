@@ -182,13 +182,13 @@ struct pci_device {
 typedef struct pci_device pci_device_t;
 
 
-extern pci_device_t mass_storage_controllers[16];  // Array to store detected mass storage devices
+extern pci_device_t *mass_storage_controllers;  // Array to store detected mass storage devices
 extern size_t mass_storage_count;                  // Counter for mass storage devices
 
-extern pci_device_t network_controllers[16];       // Array to store detected network controllers
+extern pci_device_t *network_controllers;       // Array to store detected network controllers
 extern size_t network_controller_count;            // Counter for network controllers
 
-extern pci_device_t wireless_controllers[16];      // Array to store detected wireless controllers
+extern pci_device_t *wireless_controllers;      // Array to store detected wireless controllers
 extern size_t wireless_controller_count;           // Counter for wireless controllers
 
 void pci_scan();

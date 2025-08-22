@@ -22,22 +22,32 @@ References:
 
 
 
-vfs_node_t *vfs_root = NULL;
+vfs_node_t *vfs_root;
 
 
 void vfs_init(char *fs_name) {
+
+    printf("[VFS] Starting VFS Initialization\n");
+
+    fatfs_init();
+
     vfs_root = (vfs_node_t *)kheap_alloc(sizeof(vfs_node_t), ALLOCATE_DATA);
     if (!vfs_root) {
-        printf("[VFS] Allocation failed\n");
+        printf("[VFS] vfs_root Allocation failed\n");
         return;
     }
-    memset((void *)vfs_root, 0, sizeof(vfs_node_t));   // <-- correct order
+    memset((void *)vfs_root, 0, sizeof(vfs_node_t));
 
     // Use FAT Filesystem to initialize vfs
-    // If you meant to check fs_name, use strncmp/strcmp:
     if (fs_name && strncmp(fs_name, "fat", 3) == 0) {
+
         vfs_fs_t *fatfs_ops = (vfs_fs_t *)kheap_alloc(sizeof(vfs_fs_t), ALLOCATE_DATA);
+        if(!fatfs_ops){
+            printf("[VFS] fatfs_ops Allocation failed!\n");
+            return;
+        }
         memset(fatfs_ops, 0, sizeof(vfs_fs_t));
+
         fatfs_ops->mount = fatfs_mount;
         fatfs_ops->unmount = fatfs_unmount;
         fatfs_ops->open = fatfs_open;
@@ -55,9 +65,16 @@ void vfs_init(char *fs_name) {
         fatfs_ops->listdir = fatfs_listdir;
         fatfs_ops->lseek = fatfs_lseek;
         fatfs_ops->mkdir = fatfs_mkdir;
+        fatfs_ops->getcwd = fatfs_getcwd;
+        fatfs_ops->chdir = fatfs_chdir;
+        fatfs_ops->chdrive = fatfs_chdrive;
 
         DIR *dp = (DIR *)kheap_alloc(sizeof(DIR), ALLOCATE_DATA);
-        if (dp) memset(dp, 0, sizeof(DIR));
+        if(!dp){
+            printf("dp Allocation failed!\n");
+            return;
+        }
+        memset(dp, 0, sizeof(DIR));
 
         const char* name = "/";
         // safer copy: respect destination size
@@ -93,8 +110,10 @@ vfs_node_t* vfs_get_root() {
 
 
 int vfs_mount(vfs_node_t *root_node, char *disk) {
-
-    if(!root_node) return -1;
+    
+    if(root_node == NULL || root_node->fs == NULL || root_node->fs->mount == NULL || disk == NULL){
+        return -1;
+    }
 
     if(root_node->fs->mount(disk) != 0){
 
@@ -107,11 +126,13 @@ int vfs_mount(vfs_node_t *root_node, char *disk) {
     return 0;
 }
 
+
+
 int vfs_unmount(vfs_node_t *root_node, char *disk) {
 
     if(!root_node) return -1;
 
-    if(root_node->fs->unmount(disk)){
+    if(root_node->fs->unmount(disk) != 0){
         printf("[VFS] Failed to Unmounting FAT Filesystem.\n");
         return -1;
     }
@@ -120,6 +141,7 @@ int vfs_unmount(vfs_node_t *root_node, char *disk) {
 
     return 0;
 }
+
 
 vfs_node_t *vfs_create_node(char *path, int node_type){
 
@@ -256,7 +278,7 @@ vfs_node_t *vfs_opendir(char *path, uint64_t flags){
 
 int vfs_listdir(const char *path){
     if(!path) return -1;
-    fatfs_listdir(path);
+    return fatfs_listdir(path);
 }
 
 int vfs_read_dir(vfs_node_t *dir_node, vfs_node_t ***children, uint64_t *child_count) {
@@ -299,7 +321,17 @@ int vfs_read_dir(vfs_node_t *dir_node, vfs_node_t ***children, uint64_t *child_c
     return 0; // Success
 }
 
+int vfs_getcwd(void *buf, size_t size){
+    return fatfs_getcwd(buf, size);
+}
 
+int vfs_chdir(const char *path) {
+    return fatfs_chdir(path);
+}
+
+int vfs_chdrive(const char *path){
+    return fatfs_chdrive(path);
+}
 
 
 void vfs_write_log(char *log_buffer){
@@ -319,7 +351,7 @@ void vfs_write_log(char *log_buffer){
 
 void vfs_test(){
 
-    printf("[VFS] Testing Start\n");
+    printf("[VFS] Testing Start....................\n");
 
     // Starting and mounting fat32 filesystem
     vfs_init("fat");
@@ -329,9 +361,17 @@ void vfs_test(){
         printf("[VFS] VFS Mounting Failed!\n");
     }
 
+    printf("[VFS] Present Working Directory: ");
+    char cwd[256];
+    if(vfs_getcwd(cwd, sizeof(cwd)) == 0){
+        printf("%s\n", cwd);
+    }else{
+        printf("[VFS] Current Working Directory Failed!\n");
+    }
+
     // Listing root directory
     const char *root_path = "/";
-    printf("[VFS] Listing directory: %s\n", root_path);
+    printf("[VFS] Listing directory %s: ", root_path);
     vfs_listdir(root_path);
 
     // Read and Write TESTFILE.TXT
@@ -352,13 +392,14 @@ void vfs_test(){
         
         if (bytes > 0) {
             buffer[bytes] = '\0';           // Null terminate if text
-            printf("Read: %s\n", buffer);
+            printf("[VFS] Read(Content of %s): %s\n", file_path, buffer);
         }
 
         const char* data_1 = "This is a new string.";
         // Write again
         vfs_write(file_node, 41, (const void *)data_1, strlen(data_1));
 
+        printf("[VFS] Changing File Pointer offset 12\n");
         // Changing file pointer
         vfs_lseek(file_node, 12);
 
@@ -368,39 +409,42 @@ void vfs_test(){
         
         if (bytes_1 > 0) {
             buffer[bytes_1] = '\0';           // Null terminate if text
-            printf("Read: %s\n", buffer);
+            printf("[VFS] Read(Content of %s): %s\n", file_path, buffer);
         }
 
         vfs_close(file_node);
     } else {
-        printf("%s file opening failed!\n", file_path);
+        printf("[VFS] %s file opening failed!\n", file_path);
     }
 
-    // Creating a new subdirectory in rootdir
 
-    
-    
     vfs_node_t *root_node = vfs_opendir("/", FA_READ | FA_WRITE | FA_OPEN_ALWAYS );
     if(root_node != NULL){
-        printf("Successfully open %s directory.\n", "/");
+        printf("[VFS] Successfully open %s directory.\n", "/");
     }else{
-        printf("Failed to Open Directory %s\n", "/");
+        printf("[VFS] Failed to Open Directory %s\n", "/");
         return;
     }
 
-    vfs_node_t **children;
-    uint64_t count;
-
-    if (vfs_read_dir(root_node, &children, &count) == 0) {
-        for (uint64_t i = 0; i < count; i++) {
-            printf("[VFS] %s%s\n", children[i]->name, children[i]->is_dir ? "/" : "");
-            kheap_free(children[i], sizeof(vfs_node_t)); // Free each node
-        }
-        kheap_free(children, sizeof(vfs_node_t *) * 128); // Free the children array
-    }else{
-        printf("Reading Directory %s is failed!\n", vfs_get_root()->name);
+    printf("[VFS] Change Directory\n");
+    int chdrive_res = vfs_chdir("/SUBDIR");
+    if(chdrive_res != 0){
+        printf("[VFS] Change drive failed!\n");
     }
 
+    printf("[VFS] Present Working Directory: ");
+    char cwd_1[256];
+    if(vfs_getcwd(cwd_1, sizeof(cwd_1)) == 0){
+        printf("%s\n", cwd_1);
+    }else{
+        printf("[VFS] Current Working Directory Failed!\n");
+    }
+
+    printf("[VFS] Listing directory %s: ", "/SUBDIR");
+    vfs_listdir("/SUBDIR");
+
+
+    printf("[VFS] Testing End......................\n");
 }
 
 

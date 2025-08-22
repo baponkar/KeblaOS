@@ -103,7 +103,7 @@ DSTATUS disk_initialize (
 	// }
 	// return STA_NOINIT;
 
-	return init_disks((int)pdrv) ? RES_OK : RES_ERROR;
+	return (DSTATUS) init_disks((int)pdrv) ? RES_OK : RES_ERROR;
 
 }
 

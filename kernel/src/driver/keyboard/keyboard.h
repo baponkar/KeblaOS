@@ -115,22 +115,11 @@
 #define DELETE     0x00000053 // Same as NUMPAD_PERIOD without Num Lock
 
 
-
-
-int getScanCode();
-bool getKeyState();
-char scanCodeToChar(uint32_t scanCode);
-void key_ctrl(uint32_t scanCode, bool keyPress);
-void keyboardHandler(registers_t *regs);
 void initKeyboard();
 void enableKeyboard();
 void disableKeyboard();
 
-void handel_enter_key(bool keyPressed);
-void handel_shift_key(bool keyPressed);
-void handel_caps_lock_key(bool keyPressed);
-void handel_backspace_key(bool keyPressed);
-void handel_del_key(bool keyPressed);
+
 
 bool is_printable(char ch);
 

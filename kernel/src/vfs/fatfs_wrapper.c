@@ -1,7 +1,9 @@
 
 
 #include "../memory/kheap.h"
+
 #include "../fs/FatFs-R0.15b/source/ff.h"
+#include "../fs/FatFs-R0.15b/source/diskio.h"
 
 #include "../lib/stdio.h"
 #include "../lib/string.h"
@@ -11,13 +13,45 @@
 #include "fatfs_wrapper.h"
 
 
-extern FATFS *fatfs; // Global filesystem mount
+
+uint64_t FAT32_PARTITION_LBA = 2048;    // Start of FAT32 partition in sectors
+FATFS *fatfs;                           // Global filesystem mount
+
+
+void fatfs_init() {
+
+    fatfs = (FATFS *)kheap_alloc(sizeof(FATFS), ALLOCATE_DATA);
+    if(!fatfs){
+        printf("[FATFS] fatfs allocation failed!\n");
+        kheap_free((void *)fatfs, sizeof(FATFS));
+    }
+    memset((void *)fatfs, 0, sizeof(FATFS));
+
+    BYTE pdrv = 0;  // Disk Number
+    DSTATUS disk_init = disk_initialize(pdrv);
+    printf("[FATFS] Disk initialized with result code: %d\n",(uint64_t) disk_init);
+
+    DSTATUS disk_stat = disk_status(pdrv);
+    printf("[FATFS] Disk status with result code: %d\n", disk_stat);
+
+    // Read the MBR to find the total sectors 
+    uint16_t mbr[256];
+    disk_read(pdrv, (BYTE *)mbr, 0, 1);         // pdrv=0, buff=mbr, sector=0, count=1
+    uint32_t lba_start = *(uint32_t *)((uint8_t *)mbr + 0x1BE + 8);
+	FAT32_PARTITION_LBA = lba_start;            // Use lba_start instead of hardcoded 2048
+    
+	printf("[FATFS] FatFs mounted successfully on partition starting at LBA: %d\n", FAT32_PARTITION_LBA);
+}
+
 
 
 int fatfs_mount(const char *path) {
 
     if(!fatfs){
         fatfs = (FATFS *)kheap_alloc(sizeof(FATFS), ALLOCATE_DATA);
+        if(!fatfs){
+            return -1;
+        }
         memset((void *)fatfs, 0, sizeof(FATFS));
     }
     
@@ -28,6 +62,7 @@ int fatfs_mount(const char *path) {
         return -1;
     }
     printf("[FATFS] Successfully mounted filesystem at %s\n", path);
+    
     return 0;
 }
 
@@ -198,14 +233,6 @@ int fatfs_mkdir(vfs_node_t *parent, const char *name) {
 }
 
 
-
-
-
-
-
-
-
-
 int fatfs_listdir(const char *path) {
 
     DIR dir;
@@ -291,3 +318,41 @@ int fatfs_rename(vfs_node_t *node, const char *new_name) {
 }
 
 
+// Wrapper: returns 0 on success, -1 on failure
+int fatfs_getcwd(void *buf, size_t size) {
+    if (!buf || size == 0) {
+        return -1; // invalid arguments
+    }
+
+    FRESULT res = f_getcwd((TCHAR*)buf, (UINT)size);
+    if (res != FR_OK) {
+        printf("[FATFS] f_getcwd failed with error: %d\n", res);
+        return -1;
+    }
+
+    return 0;
+}
+
+int fatfs_chdir(const char *path) {
+    if (!path) return -1;
+
+    FRESULT res = f_chdir((const TCHAR*) path);
+    if (res != FR_OK) {
+        printf("[FATFS] f_chdir failed with error: %d\n", res);
+        return -1;
+    }
+
+    return 0;
+}
+
+// Wrapper: returns 0 on success, -1 on failure
+int fatfs_chdrive(const char *path){
+    if(!path) return -1;
+    FRESULT res = f_chdrive ((const TCHAR*) path);
+    if(res != FR_OK){
+        printf("[FATFS] f_chdrive failed with error: %d\n", res);
+        return -1;
+    }
+
+    return 0;
+}

@@ -241,6 +241,29 @@ int syscall_list_dir(const char* path){
 
 
 
+int syscall_getcwd(void *buf, size_t size){
+    if(!buf || !size){
+        return -1;
+    }
+    return system_call((uint64_t)INT_SYSCALL_GETCWD, (uint64_t)buf, (uint64_t) size, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+
+int syscall_chdir(const char *path){
+    if(!path){
+        return -1;
+    }
+    return system_call((uint64_t)INT_SYSCALL_CHDIR, (uint64_t)path, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+
+
+int syscall_chdrive(const char *path){
+    if(!path){
+        return -1;
+    }
+    return system_call((uint64_t)INT_SYSCALL_CHDRIVE, (uint64_t)path, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+
+
 
 
 

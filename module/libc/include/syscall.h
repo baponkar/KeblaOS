@@ -85,7 +85,7 @@ enum int_syscall_number {
     INT_CREATE_THREAD           = 99,   // 0x63
     INT_DELETE_THREAD           = 100,  // 0x64
 
-    INT_SYSCALL_LIST            = 101 
+    INT_SYSCALL_LIST            = 101,
 };
 
 
@@ -155,6 +155,11 @@ uint64_t syscall_readdir(void * dir_ptr);
 uint64_t syscall_mkdir(void * dir_ptr);
 int syscall_list_dir(const char* path);
 
+int syscall_getcwd(void *buf, size_t size);
+int syscall_chdir(const char *path);
+int syscall_chdrive(const char *path);
+
+
 // Process Manage
 void *syscall_create_process(char* process_name);
 int syscall_delete_process(void *process);
@@ -173,6 +178,12 @@ int syscall_clock_gettime(int clk_id, struct timespec *tp);
 int syscall_gettimeofday(struct timeval *tv, struct timezone *tz);
 clock_t syscall_times(struct tms *buf);
 uint64_t syscall_get_uptime(void);
+
+
+
+
+
+
 
 
 

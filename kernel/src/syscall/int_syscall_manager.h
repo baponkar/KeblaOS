@@ -84,7 +84,7 @@ enum int_syscall_number {
     INT_CREATE_THREAD           = 99,   // 0x63
     INT_DELETE_THREAD           = 100,  // 0x64
 
-    INT_SYSCALL_LIST            = 101 
+    INT_SYSCALL_LIST            = 101
 };
 
 void int_syscall_init();

@@ -464,6 +464,29 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                 break;
             }
 
+            case INT_SYSCALL_GETCWD: {
+                void *buf = (void *) regs->rdi;
+                size_t size = (size_t)regs->rsi;
+                int res = vfs_getcwd(buf, size);
+                regs->rax = res;
+                break;
+            }
+
+            case INT_SYSCALL_CHDIR: {
+                const char *path = (const char *) regs->rdi;
+                int res = vfs_chdir(path);
+                regs->rax = res;
+                break;
+            }
+
+            case INT_SYSCALL_CHDRIVE: {
+                const char *path = (const char *) regs->rdi;
+                int res = vfs_chdrive(path);
+                regs->rax = res;
+                break;
+            }
+
+
             default: {
                 printf("Unknown System Call! %d\n", regs->rax);
                 regs->rax = (uint64_t)(-1); // unknown syscall

@@ -45,15 +45,16 @@ void kmain(){
     // print_current_time();
    
     vfs_init("fat");
-    vfs_mount(vfs_get_root(), "0:");
-    vfs_unlink("/log.txt");             // Deleting old log.txt file
-    vfs_write_log(get_serial_log());    // Create and Writing log file /log.txt
+    // if(vfs_mount(vfs_get_root(), "0:") != 0){
+    //     printf("[Kmain] vfs mount failed!\n");
+    // }
+    // vfs_unlink("/log.txt");             // Deleting old log.txt file
+    // vfs_write_log(get_serial_log());    // Create and Writing log file /log.txt
+
 
     // vfs_test();
 
-
     // int_syscall_test();
-
 
     // switch_to_core(3);
 
@@ -62,7 +63,7 @@ void kmain(){
     // Load and parse kernel modules by using limine bootloader
     // get_kernel_modules_info();
     // print_kernel_modules_info();
-    load_user_elf_and_jump();
+    // load_user_elf_and_jump();
 
     halt_kernel();
 }
