@@ -164,6 +164,7 @@ void sleep_seconds(uint64_t seconds) {
     uint64_t start = syscall_get_uptime();
     while ((syscall_get_uptime() - start) < seconds) {
         // asm volatile("hlt"); // save CPU cycles
+        // printf("%d ", syscall_get_uptime());
     }
 }
 
@@ -195,6 +196,11 @@ void test_time_functions() {
     // if(!str){
     //     printf("ctime: %s\n", str);
     // }
+
+    sleep_seconds(4);
+
+    clock_gettime(CLOCK_REALTIME, &ts);
+    printf("clock_gettime: %d sec, %d nsec\n", (int)ts.tv_sec, (int)ts.tv_nsec);
 }
 
 

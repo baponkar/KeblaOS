@@ -78,9 +78,10 @@ void init_bs_cpu_core(){
     init_tsc();             // Initialize TSC for the bootstrap core
     calibrate_apic_timer_pit();
 
-    rtc_init();
+    rtc_init();             // Initialize RTC
     printf("[Info] CPU %d (Bootstrap) with PIC initialized...\n\n", 0);
 }
+
 
 // This function initializes the bootstrap CPU core with APIC
 void start_bootstrap_cpu_core() {
@@ -93,7 +94,7 @@ void start_bootstrap_cpu_core() {
     uint32_t bsp_lapic_id = smp_response->bsp_lapic_id;
 
     // Setting up the CPU data structure for the bootstrap core
-    cpu_datas[bsp_lapic_id].lapic_id = bsp_lapic_id;                        // Set the LAPIC ID for the bootstrap core
+    cpu_datas[bsp_lapic_id].lapic_id = smp_response->bsp_lapic_id;          // Set the LAPIC ID for the bootstrap core
     cpu_datas[bsp_lapic_id].smp_info = smp_response->cpus[bsp_lapic_id];    // Set the SMP info for the bootstrap core 
     cpu_datas[bsp_lapic_id].is_online = 1;                                  // Mark the bootstrap core as online
     cpu_datas[bsp_lapic_id].kernel_stack = (uint64_t)kmalloc_a(STACK_SIZE, 1) + STACK_SIZE;  // Set the stack pointer for the bootstrap core
@@ -127,12 +128,12 @@ void start_bootstrap_cpu_core() {
 
     printf("[Info] Bootstrap CPU %d initialized...\n\n", bsp_lapic_id);
 
-    asm volatile("sti");        // Enable interrupts
+    
     init_apic_timer(100);       // Initialize the APIC timer for the bootstrap core with 100 ms/ 0.1 s interval
     
-    asm volatile("cli");  
-    disable_pit_timer();        // Disable PIT timer interrupts
-    disable_pic();              // Disable PIC interrupts
+    // asm volatile("cli");  
+    // disable_pit_timer();        // Disable PIT timer interrupts
+    // disable_pic();              // Disable PIC interrupts
     asm volatile("sti");  
 }
 
@@ -235,6 +236,7 @@ void init_all_cpu_cores() {
 
     printf("[Info] All CPU cores initialized and online.\n\n\n");
 }
+
 
 void switch_to_core(uint32_t target_lapic_id) {
     if (smp_response == NULL) return;

@@ -151,31 +151,46 @@ void vprintf(const char* format, va_list args) {
             else {
                 // Handle single-character specifiers
                 switch (*ptr) {
-                    case 'd':
+                    case 'd':{
                         print_dec((int)va_arg(args, int));
                         break;
-                    case 'u':
+                    }
+                    case 'u':{
                         print_udec((unsigned int)va_arg(args, unsigned int));
                         break;
-                    case 'x':
+                    }
+                    case 'x':{
                         print_hex(va_arg(args, uint64_t));
                         break;
-                    case 'b':
+                    }
+                    case 'b':{
                         print_bin(va_arg(args, uint64_t));
                         break;
-                    case 'c':
+                    }
+                    case 'c':{
                         putc((char)va_arg(args, int));
                         break;
-                    case 's':
+                    }
+                    case 's':{
                         puts(va_arg(args, const char*));
                         break;
-                    case 'f':
+                    }
+                    case 'f':{
                         print_float(va_arg(args, double), 6); // Default precision: 6
                         break;
-                    default:
+                    }
+                    case 'p': {
+                        void* ptr_val = va_arg(args, void*);
+                        uintptr_t addr = (uintptr_t)ptr_val;
+                        puts("0x");
+                        print_hex(addr);
+                        break;
+                    }
+                    default:{
                         putc('%');
                         putc(*ptr);
                         break;
+                    }
                 }
             }
         } 

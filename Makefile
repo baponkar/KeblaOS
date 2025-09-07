@@ -9,7 +9,7 @@
 START_TIME := $(shell date +%s)
 
 OS_NAME = KeblaOS
-OS_VERSION = 1.0
+OS_VERSION = 1.1
 
 HOST_HOME = /home/bapon
 

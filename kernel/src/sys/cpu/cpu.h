@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <stdint.h>
@@ -34,8 +35,8 @@ extern cpu_data_t cpu_datas[MAX_CPUS];  // Array indexed by CPU ID (APIC ID)
 
 void switch_to_core(uint32_t target_lapic_id);
 
-void init_bs_cpu_core();            // pic interrupt, gdt, tss, apic, paging, fpu
-void start_bootstrap_cpu_core();    // apic, gdt, tss, paging, fpu
+void init_bs_cpu_core();                // pic interrupt, gdt, tss, apic, paging, fpu
+void start_bootstrap_cpu_core();        // apic, gdt, tss, paging, fpu
 
 void start_ap_cpu_cores();
 void init_all_cpu_cores();

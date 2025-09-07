@@ -7,9 +7,11 @@
 #include "../libc/include/syscall.h"
 #include "../libc/include/stdio.h"
 #include "../libc/include/string.h"
+#include "../libc/include/time.h"
 
 #include "installer.h"
 #include "user_shell.h"
+#include "process_thread_test.h"
 
 
 
@@ -21,10 +23,12 @@ void _start(){
 
     instll();
 
+    test_time_functions();
     start_user_shell();
 
     while (true) {}     // Halt
 }
+
 
 
 

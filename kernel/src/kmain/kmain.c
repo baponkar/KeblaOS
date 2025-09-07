@@ -40,12 +40,12 @@ void kmain(){
 
     pci_scan();
 
-    // print_current_time();
-    // test_time_functions();
+    test_time_functions();
 
-    // sleep_seconds(0, 1);
-    // printf("Sleep Test Over!\n");
-    // print_current_time();
+    print_current_rtc_time();
+    sleep_seconds(0, 10);
+    printf("10 sec Sleep Test Over!\n");
+    print_current_rtc_time();
 
 
     for(int i=0; i<mass_storage_count; i++){
@@ -55,7 +55,6 @@ void kmain(){
     }
     printf("Total available Disks: %d\n", get_total_disks());
     
-
 
     // int_syscall_test();
 
@@ -67,7 +66,6 @@ void kmain(){
     // get_kernel_modules_info();
     // print_kernel_modules_info();
     load_user_elf_and_jump();
-
 
     halt_kernel();
 }

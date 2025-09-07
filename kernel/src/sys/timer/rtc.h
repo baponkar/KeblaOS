@@ -17,4 +17,8 @@ void rtc_init();
 rtc_time_t *get_rtc_time();
 
 
-void print_current_time();
+void print_current_rtc_time();
+
+
+
+

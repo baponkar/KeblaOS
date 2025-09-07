@@ -150,9 +150,9 @@ void apic_timer_handler(registers_t *regs) {
 
     apic_ticks[cpu_id] += apic_timer_ticks_per_ms;
 
-    // printf("apic_ticks[%d]: %d\n", cpu_id, apic_ticks[cpu_id]);
-
-    
+    // if(apic_ticks[cpu_id]/100 == 0){
+    //     printf("apic_ticks[%d]: %d\n", cpu_id, apic_ticks[cpu_id]);
+    // }
 
     apic_send_eoi();
 }
@@ -177,7 +177,7 @@ void init_apic_timer(uint32_t interval_ms) {// Start APIC timer with a large cou
     apic_start_oneshot_timer(0xFFFFFFFF);   // Set APIC timer to max count
     
     if(apic_timer_ticks_per_ms == 0) {
-        // calibrate_apic_timer_tsc();         // Calibrate APIC timer using TSC
+        // calibrate_apic_timer_tsc();      // Calibrate APIC timer using TSC
         calibrate_apic_timer_pit();         // Calibrate APIC timer using PIT
 
         while (!apic_calibrated);           // Wait for calibration to complete
@@ -211,6 +211,8 @@ void apic_delay(uint32_t milliseconds) {
         // printf("%x\n", apic_timer_ticks_per_ms);
     }
 }
+
+
 
 
 

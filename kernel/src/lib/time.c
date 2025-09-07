@@ -139,7 +139,8 @@ extern volatile uint64_t apic_timer_ticks_per_ms;
 
 
 uint64_t get_uptime_seconds(uint8_t cpu_id) {
-    return apic_ticks[cpu_id] / (apic_timer_ticks_per_ms * 1000);
+    // return apic_ticks[cpu_id] / (apic_timer_ticks_per_ms * 1000);
+    return (uint64_t) get_time();   // using RTC
 }
 
 // Returns processor time consumed by the program since it started.

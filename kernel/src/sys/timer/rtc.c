@@ -128,7 +128,7 @@ rtc_time_t *get_rtc_time(){
 
 
 // Function to read and print the current time
-void print_current_time() {
+void print_current_rtc_time() {
     rtc_time_t *time = get_rtc_time();
     uint8_t seconds = time->seconds;
     uint8_t minutes = time->minutes;
