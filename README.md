@@ -1,99 +1,82 @@
-
-# 🖥️ KeblaOS
+# KeblaOS
 
 [![KeblaOS Badge](https://img.shields.io/badge/Kebla-OS-maker?labelColor=red&color=blue)](https://gitlab.com/baponkar/kebla-os)
-[![GitHub Badge](https://img.shields.io/badge/Fork-Me-maker?logo=GitHub&logoColor=Blue&labelColor=white&color=blue)](https://github.com/baponkar/KeblaOS)
-[![GitLab Badge](https://img.shields.io/badge/Fork-Me-maker?logo=GitLab&logoColor=Blue&labelColor=white&color=blue)](https://gitlab.com/baponkar/KeblaOS)
-[![Linux Badge](https://img.shields.io/badge/-Linux-maker?logo=linux&logoColor=black&logoSize=auto&labelColor=white&color=blue)](https://kernel.com)
-![C Badge](https://img.shields.io/badge/C-Language-maker?logo=c&logoColor=black&labelColor=white&color=blue)
-![x86_32bit Badge](https://img.shields.io/badge/x86-32bit-maker?logo=intel&labelColor=white&color=blue)
-![ASM Badge](https://img.shields.io/badge/ASM-Language-maker?logo=assembly&labelColor=white&color=blue)
+[![KeblaOS Badge](https://img.shields.io/badge/version-1.0-maker?labelColor=red&color=blue)](https://github.com/baponkar/KeblaOS/releases)
+<img src="image/KeblaOS.png" alt="Float Left" alt="My Image" width="20" height="20">
 
-![Repo Age](https://img.shields.io/endpoint?url=https://baponkar.github.io/KeblaOS/time_elapsed.json)
-![Repo Suggestions](https://github.com/baponkar/KeblaOS/actions/workflows/suggestion.yml/badge.svg)
-![GitHub Repo stars](https://img.shields.io/github/stars/baponkar/KeblaOS?style=social)
+# KeblaOS
 
-------------------------------------------------------
-# Kebla OS
+|Subject       | Value         |
+|--------------|---------------|
+|🏷️Version     | `1.0`        |
+|🖥️Architecture| `x86`        |
+|🔢Bit         | `64`         |
+|📅Start Date  | `09.06.2025` |
+|🔄Last Update | `06.09.2025` |
 
-## Version: 0.17.4
-![KeblaOS_icon.bmp](./image/KeblaOS.png)
 
-### Project Timeline
-- **Start Date**: 9th June, 2024
-- **Last Update**: 17th July, 2025
+
+![screenshot](screenshot/screenshot.png)
+
+## Description:
+This is a x86 architecture based 64 bit Operating System.
+
+
+
+### KeblaOS Features
+
+| Feature                    | Sub-Features / Notes                                                                  |
+|----------------------------|--------------------------------------------------------------------------------------|
+| ✅ 🚀**Limine Bootloader**   | Getting Various Boot Information, Getting Firmware Information                       |
+| ✅ **ACPI**                | RSDT, FADT, MADT, MCFG, HPET                                                         |
+| ✅ **CPU Info & Control**  | CPUID, SMP                                                                           |
+| ✅ **GDT**                 | Multi-core support                                                                   |
+| ✅ **TSS**                 | Multi-core support                                                                   |
+| ✅ ⚡**Interrupts**          | APIC (Multi-core), PIC, ISR, IRQ                                                     |
+| ✅ 🧠**Memory Management**   | Memory Info Parsing, 4-Level Paging, PMM, Kmalloc, VMM, KHEAP                        |
+| ✅ ⏱️**Timers**              | TSC, RTC, PIT, APIC, ⚠️ HPET (Not Using)                                            |
+| ✅ **Multitasking**        | Process, Thread, Scheduler, CPU State Handling, Multi-core Multitasking              |
+| ✅ **Kernel Shell (kshell)** | Calculator, Steam Locomotive Animation                                             |
+| ✅ 📂**Filesystem**          | FAT32 (via FatFs, ⚠️ Issues in implementation), VFS Layer                            |
+| ✅ **System Calls**        | Interrupt-based (Using), MSR-based (Not Using)                                       |
+| ✅ **User Mode Switching** | ELF Loader, Binary Loader, minimal libc,stemcall                                     |
+| ✅ 🔌**Drivers**             | 🎴PCI, AHCI SATA Disk, VGA Framebuffer, I/O Ports, Serial, Keyboard, Speaker, Mouse    |
+| ✅ 📦**External Libraries**  | [FatFs-R0.15b](https://elm-chan.org/fsw/ff/), [Limine-9.2.3](https://codeberg.org/Limine/Limine), [tiny-regex-c](https://github.com/kokke/tiny-regex-c) |
+
 
 ---
 
-### ✅ Current Progress
-- **Bootloader**: Limine Bootloader-9.2.3
-- **Display**: VGA Framebuffer Initialization
-- **ACPI Components**:
-  - RSDP, RSDT/XSDT, FADT, MADT, AHCI, PCI, CMOS, RTC
-- **System Initialization**:
-  - GDT (Multi-Core Support)
-  - IDT (Multi-Core Support): PIC, APIC
-- **Timers**:
-  - PIT, HPET, RTC, APIC, TSC
-- **Drivers**:
-  - VGA, VGA Window Manager, Keyboard, Ports, Speaker, Mouse Driver
-- **Scheduler and Process Management**
-- **Memory Management**:
-  - Kmalloc, PMM, 4-Level 4KB Paging, VMM, KHEAP (Dynamic Kernel Heap Allocation), umalloc, UHEAP
-- **Standard C Library**:
-  - Kernel Side: assert.h, ctype.h, errno.h, limit.h, math.h, stdio.h, stdlib.h, string.h, time.h .
-
-   - User Side: Kernel Side: assert.h, ctype.h, errno.h, limit.h, math.h, stdio.h, stdlib.h, string.h, time.h .
-
-- **Jumping into Usermode**
-
-- **Interrupt Based System Call**
-  - Currently I have interrupt based system call.
-
-- **FAT32 Library FatFs**
-
-- **Building, Loading and Running ELF file by Limine**
-
-
-
-
-
-![Latest Screenshot](./screenshot/keblaos_screenshot_2.png)
-
-------------------------------------------------------
-
-## 🌟 Introducing KeblaOS
-
-KeblaOS is an innovative and cutting-edge operating system, crafted entirely in C. It celebrates the rich technological heritage of India while pushing the boundaries of modern computing.
-
-### 🎯 Why KeblaOS?
-- **Made in India**: Empowering local talent and innovation.
-- **C Language Power**: Efficient and performance-driven.
-- **Community Collaboration**: Open-source and community-driven.
-- **Flexible and Secure**: Customization with a focus on stability and security.
-
-### 🚀 Features and Goals
-- **Simplicity & Efficiency**: Lightweight architecture.
-- **Customization**: Flexible configuration.
-- **Robust Security**: Stable and secure environment.
-- **Cultural Integration**: Reflecting Indian technological aspirations.
-
-### 🤝 Get Involved
-Join us in building a revolutionary OS. Whether you're a seasoned developer or an enthusiast, your contribution can make a significant impact.
-
-### 📍 How to Contribute
-- **Code Contributions**: Help build core components.
-- **Feedback & Ideas**: Participate in brainstorming sessions.
-- **Promotion**: Spread the word about KeblaOS.
-
-### 📚 Resources
-- [Latest Version Info](./version_info.md)
-- [Tutorials and Notes](./notes/note-main.md)
-- [References](./notes/Reference.md)
-- [Releases](https://github.com/baponkar/KeblaOS/releases/)
+#### Used Tools Version :
+- [x] [Limine Bootloader](https://github.com/limine-bootloader/limine) - 9.2.3
+- [x] [x86_64-elf-gcc](https://wiki.osdev.org/GCC_Cross-Compiler) (GCC) 14.2.0
+- [x] GNU ld (GNU Binutils) 2.43
+- [x] GNU Make 4.3
+- [x] bison (GNU Bison) 3.8.2
+- [x] flex 2.6.4
+- [x] xorriso 1.5.6
+- [x] NASM version 2.16.01
+- [x] GNU gdb (Ubuntu 15.0.50.20240403-0ubuntu1) 15.0.50.20240403-git
+- [x] [FatFs](https://elm-chan.org/fsw/ff/00index_e.html) R0.15b Library
+- [x] [QEMU emulator](https://www.qemu.org/) 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.9)
+- [x] [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) 2.5.10.0
+- [x] mkfs util-linux 2.39.3
+- [x] parted (GNU parted) 3.6
+- [x] sync (GNU coreutils) 9.4
+- [x] mount from util-linux 2.39.3 (libmount 2.39.3: selinux, smack, btrfs, verity, namespaces, idmapping, statx, assert, debug)
 
 ---
 
-© 2024 KeblaOS Project. All rights reserved.
+
+`src` directory is containing source code. `build` directory is containing generated object file, binary file and iso file. `iso_root` is required for building `image.iso` file.
+
+To build and run by QEmu iso `make -B`.
+To get Make help by `make help`
+
+Downloaded from [here](https://github.com/baponkar/KeblaOS).
+
+
+---
+
+© 2025 baponkar. All rights reserved except externel library used.
 
 

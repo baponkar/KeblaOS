@@ -21,6 +21,7 @@ typedef struct {
     void* context;              // Driver-specific context (e.g., AHCI port, AHCI abar info)
 } Disk;
 
+int get_total_disks();
 
 bool kebla_disk_init();
 

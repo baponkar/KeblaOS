@@ -142,7 +142,7 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 	mkdir -p $(ISO_DIR)/boot
 
 	# Copying files to ISO directory and creating directories 
-	cp $(KERNEL_DIR)/image/boot_loader_wallpaper.bmp  $(ISO_DIR)/boot/boot_loader_wallpaper.bmp
+	cp image/boot_loader_wallpaper.bmp  $(ISO_DIR)/boot/boot_loader_wallpaper.bmp
 
 	cp -v $(BUILD_DIR)/kernel.bin $(ISO_DIR)/boot/
 
@@ -292,6 +292,74 @@ build_fat_disk:
 # qemu-img convert -f raw Disk/disk.img -O vmdk Disk/disk.vmdk
 
 
+build_usb_disk:
+	# Ensure disk directory exists
+	mkdir -p $(DISK_DIR)
+
+	# Clean previous mounts
+	sudo umount $(DISK_DIR)/mnt || true
+	sudo losetup -d /dev/loop1 || true
+
+	# 1. Create USB image (512 MiB for example)
+	dd if=/dev/zero of=$(DISK_DIR)/usb.img bs=1M count=512
+	@echo "Created usb.img (512 MiB)"
+
+
+	# 2. Partition as FAT32
+	parted $(DISK_DIR)/usb.img --script -- mklabel msdos
+	parted $(DISK_DIR)/usb.img --script -- mkpart primary fat32 1MiB 100%
+	parted $(DISK_DIR)/usb.img --script -- set 1 boot on
+
+
+	# 3. Setup loop device
+	sudo losetup -Pf $(DISK_DIR)/usb.img
+	sleep 1
+
+	# 4. Format partition
+	sudo mkfs.vfat -F 32 /dev/loop1p1
+	@echo "Formatted usb.img as FAT32"
+
+	# 5. Mount partition
+	mkdir -p $(DISK_DIR)/mnt
+	sudo mount /dev/loop1p1 $(DISK_DIR)/mnt
+
+	# 6. Copy kernel + Limine files
+	sudo mkdir -p $(DISK_DIR)/mnt/boot/limine
+	sudo mkdir -p $(DISK_DIR)/mnt/EFI/BOOT
+	sudo cp -v $(BUILD_DIR)/kernel.bin $(DISK_DIR)/mnt/boot/
+	sudo cp -v $(MODULE_DIR)/build/$(USER_PROGRAM_NAME).elf $(DISK_DIR)/mnt/boot/
+	sudo cp -v $(LIMINE_DIR)/limine.conf \
+		$(LIMINE_DIR)/limine-bios.sys \
+		$(LIMINE_DIR)/limine-bios-cd.bin \
+		$(LIMINE_DIR)/limine-uefi-cd.bin \
+		$(DISK_DIR)/mnt/boot/limine/
+	sudo cp -v $(LIMINE_DIR)/BOOTX64.EFI $(DISK_DIR)/mnt/EFI/BOOT/
+	sudo cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(DISK_DIR)/mnt/EFI/BOOT/
+
+	# 7. Sync and unmount
+	sudo sync
+	sudo umount $(DISK_DIR)/mnt
+
+	# 8. Install Limine to raw usb.img
+	sudo $(LIMINE_DIR)/limine bios-install $(DISK_DIR)/usb.img
+
+	# 9. Detach loop
+	sudo losetup -d /dev/loop1
+	@echo "USB image ready: $(DISK_DIR)/usb.img"
+
+
+usb_run:
+	qemu-system-x86_64 \
+		-m 4096 \
+		-smp 4 \
+		-drive file=$(DISK_DIR)/usb.img,format=raw \
+		-drive file=$(DISK_DIR)/disk.img,format=raw \
+		-serial stdio \
+		-vga std \
+		-rtc base=utc,clock=host \
+		-boot d
+
+
 
 # Running by qemu
 uefi_run:
@@ -325,6 +393,9 @@ run:
 		-vga std \
 		-rtc base=utc,clock=host
 # We can add -noo--rebboot to prevent rebooting after kernel panic
+
+
+
 
 disk_run:
 	# Running from Disk Image
@@ -384,7 +455,7 @@ soft_clean:
 	rm -rf $(BUILD_DIR)/kernel
 
 
-all: clean kernel build_image run
+all: clean kernel build_image build_user_programe run
 build: kernel build_image
 default: all
 
@@ -421,8 +492,7 @@ $(BUILD_INFO_FILE):
 
 
 build_user_programe:
-# $(NASM) $(NASM_FLAG) $(MODULE_DIR)/user_program.asm -o $(MODULE_DIR)/user_program.o
-	ld -T $(MODULE_DIR)/user_linker_x86_64.ld -o $(MODULE_DIR)/(USER_PROGRAM_NAME).elf $(MODULE_DIR)/$(USER_PROGRAM_NAME).o
+	make -C $(MODULE_DIR)/
 
 	@echo "Successfully build user_program.elf" 
 

@@ -19,6 +19,7 @@ char *get_serial_log() {
 
 
 
+
 void serial_init() {
     outb(0x3F8 + 1, 0x00); // Disable interrupts
     outb(0x3F8 + 3, 0x80); // Enable DLAB (set baud rate divisor)

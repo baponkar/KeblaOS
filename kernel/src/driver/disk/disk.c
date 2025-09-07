@@ -16,14 +16,25 @@ with different types of disk drives without needing to understand the specifics 
 
 #include "disk.h"
 
-extern AHCI_Context *ahci_disks;                       // Defined in AHCI
-extern int ahci_disks_count;                           // Defined in AHCI
+extern pci_device_t* mass_storage_controllers;     // Array to store detected mass storage devices
+extern size_t mass_storage_count;           // Toal available Mass Storage Controllers (Defined in pci.c)
+
+
+extern AHCI_Context *ahci_disks;            // Defined in AHCI
+extern int ahci_disks_count;                // Defined in AHCI
 
 Disk *disks;
 int disk_count;
 
 
 Disk *current_disk = NULL;
+
+
+int get_total_disks(){
+    return (int) disk_count;
+}
+
+
 
 bool kebla_disk_status(int disk_no){
     
@@ -56,46 +67,58 @@ bool kebla_disk_status(int disk_no){
 
 bool kebla_disk_init(int disk_no){
 
-    if(!init_ahci(disk_no)){
-        printf("AHCI initialized Failed!\n");
-        return false;
-    }
-
-
     if(!disks){
-        disks = (Disk *)kheap_alloc(sizeof(Disk)*ahci_disks_count, ALLOCATE_DATA);
+        disks = (Disk *)kheap_alloc(sizeof(Disk) * mass_storage_count, ALLOCATE_DATA);
         if(!disks){
             printf("disk allocation failed!\n");
             return false;
         }
     }
 
-    if(disk_no > disk_count){
-        printf("Invalid Disk No\n");
+    if(disk_no > mass_storage_count){
+        printf("Invalid disk_no: %d\n", disk_no);
+        return false;
     }
 
-    // For AHCI Disks
-    if(disk_no <= ahci_disks_count){
+    pci_device_t device = mass_storage_controllers[disk_no];
+    if(!device.base_address_registers){
+        printf("mass_storage_controllers[disk_no] = NULL\n");
+        return false;
+    }
 
-        AHCI_Context *ahci_disk = (AHCI_Context *)&ahci_disks[disk_no];
-        if(!ahci_disk){
-            printf("ahci_disk is NULL\n");
-            return false;
+    if(device.class_code == PCI_CLASS_MASS_STORAGE_CONTROLLER){
+
+        if(device.subclass_code == PCI_SUBCLASS_SERIAL_ATA){
+            if(!init_ahci(disk_no)){
+                printf("AHCI initialized Failed!\n");
+                return false;
+            }
+
+            if(disk_no <= ahci_disks_count){
+                AHCI_Context *ahci_disk = (AHCI_Context *)&ahci_disks[disk_no];
+                if(!ahci_disk){
+                    printf("ahci_disk is NULL\n");
+                    return false;
+                }
+
+                Disk *disk = &disks[disk_no];
+                disk->type = DISK_TYPE_AHCI;
+                disk->bytes_per_sector = get_bytes_per_sector(ahci_disk->port);
+                disk->total_sectors = get_total_sectors(ahci_disk->port);
+                disk->context = (void *)ahci_disk;
+
+                disk_count++;
+            }else{
+                printf("Invalid AHCI Disk No\n");
+                return false;
+            }
+        }else if(device.subclass_code == PCI_SUBCLASS_NON_VOLATILE_MEM){
+            disk_count++;
+        }else if(device.subclass_code == PCI_SUBCLASS_IDE){
+            disk_count++;
         }
-
-        Disk *disk = &disks[disk_no];
-        disk->type = DISK_TYPE_AHCI;
-        disk->bytes_per_sector = get_bytes_per_sector(ahci_disk->port);
-        disk->total_sectors = get_total_sectors(ahci_disk->port);
-        disk->context = (void *)ahci_disk;
-
-        disk_count++;
-    }else{
-        printf("Invalid AHCI Disk No\n");
     }
 
-    // For other type disks
-    
     return true;
 }
     

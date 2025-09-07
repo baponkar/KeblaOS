@@ -1,3 +1,4 @@
+
 /*
 Kernel.c
 Build Date  : 16-12-2024
@@ -8,6 +9,7 @@ Reference   : https://wiki.osdev.org/Limine
               https://wiki.osdev.org/Limine_Bare_Bones
               https://wiki.osdev.org/SSE
 */
+
 
 #include "kmain.h"
 
@@ -46,26 +48,14 @@ void kmain(){
     // print_current_time();
 
 
-    // test_ahci(0);
-    // if(!kebla_disk_init(0)){
-    //     printf("Disk initialization is failed!\n");
-    // }
-    // disk_test(0);
-    // inspect_fat32(0);
-    // fatfs_test(0);
+    for(int i=0; i<mass_storage_count; i++){
+        if(!kebla_disk_init(i)){
+            printf("Disk - %d initialization is failed!\n", i);
+        }
+    }
+    printf("Total available Disks: %d\n", get_total_disks());
     
-    // vfs_init("fat");
-    // if(vfs_mkfs(2, "0:") != 0){
-    //     printf("mkfs failed!\n");
-    // }
-    // if(vfs_mount(vfs_get_root(), "0:") != 0){
-    //     printf("[Kmain] vfs mount failed!\n");
-    // }
-    // vfs_unlink("/log.txt");             // Deleting old log.txt file
-    // vfs_write_log(get_serial_log());    // Create and Writing log file /log.txt
-    // vfs_test();
 
-    // vfs_print_tree();
 
     // int_syscall_test();
 
@@ -76,7 +66,7 @@ void kmain(){
     // Load and parse kernel modules by using limine bootloader
     // get_kernel_modules_info();
     // print_kernel_modules_info();
-    // load_user_elf_and_jump();
+    load_user_elf_and_jump();
 
 
     halt_kernel();

@@ -146,7 +146,7 @@ pci_device_t pci_device_detect(uint8_t bus, uint8_t device, uint8_t function) {
     // printf("     Device ID: %x, Vendor ID: %x Class: %x, Subclass: %x, Prog IF: %x, Revision: %d\n",
     //     pci_device.device_id, pci_device.vendor_id, class, subclass, prog_if, pci_device.revision_id);
 
-    // print_device_info((pci_device_t *) &pci_device);
+    print_device_info((pci_device_t *) &pci_device);
 
     return pci_device;
 }
@@ -515,10 +515,12 @@ void pci_scan() {
         switch (found_device.class_code) {          // 0x1
             case PCI_CLASS_MASS_STORAGE_CONTROLLER:
                 mass_storage_controllers[mass_storage_count++] = found_device; // Store the detected mass storage device
+                 mass_storage_count++;
                 break;
 
             case PCI_CLASS_NETWORK_CONTROLLER:  // 0x2
                 network_controllers[network_controller_count++] = found_device; // Store the detected network controller
+                network_controller_count++;
                 break;
             
             case PCI_CLASS_DISPLAY_CONTROLLER:  // 0x3
@@ -535,6 +537,7 @@ void pci_scan() {
 
             case PCI_CLASS_WIRELESS_CONTROLLER: // 0xD
                 wireless_controllers[wireless_controller_count++] = found_device; // Store the detected wireless controller
+                wireless_controller_count++;
                 break;
 
             default:

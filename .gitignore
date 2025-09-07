@@ -10,6 +10,7 @@ qemu.log
 initrd/*
 
 disk/disk.img
+disk/usb.img
 
 lvgl-9.2.2/*
 **/*.o
