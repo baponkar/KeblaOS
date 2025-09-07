@@ -50,17 +50,17 @@ This is a x86 architecture based 64 bit Operating System.
 - [x] [Limine Bootloader](https://github.com/limine-bootloader/limine) - 9.2.3
 - [x] [x86_64-elf-gcc](https://wiki.osdev.org/GCC_Cross-Compiler) (GCC) 14.2.0
 - [x] GNU ld (GNU Binutils) 2.43
-- [x] GNU Make 4.3
-- [x] bison (GNU Bison) 3.8.2
+- [x] [GNU Make](https://www.gnu.org/software/make/manual/make.html) 4.3
+- [x] [bison](https://www.gnu.org/software/bison/manual/) (GNU Bison) 3.8.2
 - [x] flex 2.6.4
-- [x] xorriso 1.5.6
+- [x] [xorriso](https://www.gnu.org/software/xorriso/) 1.5.6
 - [x] NASM version 2.16.01
-- [x] GNU gdb (Ubuntu 15.0.50.20240403-0ubuntu1) 15.0.50.20240403-git
+- [x] [GNU gdb](https://www.sourceware.org/gdb/documentation/) (Ubuntu 15.0.50.20240403-0ubuntu1) 15.0.50.20240403-git
 - [x] [FatFs](https://elm-chan.org/fsw/ff/00index_e.html) R0.15b Library
 - [x] [QEMU emulator](https://www.qemu.org/) 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.9)
 - [x] [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) 2.5.10.0
-- [x] mkfs util-linux 2.39.3
-- [x] parted (GNU parted) 3.6
+- [x] [mkfs](https://www.man7.org/linux/man-pages/man8/mkfs.8.html) util-linux 2.39.3
+- [x] [parted](https://www.gnu.org/software/parted/manual/parted.html) (GNU parted) 3.6
 - [x] sync (GNU coreutils) 9.4
 - [x] mount from util-linux 2.39.3 (libmount 2.39.3: selinux, smack, btrfs, verity, namespaces, idmapping, statx, assert, debug)
 
