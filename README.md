@@ -1,5 +1,3 @@
-# KeblaOS
-
 [![KeblaOS Badge](https://img.shields.io/badge/Kebla-OS-maker?labelColor=red&color=blue)](https://gitlab.com/baponkar/kebla-os)
 [![KeblaOS Badge](https://img.shields.io/badge/version-1.0-maker?labelColor=red&color=blue)](https://github.com/baponkar/KeblaOS/releases)
 <img src="image/KeblaOS.png" alt="Float Left" alt="My Image" width="20" height="20">
@@ -14,7 +12,7 @@
 |📅Start Date  | `09.06.2025` |
 |🔄Last Update | `06.09.2025` |
 
-
+---
 
 ![screenshot](screenshot/screenshot.png)
 
@@ -72,7 +70,7 @@ This is a x86 architecture based 64 bit Operating System.
 To build and run by QEmu iso `make -B`.
 To get Make help by `make help`
 
-Downloaded from [here](https://github.com/baponkar/KeblaOS).
+Downloaded from [here](https://github.com/baponkar/KeblaOS/releases).
 
 
 ---
