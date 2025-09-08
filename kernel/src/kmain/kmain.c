@@ -55,6 +55,7 @@ void kmain(){
     }
     printf("Total available Disks: %d\n", get_total_disks());
     
+    lvgl_test();
 
     // int_syscall_test();
 
@@ -65,7 +66,7 @@ void kmain(){
     // Load and parse kernel modules by using limine bootloader
     // get_kernel_modules_info();
     // print_kernel_modules_info();
-    load_user_elf_and_jump();
+    // load_user_elf_and_jump();
 
     halt_kernel();
 }

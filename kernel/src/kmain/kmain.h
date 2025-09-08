@@ -123,6 +123,10 @@
 #include "../../../ext_lib/tiny-regex-c/re.h"
 #include "../../../ext_lib/tiny-regex-c/re_test.h"
 
+// lvgl
+#include "../../../ext_lib/lvgl-9.3.0/lvgl.h"
+#include "../../../ext_lib/lvgl-9.3.0/lvgl_fb.h"
+
 // =======================================================================================
 
 #define OS_NAME "KeblaOS"

@@ -51,6 +51,9 @@ GCC_FLAG = -g -Wall \
 	-msse \
 	-msse2
 
+CFLAGS += -Ikernel/src/lib -Iext_lib/lvgl-9.3.0 -Iext_lib/lvgl-9.3.0/src
+
+
 # Assembler
 NASM = nasm
 NASM_FLAG = -g -Wall -f elf64
@@ -75,7 +78,7 @@ KERNEL_OBJ_FILES := $(patsubst $(KERNEL_DIR)/%.c, $(BUILD_DIR)/kernel/%.o, $(KER
 # Rule to compile each .c file to .o
 $(BUILD_DIR)/$(KERNEL_DIR)/%.o: $(KERNEL_DIR)/%.c
 	@mkdir -p $(dir $@)
-	$(GCC) $(GCC_FLAG) -c $< -o $@
+	$(GCC) $(GCC_FLAG) $(CFLAGS) -c $< -o $@
 
 
 
@@ -104,7 +107,7 @@ EXT_OBJ_FILES := $(patsubst $(EXT_LIB_DIR)/%.c, $(BUILD_DIR)/$(EXT_LIB_DIR)/%.o,
 # Rule to compile each .c to .o
 $(BUILD_DIR)/$(EXT_LIB_DIR)/%.o: $(EXT_LIB_DIR)/%.c
 	@mkdir -p $(dir $@)
-	$(GCC) $(GCC_FLAG) -c $< -o $@
+	$(GCC) $(GCC_FLAG) $(CFLAGS) -c $< -o $@
 
 
 
