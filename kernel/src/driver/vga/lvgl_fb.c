@@ -1,9 +1,9 @@
 
-#include "../../kernel/src/lib/time.h"
-#include "../../kernel/src/memory/kheap.h"
+#include "../../lib/time.h"
+#include "../../memory/kheap.h"
 
-#include "lvgl.h"
-#include "src/display/lv_display.h"
+#include "../../../../ext_lib/lvgl-9.3.0/lvgl.h"
+#include "../../../../ext_lib/lvgl-9.3.0/src/display/lv_display.h"
 
 #include "lvgl_fb.h"
 

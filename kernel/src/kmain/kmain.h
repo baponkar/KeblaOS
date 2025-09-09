@@ -125,7 +125,7 @@
 
 // lvgl
 #include "../../../ext_lib/lvgl-9.3.0/lvgl.h"
-#include "../../../ext_lib/lvgl-9.3.0/lvgl_fb.h"
+#include "../driver/vga/lvgl_fb.h"
 
 // =======================================================================================
 

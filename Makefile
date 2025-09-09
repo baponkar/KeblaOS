@@ -6,30 +6,30 @@
 # Author : Bapon Kar
 # Repository url : https://github.com/baponkar/KeblaOS
 
-START_TIME := $(shell date +%s)
 
+
+
+
+START_TIME := $(shell date +%s)
 OS_NAME = KeblaOS
 OS_VERSION = 1.1
-
 HOST_HOME = /home/bapon
 
-KERNEL_DIR = kernel
-
-EXT_LIB_DIR = ext_lib
-LIMINE_DIR = $(EXT_LIB_DIR)/limine-9.2.3
-FATFS_DIR = $(EXT_LIB_DIR)/FatFs-R0.15b
+BUILD_DIR := build
+BUILD_INFO_FILE = $(BUILD_DIR)/build_info.txt
 
 ISO_DIR = build/iso_root
-BUILD_DIR = build
-DEBUG_DIR = debug
-CONFIG_DIR = config
+
+DEBUG_DIR = ./debug
+DEBUG_FILE = $(DEBUG_DIR)/qemu_log.txt
+
 DISK_DIR = disk
+MAIN_DISK = $(DISK_DIR)/main__disk.img
+USB_DISK = $(DISK_DIR)/usb_disk.img
 
-MODULE_DIR = module
+USER_MODULE_DIR = module
+USER_PROGRAM_FILE = user_main
 
-BUILD_INFO_FILE = $(BUILD_DIR)/build_info.txt
-USER_PROGRAM_NAME = user_main
-DEBUG_LOG_FILE = $(DEBUG_DIR)/qemu.log
 
 
 # GCC Compiler
@@ -50,87 +50,167 @@ GCC_FLAG = -g -Wall \
 	-mcmodel=kernel \
 	-msse \
 	-msse2
-
-CFLAGS += -Ikernel/src/lib -Iext_lib/lvgl-9.3.0 -Iext_lib/lvgl-9.3.0/src
+GCC_STDLIB_FLAG = -Ikernel/src/lib -Iext_lib/lvgl-9.3.0 -Iext_lib/lvgl-9.3.0/src
 
 
 # Assembler
 NASM = nasm
 NASM_FLAG = -g -Wall -f elf64
 
-OBJDUMP = $(HOST_HOME)/opt/cross/bin/x86_64-elf-objdump
 
 # Linker
 LD = $(HOST_HOME)/opt/cross/bin/x86_64-elf-ld
 LD_FLAG = -m elf_x86_64 -nostdlib -static -z max-page-size=0x1000
 
 
+OBJDUMP = $(HOST_HOME)/opt/cross/bin/x86_64-elf-objdump
 
 
 
+# Building externel library
+EXT_LIB_DIR = ext_lib
 
-# Find all .c files inside of kernel directory recursively
-KERNEL_SRC_FILES := $(shell find $(KERNEL_DIR) -name '*.c')
 
-# Create corresponding .c files into .o file paths inside $(BUILD_DIR)
-KERNEL_OBJ_FILES := $(patsubst $(KERNEL_DIR)/%.c, $(BUILD_DIR)/kernel/%.o, $(KERNEL_SRC_FILES))
+# Creating build directory
+$(BUILD_DIR):
+	mkdir -p $@
 
-# Rule to compile each .c file to .o
-$(BUILD_DIR)/$(KERNEL_DIR)/%.o: $(KERNEL_DIR)/%.c
+
+
+# 1. FatFs Library
+FATFS_BUILD_DIR = build/ext_lib/FatFs
+FATFS_SRC_DIR   = ext_lib/FatFs-R0.15b
+FATFS_SRC_FILES := $(shell find ext_lib/FatFs-R0.15b -name '*.c')
+FATFS_OBJ_FILES := $(patsubst $(FATFS_SRC_DIR)/%.c, $(FATFS_BUILD_DIR)/%.o, $(FATFS_SRC_FILES))
+FATFS_LIB_FILE  := build/libfatfs.a
+
+build/ext_lib/FatFs:
+	mkdir -p $@
+
+build/ext_lib/FatFs/%.o: ext_lib/FatFs-R0.15b/%.c
 	@mkdir -p $(dir $@)
-	$(GCC) $(GCC_FLAG) $(CFLAGS) -c $< -o $@
+	$(GCC) $(GCC_FLAG) $(GCC_STDLIB_FLAG) -c $< -o $@
+
+
+build/libfatfs.a: $(FATFS_OBJ_FILES)
+	ar rcs $@ $^
+
+fatfs: build/libfatfs.a
+	@echo "FatFs Build completed."
 
 
 
 
+# 2. LvGL Library
+LVGL_BUILD_DIR = build/ext_lib/lvgl
+LVGL_SRC_DIR   = ext_lib/lvgl-9.3.0
+LVGL_SRC_FILES := $(shell find ext_lib/lvgl-9.3.0 -name '*.c')
+LVGL_OBJ_FILES := $(patsubst $(LVGL_SRC_DIR)/%.c, $(LVGL_BUILD_DIR)/%.o, $(LVGL_SRC_FILES))
+LVGL_LIB_FILE  := build/liblvgl.a
 
-# Find all .asm files inside of src directory recursively
-KERNEL_SRC_ASM_FILES := $(shell find $(KERNEL_DIR) -name '*.asm')
+build/ext_lib/lvgl:
+	mkdir -p $@
 
-# Create corresponding .asm files into .o file paths inside $(BUILD_DIR)
-KERNEL_OBJ_ASM_FILES := $(patsubst $(KERNEL_DIR)%.asm, $(BUILD_DIR)/kernel/%.o, $(KERNEL_SRC_ASM_FILES))
+build/ext_lib/lvgl/%.o: ext_lib/lvgl-9.3.0/%.c
+	@mkdir -p $(dir $@)
+	$(GCC) $(GCC_FLAG) $(GCC_STDLIB_FLAG) -c $< -o $@
 
-# Rule to compile each .asm file to .o
-$(BUILD_DIR)/kernel/%.o: $(KERNEL_DIR)/%.asm
+
+build/liblvgl.a: $(LVGL_OBJ_FILES)
+	ar rcs $@ $^
+
+lvgl: build/liblvgl.a
+	@echo "LVGL Build completed."
+
+
+# 3. limine
+# Nothing to build
+LIMINE_BUILD_DIR := build/ext_lib/limine-9.2.3
+LIMINE_SRC_DIR := ext_lib/limine-9.2.3
+
+
+# 4. tiny-regex-c
+TINY_REGEX_BUILD_DIR = build/ext_lib/tiny-regex-c
+TINY_REGEX_SRC_DIR   = ext_lib/tiny-regex-c
+TINY_REGEX_SRC_FILES := $(shell find ext_lib/tiny-regex-c -name '*.c')
+TINY_REGEX_OBJ_FILES := $(patsubst $(TINY_REGEX_SRC_DIR)/%.c, $(TINY_REGEX_BUILD_DIR)/%.o, $(TINY_REGEX_SRC_FILES))
+TINY_REGEX_LIB_FILE  := build/lib-tiny-regex.a
+
+build/ext_lib/tiny-regex-c:
+	mkdir -p $@
+
+build/tiny-regex-c/%.o: ext_lib/tiny-regex-c/%.c
+	@mkdir -p $(dir $@)
+	$(GCC) $(GCC_FLAG) $(GCC_STDLIB_FLAG) -c $< -o $@
+
+
+build/lib-tiny-regex.a: $(LVGL_OBJ_FILES)
+	ar rcs $@ $^
+
+tiny-regex: build/lib-tiny-regex.a
+	@echo "Tiny-Regex-C Build completed."
+
+
+
+
+# 5. Kernel build
+
+KERNEL_DIR = kernel
+
+KERNEL_BUILD_DIR = build/kernel
+KERNEL_SRC_DIR   = kernel
+KERNEL_C_SRC_FILES := $(shell find kernel -name '*.c')
+KERNEL_C_OBJ_FILES := $(patsubst $(KERNEL_SRC_DIR)/%.c, $(KERNEL_BUILD_DIR)/%.o, $(KERNEL_C_SRC_FILES))
+KERNEL_LIB_FILE  := build/libkernel.a
+
+build/kernel:
+	mkdir -p $@
+
+build/kernel/%.o: kernel/%.c
+	@mkdir -p $(dir $@)
+	$(GCC) $(GCC_FLAG) $(GCC_STDLIB_FLAG) -c $< -o $@
+
+KERNEL_ASM_SRC_FILES := $(shell find kernel -name '*.asm')
+KERNEL_ASM_OBJ_FILES := $(patsubst $(KERNEL_SRC_DIR)/%.asm, $(KERNEL_BUILD_DIR)/%.o, $(KERNEL_ASM_SRC_FILES))
+
+
+build/kernel/%.o: kernel/%.asm
 	@mkdir -p $(dir $@)
 	$(NASM) $(NASM_FLAG) $< -o $@
 
+KERNEL_OBJ_FILES := $(KERNEL_C_OBJ_FILES) $(KERNEL_ASM_OBJ_FILES)
 
+build/libkernel.a: $(KERNEL_OBJ_FILES)
+	ar rcs $@ $^
 
+kernel: build/libkernel.a
+	@echo "Kernel C Build completed."
 
-# External Library source files
-EXT_SRC_FILES := $(shell find $(EXT_LIB_DIR) -name '*.c')
+# ==================================================================================================
 
-# Map .c → .o inside build/
-EXT_OBJ_FILES := $(patsubst $(EXT_LIB_DIR)/%.c, $(BUILD_DIR)/$(EXT_LIB_DIR)/%.o, $(EXT_SRC_FILES))
-
-# Rule to compile each .c to .o
-$(BUILD_DIR)/$(EXT_LIB_DIR)/%.o: $(EXT_LIB_DIR)/%.c
-	@mkdir -p $(dir $@)
-	$(GCC) $(GCC_FLAG) $(CFLAGS) -c $< -o $@
-
-
-
-
-
-# Building Externel Library
-
-# Compile rule for all .o files found from kernel src directory
-kernel: $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES) $(EXT_OBJ_FILES)
 
 # Rule to link all object files into a single kernel binary
-$(BUILD_DIR)/kernel.bin: $(KERNEL_OBJ_FILES) $(KERNEL_OBJ_ASM_FILES) $(EXT_OBJ_FILES)
+$(BUILD_DIR)/kernel.bin: $(KERNEL_LIB_FILE) $(FATFS_LIB_FILE) $(LVGL_LIB_FILE) $(TINY_REGEX_LIB_FILE)
 	$(LD) $(LD_FLAG) -T kernel_linker_x86_64.ld -o $@ $^
 
 
+linking: $(BUILD_DIR)/kernel.bin
+	@echo "Successfully all lib files linked."
 
+# ====================================================================================================
 
+# Create a file with the current timestamp and custom message
+$(BUILD_INFO_FILE):
+	@mkdir -p $(BUILD_DIR)
+	@echo "Build Information for $(OS_NAME) v$(OS_VERSION)" > $@
+	@echo "Build Time: $$(date)" >> $@
+	@echo "Build started by: $$(whoami)@$$(hostname)" >> $@
+	@echo "---------------------------------------" >> $@
+	@echo "Build Project by: make build" >> $@
+	@echo "Build Project and then Run iso by: make all" >> $@
+	@echo "Get make help by: make help" >> $@
 
-
-#$(DEBUG_DIR)/objdump.txt: $(BUILD_DIR)/kernel.bin
-#	$(OBJDUMP) -DxS $< >$@
-
-build_image: $(BUILD_INFO_FILE) $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso 
+# ====================================================================================================
 
 # Creating ISO image
 $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBUG_DIR)/objdump.txt
@@ -149,17 +229,17 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 
 	cp -v $(BUILD_DIR)/kernel.bin $(ISO_DIR)/boot/
 
-	cp -v $(LIMINE_DIR)/limine.conf $(ISO_DIR)/boot/
+	cp -v $(LIMINE_SRC_DIR)/limine.conf $(ISO_DIR)/boot/
 
 	mkdir -p $(ISO_DIR)/boot/limine
-	cp -v $(LIMINE_DIR)/limine-bios.sys $(LIMINE_DIR)/limine-bios-cd.bin $(LIMINE_DIR)/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
+	cp -v $(LIMINE_SRC_DIR)/limine-bios.sys $(LIMINE_SRC_DIR)/limine-bios-cd.bin $(LIMINE_SRC_DIR)/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
 	
 	mkdir -p $(ISO_DIR)/EFI/BOOT
-	cp -v $(LIMINE_DIR)/BOOTX64.EFI $(ISO_DIR)/EFI/BOOT/
-	cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
+	cp -v $(LIMINE_SRC_DIR)/BOOTX64.EFI $(ISO_DIR)/EFI/BOOT/
+	cp -v $(LIMINE_SRC_DIR)/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
 
 	# Copy user_programe.elf file into boot 
-	cp -v $(MODULE_DIR)/build/$(USER_PROGRAM_NAME).elf $(ISO_DIR)/boot/$(USER_PROGRAM_NAME).elf
+	cp -v $(USER_MODULE_DIR)/build/$(USER_PROGRAM_FILE).elf $(ISO_DIR)/boot/$(USER_PROGRAM_FILE).elf
 
 	# Creating KeblaOS-0.11-image.iso file by using xorriso.
 	xorriso \
@@ -172,10 +252,68 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 		-o $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
 		
 	# install the Limine bootloader into an ISO file, specifically for BIOS-based booting.
-	$(LIMINE_DIR)/limine bios-install $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
+	$(LIMINE_SRC_DIR)/limine bios-install $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
 
+image: $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso $(BUILD_INFO_FILE)
 
-build_ext2_disk:
+# =============================================================================================
+
+fat_disk:
+	# Ensure disk directory exists
+	mkdir -p $(DISK_DIR)
+
+	# Clean previous mounts and loop device
+	sudo umount $(DISK_DIR)/mnt || true
+	sudo umount /dev/loop0p1 || true
+	sudo losetup -d /dev/loop0 || true
+
+	# 1. Create Disk Image (1024 MiB)
+	dd if=/dev/zero of=$(DISK_DIR)/disk.img bs=1M count=1024
+	@echo "Created blank Disk image"
+
+	# 2. Partition the Disk Image as FAT32
+	parted $(DISK_DIR)/disk.img --script -- mklabel msdos
+	parted $(DISK_DIR)/disk.img --script -- mkpart primary fat32 1MiB 100%
+	@echo "Disk image Partitioned (FAT32)"
+
+	# 3. Setup loop device and partition mapping
+	sudo losetup -Pf $(DISK_DIR)/disk.img
+	sleep 1
+
+	# 4. Format the partition as FAT32
+	sudo mkfs.vfat -F 32 /dev/loop0p1
+	@echo "Formatted loop0p1 as FAT32"
+
+	# 5. Mount partition
+	mkdir -p $(DISK_DIR)/mnt
+	sudo mount /dev/loop0p1 $(DISK_DIR)/mnt
+	@echo "Mounted /dev/loop0p1"
+
+	# 6. Copy files (optional - enable for real usage)
+	#sudo mkdir -p $(DISK_DIR)/mnt/boot/limine
+	#sudo mkdir -p $(DISK_DIR)/mnt/EFI/BOOT
+	#sudo cp -v $(BUILD_DIR)/kernel.bin $(DISK_DIR)/mnt/boot/
+	#sudo cp -v $(LIMINE_SRC_DIR)/limine.conf \
+	#	$(LIMINE_SRC_DIR)/limine-bios.sys \
+	#	$(LIMINE_SRC_DIR)/limine-bios-cd.bin \
+	#	$(LIMINE_SRC_DIR)/limine-uefi-cd.bin \
+	#	$(DISK_DIR)/mnt/boot/limine/
+	#sudo cp -v $(LIMINE_SRC_DIR)/BOOTX64.EFI $(DISK_DIR)/mnt/EFI/BOOT/
+	#sudo cp -v $(LIMINE_SRC_DIR)/BOOTIA32.EFI $(DISK_DIR)/mnt/EFI/BOOT/
+	#@echo "Copied Limine and kernel files to mounted disk"
+
+	# 7. Create test files and directories
+	echo "FAT32 root test file" | sudo tee $(DISK_DIR)/mnt/TESTFILE.TXT
+	sudo mkdir -p $(DISK_DIR)/mnt/SUBDIR
+	echo "FAT32 nested test file" | sudo tee $(DISK_DIR)/mnt/SUBDIR/NESTED.TXT
+
+	# 8. Cleanup
+	sudo umount $(DISK_DIR)/mnt
+	sudo losetup -d /dev/loop0
+	@echo "Disk image is ready and FAT32-formatted"
+
+#============================================================================================
+ext2_disk:
 	# Ensure disk directory exists
 	mkdir -p $(DISK_DIR)
 
@@ -236,152 +374,9 @@ build_ext2_disk:
 	sudo losetup -d /dev/loop0
 	@echo "Disk image is ready and bootable"
 
-build_fat_disk:
-	# Ensure disk directory exists
-	mkdir -p $(DISK_DIR)
+# ================================================================================
 
-	# Clean previous mounts and loop device
-	sudo umount $(DISK_DIR)/mnt || true
-	sudo umount /dev/loop0p1 || true
-	sudo losetup -d /dev/loop0 || true
-
-	# 1. Create Disk Image (1024 MiB)
-	dd if=/dev/zero of=$(DISK_DIR)/disk.img bs=1M count=1024
-	@echo "Created blank Disk image"
-
-	# 2. Partition the Disk Image as FAT32
-	parted $(DISK_DIR)/disk.img --script -- mklabel msdos
-	parted $(DISK_DIR)/disk.img --script -- mkpart primary fat32 1MiB 100%
-	@echo "Disk image Partitioned (FAT32)"
-
-	# 3. Setup loop device and partition mapping
-	sudo losetup -Pf $(DISK_DIR)/disk.img
-	sleep 1
-
-	# 4. Format the partition as FAT32
-	sudo mkfs.vfat -F 32 /dev/loop0p1
-	@echo "Formatted loop0p1 as FAT32"
-
-	# 5. Mount partition
-	mkdir -p $(DISK_DIR)/mnt
-	sudo mount /dev/loop0p1 $(DISK_DIR)/mnt
-	@echo "Mounted /dev/loop0p1"
-
-	# 6. Copy files (optional - enable for real usage)
-	#sudo mkdir -p $(DISK_DIR)/mnt/boot/limine
-	#sudo mkdir -p $(DISK_DIR)/mnt/EFI/BOOT
-	#sudo cp -v $(BUILD_DIR)/kernel.bin $(DISK_DIR)/mnt/boot/
-	#sudo cp -v $(LIMINE_DIR)/limine.conf \
-	#	$(LIMINE_DIR)/limine-bios.sys \
-	#	$(LIMINE_DIR)/limine-bios-cd.bin \
-	#	$(LIMINE_DIR)/limine-uefi-cd.bin \
-	#	$(DISK_DIR)/mnt/boot/limine/
-	#sudo cp -v $(LIMINE_DIR)/BOOTX64.EFI $(DISK_DIR)/mnt/EFI/BOOT/
-	#sudo cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(DISK_DIR)/mnt/EFI/BOOT/
-	#@echo "Copied Limine and kernel files to mounted disk"
-
-	# 7. Create test files and directories
-	echo "FAT32 root test file" | sudo tee $(DISK_DIR)/mnt/TESTFILE.TXT
-	sudo mkdir -p $(DISK_DIR)/mnt/SUBDIR
-	echo "FAT32 nested test file" | sudo tee $(DISK_DIR)/mnt/SUBDIR/NESTED.TXT
-
-	# 8. Cleanup
-	sudo umount $(DISK_DIR)/mnt
-	sudo losetup -d /dev/loop0
-	@echo "Disk image is ready and FAT32-formatted"
-
-
-# To Convert the disk image into vmdk which can be used in Vmwire
-# qemu-img convert -f raw Disk/disk.img -O vmdk Disk/disk.vmdk
-
-
-build_usb_disk:
-	# Ensure disk directory exists
-	mkdir -p $(DISK_DIR)
-
-	# Clean previous mounts
-	sudo umount $(DISK_DIR)/mnt || true
-	sudo losetup -d /dev/loop1 || true
-
-	# 1. Create USB image (512 MiB for example)
-	dd if=/dev/zero of=$(DISK_DIR)/usb.img bs=1M count=512
-	@echo "Created usb.img (512 MiB)"
-
-
-	# 2. Partition as FAT32
-	parted $(DISK_DIR)/usb.img --script -- mklabel msdos
-	parted $(DISK_DIR)/usb.img --script -- mkpart primary fat32 1MiB 100%
-	parted $(DISK_DIR)/usb.img --script -- set 1 boot on
-
-
-	# 3. Setup loop device
-	sudo losetup -Pf $(DISK_DIR)/usb.img
-	sleep 1
-
-	# 4. Format partition
-	sudo mkfs.vfat -F 32 /dev/loop1p1
-	@echo "Formatted usb.img as FAT32"
-
-	# 5. Mount partition
-	mkdir -p $(DISK_DIR)/mnt
-	sudo mount /dev/loop1p1 $(DISK_DIR)/mnt
-
-	# 6. Copy kernel + Limine files
-	sudo mkdir -p $(DISK_DIR)/mnt/boot/limine
-	sudo mkdir -p $(DISK_DIR)/mnt/EFI/BOOT
-	sudo cp -v $(BUILD_DIR)/kernel.bin $(DISK_DIR)/mnt/boot/
-	sudo cp -v $(MODULE_DIR)/build/$(USER_PROGRAM_NAME).elf $(DISK_DIR)/mnt/boot/
-	sudo cp -v $(LIMINE_DIR)/limine.conf \
-		$(LIMINE_DIR)/limine-bios.sys \
-		$(LIMINE_DIR)/limine-bios-cd.bin \
-		$(LIMINE_DIR)/limine-uefi-cd.bin \
-		$(DISK_DIR)/mnt/boot/limine/
-	sudo cp -v $(LIMINE_DIR)/BOOTX64.EFI $(DISK_DIR)/mnt/EFI/BOOT/
-	sudo cp -v $(LIMINE_DIR)/BOOTIA32.EFI $(DISK_DIR)/mnt/EFI/BOOT/
-
-	# 7. Sync and unmount
-	sudo sync
-	sudo umount $(DISK_DIR)/mnt
-
-	# 8. Install Limine to raw usb.img
-	sudo $(LIMINE_DIR)/limine bios-install $(DISK_DIR)/usb.img
-
-	# 9. Detach loop
-	sudo losetup -d /dev/loop1
-	@echo "USB image ready: $(DISK_DIR)/usb.img"
-
-
-usb_run:
-	qemu-system-x86_64 \
-		-m 4096 \
-		-smp 4 \
-		-drive file=$(DISK_DIR)/usb.img,format=raw \
-		-drive file=$(DISK_DIR)/disk.img,format=raw \
-		-serial stdio \
-		-vga std \
-		-rtc base=utc,clock=host \
-		-boot d
-
-
-
-# Running by qemu
-uefi_run:
-	# UEFI Boot
-	qemu-system-x86_64 \
-		-machine q35 \
-		-m 4096 \
-		-smp cores=2,threads=2,sockets=1,maxcpus=4 \
-		-boot d \
-		-hda $(DISK_DIR)/disk.img \
-		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
-		-serial stdio \
-		-d guest_errors,int,cpu_reset \
-		-D $(DEBUG_DIR)/qemu.log \
-		-vga std \
-		-bios /usr/share/OVMF/OVMF_CODE.fd  \
-		-rtc base=utc,clock=host
-
-run:
+bios_run:
 	# BIOS Boot
 	qemu-system-x86_64 \
 		-machine q35 \
@@ -397,24 +392,21 @@ run:
 		-rtc base=utc,clock=host
 # We can add -noo--rebboot to prevent rebooting after kernel panic
 
-
-
-
-disk_run:
-	# Running from Disk Image
+uefi_run:
+	# UEFI Boot
 	qemu-system-x86_64 \
-    -machine q35 \
-    -m 3072 \
-    -smp cores=4,threads=1,sockets=1,maxcpus=4 \
-    -boot c \
-    -hda $(DISK_DIR)/disk.img \
-    -serial stdio \
-    -d guest_errors,int,cpu_reset \
-    -D $(DEBUG_DIR)/qemu_diskboot.log \
-    -vga std \
-    -rtc base=utc,clock=host
-	-no-reboot
-
+		-machine q35 \
+		-m 4096 \
+		-smp cores=2,threads=2,sockets=1,maxcpus=4 \
+		-boot d \
+		-hda $(DISK_DIR)/disk.img \
+		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
+		-serial stdio \
+		-d guest_errors,int,cpu_reset \
+		-D $(DEBUG_DIR)/qemu.log \
+		-vga std \
+		-bios /usr/share/OVMF/OVMF_CODE.fd  \
+		-rtc base=utc,clock=host
 
 gdb_debug:
 	# GDB Debuging
@@ -432,36 +424,27 @@ gdb_debug:
 		-rtc base=utc,clock=host \
 		-s -S
 
-# clean all things from inside of build directory
 clean:
-	# Delete all .o and .d files recursively inside build directory
-	find $(BUILD_DIR) -type f \( -name '*.o' -o -name '*.d' \) -delete
+	# Delete all .o and .d files recursively inside build/kernel directory
+	find $(BUILD_DIR)/kernel -type f \( -name '*.o' -o -name '*.d' \) -delete
 
-	# Remove empty directories (which had only .o, .d files) inside build directory
-	find $(BUILD_DIR) -type d -empty -delete
+# ==============================================================================
+user_programe:
+	make -C $(USER_MODULE_DIR)/
 
-	# Remove all files from build directory
-	rm -rf $(BUILD_DIR)/*
-
-	@echo "Cleaned object files and empty directories."
+	@echo "Successfully build user_program.elf"
 
 
-# Cleaning without binary and iso files
-soft_clean:
-	# Delete all .o and .d files recursively inside build directory
-	find $(BUILD_DIR) -type f \( -name '*.o' -o -name '*.d' \) -delete
+# Full build (with external libraries)
+all: fatfs lvgl tiny-regex kernel linking image fat_disk user_programe
 
-	# Deleting iso_root directory
-	rm -rf $(BUILD_DIR)/iso_root
-
-	# Deleting kernel directory
-	rm -rf $(BUILD_DIR)/kernel
+# Kernel-only build (no ext_lib)
+build: clean kernel linking user_programe image bios_run
 
 
-all: clean kernel build_image build_user_programe run
-build: kernel build_image
-default: all
+default: build
 
+.PHONY: all build fatfs lvgl tiny-regex kernel linking user_program build_image fat_disk
 
 help:
 	@echo "Available targets:"
@@ -480,28 +463,6 @@ help:
 	@echo "  make disk_run        - Run OS by using Disk Image"
 	@echo "  make help            - Display this help menu"
 	@echo "  make build_user_programe - Build user_program.elf from module/user_program.asm"
-
-
-# Create a file with the current timestamp and custom message
-$(BUILD_INFO_FILE):
-	@mkdir -p $(BUILD_DIR)
-	@echo "Build Information for $(OS_NAME) v$(OS_VERSION)" > $@
-	@echo "Build Time: $$(date)" >> $@
-	@echo "Build started by: $$(whoami)@$$(hostname)" >> $@
-	@echo "---------------------------------------" >> $@
-	@echo "Build Project by: make build" >> $@
-	@echo "Build Project and then Run iso by: make all" >> $@
-	@echo "Get make help by: make help" >> $@
-
-
-build_user_programe:
-	make -C $(MODULE_DIR)/
-
-	@echo "Successfully build user_program.elf" 
-
-
-# This is a phony target, meaning it doesn't correspond to a file.
-.PHONY: all build clean help
 
 
 
