@@ -6,11 +6,11 @@
 
 |Subject       | Value         |
 |--------------|---------------|
-|🏷️Version     | `1.0`        |
+|🏷️Version     | `1.2`        |
 |🖥️Architecture| `x86`        |
 |🔢Bit         | `64`         |
-|📅Start Date  | `09.06.2025` |
-|🔄Last Update | `06.09.2025` |
+|📅Start Date  | `09.06.2024` |
+|🔄Last Update | `10.09.2025` |
 
 ---
 

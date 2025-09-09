@@ -12,7 +12,7 @@
 
 START_TIME := $(shell date +%s)
 OS_NAME = KeblaOS
-OS_VERSION = 1.1
+OS_VERSION = 1.2
 HOST_HOME = /home/bapon
 
 BUILD_DIR := build
@@ -433,6 +433,8 @@ user_programe:
 	make -C $(USER_MODULE_DIR)/
 
 	@echo "Successfully build user_program.elf"
+# ==============================================================================
+
 
 
 # Full build (with external libraries)
@@ -448,18 +450,19 @@ default: build
 
 help:
 	@echo "Available targets:"
+	@echo "  make                 - For Kernel build"
 	@echo "  make -B              - For Fresh rebuild"
 	@echo "  make all             - Build the project (default target)"
 	@echo "  make kernel          - Compile the kernel source files"
 	@echo "  make linking         - Link the kernel and LVGL object files"
-	@echo "  make build_image     - Create the ISO image for the OS"
+	@echo "  make image           - Create the ISO image for the OS"
 	@echo "  make build           - Build the iso image"
 	@echo "  make run             - Run the default target (displays this help message)"
 	@echo "  make uefi_run        - UEFI Run the target"
 	@echo "  make gdb_debug       - Debugging By GDB"
 	@echo "  make clean           - Clean up build artifacts"
-	@echo "  make build_ext2_disk - Create EXT2 Format Disk image which will be use in Kernel as disk"
-	@echo "  make build_fat_disk  - Create FAT Format Disk image which will be use in Kernel as disk"
+	@echo "  make ext2_disk       - Create EXT2 Format Disk image which will be use in Kernel as disk"
+	@echo "  make fat_disk        - Create FAT Format Disk image which will be use in Kernel as disk"
 	@echo "  make disk_run        - Run OS by using Disk Image"
 	@echo "  make help            - Display this help menu"
 	@echo "  make build_user_programe - Build user_program.elf from module/user_program.asm"
