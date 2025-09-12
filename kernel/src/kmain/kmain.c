@@ -72,7 +72,7 @@ void kmain(){
     
 
 
-    // ugui_test_1();
+    ugui_test_1();
     // ugui_test_2();
 
     // int_syscall_test();

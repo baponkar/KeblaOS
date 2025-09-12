@@ -44,14 +44,46 @@ volatile int mouse_x = 40; // Initial cursor x position
 volatile int mouse_y = 12; // Initial cursor y position
 
 volatile bool mouse_left_pressed = false;
-
+volatile bool mouse_right_pressed = false;
+volatile bool mouse_middle_pressed = false;
 
 
 uint8_t mouse_cycle = 0;
 uint8_t mouse_bytes[3];      // Signed byte
 bool mouse_initialized = false;
 
+// Buffer to store the background under the cursor
+static uint32_t cursor_background[CURSOR_WIDTH * CURSOR_HEIGHT];
 
+// Save the background pixels under the cursor position
+void save_cursor_background(int x, int y) {
+    for (int i = 0; i < CURSOR_HEIGHT; i++) {
+        for (int j = 0; j < CURSOR_WIDTH; j++) {
+            int px = x + j;
+            int py = y + i;
+            
+            if (px >= 0 && px < (int)fb0_width && py >= 0 && py < (int)fb0_height) {
+                cursor_background[i * CURSOR_WIDTH + j] = get_pixel(px, py);
+            } else {
+                cursor_background[i * CURSOR_WIDTH + j] = CURSOR_BG_COLOR;
+            }
+        }
+    }
+}
+
+// Restore the background pixels at the cursor position
+void restore_cursor_background(int x, int y) {
+    for (int i = 0; i < CURSOR_HEIGHT; i++) {
+        for (int j = 0; j < CURSOR_WIDTH; j++) {
+            int px = x + j;
+            int py = y + i;
+            
+            if (px >= 0 && px < (int)fb0_width && py >= 0 && py < (int)fb0_height) {
+                set_pixel(px, py, cursor_background[i * CURSOR_WIDTH + j]);
+            }
+        }
+    }
+}
 
 void mouse_wait(int type) {
     int timeout = 100000; // Timeout for waiting
@@ -78,15 +110,30 @@ uint8_t mouse_read() {
 
 
 
+
 // Draws the mouse cursor at its current position.
 void draw_mouse_cursor(int mouse_x, int mouse_y, uint32_t color) {
-    draw_rectangle(mouse_x, mouse_y, CURSOR_WIDTH, CURSOR_HEIGHT, color);
+    // Save the current background before drawing the cursor
+    save_cursor_background(mouse_x, mouse_y);
     
+    // Draw the cursor (simple rectangle for now)
+    for (int i = 0; i < CURSOR_HEIGHT; i++) {
+        for (int j = 0; j < CURSOR_WIDTH; j++) {
+            int px = mouse_x + j;
+            int py = mouse_y + i;
+            
+            if (px >= 0 && px < (int)fb0_width && py >= 0 && py < (int)fb0_height) {
+                set_pixel(px, py, color);
+            }
+        }
+    }
 }
+
 
 // Erases the mouse cursor at the given old position.
 void erase_mouse_cursor(int old_x, int old_y) {
-    draw_rectangle(old_x, old_y, CURSOR_WIDTH, CURSOR_HEIGHT, CURSOR_BG_COLOR);
+    // Restore the background that was behind the cursor
+    restore_cursor_background(old_x, old_y);
 }
 
 
@@ -140,6 +187,20 @@ void mouse_handler() {
 
     // Update button
     mouse_left_pressed = (mouse_bytes[0] & 0x01) ? true : false;
+    mouse_right_pressed = (mouse_bytes[0] & 0x02) ? true : false;
+    mouse_middle_pressed = (mouse_bytes[0] & 0x04) ? true : false;
+
+    if(mouse_left_pressed){
+        // printf("Left mouse clicked!\n");
+    }
+    
+    if(mouse_right_pressed){
+        // printf("Right mouse clicked!\n");
+    }
+    
+    if(mouse_middle_pressed){
+        // printf("Middle mouse clicked!\n");
+    }
 }
 
 
@@ -206,3 +267,16 @@ void mouse_init() {
 
 
 
+// Get mouse position and button states
+int get_mouse_x() { return mouse_x; }
+int get_mouse_y() { return mouse_y; }
+bool is_left_button_pressed() { return mouse_left_pressed; }
+bool is_right_button_pressed() { return mouse_right_pressed; }
+bool is_middle_button_pressed() { return mouse_middle_pressed; }
+
+// Check if mouse is within a rectangle
+bool mouse_in_rect(int x, int y, int width, int height) {
+    int mx = get_mouse_x();
+    int my = get_mouse_y();
+    return (mx >= x && mx <= x + width && my >= y && my <= y + height);
+}
