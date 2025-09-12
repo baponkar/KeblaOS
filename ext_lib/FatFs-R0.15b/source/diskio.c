@@ -60,6 +60,9 @@ DSTATUS disk_status (
 	// }
 	// return STA_NOINIT;
 
+	if(!kebla_disk_status){
+		return RES_ERROR;
+	}
 	return kebla_disk_status((int) pdrv) ? RES_OK : RES_ERROR;
 }
 
@@ -99,6 +102,10 @@ DSTATUS disk_initialize (
 	// 	return stat;
 	// }
 	// return STA_NOINIT;
+
+	if(!kebla_disk_init){
+		return RES_ERROR;
+	}
 
 	return (DSTATUS) kebla_disk_init((int)pdrv) ? RES_OK : RES_ERROR;
 
@@ -150,6 +157,10 @@ DRESULT disk_read (
 	// }
 
 	// return RES_PARERR;
+
+	if(!kebla_disk_read){
+		return RES_ERROR;
+	}
 
 	if(kebla_disk_read((int)pdrv, (uint64_t)(LBA_OFFSET + sector), count, buff)) {
 		return RES_OK;
@@ -208,6 +219,9 @@ DRESULT disk_write (
 	#if FF_FS_READONLY
 		return RES_WRPRT;
 	#else
+		if(!kebla_disk_write){
+			return RES_ERROR;
+		}
 		if(kebla_disk_write((int)pdrv, (uint64_t)(LBA_OFFSET + sector), count, buff)) {
 			return RES_OK;
 		} 

@@ -11,7 +11,14 @@ Reference   : https://wiki.osdev.org/Limine
 */
 
 
+
 #include "kmain.h"
+
+extern uint64_t fb0_width;
+extern uint64_t fb0_height;
+extern uint64_t fb0_pitch;
+extern uint16_t fb0_bpp;
+
 
 
 extern ring_buffer_t* keyboard_buffer;          // To get the keyboard input
@@ -40,12 +47,12 @@ void kmain(){
 
     pci_scan();
 
-    test_time_functions();
+    // test_time_functions();
 
-    print_current_rtc_time();
-    sleep_seconds(0, 10);
-    printf("10 sec Sleep Test Over!\n");
-    print_current_rtc_time();
+    // print_current_rtc_time();
+    // sleep_seconds(0, 10);
+    // printf("10 sec Sleep Test Over!\n");
+    // print_current_rtc_time();
 
 
     for(int i=0; i<mass_storage_count; i++){
@@ -55,7 +62,18 @@ void kmain(){
     }
     printf("Total available Disks: %d\n", get_total_disks());
     
-    lvgl_test();
+
+    printf("fb0_width = %d, fb0_height = %d, fb0_pitch = %d, fb0_bpp = %d \n", fb0_width, fb0_height, fb0_pitch, fb0_bpp);
+
+    enable_mouse();
+    mouse_init();
+
+    clear_screen();
+    
+
+
+    // ugui_test_1();
+    // ugui_test_2();
 
     // int_syscall_test();
 

@@ -47,6 +47,13 @@ void set_pixel(int x, int y, uint32_t color){
     *pixel = color;
 }
 
+uint32_t get_pixel(int x, int y){
+    if (x < 0 || x >= fb0_width || y < 0 || y >= fb0_height) return 0;
+    uint32_t *pixel = (uint32_t*)((uintptr_t)fb0_address + (y * fb0_pitch) + (x * 4));
+
+    return *pixel;
+}
+
 void cls_color( uint32_t color) {
     for (size_t y = 0; y < fb0_height; y++) {
         for (size_t x = 0; x < fb0_width; x++) {

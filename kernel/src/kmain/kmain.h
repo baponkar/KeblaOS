@@ -67,6 +67,10 @@
 #include "../driver/vga/vga.h"
 
 
+// PS2 Mouse
+#include "../driver/mouse/mouse.h"
+
+
 // System Info
 #include "../bootloader/sysinfo.h"
 #include "../sys/cpu/cpu.h"                 // target_cpu_task, switch_to_core
@@ -126,6 +130,12 @@
 // lvgl
 #include "../../../ext_lib/lvgl-9.3.0/lvgl.h"
 #include "../driver/vga/lvgl_fb.h"
+
+// nuklear
+
+
+// uGUI
+#include "../driver/vga/ugui_test.h"
 
 // =======================================================================================
 

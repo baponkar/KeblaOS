@@ -1,11 +1,12 @@
+
+
 # Automatic Bulding Process by GNU Makefile.
 # Reference: https://www.gnu.org/software/make/manual/html_node/index.html
 # Reference: https://wiki.osdev.org/Makefile
 
-# Last Updated : 06-09-2025
+# Last Updated : 10-09-2025
 # Author : Bapon Kar
 # Repository url : https://github.com/baponkar/KeblaOS
-
 
 
 
@@ -75,7 +76,7 @@ EXT_LIB_DIR = ext_lib
 $(BUILD_DIR):
 	mkdir -p $@
 
-
+# ================================= Externel Library Build Start =============================================
 
 # 1. FatFs Library
 FATFS_BUILD_DIR = build/ext_lib/FatFs
@@ -102,9 +103,26 @@ fatfs: build/libfatfs.a
 
 
 # 2. LvGL Library
+
+# Defined in ext_lib/lvgl-9.3.0/lvgl.mk
+LVGL_PATH = ext_lib/lvgl-9.3.0 
+
+
+ASRCS += $(shell find $(LVGL_PATH)/src -type f -name '*.S')
+CSRCS += $(shell find $(LVGL_PATH)/src -type f -name '*.c')
+CSRCS += $(shell find $(LVGL_PATH)/demos -type f -name '*.c')
+CSRCS += $(shell find $(LVGL_PATH)/examples -type f -name '*.c')
+CXXEXT := .cpp
+CXXSRCS += $(shell find $(LVGL_PATH)/src -type f -name '*${CXXEXT}')
+
+AFLAGS += "-I$(LVGL_PATH)"
+CFLAGS += "-I$(LVGL_PATH)"
+CXXFLAGS += "-I$(LVGL_PATH)"
+
+
 LVGL_BUILD_DIR = build/ext_lib/lvgl
 LVGL_SRC_DIR   = ext_lib/lvgl-9.3.0
-LVGL_SRC_FILES := $(shell find ext_lib/lvgl-9.3.0 -name '*.c')
+LVGL_SRC_FILES := $(shell find ext_lib/lvgl-9.3.0/src -name '*.c')
 LVGL_OBJ_FILES := $(patsubst $(LVGL_SRC_DIR)/%.c, $(LVGL_BUILD_DIR)/%.o, $(LVGL_SRC_FILES))
 LVGL_LIB_FILE  := build/liblvgl.a
 
@@ -113,7 +131,7 @@ build/ext_lib/lvgl:
 
 build/ext_lib/lvgl/%.o: ext_lib/lvgl-9.3.0/%.c
 	@mkdir -p $(dir $@)
-	$(GCC) $(GCC_FLAG) $(GCC_STDLIB_FLAG) -c $< -o $@
+	$(GCC) $(GCC_FLAG) $(GCC_STDLIB_FLAG) $(AFLAGS) $(CFLAGS) $(CXXFLAGS) -c $< -o $@
 
 
 build/liblvgl.a: $(LVGL_OBJ_FILES)
@@ -153,6 +171,51 @@ tiny-regex: build/lib-tiny-regex.a
 
 
 
+
+# 4. nuklear-4.12.7
+NUKLEAR_SRC_DIR   = ext_lib/Nuklear-4.12.7/src
+NUKLEAR_INCLUDE   = -I$(NUKLEAR_SRC_DIR)
+
+# Just compile your backend that includes nuklear.h
+NUKLEAR_OBJ_FILES = build/nuklear_vga_backend.o
+
+$(NUKLEAR_OBJ_FILES): kernel/src/gui/nuklear_vga_backend.c
+	@mkdir -p $(dir $@)
+	$(GCC) $(GCC_FLAG) $(GCC_STDLIB_FLAG) $(NUKLEAR_INCLUDE) -c $< -o $@
+
+nuklear: $(NUKLEAR_OBJ_FILES)
+	@echo "Nuklear (header-only) build completed."
+
+
+
+# 5. ugui
+UGUI_BUILD_DIR = build/ext_lib/UGUI
+UGUI_SRC_DIR   = ext_lib/UGUI
+
+UGUI_SRC_FILES := $(shell find $(UGUI_SRC_DIR) -name '*.c')
+UGUI_OBJ_FILES := $(patsubst $(UGUI_SRC_DIR)/%.c, $(UGUI_BUILD_DIR)/%.o, $(UGUI_SRC_FILES))
+UGUI_LIB_FILE  := build/lib-ugui.a
+
+$(UGUI_BUILD_DIR):
+	mkdir -p $@
+
+$(UGUI_BUILD_DIR)/%.o: $(UGUI_SRC_DIR)/%.c | $(UGUI_BUILD_DIR)
+	@mkdir -p $(dir $@)
+	find $(UGUI_BUILD_DIR) -type f \( -name '*.o' -o -name '*.d' \) -delete
+	$(GCC) $(GCC_FLAG) $(GCC_STDLIB_FLAG) -Iext_lib/UGUI -c $< -o $@
+
+$(UGUI_LIB_FILE): $(UGUI_OBJ_FILES)
+	ar rcs $@ $^
+
+ugui: $(UGUI_LIB_FILE)
+	@echo "UGUI Build completed."
+
+
+
+
+# ============================================== Kernel Build  Start ===============================================
+
+
 # 5. Kernel build
 
 KERNEL_DIR = kernel
@@ -190,7 +253,7 @@ kernel: build/libkernel.a
 
 
 # Rule to link all object files into a single kernel binary
-$(BUILD_DIR)/kernel.bin: $(KERNEL_LIB_FILE) $(FATFS_LIB_FILE) $(LVGL_LIB_FILE) $(TINY_REGEX_LIB_FILE)
+$(BUILD_DIR)/kernel.bin: $(KERNEL_LIB_FILE) $(FATFS_LIB_FILE) $(LVGL_LIB_FILE) $(TINY_REGEX_LIB_FILE) $(UGUI_LIB_FILE)  $(NUKLEAR_LIB_FILE)
 	$(LD) $(LD_FLAG) -T kernel_linker_x86_64.ld -o $@ $^
 
 
@@ -313,6 +376,7 @@ fat_disk:
 	@echo "Disk image is ready and FAT32-formatted"
 
 #============================================================================================
+
 ext2_disk:
 	# Ensure disk directory exists
 	mkdir -p $(DISK_DIR)
@@ -428,6 +492,14 @@ clean:
 	# Delete all .o and .d files recursively inside build/kernel directory
 	find $(BUILD_DIR)/kernel -type f \( -name '*.o' -o -name '*.d' \) -delete
 
+hard_clean:
+# Deleteing all file inside build directory , -o stands or and f stands file
+	find $(BUILD_DIR) -type f \( -name '*.o' -o -name '*' \) -delete
+
+#deleting all directories inside build directory , d stand for directory
+	find $(BUILD_DIR) -type d -empty ! -path "$(BUILD_DIR)" -delete
+
+
 # ==============================================================================
 user_programe:
 	make -C $(USER_MODULE_DIR)/
@@ -438,7 +510,8 @@ user_programe:
 
 
 # Full build (with external libraries)
-all: fatfs lvgl tiny-regex kernel linking image fat_disk user_programe
+all: hard_clean fatfs lvgl tiny-regex ugui kernel linking user_programe image fat_disk bios_run
+
 
 # Kernel-only build (no ext_lib)
 build: clean kernel linking user_programe image bios_run
@@ -446,26 +519,25 @@ build: clean kernel linking user_programe image bios_run
 
 default: build
 
-.PHONY: all build fatfs lvgl tiny-regex kernel linking user_program build_image fat_disk
+.PHONY: all build fatfs lvgl tiny-regex ugui kernel linking user_program build_image fat_disk
 
 help:
 	@echo "Available targets:"
-	@echo "  make                 - For Kernel build"
-	@echo "  make -B              - For Fresh rebuild"
-	@echo "  make all             - Build the project (default target)"
-	@echo "  make kernel          - Compile the kernel source files"
-	@echo "  make linking         - Link the kernel and LVGL object files"
+	@echo "  make                 - For Kernel build only.(default target)"
+	@echo "  make -B              - For Fresh kernel rebuild"
+	@echo "  make all             - Build the whole project along with externel library."
+	@echo "  make kernel          - Compile the kernel source files only."
+	@echo "  make linking         - Link the kernel and LVGL static library(.a) files"
 	@echo "  make image           - Create the ISO image for the OS"
-	@echo "  make build           - Build the iso image"
-	@echo "  make run             - Run the default target (displays this help message)"
+	@echo "  make bios_run        - Run the default target (displays this help message)"
 	@echo "  make uefi_run        - UEFI Run the target"
 	@echo "  make gdb_debug       - Debugging By GDB"
-	@echo "  make clean           - Clean up build artifacts"
-	@echo "  make ext2_disk       - Create EXT2 Format Disk image which will be use in Kernel as disk"
-	@echo "  make fat_disk        - Create FAT Format Disk image which will be use in Kernel as disk"
-	@echo "  make disk_run        - Run OS by using Disk Image"
+	@echo "  make clean           - Clean up kernel build artifacts"
+	@echo "  make hard_clean      - Clean up all build artifacts"
+	@echo "  make ext2_disk       - Create EXT2 Format raw Disk image which will be use in Kernel as disk"
+	@echo "  make fat_disk        - Create FAT Format raw Disk image which will be use in Kernel as disk"
 	@echo "  make help            - Display this help menu"
-	@echo "  make build_user_programe - Build user_program.elf from module/user_program.asm"
+	@echo "  make user_programe   - Build user_program.elf from module/user_program.asm"
 
 
 

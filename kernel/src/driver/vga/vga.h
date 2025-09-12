@@ -10,7 +10,7 @@
 void init_vga();
 
 void set_pixel(int x, int y, uint32_t color);
-
+uint32_t get_pixel(int x, int y);
 void cls_color( uint32_t color);
 
 
