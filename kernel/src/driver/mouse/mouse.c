@@ -12,6 +12,7 @@ Ref: https://wiki.osdev.org/PS/2_Mouse
 #include "../vga/vga.h"     // vga_init, print_bootloader_info, print_memory_map, display_image
 #include "../vga/color.h"
 
+
 #include "../../arch/interrupt/apic/apic.h"        // APIC interrupt support
 #include "../../arch/interrupt/apic/ioapic.h"      // IOAPIC support
 #include "../../arch/interrupt/apic/apic_interrupt.h"   // Interrupt handler installation
@@ -139,7 +140,7 @@ void erase_mouse_cursor(int old_x, int old_y) {
 
 
 // Process incoming mouse data packets.
-void mouse_handler() {
+static void mouse_handler() {
 
     int old_x = mouse_x;
     int old_y = mouse_y;
@@ -189,25 +190,12 @@ void mouse_handler() {
     mouse_left_pressed = (mouse_bytes[0] & 0x01) ? true : false;
     mouse_right_pressed = (mouse_bytes[0] & 0x02) ? true : false;
     mouse_middle_pressed = (mouse_bytes[0] & 0x04) ? true : false;
-
-    if(mouse_left_pressed){
-        // printf("Left mouse clicked!\n");
-    }
-    
-    if(mouse_right_pressed){
-        // printf("Right mouse clicked!\n");
-    }
-    
-    if(mouse_middle_pressed){
-        // printf("Middle mouse clicked!\n");
-    }
 }
 
 
 // This is the interrupt handler called by the APIC.
 // It processes the mouse packet and signals the end of interrupt.
 void mouseHandler(registers_t *regs) {
-    // printf("x = %d, y = %d\n", mouse_x, mouse_y); // Debug output
     mouse_handler();
     apic_send_eoi();  // Signal end-of-interrupt for APIC
 }
@@ -274,9 +262,27 @@ bool is_left_button_pressed() { return mouse_left_pressed; }
 bool is_right_button_pressed() { return mouse_right_pressed; }
 bool is_middle_button_pressed() { return mouse_middle_pressed; }
 
+
 // Check if mouse is within a rectangle
 bool mouse_in_rect(int x, int y, int width, int height) {
     int mx = get_mouse_x();
     int my = get_mouse_y();
     return (mx >= x && mx <= x + width && my >= y && my <= y + height);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

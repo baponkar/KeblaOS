@@ -65,15 +65,16 @@ void kmain(){
 
     printf("fb0_width = %d, fb0_height = %d, fb0_pitch = %d, fb0_bpp = %d \n", fb0_width, fb0_height, fb0_pitch, fb0_bpp);
 
-    enable_mouse();
+
     mouse_init();
 
     clear_screen();
     
 
 
-    ugui_test_1();
-    // ugui_test_2();
+    // ugui_test_1();
+    windows_like_ui();
+
 
     // int_syscall_test();
 

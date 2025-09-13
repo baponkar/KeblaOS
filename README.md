@@ -6,15 +6,15 @@
 
 |Subject       | Value         |
 |--------------|---------------|
-|🏷️Version     | `1.2`        |
+|🏷️Version     | `1.3`        |
 |🖥️Architecture| `x86`        |
 |🔢Bit         | `64`         |
 |📅Start Date  | `09.06.2024` |
-|🔄Last Update | `10.09.2025` |
+|🔄Last Update | `14.09.2025` |
 
 ---
 
-![screenshot](screenshot/screenshot.png)
+![screenshot](screenshot/keblaos_gui_screenshot.png)
 
 ## Description:
 This is a x86 architecture based 64 bit Operating System.
@@ -39,7 +39,7 @@ This is a x86 architecture based 64 bit Operating System.
 | ✅ **System Calls**        | Interrupt-based (Using), MSR-based (Not Using)                                       |
 | ✅ **User Mode Switching** | ELF Loader, Binary Loader, minimal libc,stemcall                                     |
 | ✅ 🔌**Drivers**             | 🎴PCI, AHCI SATA Disk, VGA Framebuffer, I/O Ports, Serial, Keyboard, Speaker, Mouse    |
-| ✅ 📦**External Libraries**  | [FatFs-R0.15b](https://elm-chan.org/fsw/ff/), [Limine-9.2.3](https://codeberg.org/Limine/Limine), [tiny-regex-c](https://github.com/kokke/tiny-regex-c) |
+| ✅ 📦**External Libraries**  | [FatFs-R0.15b](https://elm-chan.org/fsw/ff/), [Limine-9.2.3](https://codeberg.org/Limine/Limine), [tiny-regex-c](https://github.com/kokke/tiny-regex-c), [uGUI](https://github.com/achimdoebler/UGUI)|
 
 
 ---

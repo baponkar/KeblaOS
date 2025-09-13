@@ -57,19 +57,12 @@ uint32_t get_pixel(int x, int y){
 void cls_color( uint32_t color) {
     for (size_t y = 0; y < fb0_height; y++) {
         for (size_t x = 0; x < fb0_width; x++) {
-            // fb0_address[y * fb0_width + x] = color;
             set_pixel(x, y, color);
         }
     }
 }
 
-point_t set_point(uint64_t x, uint64_t y){
-    point_t pt;
-    pt.x = x;
-    pt.y = y;
 
-    return pt;
-}
 
 
 void draw_line( int x1, int y1, int x2, int y2, uint32_t color) {
@@ -198,6 +191,19 @@ void display_image( int x, int y, const uint64_t* image_data, int img_width, int
     }
 }
 
+// Display an image at position(x, y) in the framebuffer : ignoring black color
+void draw_image_with_transparency(int x, int y,  const uint64_t *image_data, int img_width, int img_height) {
+    for (int row = 0; row < img_height; row++) {
+        for (int col = 0; col < img_width; col++) {
+            uint32_t color = (uint32_t)image_data[row * img_width + col];  // take lower 32 bits
+            if (color != 0x00000000) {  // skip transparent
+                set_pixel(x + col, y + row, color);
+            }
+        }
+    }
+}
+
+
 void load_image_with_animation(int x, int y, const uint64_t* image_data, int img_width, int img_height) {
     cls_color(COLOR_BLACK ); // Clear screen first
     int bar_width = 10; // Width of the loading bar (pixels)
@@ -222,6 +228,5 @@ void load_image_with_animation(int x, int y, const uint64_t* image_data, int img
     
     cls_color(COLOR_BLACK ); // Clear screen again
 }
-
 
 
