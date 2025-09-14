@@ -6,7 +6,7 @@
 
 |Subject       | Value         |
 |--------------|---------------|
-|🏷️Version     | `1.3`        |
+|🏷️Version     | `1.1`        |
 |🖥️Architecture| `x86`        |
 |🔢Bit         | `64`         |
 |📅Start Date  | `09.06.2024` |
@@ -39,7 +39,18 @@ This is a x86 architecture based 64 bit Operating System.
 | ✅ **System Calls**        | Interrupt-based (Using), MSR-based (Not Using)                                       |
 | ✅ **User Mode Switching** | ELF Loader, Binary Loader, minimal libc,stemcall                                     |
 | ✅ 🔌**Drivers**             | 🎴PCI, AHCI SATA Disk, VGA Framebuffer, I/O Ports, Serial, Keyboard, Speaker, Mouse    |
-| ✅ 📦**External Libraries**  | [FatFs-R0.15b](https://elm-chan.org/fsw/ff/), [Limine-9.2.3](https://codeberg.org/Limine/Limine), [tiny-regex-c](https://github.com/kokke/tiny-regex-c), [uGUI](https://github.com/achimdoebler/UGUI)|
+
+
+
+* ✅ 📦**External Libraries** :
+    1. [Limine-9.2.3](https://codeberg.org/Limine/Limine)
+    2. [FatFs-R0.15b](https://elm-chan.org/fsw/ff/)
+    3. [tiny-regex-c](https://github.com/kokke/tiny-regex-c)
+    4. [uGUI](https://github.com/achimdoebler/UGUI)
+    5. [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear)
+    6. [LvGL](https://github.com/lvgl/lvgl)
+    
+    
 
 
 ---
@@ -64,7 +75,67 @@ This is a x86 architecture based 64 bit Operating System.
 
 ---
 
+## System Call:
 
+1. `int syscall_keyboard_read(uint8_t *buffer, size_t size)`
+2. `int syscall_print(const char *msg)`
+3. `int syscall_exit()`
+4. `int syscall_print_rax()`
+
+5. `uint64_t syscall_uheap_alloc(size_t size, enum allocation_type type);`
+6. `uint64_t syscall_uheap_free(void *ptr, size_t size);`
+
+
+- FatFs File Manage: 
+
+    7. `int64_t syscall_vfs_mkfs(int fs_type, char *disk);`
+    8. `nt64_t syscall_vfs_init(char *fs_name);`
+    9. `uint64_t syscall_mount(char *path);`
+    10. `uint64_t syscall_open(const char *path, uint64_t flags);`
+    11. `uint64_t syscall_close(void *file);`
+    12. `uint64_t syscall_read(void *file, uint64_t offset, void *buf, uint32_t size);`
+    13. `uint64_t syscall_write(void *file, uint64_t offset, void *buf, uint32_t btw);`
+
+
+    14. `uint64_t syscall_lseek(void *file, uint32_t offs);`
+    15. `uint64_t syscall_unlink(char *path);`
+
+
+- FatFs Directory Manage:
+
+    16. `uint64_t syscall_opendir(const char *path);`
+    17. `uint64_t syscall_closedir(void * dir_ptr);`
+    18. `uint64_t syscall_readdir(void * dir_ptr);`
+    19. `uint64_t syscall_mkdir(void * dir_ptr);`
+    20. `int syscall_list_dir(const char* path);`
+    21. `int syscall_getcwd(void *buf, size_t size);`
+    22. `int syscall_chdir(const char *path);`
+    23. `int syscall_chdrive(const char *path);`
+
+
+- Process Manage
+
+    24. `void *syscall_create_process(char* process_name);`
+    25. `int syscall_delete_process(void *process);`
+    26. `void *syscall_get_process_from_pid(size_t pid);`
+    27. `void *syscall_get_current_process();`
+
+- Thread Manage
+
+    28. `void *syscall_create_thread(void* parent, const char* thread_name, void (*function)(void*), void* arg);`
+    29. `void *syscall_delete_thread(void *thread);`
+
+
+- Time Manage
+
+    30. `time_t syscall_time(time_t *t);`
+    31. `int syscall_clock_gettime(int clk_id, struct timespec *tp);`
+    32. `int syscall_gettimeofday(struct timeval *tv, struct timezone *tz);`
+    33. `clock_t syscall_times(struct tms *buf);`
+    34. `uint64_t syscall_get_uptime(void);`
+
+
+Before building set GCC , LD, OBJDUMP, 
 `src` directory is containing source code. `build` directory is containing generated object file, binary file and iso file. `iso_root` is required for building `image.iso` file.
 
 To build and run by QEmu iso `make -B`.
