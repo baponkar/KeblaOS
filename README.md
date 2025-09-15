@@ -23,24 +23,24 @@ This is a x86 architecture based 64 bit Operating System.
 
 ### KeblaOS Features
 
-| Feature                    | Sub-Features / Notes                                                                  |
-|----------------------------|--------------------------------------------------------------------------------------|
-| ✅ 🚀**Limine Bootloader**   | Getting Various Boot Information, Getting Firmware Information                       |
-| ✅ **ACPI**                | RSDT, FADT, MADT, MCFG, HPET                                                         |
-| ✅ **CPU Info & Control**  | CPUID, SMP                                                                           |
-| ✅ **GDT**                 | Multi-core support                                                                   |
-| ✅ **TSS**                 | Multi-core support                                                                   |
+| Feature                      | Sub-Features / Notes                                                                 |
+|------------------------------|--------------------------------------------------------------------------------------|
+| ✅ 🚀**Limine Bootloader**  | Getting Various Boot Information, Getting Firmware Information                       |
+| ✅ **ACPI**                  | RSDT, FADT, MADT, MCFG, HPET                                                         |
+| ✅ **CPU Info & Control**    | CPUID, SMP                                                                           |
+| ✅ **GDT**                   | Multi-core support                                                                   |
+| ✅ **TSS**                   | Multi-core support                                                                   |
 | ✅ ⚡**Interrupts**          | APIC (Multi-core), PIC, ISR, IRQ                                                     |
 | ✅ 🧠**Memory Management**   | Memory Info Parsing, 4-Level Paging, PMM, Kmalloc, VMM, KHEAP                        |
 | ✅ ⏱️**Timers**              | TSC, RTC, PIT, APIC, ⚠️ HPET (Not Using)                                            |
-| ✅ **Multitasking**        | Process, Thread, Scheduler, CPU State Handling, Multi-core Multitasking              |
-| ✅ **Kernel Shell (kshell)** | Calculator, Steam Locomotive Animation                                             |
-| ✅ 📂**Filesystem**          | FAT32 (via FatFs, ⚠️ Issues in implementation), VFS Layer                            |
-| ✅ **System Calls**        | Interrupt-based (Using), MSR-based (Not Using)                                       |
-| ✅ **User Mode Switching** | ELF Loader, Binary Loader, minimal libc,stemcall                                     |
-| ✅ 🔌**Drivers**             | 🎴PCI, AHCI SATA Disk, VGA Framebuffer, I/O Ports, Serial, Keyboard, Speaker, Mouse    |
+| ✅ **Multitasking**        | Process, Thread, Scheduler, CPU State Handling, Multi-core Multitasking                |
+| ✅ **Kernel Shell (kshell)** | Calculator, Steam Locomotive Animation                                               |
+| ✅ 📂**Filesystem**          | FAT32 (via FatFs, ⚠️ Issues in implementation), VFS Layer                           |
+| ✅ **System Calls**        | Interrupt-based (Using), MSR-based (Not Using)                                         |
+| ✅ **User Mode Switching** | ELF Loader, Binary Loader, minimal libc,stemcall                                       |
+| ✅ 🔌**Drivers**             | 🎴PCI, AHCI SATA Disk, VGA Framebuffer, I/O Ports, Serial, Keyboard, Speaker, Mouse |
 
-
+-------------------------------------------------------------------------------------------------------------------------
 
 * ✅ 📦**External Libraries** :
     1. [Limine-9.2.3](https://codeberg.org/Limine/Limine)
@@ -77,13 +77,15 @@ This is a x86 architecture based 64 bit Operating System.
 
 ## System Call:
 
-1. `int syscall_keyboard_read(uint8_t *buffer, size_t size)`
-2. `int syscall_print(const char *msg)`
-3. `int syscall_exit()`
-4. `int syscall_print_rax()`
+- General System Call:
 
-5. `uint64_t syscall_uheap_alloc(size_t size, enum allocation_type type);`
-6. `uint64_t syscall_uheap_free(void *ptr, size_t size);`
+    1. `int syscall_keyboard_read(uint8_t *buffer, size_t size)`
+    2. `int syscall_print(const char *msg)`
+    3. `int syscall_exit()`
+    4. `int syscall_print_rax()`
+
+    5. `uint64_t syscall_uheap_alloc(size_t size, enum allocation_type type);`
+    6. `uint64_t syscall_uheap_free(void *ptr, size_t size);`
 
 
 - FatFs File Manage: 
@@ -113,20 +115,20 @@ This is a x86 architecture based 64 bit Operating System.
     23. `int syscall_chdrive(const char *path);`
 
 
-- Process Manage
+- Process Manage:
 
     24. `void *syscall_create_process(char* process_name);`
     25. `int syscall_delete_process(void *process);`
     26. `void *syscall_get_process_from_pid(size_t pid);`
     27. `void *syscall_get_current_process();`
 
-- Thread Manage
+- Thread Manage:
 
     28. `void *syscall_create_thread(void* parent, const char* thread_name, void (*function)(void*), void* arg);`
     29. `void *syscall_delete_thread(void *thread);`
 
 
-- Time Manage
+- Time Manage:
 
     30. `time_t syscall_time(time_t *t);`
     31. `int syscall_clock_gettime(int clk_id, struct timespec *tp);`
@@ -134,6 +136,13 @@ This is a x86 architecture based 64 bit Operating System.
     33. `clock_t syscall_times(struct tms *buf);`
     34. `uint64_t syscall_get_uptime(void);`
 
+- VGA:
+    
+    35. `int syscall_set_pixel(int x, int y, uint32_t color);`
+    36. `uint32_t syscall_get_pixel(int x, int y);`
+    37. `int syscall_cls_color();`
+    38. `int syscall_display_image( int x, int y, const uint64_t* image_data, int img_width, int img_height);`
+    39. `int syscall_display_transparent_image( int x, int y, const uint64_t* image_data, int img_width, int img_height);`
 
 Before building set GCC , LD, OBJDUMP, 
 `src` directory is containing source code. `build` directory is containing generated object file, binary file and iso file. `iso_root` is required for building `image.iso` file.

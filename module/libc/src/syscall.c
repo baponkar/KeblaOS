@@ -288,4 +288,57 @@ int syscall_chdrive(const char *path){
 
 
 
+// ------------------vfs------------------------------------
 
+int fb0_width = 1200;
+int fb0_height = 800;
+
+int syscall_set_pixel(int x, int y, uint32_t color){
+    if(x > fb0_width && y > fb0_height){
+        return -1;
+    }
+    system_call((uint64_t)INT_VGA_SETPIXEL , (uint64_t)x, (uint64_t) y, (uint64_t) color, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return 0;
+}
+
+uint32_t syscall_get_pixel(int x, int y){
+    if(x > fb0_width && y > fb0_height){
+        return -1;
+    }
+    return system_call((uint64_t)INT_VGA_GETPIXEL , (uint64_t)x, (uint64_t) y, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+
+int syscall_cls_color(uint32_t color){
+    system_call((uint64_t)INT_VGA_CLEAR , (uint64_t)color, (uint64_t)0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return 0;
+}
+
+
+
+int syscall_display_image( int x, int y, const uint64_t* image_data, int img_width, int img_height){
+    if(x > fb0_width && y > fb0_height && image_data == NULL && img_width <= 0 && img_width >= fb0_width && img_height >= fb0_height && img_height <= 0){
+        return -1;
+    }
+    system_call((uint64_t)INT_VGA_DISPLAY_IMAGE , (uint64_t)x, (uint64_t)y, (uint64_t) image_data, (uint64_t) img_width, (uint64_t) img_height, (uint64_t) 0);
+    return 0;
+}
+
+
+int syscall_display_transparent_image( int x, int y, const uint64_t* image_data, int img_width, int img_height){
+    if(x > fb0_width && y > fb0_height && image_data == NULL && img_width <= 0 && img_width >= fb0_width && img_height >= fb0_height && img_height <= 0){
+        return -1;
+    }
+    system_call((uint64_t)INT_VGA_DISPLAY_TRANSPARENT_IMAGE , (uint64_t)x, (uint64_t)y, (uint64_t) image_data, (uint64_t) img_width, (uint64_t) img_height, (uint64_t) 0);
+    return 0;
+}
+
+
+int syscall_acpi_poweroff(uint32_t color){
+    system_call((uint64_t)INT_ACPI_POWEROFF, (uint64_t)0, (uint64_t)0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return 0;
+}
+
+int syscall_acpi_reboot(uint32_t color){
+    system_call((uint64_t)INT_ACPI_REBOOT, (uint64_t)0, (uint64_t)0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return 0;
+}

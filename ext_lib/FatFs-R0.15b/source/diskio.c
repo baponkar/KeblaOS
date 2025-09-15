@@ -17,6 +17,9 @@
 #include "diskio.h"		/* Declarations of disk functions */
 
 
+extern bool kebla_disk_read(int disk_no, uint64_t lba, uint32_t count, void* buf);
+extern bool kebla_disk_write(int disk_no, uint64_t lba, uint32_t count, void* buf);
+extern bool kebla_disk_status(int disk_no);
 
 /* Definitions of physical drive number for each drive */
 #define DEV_RAM		0	/* Example: Map Ramdisk to physical drive 0 */

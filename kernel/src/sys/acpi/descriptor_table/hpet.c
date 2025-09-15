@@ -13,7 +13,7 @@ HPET(High Precision Event Timer)
 
 #include "hpet.h"
 
-
+extern bool debug_on;
 
 
 #define HPET_GENERAL_CAPS      0x000 // R - 64-bit
@@ -30,7 +30,8 @@ hpet_t *hpet;
 
 void hpet_init(hpet_t* hpet) {
     if (!hpet || hpet->base_address.AddressSpace != 0) {
-        printf("[HPET] hpet: %x, hpet->base_address.AddressSpace\n", (uint64_t)hpet, (uint64_t)hpet->base_address.AddressSpace);
+        printf("[HPET] hpet: %x, hpet->base_address.AddressSpace\n", 
+            (uint64_t)hpet, (uint64_t)hpet->base_address.AddressSpace);
         return;
     }
 
@@ -121,7 +122,7 @@ void hpet_enable_periodic_irq(uint8_t irq_number, uint64_t period_fs) {
     // Install IRQ handler
     irq_install(irq_number, my_hpet_timer_handler);
 
-    printf("[HPET] : Successfully Enabling Periodic IRQ\n");
+    if(debug_on) printf("[HPET] : Successfully Enabling Periodic IRQ\n");
 }
 
 

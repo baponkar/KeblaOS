@@ -17,6 +17,8 @@ EBX, ECX, and EDX registers:
 
 #include "cpuid.h"
 
+extern bool debug_on;
+
 // Vendor strings from CPUs.
 #define CPUID_VENDOR_AMD           "AuthenticAMD"
 #define CPUID_VENDOR_AMD_OLD       "AMDisbetter!" // Early engineering samples of AMD K5 processor
@@ -237,7 +239,7 @@ bool has_fpu() {
 // Enable FPU and SSE
 void enable_fpu_and_sse() {
 
-    if(!has_fpu() == false) {
+    if(!has_fpu()) {
         printf("[Error] FPU not present!\n");
         return;
     }
@@ -264,7 +266,7 @@ void enable_fpu_and_sse() {
 
     asm volatile ("fninit");    // Initialize the FPU
 
-    printf(" [-] FPU and SSE enabled\n");
+    if(debug_on) printf(" FPU and SSE enabled\n");
 }
 
 
@@ -272,19 +274,19 @@ void enable_fpu_and_sse() {
 void print_cpu_vendor() {
     char vendor[13];
     get_cpu_vendor(vendor);
-    printf(" [*] CPUID: CPU Vendor : %s\n", vendor);
+    printf(" CPUID: CPU Vendor : %s\n", vendor);
 }
 
 void print_cpu_brand() {
     char brand[49];
     get_cpu_brand(brand);
-    printf(" [*] CPUID: CPU Brand : %s\n", brand);
+    printf(" CPUID: CPU Brand : %s\n", brand);
 }
 
 void print_cpu_base_frequency(){
     uint32_t cpu_base_frequency = get_cpu_base_frequency();
 
-    printf(" [*] CPUID: CPU Base Frequency: %d Hz\n", cpu_base_frequency);
+    printf(" CPUID: CPU Base Frequency: %d Hz\n", cpu_base_frequency);
 }
 
 

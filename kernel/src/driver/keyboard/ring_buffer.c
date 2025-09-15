@@ -13,6 +13,8 @@ https://embedjournal.com/implementing-circular-buffer-embedded-c/
 
 #include "ring_buffer.h"
 
+extern bool debug_on;
+
 extern ring_buffer_t* keyboard_buffer;
 
 // Initialize the ring buffer with given capacity.
@@ -31,6 +33,8 @@ ring_buffer_t* ring_buffer_init(size_t capacity) {
     keyboard_buffer->head = 0;
     keyboard_buffer->tail = 0;
     keyboard_buffer->full = false;
+
+    if(debug_on) printf("Successfully ring buffer initialied\n");
     return keyboard_buffer;
 }
 

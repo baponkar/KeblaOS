@@ -15,6 +15,7 @@ https://stackoverflow.com/questions/79386685/how-does-stack-memory-will-be-use-t
 
 #include "pic.h"
 
+extern bool debug_on;
 
 #define PIC1_COMMAND_PORT 0x20      //Primary PIC(programmable interrupt controller) Command Port:
 #define PIC1_DATA_PORT 0x21         //Primary PIC Data Port
@@ -82,7 +83,7 @@ void disable_pic() {
     outb(PIC2_DATA_PORT, 0xFF);     // Mask all interrupts
     io_wait();
 
-    printf(" [-] PIC Disabled.\n");
+    if(debug_on) printf(" PIC Disabled.\n");
 }
 
 
@@ -92,7 +93,7 @@ void enable_pic() {
     outb(PIC2_DATA_PORT, 0x00);     // Unmask all interrupts
     io_wait();
 
-    printf(" [+] PIC Enabled.\n");
+    if(debug_on) printf(" PIC Enabled.\n");
 }
 
 void send_eoi(uint8_t irq) {

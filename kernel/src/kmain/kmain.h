@@ -58,6 +58,11 @@
 #include "../driver/keyboard/ring_buffer.h"     // Hold keyboard input
 #include "../driver/mouse/mouse.h"              // mouse driver
 #include "../driver/io/serial.h"
+#include "../sys/acpi/descriptor_table/fadt.h"
+
+// Network Driver
+#include "../driver/network/ethernet/ethernet.h"
+
 
 // VGA Drivers
 #include "../driver/vga/framebuffer.h"
@@ -76,7 +81,7 @@
 #include "../sys/cpu/cpu.h"                 // target_cpu_task, switch_to_core
 #include  "../sys/cpu/cpuid.h"              // get_cpu_count, get_cpu_info
 #include "../bootloader/firmware.h"
-#include "../sys/cpu/smp.h"
+
 
 // Bootloader
 #include "../bootloader/boot.h"                     // bootloader info

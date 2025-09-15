@@ -25,6 +25,7 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 
 #include "paging.h"
 
+extern bool debug_on;
 
 extern void enable_paging(uint64_t pml4_address);   // present in load_paging.asm
 extern void disable_paging();                       // present in load_paging.asm
@@ -93,7 +94,7 @@ void set_cr3_addr(uint64_t cr3) {
 // Initialising Paging for bootstrap CPU core
 void init_bs_paging()
 {  
-    printf(" [-] Initializing Paging for Bootstrap CPU Core\n");
+    if(debug_on) printf(" [-] Initializing Paging for Bootstrap CPU Core\n");
     assert(phys_mem_head != 0); // Check if physical memory head is initialized
 
     bsp_cr3 = get_cr3_addr();   // Get the current value of CR3 (the base of the PML4 table)
@@ -128,7 +129,7 @@ void init_bs_paging()
     // Invalidate the TLB for the changes to take effect
     flush_tlb_all();
     
-    printf(" [-] Successfully Paging initialized.\n");
+    if(debug_on) printf(" Successfully Paging initialized.\n");
 }
 
 
@@ -143,7 +144,7 @@ void init_bs_paging_with_new_pml4() {
     }
 
     set_cr3_addr(bsp_cr3);  // Set the CR3 register to the new PML4 address
-    printf(" [-] Set CR3 to new PML4 address: %x\n", bsp_cr3);
+    if(debug_on) printf(" Set CR3 to new PML4 address: %x\n", bsp_cr3);
 
     kernel_pml4 = (pml4_t *) phys_to_vir(bsp_cr3); // Get the PML4 table pointer from the new CR3 address
 
@@ -156,13 +157,13 @@ void init_bs_paging_with_new_pml4() {
         }
 
         if(page->present && page->frame) {
-            printf("[Debug] Page at address %x already present with frame %x\n", addr, page->frame << 12);
+            if(debug_on) printf(" Page at address %x already present with frame %x\n", addr, page->frame << 12);
             continue; // Skip if the page is already present
         }
         alloc_frame(page, 0, 1); // page, user, rw
     }
 
-    printf(" [-] Successfully initialized Paging with new PML4 for Higher Half Kernel.\n");
+    if(debug_on) printf(" [-] Successfully initialized Paging with new PML4 for Higher Half Kernel.\n");
 
     // Updating lower half pages first 10 MB
     for (uint64_t addr = LOWER_HALF_START_ADDR; addr < LOWER_HALF_START_ADDR + 0x100000; addr += PAGE_SIZE) {
@@ -173,7 +174,7 @@ void init_bs_paging_with_new_pml4() {
         }
 
         if(page->present && page->frame) {
-            printf("[Debug] Page at address %x already present with frame %x\n", addr, page->frame << 12);
+            if(debug_on) printf(" Page at address %x already present with frame %x\n", addr, page->frame << 12);
             continue; // Skip if the page is already present
         }
         alloc_frame(page, 1, 1); // page, user, rw
@@ -186,10 +187,10 @@ void init_bs_paging_with_new_pml4() {
 
 // Initializing Paging for other CPU cores
 void init_ap_paging(int core_id) {
-    printf(" [-] Initializing Paging for CPU %d\n", core_id);
+    if(debug_on) printf(" Initializing Paging for CPU %d\n", core_id);
 
     set_cr3_addr(bsp_cr3);  // Set the CR3 register to the PML4 address
-    printf(" [-] CPU %d: Set CR3 to PML4 address: %x\n", core_id, bsp_cr3);
+    if(debug_on) printf(" CPU %d: Set CR3 to PML4 address: %x\n", core_id, bsp_cr3);
 
     pml4_t * pml4 = (pml4_t *) phys_to_vir((uint64_t)get_cr3_addr()); // Get the current value of CR3 (the base of the PML4 table)
 
@@ -209,8 +210,10 @@ void init_ap_paging(int core_id) {
 
     flush_tlb_all();        // Flush TLB for the current core
 
-    printf(" [-] Enabling Paging first 1 MB Lower Half Memory address for core %d\n", core_id);
-    printf(" [-] Successfully Paging initialized for core %d.\n", core_id);
+    if(debug_on) {
+        printf(" Enabling Paging first 1 MB Lower Half Memory address for core %d\n", core_id);
+        printf(" Successfully Paging initialized for core %d.\n", core_id);
+    }
 }
 
 // Function to allocate a new page

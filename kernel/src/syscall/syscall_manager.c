@@ -11,6 +11,8 @@
 #include "../lib/stdio.h"
 #include "syscall_manager.h"
 
+extern bool debug_on;
+
 #define MSR_EFER     0xC0000080
 #define MSR_STAR     0xC0000081
 #define MSR_LSTAR    0xC0000082
@@ -49,10 +51,12 @@ void init_syscall(uint64_t cpu_id) {
     write_msr(MSR_GS_BASE, 0); // MSR_GS_BASE — user GS base (dummy OK)
     write_msr(MSR_KERNEL_GS_BASE, (uint64_t)&cpu_datas[cpu_id]); // MSR_KERNEL_GS_BASE
 
+    if(debug_on) {
+        printf("[CPU %d] Initialized syscall with GS_BASE: %x\n", cpu_id, gs_base);
+        printf("[CPU %d] kernel_stack: %x\n", cpu_id, (uint64_t)gs_base->kernel_stack);
+        printf("[CPU %d] user_stack: %x\n", cpu_id, (uint64_t)gs_base->user_stack);
+    }
 
-    printf("[CPU %d] Initialized syscall with GS_BASE: %x\n", cpu_id, gs_base);
-    printf("[CPU %d] kernel_stack: %x\n", cpu_id, (uint64_t)gs_base->kernel_stack);
-    printf("[CPU %d] user_stack: %x\n", cpu_id, (uint64_t)gs_base->user_stack);
 
     // Enable SYSCALL/SYSRET by setting SCE in IA32_EFER.
     uint64_t efer = read_msr(MSR_EFER);
@@ -70,9 +74,11 @@ void init_syscall(uint64_t cpu_id) {
     write_msr(MSR_SFMASK, 0);
 
     uint64_t kgs = read_msr(MSR_KERNEL_GS_BASE);
-    printf("MSR_KERNEL_GS_BASE = %x\n", (void*)kgs);
-
-    printf("[CPU %d] MSR based Syscall initialized successfully.\n", cpu_id);
+    
+    if(debug_on){
+        printf("MSR_KERNEL_GS_BASE = %x\n", (void*)kgs);
+        printf("[CPU %d] MSR based Syscall initialized successfully.\n", cpu_id);
+    }
 }
 
 

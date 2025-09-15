@@ -62,6 +62,8 @@ sudo apt install libelf-dev # For ELF file support
 sudo apt install libssl-dev # For SSL support in some GCC versions
 sudo apt install wget       # For downloading files
 sudo apt install xz-utils   # For extracting .xz files
+sudo apt install ovmf       # FOr UEFI RUN
+
 
 
 # Set the base URL for downloading source files

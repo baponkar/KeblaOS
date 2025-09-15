@@ -20,7 +20,7 @@ void get_firmware_info(){
     if(firmware_type_request.response != NULL){
         uint64_t firmware_type = firmware_type_request.response->firmware_type;
         if(firmware_type == LIMINE_FIRMWARE_TYPE_X86BIOS){
-            FIRMWARE_TYPE = "X86BIOS";
+            FIRMWARE_TYPE = "x86BIOS";
         }else if(firmware_type == LIMINE_FIRMWARE_TYPE_UEFI32){
             FIRMWARE_TYPE = "UEFI32";
         }else if(firmware_type == LIMINE_FIRMWARE_TYPE_UEFI64){

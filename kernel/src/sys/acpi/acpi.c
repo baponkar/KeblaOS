@@ -26,7 +26,7 @@
 
 #include "acpi.h"
 
-
+extern bool debug_on;
 
 __attribute__((used, section(".limine_requests")))
 static volatile LIMINE_BASE_REVISION(0);
@@ -74,12 +74,12 @@ void validate_rsdp_table(rsdp_t *rsdp){
                 sum += ptr[i];
             }
             if((sum % 256) == 0){
-                printf(" [-] ACPI %d.0 is signature and checksum validated\n", acpi_version);
+                if(debug_on) printf(" ACPI %d.0 is signature and checksum validated\n", acpi_version);
             }else{
-                printf("[Error] ACPI %d.0 is not checksum validated\n", acpi_version);
+                if(debug_on) printf("[Error] ACPI %d.0 is not checksum validated\n", acpi_version);
             }
         }else{
-            printf(" [-] ACPI %d.0 is not signature validated\n", acpi_version);
+            if(debug_on) printf(" ACPI %d.0 is not signature validated\n", acpi_version);
         }
     }else{
         printf("[Error] ACPI Table not found\n");
@@ -89,7 +89,6 @@ void validate_rsdp_table(rsdp_t *rsdp){
 
 // Function to read ACPI enable status
 int is_acpi_enabled() {
-    fadt_t *fadt = (fadt_t *)fadt;
     if (!fadt) {
         printf("[Error] FADT not found! ACPI status unknown.\n");
         return -1;
@@ -109,17 +108,16 @@ int is_acpi_enabled() {
     uint16_t acpi_status = inw(pm1a_control); // Read PM1a Control Block register
 
     if (acpi_status & 1) { // Check SCI_EN (Bit 0)
-        printf(" [-] ACPI is ENABLED.\n");
+        if(debug_on) printf(" ACPI is ENABLED.\n");
         return 1;
     }
     
-    printf(" [-] ACPI is DISABLED.\n");
+    if(debug_on) printf(" ACPI is DISABLED.\n");
     return 0;
 }
 
 
 void acpi_enable() {
-    fadt_t *fadt = (fadt_t *) fadt;
     if (!fadt) {
         printf(" [Error] FADT not found, ACPI cannot be enabled!\n");
         return;
@@ -131,7 +129,7 @@ void acpi_enable() {
 
         // Wait a bit for ACPI mode to activate
         for (volatile int i = 0; i < 100000; i++);
-        printf(" [-] Succesfully ACPI Mode enable\n");
+        if(debug_on) printf(" Succesfully ACPI Mode enable\n");
     }
 }
 
@@ -146,7 +144,7 @@ void init_acpi(){
     if(!is_acpi_enabled()){
         acpi_enable();
     }else {
-        printf("[ACPI] : ACPI is already enabled!\n");
+        if(debug_on) printf("[ACPI] : ACPI is already enabled!\n");
     }
         
     // FADT
@@ -154,9 +152,9 @@ void init_acpi(){
 
     // HPET
     // parse_hpet(hpet);
-    if(!hpet){
-        printf("HPET is NULL!\n");
-    }
+    // if(!hpet){
+    //     printf("HPET is NULL!\n");
+    // }
     // hpet_init(hpet);
     // hpet_enable_periodic_irq(17, 1);
 
@@ -166,7 +164,7 @@ void init_acpi(){
     // MCFG
     // parse_mcfg(mcfg);    // PCIe Scan
 
-    printf(" [-] Successfully ACPI Enabled\n");
+    if(debug_on) printf(" Successfully ACPI Enabled\n");
 }
 
 

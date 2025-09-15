@@ -14,6 +14,8 @@ https://wiki.osdev.org/TSC
 
 #include "tsc.h"
 
+extern bool debug_on;
+
 
 volatile uint64_t tsc_ticks = 0;
 
@@ -70,7 +72,7 @@ void init_tsc(){
 
     cpu_frequency_hz = get_cpu_freq_msr();
 
-    printf(" [-] TSC Timer initialized with CPU Frequency %d Hz\n", cpu_frequency_hz);
+    if(debug_on) printf(" TSC Timer initialized with CPU Frequency %d Hz\n", cpu_frequency_hz);
 }
 
 

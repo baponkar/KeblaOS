@@ -17,6 +17,7 @@
 
 #include "apic_interrupt.h"
 
+extern bool debug_on;
 
 #define  TOTAL_INT_ENTRIES 256
 
@@ -136,11 +137,12 @@ void bsp_apic_int_init(){
 
     enable_apic();          // Enable the APIC after setting up the IDT
     enable_ioapic_mode();   // Enable IOAPIC mode
+    ioapic_init();
     bsp_apic_irq_remap();   // Remap the APIC to the new interrupt vector table
 
     asm volatile("sti");
 
-    printf(" [-] Successfully Bootstrap apic Interrupt Initialized.\n");
+    if(debug_on) printf(" Successfully Bootstrap apic Interrupt Initialized.\n");
 }
 
 
@@ -248,6 +250,6 @@ void ap_apic_int_init(uint64_t core_id){
     idt_flush((uint64_t) &core_int_ptr[core_id]);
    
     asm volatile("sti");
-    printf(" [-] Successfully CPU %d Interrupt Initialized.\n", core_id);
+    if(debug_on) printf(" Successfully CPU %d Interrupt Initialized.\n", core_id);
 }
 

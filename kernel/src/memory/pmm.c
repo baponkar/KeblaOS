@@ -13,6 +13,7 @@
 
 #include "pmm.h"
 
+extern bool debug_on;
 
 // This file will set or free a 4KB physical Frame.
 // one row of bitmap can store information(free/use) of 8 * 4 KB = 32 Kb memory page(8 pages)
@@ -105,7 +106,7 @@ void init_pmm(){
     // clear the memory of frames array
     memset(frames, 0, sizeof(uint64_t) * (nframes + 1) / BITMAP_SIZE);                           
 
-    printf(" [-] Successfully initialized PMM!\n");
+    if(debug_on) printf(" Successfully initialized PMM!\n");
 }
 
 

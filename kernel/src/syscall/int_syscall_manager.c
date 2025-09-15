@@ -5,10 +5,15 @@ References:
     https://github.com/dreamportdev/Osdev-Notes/blob/master/06_Userspace/04_System_Calls.md
 */
 
+#include "../driver/vga/vga.h"
+#include "../driver/vga/framebuffer.h"
+
 #include "../lib/string.h"  // for size_t
 #include "../lib/stdio.h"
 #include "../lib/errno.h"
 #include "../lib/time.h"
+
+#include "../sys/acpi/descriptor_table/fadt.h" // acpi_poweroff 
 
 #include "../process/process.h"
 #include "../process/thread.h"
@@ -29,6 +34,8 @@ References:
 
 
 #include "int_syscall_manager.h"
+
+extern bool debug_on;
 
 #define MAX_PATH_LEN 256
 
@@ -360,6 +367,10 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
 
             // --------------------------VFS File Manages--------------------------
+
+            case INT_GET_FB_INFO: {
+                break;
+            }
             
             case INT_VFS_MKFS: {
                 
@@ -519,6 +530,65 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                 break;
             }
 
+            // ---------------------------- VGA--------------------------------
+
+            case INT_VGA_SETPIXEL: {
+                int x = (int) regs->rdi;
+                int y = (int) regs->rsi;
+                uint32_t color = (uint32_t) regs->rdx;
+
+                set_pixel(x, y, color);
+                break;
+            }
+
+            case INT_VGA_GETPIXEL: {
+                int x = (int) regs->rdi;
+                int y = (int) regs->rsi;
+
+                regs->rax = get_pixel(x, y);
+                break;
+            } 
+            
+            case INT_VGA_CLEAR:{
+                uint32_t color = (uint32_t) regs->rdi;
+                cls_color(color);
+                regs->rax = 0;
+                break;
+            } 
+            
+            case INT_VGA_DISPLAY_IMAGE:{
+                int x = (int) regs->rdi;
+                int y = (int) regs->rsi;
+                const uint64_t* image_data = (const uint64_t*) regs->rdx;
+                int width = (int) regs->r10;
+                int height = (int) regs->r8;
+                display_image(x, y, image_data, width, height);
+                regs->rax = 0;
+                break;
+            }
+
+            case INT_VGA_DISPLAY_TRANSPARENT_IMAGE:{
+                int x = (int) regs->rdi;
+                int y = (int) regs->rsi;
+                const uint64_t* image_data = (const uint64_t*) regs->rdx;
+                int width = (int) regs->r10;
+                int height = (int) regs->r8;
+                draw_image_with_transparency(x, y, image_data, width, height);
+                regs->rax = 0;
+                break;
+            }
+
+            case INT_ACPI_POWEROFF: {
+                acpi_poweroff();
+                regs->rax = 0;
+                break;
+            }
+
+            case INT_ACPI_REBOOT: {
+                acpi_reboot();
+                regs->rax = 0;
+                break;
+            }
 
             default: {
                 printf("Unknown System Call! %d\n", regs->rax);
@@ -537,7 +607,7 @@ void int_syscall_init(){
     irq_install(96, (void *)&int_systemcall_handler);     
 
     asm volatile("sti");
-    printf(" [-] Interrupt Based System Call initialized!\n");
+    if(debug_on) printf(" Interrupt Based System Call initialized!\n");
 }
 
 

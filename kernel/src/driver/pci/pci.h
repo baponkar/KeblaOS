@@ -192,8 +192,14 @@ extern size_t network_controller_count;             // Counter for network contr
 extern pci_device_t *wireless_controllers;          // Array to store detected wireless controllers
 extern size_t wireless_controller_count;            // Counter for wireless controllers
 
-void pci_scan();
 
+
+uint32_t pci_read(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset);
+void pci_write(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, uint32_t value);
+
+
+
+void pci_scan();
 
 
 void print_device_info(pci_device_t *device);

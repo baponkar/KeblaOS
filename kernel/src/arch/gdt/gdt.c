@@ -28,7 +28,7 @@
 
 #include "gdt.h"
 
-
+extern bool debug_on;
 
 #define STACK_SIZE 0x4000   // 16 KB
 #define GDT_ENTRIES 7       // 1-Null(64 Bit) + 2-Kernel(2*64 Bit) + 2-User(2*64 Bit) + 1-TSS(128 Bit)
@@ -81,7 +81,7 @@ void gdt_tss_init(){
     gdt_flush(&gdtr);     // Load GDT
     tss_flush(0x28);      // Selector 0x28 (5th entry in GDT)
 
-    printf(" [-] GDT & TSS initialized.\n");
+    if(debug_on) printf(" GDT & TSS initialized.\n");
 }
 
 
@@ -95,7 +95,7 @@ void print_gdt_entry(uint16_t selector) {
     uint8_t access = entry->access;
     uint8_t flags = (entry->granularity & 0xF0) >> 4;
 
-    printf("GDT Entry %x: Base=%x Limit=%x Access=%x Flags=%x\n",
+    if(debug_on) printf("GDT Entry %x: Base=%x Limit=%x Access=%x Flags=%x\n",
            selector, base, limit, access, flags);
 }
 

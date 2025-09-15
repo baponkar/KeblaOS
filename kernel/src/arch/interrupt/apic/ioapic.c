@@ -11,6 +11,7 @@ https://wiki.osdev.org/IOAPIC
 #include "../irq_manage.h"
 #include "ioapic.h"
 
+extern bool debug_on;
 
 // Offsets for IOAPIC registers
 #define IOAPIC_REGSEL   0x00
@@ -103,7 +104,7 @@ void ioapic_route_all_irq(uint8_t lapic_id, uint32_t flags) {
     ioapic_route_irq(19, lapic_id, 51, flags);
     ioapic_route_irq(96, lapic_id, 128, flags);   // To Manage System Call
 
-    printf(" [-] IOAPIC Hardware IRQs routed to LAPIC ID %d\n", lapic_id);
+    if(debug_on) printf(" IOAPIC Hardware IRQs routed to LAPIC ID %d\n", lapic_id);
 }
 
 
@@ -112,10 +113,10 @@ void ioapic_route_all_irq(uint8_t lapic_id, uint32_t flags) {
 
 void ioapic_init() {
     // Read IOAPIC ID and version
-    uint32_t ioapic_id = ioapic_read_reg(IOAPICID) >> 24; // Get the IOAPIC ID (bits 24-31)
-    uint32_t ioapic_ver = ioapic_read_reg(IOAPICVER) & 0xFF; // Get the IOAPIC version (bits 0-7)
+    uint32_t ioapic_id = ioapic_read_reg(IOAPICID) >> 24;       // Get the IOAPIC ID (bits 24-31)
+    uint32_t ioapic_ver = ioapic_read_reg(IOAPICVER) & 0xFF;    // Get the IOAPIC version (bits 0-7)
 
-    printf("IOAPIC ID: %u, Version: %u\n", ioapic_id, ioapic_ver);
+    if(debug_on) printf("IOAPIC ID: %u, Version: %u\n", ioapic_id, ioapic_ver);
 }
 
 

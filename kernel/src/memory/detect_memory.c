@@ -14,6 +14,7 @@ References:
 
 #include "detect_memory.h"
 
+extern bool debug_on;
 
 __attribute__((used, section(".limine_requests")))
 static volatile LIMINE_BASE_REVISION(3);
@@ -53,6 +54,8 @@ static volatile struct limine_hhdm_request hhdm_request = {
     .id = LIMINE_HHDM_REQUEST,
     .revision = 3
 };
+
+extern bool debug_on;
 
 uint64_t STACK_MEM_SIZE;
 
@@ -104,33 +107,33 @@ static const char* get_mem_type(uint64_t type) {
 // Getting Start Stack Memory Size
 void get_stack_mem_info(){
     if(stack_size_request.response == NULL){
-        printf("[Error] Memory: Getting limine_stack_size_request failed!\n");
+        if(debug_on) printf("[Error] Memory: Getting limine_stack_size_request failed!\n");
         return;
     }
 
     STACK_MEM_SIZE = stack_size_request.stack_size;
-    printf(" [Memory] Start Stack size : %x\n", STACK_MEM_SIZE);
+    if(debug_on) printf(" [Memory] Start Stack size : %x\n", STACK_MEM_SIZE);
 }
 
 // What type Paging mode started by limine
 void get_paging_mode(){
     if(paging_mode_request.response == NULL){
-        printf("[Error] Memory: Getting limine_paging_mode_request failed!\n");
+        if(debug_on) printf("[Error] Memory: Getting limine_paging_mode_request failed!\n");
         return;
     }
 
     paging_mode = paging_mode_request.response->mode;
 
     if(paging_mode == LIMINE_PAGING_MODE_X86_64_4LVL)
-        printf(" [Memory] LIMINE_PAGING_MODE_X86_64_4LVL\n");
+        if(debug_on) printf(" [Memory] LIMINE_PAGING_MODE_X86_64_4LVL\n");
     if(paging_mode == LIMINE_PAGING_MODE_X86_64_5LVL)
-        printf(" [Memory] LIMINE_PAGING_MODE_X86_64_5LVL\n");
+        if(debug_on) printf(" [Memory] LIMINE_PAGING_MODE_X86_64_5LVL\n");
 }
 
 // The Physical and Virtual address where limine put the kernel
 void get_kernel_address(){
     if(kernel_address_request.response == NULL){
-        printf("[Error] Memory: Getting limine_kernel_address_request failed!\n");
+        if(debug_on) printf("[Error] Memory: Getting limine_kernel_address_request failed!\n");
         return;
     }
 
@@ -139,13 +142,13 @@ void get_kernel_address(){
 
     KERNEL_OFFSET = KERNEL_VIR_BASE - KERNEL_PHYS_BASE;
 
-    printf(" [Memory] Kernel position address: Virtual = %x, Physical = %x\n", KERNEL_VIR_BASE, KERNEL_PHYS_BASE);
+    if(debug_on) printf(" [Memory] Kernel position address: Virtual = %x, Physical = %x\n", KERNEL_VIR_BASE, KERNEL_PHYS_BASE);
 }
 
 // Get The Higher Half Direct Map Offset
 void get_hhdm_offset(){
     if(hhdm_request.response == NULL){
-        printf("[Error] Memory: Getting limine_hhdm_request failed!\n");
+        if(debug_on) printf("[Error] Memory: Getting limine_hhdm_request failed!\n");
         return;
     }
 
@@ -155,7 +158,7 @@ void get_hhdm_offset(){
 // Getting Memory map 
 void get_phys_mem_map(){
     if(memmap_request.response == NULL){
-        printf("[Error] Memory: limine_memmap_request.response is failed!\n");
+        if(debug_on) printf("[Error] Memory: limine_memmap_request.response is failed!\n");
         return;
     }
 
@@ -174,7 +177,7 @@ void get_phys_mem_map(){
 // Set usable memory map to use further
 void set_usable_mem(){
     if(mem_entries == NULL){
-        printf("[Error] Memory: mem_entries is empty!\n");
+        if(debug_on) printf("[Error] Memory: mem_entries is empty!\n");
         return;
     }
 
@@ -199,14 +202,14 @@ void set_usable_mem(){
     //Final usable_mem_length
     USABLE_LENGTH_PHYS_MEM = USABLE_END_PHYS_MEM - USABLE_START_PHYS_MEM;
 
-    printf(" [Memory] Usable Phys. memory => Start: %x, End: %x, Length: %x\n", 
+    if(debug_on) printf(" [Memory] Usable Phys. memory => Start: %x, End: %x, Length: %x\n", 
         USABLE_START_PHYS_MEM, USABLE_END_PHYS_MEM, USABLE_END_PHYS_MEM);
 }
 
 // Getting total physical memory space present at the device
 void get_total_phys_memory(){
     if(mem_entries == NULL){
-        printf("[Error] Memory: mem_entries is empty!\n");
+        if(debug_on) printf("[Error] Memory: mem_entries is empty!\n");
         return;
     }
 
@@ -221,7 +224,7 @@ void get_total_phys_memory(){
         TOTAL_PHYS_MEMORY += length;
     }
 
-    printf(" [Memory] Total Device Memory = %x\n", TOTAL_PHYS_MEMORY);
+    if(debug_on) printf(" [Memory] Total Device Memory = %x\n", TOTAL_PHYS_MEMORY);
 }
 
 // Get memory info and set some value for further use
@@ -240,11 +243,12 @@ void get_set_memory(){
         uint64_t kernel_phys_start_addr = HIGHER_HALF_START_ADDR - HHDM_OFFSET;
         uint64_t kernel_phys_end_addr = HIGHER_HALF_END_ADDR - HHDM_OFFSET;
 
-        printf(" [Memory] HHDM Offset: %x\n", HHDM_OFFSET);
-        printf(" [Memory] Higher Half Start(Virtual): %x and End(Virtual): %x\n", 
-            HIGHER_HALF_START_ADDR, HIGHER_HALF_END_ADDR);
-        printf(" [Memory] Higher Half Start(Physical): %x and End(Physical): %x\n", 
-            kernel_phys_start_addr, kernel_phys_end_addr);
+        if(debug_on){
+            printf(" [Memory] HHDM Offset: %x\n", HHDM_OFFSET);
+            printf(" [Memory] Higher Half Start(Virtual): %x and End(Virtual): %x\n", HIGHER_HALF_START_ADDR, HIGHER_HALF_END_ADDR);
+            printf(" [Memory] Higher Half Start(Physical): %x and End(Physical): %x\n", kernel_phys_start_addr, kernel_phys_end_addr);
+        }
+        
     }
 
     // Get Physical Memory map and set usable memory map

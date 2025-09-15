@@ -7,6 +7,8 @@
 
 #include "rtc.h"
 
+extern bool debug_on;
+
 #define RTC_VECTOR  40
 #define RTC_IRQ 8   // 40 - 32
 // Ports for RTC
@@ -89,7 +91,7 @@ void rtc_init() {
         printf("rtc_time allocation failed!\n");
     }
 
-    printf("[Info] RTC Timer initialized\n");
+    if(debug_on) printf(" RTC Timer initialized\n");
 }
 
 

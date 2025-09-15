@@ -17,6 +17,8 @@
 
 #include "pit_timer.h"
 
+extern bool debug_on;
+
 #define PIT_TIMER_VECTOR  32    // 0x20 = 32, IRQ0 is the first interrupt vector in the PIC 
 #define PIT_TIMER_IRQ 0         // 32-32 = 0
 
@@ -106,7 +108,7 @@ void init_pit_timer(uint32_t interval_ms) {
 
     send_eoi(PIT_TIMER_IRQ);
     
-    printf("[Info] PIT Timer initialized with %d ms interval (divisor: %d, frequency: %d Hz)\n", interval_ms, divisor, frequency);
+    if(debug_on) printf(" PIT Timer initialized with %d ms interval (divisor: %d, frequency: %d Hz)\n", interval_ms, divisor, frequency);
 }
 
 

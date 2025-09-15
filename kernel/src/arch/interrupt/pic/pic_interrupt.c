@@ -16,6 +16,8 @@ https://wiki.osdev.org/8259_PIC
 #include "pic_interrupt.h"
 
 
+extern bool debug_on;
+
 #define  TOTAL_INT_ENTRIES 256
 
 
@@ -127,7 +129,7 @@ void pic_int_init(){
 
     asm volatile("sti");
 
-    printf("[Info] Successfully pic Bootstrap Interrupt Initialized.\n");
+    if(debug_on)  printf(" Successfully pic Bootstrap Interrupt Initialized.\n");
 }
 
 

@@ -22,6 +22,8 @@ extern madt_t *madt;   // Defined in madt.c
 extern mcfg_t *mcfg;   // Defined in mcfg.c
 extern hpet_t *hpet;   // Defined in hpet.c
 
+
+
 // parsing RSDT and XSDT tables to get MADT, MCFG, FADT and HPET tables
 void parse_rsdt_table(rsdp_t *rsdp){
     if(rsdp->revision >= 2){

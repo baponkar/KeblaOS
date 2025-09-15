@@ -100,7 +100,7 @@ uint64_t get_lapic_base(){
 }
 
 uint32_t get_lapic_id() {
-    return apic_read(LAPIC_ID_REGISTER) >> 24;
+    return apic_read(LAPIC_ID_REGISTER) >> 24 & 0xFF;;
 }
 
 uint32_t get_lapic_version() {

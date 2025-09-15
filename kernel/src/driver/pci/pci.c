@@ -20,7 +20,7 @@
 
 #include "pci.h"
 
-
+extern bool debug_on;
 
 #define CONFIG_ADDRESS 0xCF8
 #define CONFIG_DATA    0xCFC
@@ -142,11 +142,11 @@ pci_device_t pci_device_detect(uint8_t bus, uint8_t device, uint8_t function) {
     // pci_device.base_address_registers[6] = bar6;
 
 
-    // printf(" [-] PCI: Device found at %d:%d.%d\n", bus, device, function);
-    // printf("     Device ID: %x, Vendor ID: %x Class: %x, Subclass: %x, Prog IF: %x, Revision: %d\n",
-    //     pci_device.device_id, pci_device.vendor_id, class, subclass, prog_if, pci_device.revision_id);
+    // if(debug_on) printf(" [-] PCI: Device found at %x:%x.%x\n", bus, device, function);
+    if(debug_on) printf("     Device ID: %x, Vendor ID: %x, Class: %x, Subclass: %x\n",
+        pci_device.device_id, pci_device.vendor_id, class, subclass);
 
-    print_device_info((pci_device_t *) &pci_device);
+    if(debug_on) print_device_info((pci_device_t *) &pci_device);
 
     return pci_device;
 }
@@ -217,7 +217,7 @@ void print_device_info(pci_device_t *device){
             break;
     }
 
-    printf(" Device ID: %d", device->device_id);
+    printf(" Device ID: %x", device->device_id);
 
     switch(device->class_code){
         case PCI_CLASS_UNCLASSIFIED:
@@ -492,7 +492,7 @@ void pci_scan() {
         return;
     }
 
-    printf("[PCI] Scanning PCI devices... \n");
+    if(debug_on) printf("[PCI] Scanning PCI devices... \n");
 
     for (uint32_t index = 0; index < (256 * 32 * 8); index++) {
         uint8_t bus = (index >> 8) & 0xFF;
@@ -544,7 +544,7 @@ void pci_scan() {
                 break; // Not a mass storage or network controller
         }
     }
-    printf("[PCI] PCI Scan Completed\n\n");
+    if(debug_on) printf("[PCI] PCI Scan Completed\n\n");
 }
 
 

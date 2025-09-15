@@ -86,7 +86,20 @@ enum int_syscall_number {
 
     INT_SYSCALL_LIST            = 101,
     INT_VFS_INIT                = 102,
-    INT_VFS_MKFS                = 103
+    INT_VFS_MKFS                = 103,
+
+    // VGA 
+    INT_GET_FB_INFO             = 104,
+    INT_VGA_SETPIXEL            = 105,
+    INT_VGA_GETPIXEL            = 106,
+    INT_VGA_CLEAR               = 107,
+    INT_VGA_DISPLAY_IMAGE       = 108,
+    INT_VGA_DISPLAY_TRANSPARENT_IMAGE = 109,
+
+    // ACPI
+    INT_ACPI_POWEROFF           = 110,
+    INT_ACPI_REBOOT             = 111
+
  
 };
 

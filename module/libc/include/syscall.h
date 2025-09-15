@@ -85,9 +85,21 @@ enum int_syscall_number {
     INT_CREATE_THREAD           = 99,   // 0x63
     INT_DELETE_THREAD           = 100,  // 0x64
 
-    INT_SYSCALL_LIST            = 101,
-    INT_VFS_INIT                = 102,
-    INT_VFS_MKFS                = 103
+    INT_SYSCALL_LIST            = 101,  // 0x65
+    INT_VFS_INIT                = 102,  // 0x66
+    INT_VFS_MKFS                = 103,  // 0x67
+
+        // VGA 
+    INT_VGA_SETPIXEL            = 104,  // 0x68
+    INT_VGA_GETPIXEL            = 105,  // 0x69
+    INT_VGA_CLEAR               = 106,  // 0x6a
+    INT_VGA_DISPLAY_IMAGE       = 107,  // 0x6b
+    INT_VGA_DISPLAY_TRANSPARENT_IMAGE = 108, // 0x6c
+
+    // ACPI
+    INT_ACPI_POWEROFF           = 110,
+    INT_ACPI_REBOOT             = 111
+
 };
 
 
@@ -186,8 +198,12 @@ uint64_t syscall_get_uptime(void);
 
 
 
-
-
+// VGA 
+int syscall_set_pixel(int x, int y, uint32_t color);
+uint32_t syscall_get_pixel(int x, int y);
+int syscall_cls_color(uint32_t color);
+int syscall_display_image( int x, int y, const uint64_t* image_data, int img_width, int img_height);
+int syscall_display_transparent_image( int x, int y, const uint64_t* image_data, int img_width, int img_height);
 
 
 

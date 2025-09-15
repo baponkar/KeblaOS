@@ -18,6 +18,8 @@ https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_K
 
 #include "keyboard.h"
 
+extern bool debug_on;
+
 #define KEYBOARD_BUF_SIZE 128   // Ring buffer capacity for keystrokes
 #define KEYBOARD_INT_VECTOR 33
 #define KEYBOARD_IRQ 1          // 33 - 32
@@ -255,14 +257,14 @@ void initKeyboard(){
     if (!keyboard_buffer) {
         printf( "Failed to initialize Keyboard ring buffer!\n");
     }else{
-        printf("Successfully initialized ring buffer with capacity %d\n", capacity);
+        if(debug_on) printf("Successfully initialized ring buffer with capacity %d\n", capacity);
     }
 
     apic_send_eoi();
 
     asm volatile("sti");
 
-    printf(" [-] Successfully KEYBOARD initialized.\n");
+    if(debug_on) printf(" [-] Successfully KEYBOARD initialized.\n");
 
 }
 

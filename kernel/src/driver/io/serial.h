@@ -15,5 +15,5 @@ void serial_print_dec(int64_t num);
 void serial_print_bin(uint64_t num);
 
 
-
+void serial_printf(const char *fmt, ...);
 

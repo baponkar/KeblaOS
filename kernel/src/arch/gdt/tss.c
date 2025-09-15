@@ -6,6 +6,8 @@
 
 #include "tss.h"
 
+extern bool debug_on;
+
 #define GDT_ENTRIES 7
 #define STACK_SIZE 0x1000               // 16 KB
 
@@ -32,7 +34,7 @@ void tss_set_entry(int i, uint64_t base, uint32_t limit, uint8_t access, uint8_t
 void tss_init(){
     uint64_t stack = (uint64_t) kmalloc_a(STACK_SIZE, 1);  // 4KB aligned
     if(!stack){
-        printf("Stack Memory Creation Failed!\n");
+        if(debug_on) printf("Stack Memory Creation Failed!\n");
         return;
     }
     memset(&tss, 0, sizeof(tss_t));

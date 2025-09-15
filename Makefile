@@ -76,6 +76,7 @@ EXT_LIB_DIR = ext_lib
 $(BUILD_DIR):
 	mkdir -p $@
 
+
 # ================================= Externel Library Build Start =============================================
 
 # 1. FatFs Library
@@ -453,7 +454,9 @@ bios_run:
 		-d guest_errors,int,cpu_reset \
 		-D $(DEBUG_DIR)/qemu.log \
 		-vga std \
-		-rtc base=utc,clock=host
+		-rtc base=utc,clock=host \
+		-net nic \
+		-net user
 # We can add -noo--rebboot to prevent rebooting after kernel panic
 
 uefi_run:
@@ -469,8 +472,10 @@ uefi_run:
 		-d guest_errors,int,cpu_reset \
 		-D $(DEBUG_DIR)/qemu.log \
 		-vga std \
-		-bios /usr/share/OVMF/OVMF_CODE.fd  \
-		-rtc base=utc,clock=host
+		-bios /usr/share/ovmf/OVMF.fd  \
+		-rtc base=utc,clock=host \
+		-net nic \
+		-net user
 
 gdb_debug:
 	# GDB Debuging

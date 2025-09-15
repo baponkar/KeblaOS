@@ -8,7 +8,7 @@ This file will enable GDT and TSS for every CPU
 
 #include "multi_core_gdt_tss.h"
 
-
+extern bool debug_on;
 
 extern void gdt_flush(gdtr_t *gdtr_instance);
 extern void tss_flush(uint16_t selector);
@@ -84,7 +84,7 @@ void init_gdt_tss_in_cpu(size_t cpu_id){
     gdt_flush((gdtr_t *)&temp.gdtr);    // Load GDT
     tss_flush(0x28);                    // Selector 0x28 (5th entry in GDT)
 
-    printf(" [-] Initialize GDT & TSS for CPU %d.\n", cpu_id);
+    if(debug_on) printf(" Initialize GDT & TSS for CPU %d.\n", cpu_id);
 }
 
 

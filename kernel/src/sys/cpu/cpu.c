@@ -6,13 +6,15 @@
     https://github.com/limine-bootloader/limine/blob/v7.x/PROTOCOL.md
     https://wiki.osdev.org/CPUID
     https://wiki.osdev.org/CPU_Registers_x86
+
+    https://github.com/limine-bootloader/limine/blob/v7.x/PROTOCOL.md
+    https://wiki.osdev.org/Symmetric_Multiprocessing
 */
 
 
 
 #include "../../lib/stdio.h"
 
-#include "smp.h"
 
 #include "../../arch/gdt/gdt.h"
 #include "../../arch/gdt/multi_core_gdt_tss.h"
@@ -53,21 +55,62 @@
 #include "cpu.h"
 
 
+__attribute__((used, section(".limine_requests")))
+static volatile LIMINE_BASE_REVISION(0);
 
+// Geting Symmetrical Processor Info
+__attribute__((used, section(".requests")))
+static volatile struct limine_smp_request smp_request = {
+    .id = LIMINE_SMP_REQUEST,
+    .revision = 0
+};
+
+extern bool debug_on;
+
+
+struct limine_smp_response *smp_response;
+uint32_t flags;
+uint32_t bsp_lapic_id;
+uint64_t cpu_count;
+struct limine_smp_info **cpus;  // Pointer to an array of pointers to smp_info structures
 
 cpu_data_t cpu_datas[MAX_CPUS];  // Array indexed by CPU ID (APIC ID)
-
-extern struct limine_smp_response *smp_response;
 
 extern madt_t *madt;
 
 
+void get_smp_info(){
+
+    smp_response = smp_request.response;
+    if(smp_response == NULL){
+        printf("[Error] SMP: smp_response not found!\n");
+        return;
+    }
+
+    flags = smp_response->flags;
+    bsp_lapic_id = smp_response->bsp_lapic_id;
+    cpu_count = smp_response->cpu_count;
+    cpus = smp_response->cpus;
+
+    if(debug_on) printf(" SMP: Flags: %x, bsp_lapic_id: %d, cpu_count: %d\n", 
+        flags, bsp_lapic_id, cpu_count, cpus);
+
+    for(int i=0; i<cpu_count; i++){
+        if(debug_on) printf(" cpu_id: %d, lapic_id: %d, reserved: %x, goto_address: %x, extra_argument: %x\n",
+        cpus[i]->processor_id, cpus[i]->lapic_id, cpus[i]->reserved, (uint64_t)cpus[i]->goto_address, (uint64_t)cpus[i]->extra_argument);
+    }
+}
+
+
 // This function initializes the bootstrap CPU core with PIC
 void init_bs_cpu_core(){
-    print_cpu_brand();
-    print_cpu_vendor();
-    print_cpu_base_frequency();
     get_smp_info();
+    if(debug_on){
+        print_cpu_brand();
+        print_cpu_vendor();
+        print_cpu_base_frequency();
+    }
+    
 
     // initially starts pic
     gdt_tss_init();         // Initialize GDT and TSS
@@ -79,7 +122,7 @@ void init_bs_cpu_core(){
     calibrate_apic_timer_pit();
 
     rtc_init();             // Initialize RTC
-    printf("[Info] CPU %d (Bootstrap) with PIC initialized...\n\n", 0);
+    if(debug_on) printf(" CPU %d (Bootstrap) with PIC initialized...\n\n", 0);
 }
 
 
@@ -126,14 +169,14 @@ void start_bootstrap_cpu_core() {
 
     initKeyboard();             // Initialize the keyboard driver
 
-    printf("[Info] Bootstrap CPU %d initialized...\n\n", bsp_lapic_id);
+    if(debug_on) printf(" Bootstrap CPU %d initialized...\n\n", bsp_lapic_id);
 
     
     init_apic_timer(100);       // Initialize the APIC timer for the bootstrap core with 100 ms/ 0.1 s interval
     
     // asm volatile("cli");  
-    // disable_pit_timer();        // Disable PIT timer interrupts
-    // disable_pic();              // Disable PIC interrupts
+    // disable_pit_timer();     // Disable PIT timer interrupts
+    // disable_pic();           // Disable PIC interrupts
     asm volatile("sti");  
 }
 
@@ -181,10 +224,10 @@ void target_cpu_task(struct limine_smp_info *smp_info) {
         enable_fpu_and_sse();
     }
 
-    init_apic_timer(100);       // Initialize the APIC timer for the bootstrap core with 100 ms/ 0.1 s interval
+    init_apic_timer(100);       // Initialize the APIC timer for the ap core
 
     cpu_datas[core_id].is_online = 1; // Mark this core as online
-    printf(" [-] CPU %d (LAPIC ID: %x) is online\n", core_id, core_id);
+    if(debug_on) printf(" CPU %d (LAPIC ID: %x) is online\n", core_id, core_id);
 
     asm volatile("sti"); // Enable interrupts
 
@@ -217,7 +260,7 @@ void start_ap_cpu_cores() {
 
         tsc_sleep(1000000); // Wait 1s before starting the next core
 
-        printf("[Info] AP CPU core %d started...\n", core);
+        if(debug_on) printf(" AP CPU core %d started...\n", core);
     }
 }
 
@@ -234,7 +277,7 @@ void init_all_cpu_cores() {
 
     asm volatile("sti");
 
-    printf("[Info] All CPU cores initialized and online.\n\n\n");
+    if(debug_on) printf(" All CPU cores initialized and online.\n\n\n");
 }
 
 
@@ -250,7 +293,7 @@ void switch_to_core(uint32_t target_lapic_id) {
         }
     }
 
-    printf("[Info] Successfully Switched  into CPU %d.\n", target_lapic_id);
+    printf(" Successfully Switched  into CPU %d.\n", target_lapic_id);
 }
 
 
