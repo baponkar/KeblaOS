@@ -195,8 +195,8 @@ void display_image( int x, int y, const uint64_t* image_data, int img_width, int
 void draw_image_with_transparency(int x, int y,  const uint64_t *image_data, int img_width, int img_height) {
     for (int row = 0; row < img_height; row++) {
         for (int col = 0; col < img_width; col++) {
-            uint32_t color = (uint32_t)image_data[row * img_width + col];  // take lower 32 bits
-            if (color != 0x00000000) {  // skip transparent
+            uint32_t color = (uint32_t)image_data[row * img_width + col];   // take lower 32 bits
+            if (color != 0x00000000) {                                      // skip transparent
                 set_pixel(x + col, y + row, color);
             }
         }

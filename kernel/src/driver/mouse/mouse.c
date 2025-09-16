@@ -9,12 +9,12 @@ Ref: https://wiki.osdev.org/PS/2_Mouse
 
 #include "../../sys/cpu/cpu.h"
 #include "../vga/framebuffer.h"
-#include "../vga/vga.h"     // vga_init, print_bootloader_info, print_memory_map, display_image
+#include "../vga/vga.h"         // vga_init, print_bootloader_info, print_memory_map, display_image
 #include "../vga/color.h"
 
 
-#include "../../arch/interrupt/apic/apic.h"        // APIC interrupt support
-#include "../../arch/interrupt/apic/ioapic.h"      // IOAPIC support
+#include "../../arch/interrupt/apic/apic.h"             // APIC interrupt support
+#include "../../arch/interrupt/apic/ioapic.h"           // IOAPIC support
 #include "../../arch/interrupt/apic/apic_interrupt.h"   // Interrupt handler installation
 #include "../../arch/interrupt/irq_manage.h"
 
@@ -26,8 +26,8 @@ Ref: https://wiki.osdev.org/PS/2_Mouse
 #include "mouse.h"
 
 // Mouse cursor dimensions and colors
-#define CURSOR_WIDTH 8
-#define CURSOR_HEIGHT 8
+#define CURSOR_WIDTH 12
+#define CURSOR_HEIGHT 12
 #define CURSOR_COLOR COLOR_RED      // Red
 #define CURSOR_BG_COLOR COLOR_BLACK // Black (to erase old position)
 

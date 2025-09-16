@@ -14,7 +14,7 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "kmain.h"
 
-bool debug_on = false;
+bool debug_on = true;
 
 extern uint64_t fb0_width;
 extern uint64_t fb0_height;
@@ -65,15 +65,17 @@ void kmain(){
     printf("Total available Disks: %d\n", get_total_disks());
     
 
-    // e100_test();
-    // test_e1000_driver();
+    // clear_screen();
 
     mouse_init();
 
-    // clear_screen();
 
     // ugui_test_1();
-    windows_like_ui();
+    desktop_init();
+
+    // test_e1000_driver();
+    // start();
+    // test_e1000();
 
 
     // int_syscall_test();

@@ -12,6 +12,10 @@ initrd/*
 disk/disk.img
 disk/usb.img
 
+*.crt
+*.priv
+*.signed
+
 lvgl-9.2.2/*
 **/*.o
 **/*bin

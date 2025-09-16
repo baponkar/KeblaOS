@@ -57,11 +57,12 @@
 #include "../driver/pci/pci.h"                  // PCI Driver
 #include "../driver/keyboard/ring_buffer.h"     // Hold keyboard input
 #include "../driver/mouse/mouse.h"              // mouse driver
-#include "../driver/io/serial.h"
-#include "../sys/acpi/descriptor_table/fadt.h"
+#include "../driver/io/serial.h"                // Serial Driver
+#include "../sys/acpi/descriptor_table/fadt.h"  // acpi_oweroff() and acpi_reboot()
 
 // Network Driver
 #include "../driver/network/ethernet/ethernet.h"
+#include "../driver/network/ethernet/ethernet_i217.h"
 
 
 // VGA Drivers
@@ -141,7 +142,7 @@
 
 // uGUI
 #include "../driver/vga/ugui_test.h"
-#include "../driver/vga/start_window.h"
+#include "../driver/vga/desktop.h"
 
 // =======================================================================================
 

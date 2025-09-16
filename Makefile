@@ -455,8 +455,8 @@ bios_run:
 		-D $(DEBUG_DIR)/qemu.log \
 		-vga std \
 		-rtc base=utc,clock=host \
-		-net nic \
-		-net user
+		-netdev user,id=n1 -device e1000,netdev=n1
+
 # We can add -noo--rebboot to prevent rebooting after kernel panic
 
 uefi_run:
