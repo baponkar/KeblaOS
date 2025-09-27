@@ -1,0 +1,19 @@
+1. https://github.com/limine-bootloader/limine
+2. https://gcc.gnu.org/
+3. https://nasm.us/
+4. https://wiki.osdev.org
+5. https://forum.osdev.org 
+6. https://stackoverflow.com 
+7. https://github.com/lvgl/lvgl
+8. https://github.com/mpetch
+9. https://elm-chan.org/fsw/ff/00index_e.html
+10. https://www.nongnu.org/ext2-doc/ext2.html
+11. https://github.com/kokke/tiny-regex-c
+
+
+
+
+
+
+
+
