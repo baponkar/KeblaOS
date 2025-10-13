@@ -168,8 +168,8 @@ void ap_int_set_gate(uint64_t core_id, uint8_t index, uint64_t offset, uint16_t 
     // for x86_64 : |1|00 |0|1110| ==> 10001110 ==> 0x8E
     entry->type_attributes = attr;    // set 8 bit  of P(1 bit) + DPL(2 bit) + gate type(4 bit) + 0(1 bit)
     
-    entry->ist = 0; // disabled ist i.e clear 3 bit of ist and 5 bit of reserved field 
-    entry->zero = 0; // set top 32 bit to zero
+    entry->ist = 0;     // disabled ist i.e clear 3 bit of ist and 5 bit of reserved field 
+    entry->zero = 0;    // set top 32 bit to zero
 }
 
 

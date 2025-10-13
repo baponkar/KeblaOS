@@ -13,8 +13,19 @@ double atof(const char* str);       // Convert string to double
 int atoi(const char* str);          // Convert string to integer
 long atol(const char *str);         // Convert string to long integer
 
+// Metadata header structure
+typedef struct malloc_header {
+    size_t size;
+    struct malloc_header *next;
+    struct malloc_header *prev;
+    unsigned char magic;  // For integrity checking
+} malloc_header_t;
+
+#define MAGIC 0xAB
+#define HEADER_SIZE sizeof(malloc_header_t)
+
 void *malloc(size_t size);                  // Allocate memory
-void free(void *ptr, size_t size);          // Free allocated memory
+void free(void *ptr);                       // Free allocated memory
 void *calloc(size_t nmemb, size_t size);    // Allocate and zero-initialize array
 void *realloc(void *ptr, size_t size);      // Resize allocated memory block
 

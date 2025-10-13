@@ -1,417 +1,346 @@
 
 
-#include "../memory/kheap.h"
+#include "FatFs-R0.15b/source/ff.h"
+#include "FatFs-R0.15b/source/diskio.h"
 
-#include "../../../ext_lib/FatFs-R0.15b/source/ff.h"
-#include "../../../ext_lib/FatFs-R0.15b/source/diskio.h"
-
+#include "../lib/stdlib.h"
 #include "../lib/stdio.h"
 #include "../lib/string.h"
-
+#include "../lib/stdlib.h"
 #include "../lib/time.h"
 
 #include "fatfs_wrapper.h"
 
 
+FATFS *fs;
 
-FATFS *fatfs;                           // Global filesystem mount
-
-
-void fatfs_init(int pdrv) {
-
-    fatfs = (FATFS *)kheap_alloc(sizeof(FATFS), ALLOCATE_DATA);
-    if(!fatfs){
-        printf("[FATFS] fatfs allocation failed!\n");
-        kheap_free((void *)fatfs, sizeof(FATFS));
-    }
-    memset((void *)fatfs, 0, sizeof(FATFS));
-
-    DSTATUS disk_init = disk_initialize(pdrv);
-    if(disk_init != RES_OK){
-        printf("[FATFS] Disk initialization Failed with error code: %d\n", (uint64_t)disk_init);
-    }
+/* Error code to string conversion */
+const char* fatfs_error_string(FRESULT result)
+{
+    static const char* const error_strings[] = {
+        "OK",                       /* FR_OK */
+        "Disk error",               /* FR_DISK_ERR */
+        "Internal error",           /* FR_INT_ERR */
+        "Drive not ready",          /* FR_NOT_READY */
+        "File not found",           /* FR_NO_FILE */
+        "Path not found",           /* FR_NO_PATH */
+        "Invalid name",             /* FR_INVALID_NAME */
+        "Access denied",            /* FR_DENIED */
+        "File already exists",      /* FR_EXIST */
+        "Invalid object",           /* FR_INVALID_OBJECT */
+        "Write protected",          /* FR_WRITE_PROTECTED */
+        "Invalid drive",            /* FR_INVALID_DRIVE */
+        "Not enabled",              /* FR_NOT_ENABLED */
+        "No filesystem",            /* FR_NO_FILESYSTEM */
+        "MKFS aborted",             /* FR_MKFS_ABORTED */
+        "Timeout",                  /* FR_TIMEOUT */
+        "File locked",              /* FR_LOCKED */
+        "Not enough core",          /* FR_NOT_ENOUGH_CORE */
+        "Too many open files",      /* FR_TOO_MANY_OPEN_FILES */
+        "Invalid parameter"         /* FR_INVALID_PARAMETER */
+    };
     
-	// printf("[FATFS] FatFs initialized successfully\n");
+    if (result < sizeof(error_strings) / sizeof(error_strings[0])) {
+        return error_strings[result];
+    }
+    return "Unknown error";
 }
 
+int fatfs_init(int disk_no){
+    fs = (FATFS *)malloc(sizeof(FATFS));
+    if(!fs){
+        printf("memory allocation for fs is failed!\n");
+        return -1;
+        free(fs);
+    }
+    memset(fs, 0, sizeof(FATFS));
 
-// Format Disk with FAT32
-/*
- FM_FAT		0x01
- FM_FAT32	0x02
- FM_EXFAT	0x04
- FM_ANY		0x07
- FM_SFD		0x08
-*/
-int fatfs_mkfs(int fat_type, const char *disk){
+    return (int) disk_initialize (disk_no);
+}
 
-    MKFS_PARM opt;
+int fatfs_disk_status(int disk_no){
+    return disk_status (disk_no);
+}
 
-    opt.fmt    = fat_type;  // Make FAT32
+int fatfs_mkfs(int disk_no, int fs_type){
+    MKFS_PARM opt;          
+
+    opt.fmt = fs_type;      // FM_FAT, FM_FAT32, FM_EXFAT, FM_ANY, FM_SFD
     opt.n_fat  = 1;         // One FAT
     opt.align  = 0;         // Default alignment
     opt.n_root = 0;         // Not used for FAT32
     opt.au_size= 0;         // Auto cluster size
-
-    BYTE work[4096];  // 4K buffer, enough for 512-byte sectors
-
-    printf("Inside of fatfs_mkfs: fat_type %d, disk %s\n", fat_type, disk);
-
-    return (int) f_mkfs(disk, &opt, work, sizeof(work)) == FR_OK ? 0 : -1;
-}
-
-
-// "0:" → drive 0 (e.g. primary partition)
-// "1:" → drive 1 (e.g. second disk or USB)
-// "" → default drive (shortcut for "0:")
-
-int fatfs_mount(const char *path) {
-
-    if(!fatfs){
-        fatfs = (FATFS *)kheap_alloc(sizeof(FATFS), ALLOCATE_DATA);
-        if(!fatfs){
-            return -1;
-        }
-        memset((void *)fatfs, 0, sizeof(FATFS));
-    }
     
-    FRESULT res = f_mount(fatfs, (const TCHAR*)path, 1); // 1	Immediate mount — mount the volume right now, return result immediately
-    if (res != FR_OK) {
-        printf("[FATFS] Failed to mount filesystem at %s, error: %d\n", path, res);
-        return -1;
-    }
+    BYTE work[4096];        // 4K buffer, enough for 512-byte sectors
 
-    // printf("[FATFS] Successfully mounted filesystem at %s\n", path);
+    char root_path[16];
+    sprintf(root_path, "%d:",disk_no);
     
-    return 0;
+    return f_mkfs(root_path, &opt, work, sizeof(work));
 }
 
-int fatfs_unmount(const char *path) {
-    FRESULT res = f_mount(NULL, path, 0);
-    if (res != FR_OK) {
-        printf("[FATFS] Failed to unmount filesystem at %s, error: %d\n", path, res);
-        return -1;
+int fatfs_mount(int disk_no){
+    if(!fs){
+        fs = (FATFS *)malloc(sizeof(FATFS));
     }
-    // printf("[FATFS] Successfully unmounted filesystem at %s\n", path);
-    return 0;
-}
-
-
-int fatfs_open(vfs_node_t *node, int flags) {
-    // ensure node and node->fs_data are valid
-    if (!node) return -1;
-    FIL *file = (FIL *)node->fs_data;
-    if (!file) {
-        file = (FIL *)kheap_alloc(sizeof(FIL), ALLOCATE_DATA);
-        if (!file) return -1;
-        node->fs_data = file;
-    }
-    memset(file, 0, sizeof(FIL)); 
-
-    FRESULT res = f_open(file, node->name, flags);
-    if (res != FR_OK) {
-        printf("[FATFS] Failed to open file %s, error: %d\n", node->name, res);
-        return -1;
-    }
-
-    node->is_dir = 0;
-    node->is_open = 1;
-    node->fs_data = (void *)file;
-
-    return 0;
-}
-
-int fatfs_close(vfs_node_t *node) {
-    FIL *file = (FIL *)node->fs_data;
-    FRESULT res = f_close(file);
-    node->is_open = 0;
-    if (res != FR_OK) {
-        printf("[FATFS] Failed to close file %s, error: %d\n", node->name, res);
-        return -1;
-    }
-    return 0;
-}
-
-int fatfs_lseek(vfs_node_t *node, uint64_t offset){
-    if(!node) return -1;
-    return f_lseek((FIL *)node->fs_data, offset);
-}
-
-int fatfs_read(vfs_node_t *node, uint64_t offset, void *buf, uint64_t size) {
-
-    FIL *file = (FIL *)node->fs_data;
-    if(!file) {
-        printf("node->fs_data is NULL\n");
-        return -1;
-    }
+    memset(fs, 0, sizeof(FATFS));
     
-    if (f_lseek(file, offset) != FR_OK) {
-        printf("[FATFS] Failed to seek in file %s\n", node->name);
-        return -1;
+    char path[16];
+    sprintf(path, "%d:", disk_no);
+    const TCHAR* root_path = (const TCHAR*) path;
+
+    BYTE mount_opt;
+
+    FRESULT mount_res = f_mount (fs, root_path, mount_opt);
+
+    return mount_res;
+}
+
+// Divide a physical drive into some partitions
+int fatfs_fdisk(int disk_no, void *ptbl, void* work){
+    // return f_fdisk((BYTE) disk_no, (const LBA_t *) ptbl, work);
+}
+
+// Set current code page
+int fatfs_setcp(int cp){
+    f_setcp((WORD) cp);
+}
+
+// Put a Char in fp
+int fatfs_putc(void *fp, char c){
+    return f_putc((TCHAR) c, (FIL*) fp);
+}
+
+// Put String into file
+int fatfs_puts(char *str, void *cp){
+    return f_puts ((const TCHAR*) str, (FIL*) cp);	
+}
+
+// Printing file content
+int fatfs_printf(void *fp, char *str){
+    // return f_printf ((FIL*) fp, (const TCHAR*) str, ...);
+}
+
+//Get a string from the file
+char *fatfs_gets(char *buff, int len, void *fp){
+    return (char *)f_gets ((TCHAR*) buff, len, (FIL*)fp);
+}
+
+// open a file
+void *fatfs_open(char *path, int mode) {
+
+    if (!path) return NULL;
+
+    FIL *fp = (FIL *)malloc(sizeof(FIL));  // dynamically allocate
+    if (!fp) return NULL;
+
+    FRESULT res = f_open(fp, (const TCHAR*) path, (BYTE) mode);
+    if (res != FR_OK) {
+        printf("Failed to open %s with error code %d\n", path, mode);
+        free(fp);
+        return NULL;
     }
 
+    return (void *)fp;
+}
+
+
+// Close the file
+int fatfs_close(void *fp){
+    if(!fp) return -1;
+    FRESULT res = f_close((FIL*) fp);
+    free(fp);
+
+    return res;
+}
+
+// reading file and put contents in buffer
+int fatfs_read(void *fp, char *buff, int size){
+    if(!fp) return -1;
+    
     UINT br;
-    if (f_read(file, buf, size, &br) != FR_OK) {
-        printf("[FATFS] Failed to read from file %s\n", node->name);
-        return -1;
-    }
 
-    return br;      // Return number of bytes read
+    return f_read(fp, (void *)buff, size, &br);
 }
 
-int fatfs_write(vfs_node_t *node, uint64_t offset, const void *buf, uint64_t size) {
-    FIL *file = (FIL *)node->fs_data;
+
+// writing buffer content into file
+int fatfs_write(void *fp, char *buff, int filesize){
+    if(!fp | !buff) return -1;
     UINT bw;
-    FRESULT res = f_lseek(file, offset);
-    if (res != FR_OK) {
-        printf("[FATFS] Failed to seek in file %s, error: %d\n", node->name, res);
-        return -1;
+
+    return f_write ((FIL*) fp, (void*) buff, filesize, &bw);
+}
+
+// Change Current pointer
+int fatfs_lseek(void *fp, int offset){
+    return f_lseek ((FIL*) fp, (FSIZE_t) offset);	
+}
+
+// It shortens the file — everything after the current file position is deleted (removed from the file).
+int fatfs_truncate(void *fp){
+    return f_truncate ((FIL*) fp);
+}
+
+// The f_sync() function forces any cached data of the file to be physically written to the disk.
+int fatfs_sync(void * fp){
+   return f_sync((FIL*) fp);
+}
+
+// open a directory
+void *fatfs_opendir(char *path){
+    DIR dp;
+    if(f_opendir((DIR*) &dp, (const TCHAR*) path) == FR_OK){
+        return (void *)&dp;
     }
-    res = f_write(file, buf, size, &bw);
-    if (res != FR_OK) {
-        printf("[FATFS] Failed to write to file %s, error: %d\n", node->name, res);
-        return -1;
-    }
-    return bw; // Return number of bytes written
+    return NULL;
+}
+
+// close the directory
+int fatfs_closedir(void *dp){
+    return f_closedir(dp);
+}
+
+// 
+int fatfs_readdir(void *dp, void *fno){
+    return f_readdir((DIR*) dp, (FILINFO*) fno);
+}
+
+int fatfs_findfirst(void *dp, void *fno, char *path, char *pattern){
+    return f_findfirst((DIR*)dp, (FILINFO*)fno, (const TCHAR*)path, (const TCHAR*)pattern);
 }
 
 
-
-
-int fatfs_opendir(vfs_node_t *node, int flags){
-    if (!node) return -1;
-
-    DIR *dir = (DIR *)node->fs_data;
-    if(!dir){
-        dir = (DIR *)kheap_alloc(sizeof(DIR), ALLOCATE_DATA);
-        if(!dir) return -1;
-        node->fs_data = (void *)dir;
-    }
-    memset(dir, 0, sizeof(DIR)); 
-
-    FRESULT res = f_opendir(dir, (const TCHAR*) node->name);
-    if (res != FR_OK) {
-        printf("[FATFS] Failed to open directory %s, error: %d\n", node->name, res);
-        return -1;
-    }
-
-    node->fs_data = (void *)dir;
-
-    return 0;
+int fatfs_findnext(void *dp, void *fno){
+    return f_findnext ((DIR*) dp, (FILINFO*) fno);
 }
 
 
-int fatfs_readdir(vfs_node_t *dir_node, vfs_node_t **children, uint64_t *child_count) {
+int fatfs_mkdir(char *path){
+    return f_mkdir (path);
+}
 
-    if(!dir_node || !children || !child_count) return -1;
+int fatfs_unlink(char *path){
+    return f_unlink((const TCHAR*) path);
+}
 
-    DIR *dir = (DIR *) dir_node->fs_data;
+int fatfs_rename(char *old_path, char *new_path){
+    return f_rename (old_path, new_path);
+}
 
-    FILINFO fno;
-    *child_count = 0;
+int fatfs_stat(char *path, void *fno){
+    return f_stat((const TCHAR*) path, (FILINFO*) fno);
+}
 
-    while (true) {
-        memset(&fno, 0, sizeof(FILINFO));
-        FRESULT res = f_readdir(dir, &fno);
+int fatfs_chmod(char *path, int attr, int mask){
+    return f_chmod ((const TCHAR*) path, (BYTE) attr, (BYTE) mask);
+}
 
-        if (res != FR_OK || fno.fname[0] == 0) break; // End of directory or error
+int fatfs_utime(char *path, void *fno){
+    return f_utime((const TCHAR*) path, (const FILINFO*) fno);
+}
 
-        // Allocate memory for child node
-        vfs_node_t *child = (vfs_node_t *)kheap_alloc(sizeof(vfs_node_t),ALLOCATE_DATA);
-        if (!child) {
-            printf("[FATFS] Memory allocation failed for child node\n");
-            return -1;
+int fatfs_chdir(char *path){
+   return f_chdir((const TCHAR*) path);
+}
+
+int fatfs_chdrive(char *path){
+    return f_chdrive((const TCHAR*) path);	
+}
+
+int fatfs_getcwd(char *buff, int len){
+    return f_getcwd((TCHAR*) buff, (UINT) len);
+}
+
+//  Get number of free clusters on the drive
+int fatfs_getfree(char *path ){
+    DWORD nclast;
+    FATFS **fatfs = (FATFS **)malloc(sizeof(FATFS*));
+    if(!fatfs) return -1;
+
+    FRESULT res = f_getfree ((const TCHAR*) path, (DWORD*) &nclast, fatfs);
+
+    free(fatfs);
+
+    return res;
+}
+
+int fatfs_getlabel(char *path, char* label, void *vsn){
+    return f_getlabel((const TCHAR*) path, (TCHAR*) label, vsn);
+}
+
+int fatfs_setlabel(char *label){
+    return f_setlabel(label);
+}
+
+int fatfs_forward(){
+    // f_forward (FIL* fp, UINT(*func)(const BYTE*,UINT), UINT btf, UINT* bf);
+}
+
+int fatfs_expand(){
+    // f_expand (FIL* fp, FSIZE_t fsz, BYTE opt);
+}
+
+void fatfs_test(int disk_no){
+
+    if(fatfs_init(disk_no) == FR_OK){
+        printf("Successfully initialized Disk %d\n", disk_no);
+    }
+
+    if(fatfs_disk_status(disk_no) == FR_OK){
+        printf("Disk Status %d for Disk-%d\n", FR_OK, disk_no);
+    }
+
+    if(fatfs_mkfs(disk_no, FM_FAT32) == FR_OK){
+        printf("Successfully made FAT32 Filesystem in Disk %d\n", disk_no);
+    }
+
+    if(fatfs_mount(disk_no) == FR_OK){
+        printf("Successfully mounted Disk %d\n", disk_no);
+    }
+
+    int flag = FA_CREATE_ALWAYS | FA_WRITE ;
+    void *test_file = fatfs_open("0:/testfile.txt", flag);
+    if(test_file != NULL){
+        printf("Successfully open 0:/testfile.txt\n");
+    }
+
+    const char text[] = "Hello from FATFS\r\n";
+    if(test_file != NULL){
+        if(fatfs_write(test_file, text, strlen(text)) == FR_OK){
+            printf("Successfully Write in 0:/testfile.txt\n");
         }
-
-        strncpy(child->name, fno.fname, sizeof(child->name) - 1);
-        child->name[sizeof(child->name) - 1] = '\0'; // Ensure null termination
-        child->is_dir = (fno.fattrib & AM_DIR) ? 1 : 0;
-        child->size = fno.fsize;
-        child->ctime = fno.ftime;   // Assuming ftime is in a compatible format
-        child->fs_data = NULL;      // Set to NULL or appropriate filesystem data
-
-        children[*child_count] = child;
-        (*child_count)++;
     }
 
-    f_closedir(dir);
+    if(fatfs_sync(test_file) == FR_OK){
+        printf("Successfully synced file\n");
+    }
 
-    return 0;                       // Success
+    if(fatfs_close(test_file) == FR_OK){
+        printf("Successfully Closed 0:/testfile.txt\n");
+    }
+
+    test_file = fatfs_open("0:/testfile.txt", FA_READ);
+    if(test_file != NULL){
+        printf("Successfully opened 0:/testfile.txt again\n");
+    }
+
+    if(fatfs_lseek(test_file, 4) == FR_OK){
+        printf("Successfully change pointer offset 4\n");
+    }
+
+    char read_buff[26];
+    if(fatfs_read(test_file, read_buff, 25) == FR_OK){
+        read_buff[25] = '\0';
+        printf("Reading Successfull: %s\n", read_buff);
+    }
+
+    char cwd_buf[256];
+    if(fatfs_getcwd(cwd_buf, sizeof(cwd_buf)) == FR_OK){
+        cwd_buf[24] = '\0';
+        printf("Current Working Directory: %s\n", cwd_buf);
+    }
 }
-
-
-int fatfs_mkdir(const char *path) {
-
-    FRESULT res = f_mkdir(path);
-    if (res != FR_OK) {
-        printf("[FATFS] Failed to create directory %s, error: %d\n", path, res);
-        return -1;
-    }
-
-    // printf("[FATFS] Successfully created directory %s\n", full_path);
-
-    return 0;
-}
-
-
-int fatfs_listdir(const char *path) {
-
-    DIR dir;
-    FILINFO fno;
-
-    FRESULT res = f_opendir(&dir, path);
-    if (res != FR_OK) {
-        printf("[FATFS] Failed to open dir: %s, error: %d\n", path, res);
-        return -1;
-    }
-
-    // printf("[FATFS] Listing directory: %s: ", path);
-
-    while (1) {
-        memset(&fno, 0, sizeof(FILINFO)); 
-        res = f_readdir(&dir, &fno);
-
-        if (res != FR_OK) {
-            printf("[FATFS] Read error: %d\n", res);
-            return -1;
-            break;
-        }
-
-        if (fno.fname[0] == 0) break;
-
-        // Dump first few raw bytes
-        printf((fno.fattrib & AM_DIR) ? "%s " : "%s(%d bytes) " ,fno.fname, (uint64_t)fno.fsize);
-    }
-
-    printf("\n");
-
-    f_closedir(&dir);
-
-    return 0;
-}
-
-
-int fatfs_unlink(const char *file_path) {
-
-    FRESULT res = f_unlink(file_path);
-    if (res != FR_OK) {
-        printf("[FATFS] Failed to delete file %s, error: %d\n", file_path, res);
-        return -1;
-    }
-
-    // printf("[FATFS] Successfully deleted file %s\n", file_path);
-
-    return 0;
-}
-
-
-int fatfs_stat(vfs_node_t *node) {
-    FILINFO fno;
-    FRESULT res = f_stat(node->name, &fno);
-    if (res != FR_OK) {
-        printf("[FATFS] Failed to stat file %s, error: %d\n", node->name, res);
-        return -1;
-    }
-    
-    node->size = fno.fsize;
-    node->ctime = fno.ftime; // Assuming ftime is in a compatible format
-    node->is_dir = (fno.fattrib & AM_DIR) ? 1 : 0;
-    
-    return 0; // Success
-}
-
-
-int fatfs_rename(vfs_node_t *node, const char *new_name) {
-    char old_path[512];
-    sprintf(old_path, "%s/%s", node->parent->name, node->name);
-    
-    char new_path[512];
-    sprintf(new_path, "%s/%s", node->parent->name, new_name);
-    
-    FRESULT res = f_rename(old_path, new_path);
-    if (res != FR_OK) {
-        printf("[FATFS] Failed to rename %s to %s, error: %d\n", old_path, new_path, res);
-        return -1;
-    }
-    
-    strncpy(node->name, new_name, sizeof(node->name) - 1);
-    node->name[sizeof(node->name) - 1] = '\0'; // Ensure null termination
-
-    // printf("[FATFS] Successfully renamed %s to %s\n", old_path, new_path);
-
-    return 0;
-}
-
-
-// Wrapper: returns 0 on success, -1 on failure
-int fatfs_getcwd(void *buf, size_t size) {
-    if (!buf || size == 0) {
-        return -1; // invalid arguments
-    }
-
-    FRESULT res = f_getcwd((TCHAR*)buf, (UINT)size);
-    if (res != FR_OK) {
-        printf("[FATFS] f_getcwd failed with error: %d\n", res);
-        return -1;
-    }
-
-    return 0;
-}
-
-int fatfs_chdir(const char *path) {
-    if (!path) return -1;
-
-    FRESULT res = f_chdir((const TCHAR*) path);
-    if (res != FR_OK) {
-        printf("[FATFS] f_chdir failed with error: %d\n", res);
-        return -1;
-    }
-
-    return 0;
-}
-
-// Wrapper: returns 0 on success, -1 on failure
-int fatfs_chdrive(const char *path){
-    if(!path) return -1;
-    FRESULT res = f_chdrive ((const TCHAR*) path);
-    if(res != FR_OK){
-        printf("[FATFS] f_chdrive failed with error: %d\n", res);
-        return -1;
-    }
-
-    return 0;
-}
-
-
-
-void fatfs_test(int pdrv){
-    fatfs_init(pdrv);
-
-    // Mounting Drive 0
-    const char *drive_path = "0:"; // First  Drive
-    if(fatfs_mount(drive_path) == 0){
-        printf("First Drive(0) mounted successfully!\n");
-    }
-
-    uint8_t buffer[256];
-    memset(buffer, 0, sizeof(buffer));
-
-    // Print Current Working Directory
-    fatfs_getcwd((void *)buffer, sizeof(buffer));
-    printf("CWD: %s\n", buffer);
-
-    // Clearing buffer
-    memset(buffer, 0, sizeof(buffer));
-    
-    // Listing The contents in directory "/"
-    fatfs_listdir("0:/");
-    
-}
-
-
-
-
-
 
 
 

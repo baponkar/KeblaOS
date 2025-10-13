@@ -1,6 +1,14 @@
 
 #pragma once
 
+#ifndef isnan
+#define isnan(x) ((x) != (x))
+#endif
+
+#ifndef isinf
+#define isinf(x) (!isnan(x) && isnan(x - x))
+#endif
+
 // Mathematical constants
 #define M_E        2.71828182845904523536   // e
 #define M_LOG2E    1.44269504088896340736   // log2(e)

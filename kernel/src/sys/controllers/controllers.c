@@ -46,7 +46,8 @@ pci_device_t* get_pci_controller(int index){
 }
 
 void init_controllers(){
-    printf("\n[Controllers] Initializing Controllers...\n");
+    
+    if(debug_on) printf("\n[Controllers] Initializing Controllers...\n");
     alloc_controllers_memory();
 
     pci_scan();
@@ -116,6 +117,6 @@ void init_controllers(){
         }
     }
 
-    printf(" Total PCI Devices found: %d\n", get_pci_controllers_count());
-    printf("[Controllers] Initialization Complete.\n\n");
+    if(debug_on) printf(" Total PCI Devices found: %d\n", get_pci_controllers_count());
+    if(debug_on) printf("[Controllers] Initialization Complete.\n\n");
 }

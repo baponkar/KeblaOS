@@ -1,5 +1,7 @@
 
 #include "../driver/vga/vga_term.h"
+#include "stdlib.h"
+
 #include "string.h"
 
 // Copy dat of src into dest
@@ -240,6 +242,19 @@ char *strrchr(const char *str, int c) {
     return (char *)last;
 }
 
+
+char *strdup(const char *str) {
+    if (str == NULL) return NULL;
+    
+    size_t len = strlen(str) + 1;  // +1 for null terminator
+    char *copy = malloc(len);
+    
+    if (copy != NULL) {
+        memcpy(copy, str, len);
+    }
+    
+    return copy;
+}
 
 void clear_buffer(char *buffer, int size) {
     memset(buffer, '\0', size);  // Set entire buffer to '\0'

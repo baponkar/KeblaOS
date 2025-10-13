@@ -5,39 +5,78 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "../vfs/vfs.h"
+#include "FatFs-R0.15b/source/ff.h"
 
-void fatfs_init(int pdrv);
+int fatfs_init(int disk_no);
+int fatfs_disk_status(int disk_no);
 
-int fatfs_mkfs(int fat_type, const char *disk);
+int fatfs_mount(int disk_no);
+int fatfs_mkfs(int disk_no, int fs_type);
+int fatfs_fdisk(int disk_no, void *ptbl, void* work);
+int fatfs_setcp(int cp);
+int fatfs_putc(void *fp, char c);
+int fatfs_puts(char *str, void *cp);
+int fatfs_printf(void *fp, char *str);
+char *fatfs_gets(char *buff, int len, void *fp);
 
-int fatfs_mount(const char *path);
-int fatfs_unmount(const char *path);
+void *fatfs_open(char *path, int mode);
+int fatfs_close(void *fp);
+int fatfs_read(void *fp, char *buff, int size);
+int fatfs_write(void *fp, char *buff, int filesize);
+int fatfs_lseek(void *fp, int offset);
+int fatfs_truncate(void *fp);
+int fatfs_sync(void * fp);
+void *fatfs_opendir(char *path);
+int fatfs_closedir(void *dp);
+int fatfs_readdir(void *dp, void *fno);
+int fatfs_findfirst(void *dp, void *fno, char *path, char *pattern);
+int fatfs_findnext(void *dp, void *fno);
+int fatfs_mkdir(char *path);
+int fatfs_unlink(char *path);
+int fatfs_rename(char *old_path, char *new_path);
+int fatfs_stat(char *path, void *fno);
+int fatfs_chmod(char *path, int attr, int mask);
+int fatfs_utime(char *path, void *fno);
+int fatfs_chdir(char *path);
+int fatfs_chdrive(char *path);
+int fatfs_getcwd(char *buff, int len);
+int fatfs_getfree(char *path);
+int fatfs_getlabel(char *path, char* label, void *vsn);
+int fatfs_setlabel(char *label);
+int fatfs_forward();
+int fatfs_expand();
 
-int fatfs_open(vfs_node_t *node, int flags);
-int fatfs_close(vfs_node_t *node);
-int fatfs_lseek(vfs_node_t *node, uint64_t offset);
-int fatfs_read(vfs_node_t *node, uint64_t offset, void *buf, uint64_t size);
-int fatfs_write(vfs_node_t *node, uint64_t offset, const void *buf, uint64_t size);
-int fatfs_create(vfs_node_t *parent, const char *name);
-int fatfs_unlink(const char *file_path);
-
-int fatfs_opendir(vfs_node_t *node, int flags);
-int fatfs_readdir(vfs_node_t *dir_node, vfs_node_t **children, uint64_t *child_count);
-int fatfs_mkdir(const char *path);
-int fatfs_listdir(const char *path);
- 
-int fatfs_pwd(void *buf);
-
-int fatfs_rename(vfs_node_t *node, const char *new_name);   // C
-int fatfs_stat(vfs_node_t *node);
-
-int fatfs_getcwd(void *buf, size_t size);   // Get Current Directory
-int fatfs_chdir(const char *path);          // Change Current Working Directory
-int fatfs_chdrive(const char *path);        // Change Default Drive
+const char* fatfs_error_string(FRESULT result);
 
 
-void fatfs_test(int pdrv);
+void fatfs_test(int disk_no);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

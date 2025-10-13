@@ -29,9 +29,9 @@ void _start(){
 
     // regex_test();
 
-    user_syscall_test();
+    // user_syscall_test();
 
-    // start_user_shell();
+    start_user_shell();
 
     while (true) {}     // Halt
 }

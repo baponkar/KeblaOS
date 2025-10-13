@@ -9,9 +9,7 @@
 #include "ahci.h"
 
 
-#define MAX_AHCI_DISK 10
 
-bool init_sata();
 bool sata_read(HBA_PORT_T* port, size_t _lba, size_t _count, uintptr_t _buf_phys_addr);
 bool sata_write(HBA_PORT_T* port, size_t _lba, size_t _count, uintptr_t _phys_buf_addr);
 

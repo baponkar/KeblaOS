@@ -7,31 +7,38 @@
 
 #include "../../pci/pci.h"
 
+// AHCI Device Signatures
 #define	SATA_SIG_ATA	0x00000101	// SATA drive
 #define	SATA_SIG_ATAPI	0xEB140101	// SATAPI drive
 #define	SATA_SIG_SEMB	0xC33C0101	// Enclosure management bridge
 #define	SATA_SIG_PM	    0x96690101	// Port multiplier
+#define SATA_SIG_NO_DEVICE 0x00000000	// No Device
 
-#define ATA_DEV_BUSY    0x80
-#define ATA_DEV_DRQ     0x08
+// AHCI Devices
+typedef enum {
+	AHCI_DEV_NULL,
+	AHCI_DEV_SATA ,
+	AHCI_DEV_SEMB,
+	AHCI_DEV_PM ,
+	AHCI_DEV_SATAPI
+} AHCI_DEVICE_TYPE;
 
-#define ATA_CMD_READ_DMA_EX   0x25
-#define ATA_CMD_WRITE_DMA_EX  0x35
+
+// ATA Commands
+#define ATA_DEV_BUSY    0x80		// Device is busy
+#define ATA_DEV_DRQ     0x08		// Device is ready to transfer Data
+
+#define ATA_CMD_READ_DMA_EX   0x25	// Read sectors using DMA (48-bit LBA).
+#define ATA_CMD_WRITE_DMA_EX  0x35	// Write sectors using DMA (48-bit LBA).
+
+#define HBA_PORT_IPM_ACTIVE  1		// Port Device Detection (DET) value indicating a device is present and active.
+#define HBA_PORT_DET_PRESENT 3		// Interface Power Management (IPM) value indicating port is active.
  
-#define AHCI_DEV_NULL   0
-#define AHCI_DEV_SATA   1
-#define AHCI_DEV_SEMB   2
-#define AHCI_DEV_PM     3
-#define AHCI_DEV_SATAPI 4
- 
-#define HBA_PORT_IPM_ACTIVE  1
-#define HBA_PORT_DET_PRESENT 3
- 
-#define HBA_PxCMD_ST    0x0001
-#define HBA_PxCMD_FRE   0x0010
-#define HBA_PxCMD_FR    0x4000
-#define HBA_PxCMD_CR    0x8000
-#define HBA_PxIS_TFES   (1 << 30)       /* TFES - Task File Error Status */
+#define HBA_PxCMD_ST    0x0001		// Start. Set to start the command engine.
+#define HBA_PxCMD_FRE   0x0010		// FIS Receive Enable. Start receiving FIS (Frame Information Structure).
+#define HBA_PxCMD_FR    0x4000		// FIS Receive Running. Read-only, indicates FIS RX engine is running.
+#define HBA_PxCMD_CR    0x8000		// Command List Running. Read-only, indicates command engine is running.
+#define HBA_PxIS_TFES   (1 << 30)   // Task File Error Status. Indicates an error in ATA command execution.
 
 typedef enum
 {
@@ -323,7 +330,10 @@ typedef struct {
     uint16_t unused2[222];
 } IDENTIFY_DEVICE;
 
-
+typedef struct {
+	int device_type;
+	HBA_PORT_T *port
+}AHCI_DEVICE;
 
 
 
@@ -331,10 +341,10 @@ void startCMD(HBA_PORT_T *port);
 void stopCMD(HBA_PORT_T *port);
 bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t start_l, uint32_t start_h, uint32_t count, uintptr_t phys_buf);
 
-int checkType(HBA_PORT_T* port);
+int  checkType(HBA_PORT_T* port);
 void probePort(HBA_MEM_T *abar);
-void portRebase(HBA_MEM_T *abar, int port_no);
-int findCMDSlot(HBA_PORT_T* port, size_t cmd_slots);
+void portRebase(HBA_PORT_T *port);
+int  findCMDSlot(HBA_PORT_T* port, size_t cmd_slots);
 
 
 

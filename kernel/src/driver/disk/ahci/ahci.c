@@ -36,11 +36,13 @@ References:
 
 #include "../../../lib/stdio.h"
 #include "../../../lib/string.h"
-#include "../../../memory/kmalloc.h"
-#include "../../../memory/kheap.h"
+#include "../../../lib/stdlib.h"
+#include "../../../lib/stdlib.h"
+
 #include "../../../memory/vmm.h"
 
 #include "ahci.h"
+
 
 
 
@@ -62,14 +64,18 @@ int checkType(HBA_PORT_T* port)
  
 	switch (port->sig)
 	{
+        case SATA_SIG_ATA:
+            return AHCI_DEV_SATA;
         case SATA_SIG_ATAPI:
             return AHCI_DEV_SATAPI;
         case SATA_SIG_SEMB:
             return AHCI_DEV_SEMB;
         case SATA_SIG_PM:
             return AHCI_DEV_PM;
+        case SATA_SIG_NO_DEVICE:
+            return AHCI_DEV_NULL;
         default:
-            return AHCI_DEV_SATA;
+            return AHCI_DEV_NULL;
 	}
 }
  
@@ -143,17 +149,16 @@ void stopCMD(HBA_PORT_T *port)
 
 
 // AHCI driver to rebase a SATA port to use new memory locations for its command list
-void portRebase(HBA_MEM_T *abar, int port_no)
+void portRebase(HBA_PORT_T *port)
 {
-    HBA_PORT_T *port = &abar->ports[port_no];
     stopCMD(port);
 
     // Allocate a physically contiguous region for this port:
     // Make it large enough for CLB (1K), FB (1K), CTBA area (8K), plus margin.
     const size_t ALLOC_SIZE = 64 * 1024; // 64 KiB to be safe
-    void *base_virt = (void *) kheap_alloc(ALLOC_SIZE, ALLOCATE_DATA);
+    void *base_virt = (void *) malloc(ALLOC_SIZE);
     if (!base_virt) {
-        printf("[AHCI] portRebase: kmalloc failed\n");
+        printf("[AHCI] portRebase: malloc failed\n");
         return;
     }
 
@@ -218,9 +223,9 @@ int findCMDSlot(HBA_PORT_T* port, size_t cmd_slots)
 		if (!(slots & 1))
 			return i;
 		slots >>= 1;
-		printf(" [AHCI] find a free command list entry at %d\n", i);
+		// printf(" [AHCI] find a free command list entry at %d\n", i);
 	}
-	printf(" [AHCI] Cannot find a free command list entry\n");
+	// printf(" [AHCI] Cannot find a free command list entry\n");
 	return -1;
 }
 
@@ -313,19 +318,18 @@ bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t start_l
     while (true) {
         if (!(port->ci & (1 << slot))) break;
         if (port->is & HBA_PxIS_TFES) {
-            printf(" [AHCI] Disk error\n");
+            printf(" [AHCI] Task File error!\n");
             return false;
         }
     }
 
     if (port->is & HBA_PxIS_TFES) {
-        printf(" [AHCI] Disk error after completion\n");
+        printf(" [AHCI] Task File error after completion!\n");
         return false;
     }
 
     return true;
 }
-
 
 
 

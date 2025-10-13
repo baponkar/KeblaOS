@@ -199,6 +199,12 @@ void vprintf(const char* format, va_list args) {
                     case 'f':
                         print_float(va_arg(args, double), 6); // Default precision: 6
                         break;
+                    case 'p': {
+                        void* ptr_val = va_arg(args, void*);
+                        uintptr_t addr = (uintptr_t)ptr_val;
+                        print_hex(addr);
+                        break;
+                    }
                     default:
                         putchar('%');
                         putchar(*ptr);

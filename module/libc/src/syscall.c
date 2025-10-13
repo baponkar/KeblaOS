@@ -147,11 +147,11 @@ int64_t syscall_vfs_mkfs(int fs_type, char *disk){
 }
 
 
-int64_t syscall_vfs_init(char *fs_name) {
+int64_t syscall_vfs_init(char *fs_name, int disk_no) {
     if (!fs_name) {
         return -1;                  // Invalid path
     }
-    return system_call((uint64_t)INT_VFS_INIT, (uint64_t) fs_name, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t)INT_VFS_INIT, (uint64_t) fs_name, (uint64_t) disk_no, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
 

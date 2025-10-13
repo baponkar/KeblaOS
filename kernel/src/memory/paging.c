@@ -25,12 +25,14 @@ https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
 
 #include "paging.h"
 
+
+
+
 extern bool debug_on;
 
 extern void enable_paging(uint64_t pml4_address);   // present in load_paging.asm
 extern void disable_paging();                       // present in load_paging.asm
 
-extern volatile uint64_t phys_mem_head;             // Physical memory head pointer, initialized in detect_memory.c
 pml4_t *kernel_pml4;
 uint64_t bsp_cr3;
 
@@ -50,10 +52,8 @@ void alloc_frame(page_t *page, int user, int is_writeable) {
     page->present = 1;                      // Mark it as present.
     page->rw = is_writeable;                // Should the page be writeable?
     page->user = user;                      // Should the page be user-mode?
-    phys_mem_head &= 0xFFFFFFFFFFFFF000;    // Align the physical memory head to 4KB boundary
-    page->frame = (uint64_t) (phys_mem_head + (bit_no * FRAME_SIZE)) >> 12;     // Store physical base address
-
-    phys_mem_head += FRAME_SIZE;            // Move the physical memory head to the next frame
+    page->frame = (uint64_t) (USABLE_START_PHYS_MEM + (bit_no * FRAME_SIZE)) >> 12;     // Store physical base address
+    
 }
 
 
@@ -63,13 +63,13 @@ void free_frame(page_t *page)
 {
     if (page->frame != NULL)
     {
-        uint64_t frame = (uint64_t) page->frame << 12;  // Get the physical address of the frame
+        uint64_t frame_addr = (uint64_t) page->frame << 12;  // Get the physical address of the frame
 
-        uint64_t bit_no = PHYS_ADDR_TO_BIT_NO(frame);   // Convert the physical frame address into a bit number
+        uint64_t bit_no = PHYS_ADDR_TO_BIT_NO(frame_addr);   // Convert the physical frame address into a bit number
         
-        clear_frame(bit_no);                            // Frame is now free again from bitmap.
+        clear_frame(bit_no);                                // Frame is now free again from bitmap.
 
-        page->frame = 0;                                // Page now doesn't have a frame.
+        page->frame = 0;                                    // Page now doesn't have a frame.
     }
 }
 
@@ -95,7 +95,6 @@ void set_cr3_addr(uint64_t cr3) {
 void init_bs_paging()
 {  
     if(debug_on) printf(" [-] Initializing Paging for Bootstrap CPU Core\n");
-    assert(phys_mem_head != 0); // Check if physical memory head is initialized
 
     bsp_cr3 = get_cr3_addr();   // Get the current value of CR3 (the base of the PML4 table)
 

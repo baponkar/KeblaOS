@@ -18,7 +18,13 @@
 #define BIT_NO_TO_ADDR(bit_no) (USABLE_START_PHYS_MEM + (bit_no * FRAME_SIZE))
 
 // Converting physical address to bit number
-#define PHYS_ADDR_TO_BIT_NO(addr) ((addr - USABLE_START_PHYS_MEM) / FRAME_SIZE)
+// #define PHYS_ADDR_TO_BIT_NO(phy_addr)(((phy_addr) < (USABLE_START_PHYS_MEM)) ? 0 : ((phy_addr - USABLE_START_PHYS_MEM) / FRAME_SIZE))
+// In pmm.h - Revised version
+#define PHYS_ADDR_TO_BIT_NO(phy_addr) ( \
+    ((phy_addr) < USABLE_START_PHYS_MEM || (phy_addr) >= (USABLE_START_PHYS_MEM + USABLE_LENGTH_PHYS_MEM)) ? \
+    (uint64_t)-1 : /* Return invalid value for out-of-range addresses */ \
+    (((phy_addr) - USABLE_START_PHYS_MEM) / FRAME_SIZE) \
+)
 
 // Finding the maximum frame index from the memory size.
 #define MAX_FRAME_INDEX(memory_size) (memory_size / (BITMAP_SIZE * FRAME_SIZE))
@@ -29,7 +35,7 @@ extern uint64_t nframes; // Total frames
 void set_frame(uint64_t frame_addr);
 void clear_frame(uint64_t frame_addr);
 uint64_t test_frame(uint64_t frame_addr);
-uint64_t free_frame_bit_no();
+int64_t free_frame_bit_no();
 
 void init_pmm();
 

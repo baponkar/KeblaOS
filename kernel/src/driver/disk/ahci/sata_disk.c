@@ -1,73 +1,14 @@
 
 #include "../../../lib/stdio.h"
 #include "../../../lib/string.h"
+#include "../../../lib/stdlib.h"
 
 #include "../../../memory/vmm.h"
 #include "../../../memory/kheap.h"
 
 #include "sata_disk.h"
 
-#define MAX_SATA_DISKS 10
-
-extern pci_device_t *mass_storage_controllers;  // Array to store detected mass storage controllers
-extern int mass_storage_controllers_count;   // Counter for mass storage controllers
-
-HBA_PORT_T **sata_disks = NULL;                 // Store Different AHCI Disks contexts
-int sata_disks_count = 0;                       // Total disks count
-// Valid Disk no starts from 0 to sata_disks_count-1
-
-
-bool init_sata(){
-    sata_disks = (HBA_PORT_T **) kheap_alloc(sizeof(HBA_PORT_T *) * MAX_SATA_DISKS, ALLOCATE_DATA);
-    if(!sata_disks){
-        printf("[SATA] sata_disks allocation have failed!\n");
-        return false;
-    }
-    memset(sata_disks, 0, sizeof(HBA_PORT_T *) * MAX_SATA_DISKS);
-    sata_disks_count = 0;
-
-    if(!mass_storage_controllers){
-        printf("[SATA] mass_storage_controllers is NULL\n");
-        return false;
-    }
-
-    if(mass_storage_controllers_count <= 0){
-        printf("[SATA] mass_storage_controllers_count is %d\n", mass_storage_controllers_count);
-        return false;
-    }
-
-
-    for(int controllers_no = 0; controllers_no < mass_storage_controllers_count; controllers_no++){
-        pci_device_t device = mass_storage_controllers[controllers_no];
-
-        uint64_t bar5 = (uint64_t) (device.base_address_registers[5] & ~0xF);    // BAR5 is a Physically memory mapped address
-        if(bar5 == 0) continue;                             // Skip if BAR5 is not set
-
-        HBA_MEM_T *abar = (HBA_MEM_T *) phys_to_vir(bar5);  // Map to virtual address
-        if(!abar) continue;                                 // Skip if mapping fails
-
-        // Find a port with a SATA drive
-        uint32_t pi = abar->pi;
-        for (size_t i = 0; i < 32; i++) 
-        {
-            if (pi & 1)
-            {
-                if(checkType(&abar->ports[i]) == AHCI_DEV_SATA){
-                    portRebase(abar, i);	                // Rebase the port
-                    HBA_PORT_T *port = (HBA_PORT_T *) &abar->ports[i];	// Select the port
-                    sata_disks[sata_disks_count++] = port;   // Store the port context
-                }
-                continue;                                   // Skip Othertype
-            }
-            pi >>= 1;
-        }
-        
-    }
-
-    printf("[SATA] Sucessfully initialized SATA Disk \n");
-
-    return true;
-}
+extern bool debug_on;
 
 
 
@@ -244,84 +185,6 @@ void sata_disk_identify(HBA_PORT_T* port) {
 }
 
 
-
-
-
-void test_sata(int sata_disk_no)
-{
-	printf("[SATA] Start Testing SATA DISK.................\n");
-
-    if(!init_sata()) printf("SATA initialization is failed!\n");
-
-    HBA_PORT_T *port = sata_disks[sata_disk_no];
-
-	printf(" [-] AHCI Device Type: ");
-	switch(checkType(port)){
-		case AHCI_DEV_SATAPI:
-			printf("AHCI_DEV_SATAPI\n");
-			break;
-		case AHCI_DEV_SEMB:
-			printf("AHCI_DEV_SEMB\n");
-			break;
-		case AHCI_DEV_PM:
-			printf("AHCI_DEV_PM\n");
-			break;
-		default:
-			printf("AHCI_DEV_SATA\n");
-			break;
-	}
-
-	// Get total sectors and size
-	sata_disk_identify(port);
-
-	// Create a buffer for the command list
-    void *buf_1_vir = (void *)kheap_alloc(0x8000, ALLOCATE_DATA);       // 32 KB buffer (overkill but fine for test)
-    if (buf_1_vir == NULL) {
-        printf(" [SATA] Buffer_1 Memory allocation failed!\n");
-        return;
-    }
-    memset(buf_1_vir, 0, 512); // Clear first sector (only 512 bytes needed)
-	uintptr_t buf_1_phys = (uintptr_t)vir_to_phys((uint64_t)buf_1_vir); // Convert to physical address
-
-    // Step 2: Write a string into the buffer
-    const char* test_string = "Hello from KeblaOS!\0";
-    memcpy((char*)buf_1_vir, test_string, strlen(test_string)); 	    // Copy into buffer
-
-
-    // Step 3: Write the buffer to disk
-    if (sata_write(port, 0, 4, buf_1_phys)) {
-        printf(" [SATA] Write successful from buf_1 into disk.\n");
-    } else {
-        printf(" [SATA] Write failed from buf_1 into disk!\n");
-        return;
-    }
-
-
-	void * buf_2_vir = (void *)kheap_alloc(0x8000, ALLOCATE_DATA);      // 32 KB buffer (overkill but fine for test)
-	if (buf_2_vir == NULL) {
-		printf(" [SATA] Buffer_2 Memory allocation failed!\n");
-		return;
-	}
-	memset(buf_2_vir, 0, 512); // Clear first sector (only 512 bytes needed)
-	// Convert virtual address to physical for AHCI read
-	uintptr_t buf_2_phys = (uintptr_t)vir_to_phys((uint64_t)buf_2_vir); // Convert to physical address
-
-    // Step 5: Read back from disk
-    if (sata_read(port, 0, 4, buf_2_phys)) {
-		// Null terminate the string to safely print it
-		((char*)buf_2_vir)[strlen(test_string)] = '\0';
-        printf(" [SATA] Data read from disk: %s.\n", (char*)buf_2_vir);
-    } else {
-        printf(" [SATA] Read failed from disk!\n");
-    }
-
-    kheap_free((void *)phys_to_vir((uint64_t) buf_1_vir), 0x8000); 	    // Free memory
-	kheap_free((void *)phys_to_vir((uint64_t) buf_2_vir), 0x8000);	    // Free memory
-
-	printf("[SATA] Test completed successfully...............\n");
-
-	return;
-}
 
 
 

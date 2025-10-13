@@ -73,7 +73,7 @@ uint64_t KERNEL_PHYS_BASE;
 uint64_t KERNEL_OFFSET;
 
 // Physical Memory Head Address which is updating by kmalloc and pmm
-volatile uint64_t phys_mem_head; 
+volatile uint64_t phys_mem_head;    // This head is updated by paging, kmalloc, 
 
 // Usable Physical Memory
 uint64_t USABLE_START_PHYS_MEM;
@@ -197,13 +197,14 @@ void set_usable_mem(){
 
     // USABLE_START_PHYS_MEM = 0x100000;
 
-    phys_mem_head = USABLE_START_PHYS_MEM; // Set the physical memory head to the start of usable memory
+    USABLE_START_PHYS_MEM &= 0xFFFFFFFFFFFFF000;    // Making 4KB aligned
+    phys_mem_head = USABLE_START_PHYS_MEM;          // Set the physical memory head to the start of usable memory
 
     //Final usable_mem_length
     USABLE_LENGTH_PHYS_MEM = USABLE_END_PHYS_MEM - USABLE_START_PHYS_MEM;
 
-    if(debug_on) printf(" [Memory] Usable Phys. memory => Start: %x, End: %x, Length: %x\n", 
-        USABLE_START_PHYS_MEM, USABLE_END_PHYS_MEM, USABLE_END_PHYS_MEM);
+    // printf(" [Memory] Usable Phys. memory => Start: %x, End: %x, Length: %x\n", 
+    //     USABLE_START_PHYS_MEM, USABLE_END_PHYS_MEM, USABLE_END_PHYS_MEM);
 }
 
 // Getting total physical memory space present at the device
@@ -229,6 +230,7 @@ void get_total_phys_memory(){
 
 // Get memory info and set some value for further use
 void get_set_memory(){
+
     get_stack_mem_info();
     get_paging_mode();
     get_kernel_address();
@@ -248,7 +250,6 @@ void get_set_memory(){
             printf(" [Memory] Higher Half Start(Virtual): %x and End(Virtual): %x\n", HIGHER_HALF_START_ADDR, HIGHER_HALF_END_ADDR);
             printf(" [Memory] Higher Half Start(Physical): %x and End(Physical): %x\n", kernel_phys_start_addr, kernel_phys_end_addr);
         }
-        
     }
 
     // Get Physical Memory map and set usable memory map

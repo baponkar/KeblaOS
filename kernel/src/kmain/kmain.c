@@ -14,7 +14,7 @@ Reference   : https://wiki.osdev.org/Limine
 
 #include "kmain.h"
 
-bool debug_on = true;
+bool debug_on = false;
 
 extern uint64_t fb0_width;
 extern uint64_t fb0_height;
@@ -24,8 +24,8 @@ extern uint16_t fb0_bpp;
 
 extern ring_buffer_t* keyboard_buffer;          // To get the keyboard input
 
-extern HBA_PORT_T **satapi_disks;
-extern int satapi_disks_count; 
+extern Disk *disks;
+extern int disk_count; 
 
 void kmain(){
 
@@ -50,36 +50,42 @@ void kmain(){
         return;
     }
 
-    // pcie_scan();
-    init_controllers();
-    // detected_serial_bus_controller_info();
-    // detected_input_device_info();
+    // pci_scan();
+    init_controllers();     // This have PCI Scan
 
-    // test_time_functions();
 
-    // print_current_rtc_time();
-    // sleep_seconds(0, 10);
-    // printf("10 sec Sleep Test Over!\n");
-    // print_current_rtc_time();
+    // Test Disks
+    kebla_disk_init(0);
+    kebla_disk_init(1);
+    kebla_disk_init(2);
     
-
-    // find_all_disks();
-    
-    // init_sata();
-    // test_sata(0);
-
-    // init_nvme();
-
-    kebla_disk_init(0, DISK_TYPE_SATA);
-
     // fatfs_test(0);
+    // iso9660_disk_test(2);
 
-    // init_satapi();
-    // satapi_inquiry(satapi_disks[0]);
-    // test_satapi();
+    install_kebla_os(2, 0);
+
+
+    // install_kebla_os(2, 0);
+    // test_iso9660(disks[2].context);
+
+    // Example usage
+    // installer_context_t *installer = installer_init(disks[2].context, 0, example_progress_callback, example_status_callback);
+
+    // if (installer) {
+    //     bool success = install_operating_system(installer, true); // true = format disk
+    //     installer_cleanup(installer);
+    // }
+    
+    // disk_test(0);
+    // vfs_test(0);
+    // init_nvme();
+    // for(int i=0; i<disk_count; i++){
+    //     printf(" Disk-%d, Type-%d\n", i, disks[i].type);
+    //     detect_partition_table(i);
+    //     printf(" Detect Filesystem %d in Disk-0\n", detect_filesystem(i));
+    // }
     
     // mouse_init();
-
 
     // lvgl_test();
     // ugui_test_1();
@@ -107,9 +113,8 @@ void kmain(){
     //     sleep_seconds(0, 10);
     // }
 
-    switch_to_core(2);
+    // switch_to_core(2);
     
-
     halt_kernel();
 }
 

@@ -10,6 +10,9 @@ Author       : Baponkar
 #include "../memory/kheap.h"
 #include "../memory/vmm.h"
 
+#include "stdio.h"
+#include "string.h"
+
 #include "stdlib.h"
 
 
@@ -125,55 +128,83 @@ long atol(const char *str) {
 /* ---------- Memory management ---------- */
 void *malloc(size_t size) {
     if (size == 0) return NULL;
-    return (void*)kheap_alloc(size, ALLOCATE_DATA);
+    
+    // Allocate space for header + user data
+    size_t total_size = HEADER_SIZE + size;
+    malloc_header_t *header = (malloc_header_t*)kheap_alloc(total_size, ALLOCATE_DATA);
+    
+    if (!header) return NULL;
+    
+    // Initialize header
+    header->size = size;
+    header->magic = MAGIC;
+    // next/prev can be used for heap management if needed
+    
+    // Return pointer to user data (after header)
+    return (void*)((uint8_t*)header + HEADER_SIZE);
 }
 
-void free(void *ptr, size_t size) {
+void free(void *ptr) {
     if (ptr == NULL) return;
-    // In your syscall, size may be required; store metadata or ignore
-    kheap_free(ptr, size);
+    
+    // Get header from user pointer
+    malloc_header_t *header = (malloc_header_t*)((uint8_t*)ptr - HEADER_SIZE);
+    
+    // Validate magic number to detect corruption
+    if (header->magic != MAGIC) {
+        printf("[Heap Error] Invalid free: corrupted header or bad pointer\n");
+        return;
+    }
+    
+    // Free the entire block (header + user data)
+    kheap_free(header, HEADER_SIZE + header->size);
 }
 
 void *calloc(size_t nmemb, size_t size) {
     size_t total = nmemb * size;
     void *ptr = malloc(total);
     if (ptr) {
-        unsigned char *p = (unsigned char*)ptr;
-        for (size_t i = 0; i < total; i++) {
-            p[i] = 0;
-        }
+        memset(ptr, 0, total);
     }
     return ptr;
 }
 
 void *realloc(void *ptr, size_t size) {
-    if (ptr == NULL) {
-        return malloc(size);
-    }
+    if (ptr == NULL) return malloc(size);
     if (size == 0) {
-        free(ptr, size);
+        free(ptr);
         return NULL;
     }
-
-    // Simple strategy: allocate new, copy old, free old
-    // For real impl: store size in metadata
-    void *newptr = malloc(size);
-    if (!newptr) return NULL;
-
-    // copy min(old_size, size) — here we don't know old size, so assume size
-    // Better: implement heap metadata in your kernel syscall layer
-    // For now: blind copy
-    unsigned char *dst = newptr;
-    unsigned char *src = ptr;
-    for (size_t i = 0; i < size; i++) {
-        dst[i] = src[i];
+    
+    // Get original size from header
+    malloc_header_t *old_header = (malloc_header_t*)((uint8_t*)ptr - HEADER_SIZE);
+    
+    if (old_header->magic != MAGIC) {
+        printf("[Heap Error] Invalid realloc: corrupted header\n");
+        return NULL;
     }
-
-    free(ptr, size); // In real impl, pass old size
-    return newptr;
+    
+    size_t old_size = old_header->size;
+    
+    // If same size, return original pointer
+    if (old_size == size) return ptr;
+    
+    // Allocate new block
+    void *new_ptr = malloc(size);
+    if (!new_ptr) return NULL;
+    
+    // Copy minimum of old and new size
+    size_t copy_size = (old_size < size) ? old_size : size;
+    memcpy(new_ptr, ptr, copy_size);
+    
+    // Free old block
+    free(ptr);
+    
+    return new_ptr;
 }
-
 /* ---------- Random numbers ---------- */
+
+
 static unsigned long rand_next = 1;
 
 int rand(void) {

@@ -27,8 +27,8 @@ References:
 #include "../memory/uheap.h"
 #include "../memory/paging.h"
 
-#include "../../../ext_lib/FatFs-R0.15b/source/ff.h"
-#include "../../../ext_lib/FatFs-R0.15b/source/diskio.h"
+#include "../fs/FatFs-R0.15b/source/ff.h"
+#include "../fs/FatFs-R0.15b/source/diskio.h"
 
 #include "../vfs/vfs.h"
 
@@ -375,87 +375,36 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
             
             case INT_VFS_MKFS: {
-                
-                int fat_type = regs->rdi;
-                if(fat_type < FM_FAT){
-                    printf("Invalid Fat Type\n");
-                    regs->rax = -1;
-                    break;
-                }
-
-                const char *disk = (const char *)regs->rsi;
-                if(!disk){
-                    printf("Invalid Disk\n");
-                    regs->rax = -1;
-                    break;
-                }
-
-                regs->rax = vfs_mkfs(fat_type, disk);
                 break;
             }
 
             case INT_VFS_INIT: {
-                char *fs_name = (char *)regs->rdi;
-                if(!fs_name){
-                    printf("invalid file-system name!\n");
-                    regs->rax = -1;
-                    break;
-                }
-                vfs_init(fs_name);
-                regs->rax = 0;
                 break;
             }
 
             case INT_SYSCALL_MOUNT: { // 0x52
-                vfs_node_t *root_node = vfs_get_root();
-                char *disk = (char *)regs->rdi;
-                int res = vfs_mount(root_node, disk);
-                regs->rax = (int64_t)res;
                 break;
             }
 
             case INT_SYSCALL_OPEN: { // 0x51
-                char *path = (char *)regs->rdi;
-                uint64_t flags = regs->rsi;
-                vfs_node_t *node = vfs_open(path, flags);
-                regs->rax = (uint64_t) node;
                 break;
             }
 
             case INT_SYSCALL_READ: {  // 0x35
 
-                vfs_node_t *node = (vfs_node_t *) regs->rdi;
-                uint64_t offset = regs->rsi;
-                void *buf = (void *)regs->rdx;
-                uint64_t size = regs->r10;
-
-                int res = vfs_read(node, offset, buf, size);
-                regs->rax = (int64_t) res;
                 break;
 
             }
 
             case INT_SYSCALL_WRITE: {  // 0x36
-                vfs_node_t *node = (vfs_node_t *)regs->rdi;
-                uint64_t offset = regs->rsi;
-                const void* buf = (const void*)regs->rdx;
-                uint64_t size = regs->r10;
-                int res = vfs_write(node, offset, buf, size);
-                regs->rax = (int64_t) res;
                 break;
             }
 
             case INT_SYSCALL_CLOSE: {  // 0x34
-                vfs_node_t *node = (vfs_node_t *) regs->rdi;
-                int res = vfs_close(node);
-                regs->rax = (int64_t)res;
                 break;
             }
 
             case INT_SYSCALL_LSEEK: { // 0x37
-                vfs_node_t *node = (vfs_node_t *)regs->rdi;
-                uint64_t offset = regs->rsi;
-                regs->rax = vfs_lseek(node, offset);
                 break;
             }
 
@@ -464,27 +413,16 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
 
             case INT_SYSCALL_UNLINK: {
-                const char *file_path = (const char *)regs->rdi;
-                regs->rax = vfs_unlink(file_path);
                 break;
             }
             
             // ------------------- VFS Directory Manage ------------------------------------
 
             case INT_SYSCALL_LIST: {
-                const char* path = (const char *)regs->rdi;
-                vfs_listdir(path);
-
-                regs->rax = 0;
                 break;
             }
 
             case INT_SYSCALL_OPENDIR: {   // 0x4
-                char *path = (const char *)regs->rdi;
-                uint64_t flags = regs->rsi;
-                vfs_node_t *node = vfs_opendir(path, flags);
-
-                regs->rax = (uint64_t) node;
 
                 break;
             }
@@ -494,41 +432,22 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
 
             case INT_SYSCALL_READDIR: {   // 0x46
-                vfs_node_t *dir_node = (vfs_node_t *) regs->rdi;
-                vfs_node_t ***children = (vfs_node_t ***) regs->rsi;
-                uint64_t *child_count = (uint64_t *)regs->rdx;
-                int res = vfs_read_dir(dir_node, children, child_count);
-
-                regs->rax  = res;
                 break;
             }
 
             case INT_SYSCALL_MKDIR: {    // 0x4E
-                char *path = (char *)regs->rdi;
-                int res = vfs_mkdir(path);
-                regs->rax = res;
                 break;
             }
 
             case INT_SYSCALL_GETCWD: {
-                void *buf = (void *) regs->rdi;
-                size_t size = (size_t)regs->rsi;
-                int res = vfs_getcwd(buf, size);
-                regs->rax = res;
                 break;
             }
 
             case INT_SYSCALL_CHDIR: {
-                const char *path = (const char *) regs->rdi;
-                int res = vfs_chdir(path);
-                regs->rax = res;
                 break;
             }
 
             case INT_SYSCALL_CHDRIVE: {
-                const char *path = (const char *) regs->rdi;
-                int res = vfs_chdrive(path);
-                regs->rax = res;
                 break;
             }
 

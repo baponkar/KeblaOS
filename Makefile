@@ -7,6 +7,7 @@
 # Last Updated : 27-09-2025
 # Author : Bapon Kar
 # Repository url : https://github.com/baponkar/KeblaOS
+# To see inside of hex file https://hexed.it/
 # Help : Run 'make help'
 
 
@@ -24,7 +25,7 @@ ISO_DIR = build/iso_root
 DEBUG_DIR = ./debug
 DEBUG_FILE = $(DEBUG_DIR)/qemu_log.txt
 
-DISK_DIR = disk
+DISK_DIR = disk_img
 DISK_1 = $(DISK_DIR)/disk_1.img
 DISK_2 = $(DISK_DIR)/disk_2.img
 
@@ -80,25 +81,25 @@ $(BUILD_DIR):
 # ================================= Externel Library Build Start =============================================
 
 # 1. FatFs Library
-FATFS_BUILD_DIR = build/ext_lib/FatFs
-FATFS_SRC_DIR   = ext_lib/FatFs-R0.15b
-FATFS_SRC_FILES := $(shell find ext_lib/FatFs-R0.15b -name '*.c')
-FATFS_OBJ_FILES := $(patsubst $(FATFS_SRC_DIR)/%.c, $(FATFS_BUILD_DIR)/%.o, $(FATFS_SRC_FILES))
-FATFS_LIB_FILE  := build/libfatfs.a
+# FATFS_BUILD_DIR = build/ext_lib/FatFs
+# FATFS_SRC_DIR   = ext_lib/FatFs-R0.15b
+# FATFS_SRC_FILES := $(shell find ext_lib/FatFs-R0.15b -name '*.c')
+# FATFS_OBJ_FILES := $(patsubst $(FATFS_SRC_DIR)/%.c, $(FATFS_BUILD_DIR)/%.o, $(FATFS_SRC_FILES))
+# FATFS_LIB_FILE  := build/libfatfs.a
 
-build/ext_lib/FatFs:
-	mkdir -p $@
+# build/ext_lib/FatFs:
+# 	mkdir -p $@
 
-build/ext_lib/FatFs/%.o: ext_lib/FatFs-R0.15b/%.c
-	@mkdir -p $(dir $@)
-	$(GCC) $(GCC_FLAG) $(GCC_STDLIB_FLAG) -c $< -o $@
+# build/ext_lib/FatFs/%.o: ext_lib/FatFs-R0.15b/%.c
+# 	@mkdir -p $(dir $@)
+# 	$(GCC) $(GCC_FLAG) $(GCC_STDLIB_FLAG) -c $< -o $@
 
 
-build/libfatfs.a: $(FATFS_OBJ_FILES)
-	ar rcs $@ $^
+# build/libfatfs.a: $(FATFS_OBJ_FILES)
+# 	ar rcs $@ $^
 
-fatfs: build/libfatfs.a
-	@echo "FatFs Build completed."
+# fatfs: build/libfatfs.a
+# 	@echo "FatFs Build completed."
 
 
 
@@ -142,7 +143,7 @@ lvgl: build/liblvgl.a
 	@echo "LVGL Build completed."
 
 
-# 3. limine
+# 3. limine (I am using previus building files )
 # Nothing to build
 LIMINE_BUILD_DIR := build/ext_lib/limine-9.2.3
 LIMINE_SRC_DIR := ext_lib/limine-9.2.3
@@ -163,7 +164,7 @@ build/tiny-regex-c/%.o: ext_lib/tiny-regex-c/%.c
 	$(GCC) $(GCC_FLAG) $(GCC_STDLIB_FLAG) -c $< -o $@
 
 
-build/lib-tiny-regex.a: $(LVGL_OBJ_FILES)
+build/lib-tiny-regex.a: $(TINY_REGEX_LIB_FILE)
 	ar rcs $@ $^
 
 tiny-regex: build/lib-tiny-regex.a
@@ -213,6 +214,9 @@ ugui: $(UGUI_LIB_FILE)
 
 
 
+# external_libs: $(FATFS_LIB_FILE) $(LVGL_LIB_FILE) $(UGUI_LIB_FILE) $(NUKLEAR_LIB_FILE) $(TINY_REGEX_LIB_FILE)
+external_libs: $(LVGL_LIB_FILE) $(UGUI_LIB_FILE) $(NUKLEAR_LIB_FILE) $(TINY_REGEX_LIB_FILE)
+
 
 # ============================================== Kernel Build  Start ===============================================
 
@@ -250,18 +254,19 @@ build/libkernel.a: $(KERNEL_OBJ_FILES)
 kernel: build/libkernel.a
 	@echo "Kernel C Build completed."
 
-# ==================================================================================================
+# =======================================================================================================================================
 
 
 # Rule to link all object files into a single kernel binary
-$(BUILD_DIR)/kernel.bin: $(KERNEL_LIB_FILE) $(FATFS_LIB_FILE) $(LVGL_LIB_FILE) $(TINY_REGEX_LIB_FILE) $(UGUI_LIB_FILE)  $(NUKLEAR_LIB_FILE)
+# $(BUILD_DIR)/kernel.bin: $(KERNEL_LIB_FILE) $(FATFS_LIB_FILE) $(LVGL_LIB_FILE) $(TINY_REGEX_LIB_FILE) $(UGUI_LIB_FILE) $(NUKLEAR_LIB_FILE)
+$(BUILD_DIR)/kernel.bin: $(KERNEL_LIB_FILE) $(LVGL_LIB_FILE) $(TINY_REGEX_LIB_FILE) $(UGUI_LIB_FILE) $(NUKLEAR_LIB_FILE)
 	$(LD) $(LD_FLAG) -T kernel_linker_x86_64.ld -o $@ $^
 
 
 linking: $(BUILD_DIR)/kernel.bin
 	@echo "Successfully all lib files linked."
 
-# ====================================================================================================
+# ======================================================================================================================================
 
 # Create a file with the current timestamp and custom message
 $(BUILD_INFO_FILE):
@@ -274,7 +279,7 @@ $(BUILD_INFO_FILE):
 	@echo "Build Project and then Run iso by: make all" >> $@
 	@echo "Get make help by: make help" >> $@
 
-# ====================================================================================================
+# =====================================================================================================================================
 
 # Creating ISO image
 $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBUG_DIR)/objdump.txt
@@ -317,7 +322,7 @@ $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBU
 
 image: $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso $(BUILD_INFO_FILE)
 
-# =============================================================================================
+# ========================================================================================================================================
 
 
 blank_disk_1:
@@ -348,8 +353,8 @@ blank_disk_2:
 	sudo umount /dev/loop2p1 || true
 	sudo losetup -d /dev/loop2 || true
 
-	# 1. Create Disk Image (1024 MiB)
-	dd if=/dev/zero of=$(DISK_2) bs=1M count=1024
+	# 1. Create Disk Image (512 MiB)
+	dd if=/dev/zero of=$(DISK_2) bs=1M count=512
 	@echo "Created blank Disk-2 image"
 
 # Creating two blank disks
@@ -389,38 +394,26 @@ fat32_format:
 ext2_format:
 
 	# Disk - 1
-	# Partition the disk.img as EXT2
 	parted $(DISK_DIR)/disk_1.img --script -- mklabel msdos
 	parted $(DISK_DIR)/disk_1.img --script -- mkpart primary ext2 1MiB 100%
 	@echo "Disk-1 image Partitioned (EXT2)"
 
 	# Setup loop device with partitions
 	sudo losetup -fP $(DISK_1)
-	LOOPDEV_1=$(shell sudo losetup -j $(DISK_1) | cut -d: -f1)
-
-	# Format the first partition as EXT2
-	sudo mkfs.ext2 $$(echo $(LOOPDEV_1))p1
-	@echo "Disk-1 Formatted first partition as EXT2"
-
-	# Detach loop device
-	sudo losetup -d $$(echo $(LOOPDEV_1))
+	@LOOPDEV_1=$$(sudo losetup -j $(DISK_1) | cut -d: -f1); \
+	sudo mkfs.ext2 $${LOOPDEV_1}p1; \
+	sudo losetup -d $${LOOPDEV_1}
 
 	# Disk - 2
-	# Partition the disk.img as EXT2
 	parted $(DISK_DIR)/disk_2.img --script -- mklabel msdos
-	parted $(DISK_DIR)/disk_2.img --script -- mkpart primary ext2
+	parted $(DISK_DIR)/disk_2.img --script -- mkpart primary ext2 1MiB 100%
 	@echo "Disk-2 image Partitioned (EXT2)"
 
-	# Setup loop device with partitions
 	sudo losetup -fP $(DISK_2)
-	LOOPDEV_2=$(shell sudo losetup -j $(DISK_2) | cut -d: -f1)
+	@LOOPDEV_2=$$(sudo losetup -j $(DISK_2) | cut -d: -f1); \
+	sudo mkfs.ext2 $${LOOPDEV_2}p1; \
+	sudo losetup -d $${LOOPDEV_2}
 
-	# Format the first partition as EXT2
-	sudo mkfs.ext2 $$(echo $(LOOPDEV_2))p1
-	@echo "Disk-2 Formatted first partition as EXT2"
-
-	# Detach loop device
-	sudo losetup -d $$(echo $(LOOPDEV_2))
 
 create_disks:
 	# Clean previous disk directory and created again disk directory
@@ -433,7 +426,7 @@ create_disks:
 	# make ext2_format
 	@echo "All Disk images are created and formatted."
 
-# ================================================================================
+# =======================================================================================================================================
 
 # Run the OS in QEMU with BIOS boot and two sata disks drives
 bios_run:
@@ -447,14 +440,17 @@ bios_run:
 	-device ahci,id=ahci \
 	-device ide-hd,drive=sata_disk1,bus=ahci.0 \
 	-device ide-hd,drive=sata_disk2,bus=ahci.1 \
-	-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
+	-device ide-cd,drive=cdrom,bus=ahci.2 \
+	-drive id=cdrom,media=cdrom,file=$(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso,if=none \
 	-serial stdio \
 	-vga std \
 	-rtc base=utc,clock=host \
 	-netdev user,id=n1 -device e1000,netdev=n1 \
 	-d guest_errors,int,cpu_reset \
-	-D $(DEBUG_DIR)/qemu.log
+	-D $(DEBUG_DIR)/qemu.log \
+	-trace enable=all,file=./debug/trace.log
 	#-no-reboot
+# To see available trace events about start_dma: qemu-system-x86_64 -trace help | grep -i start_dma
 # We can add -noo--rebboot to prevent rebooting after kernel panic
 
 
@@ -519,6 +515,25 @@ uefi_nvme_run:
 		-rtc base=utc,clock=host \
 		-net nic -net user
 
+if disk_run:
+	qemu-system-x86_64 \
+	-machine q35 \
+	-m 4096 \
+	-smp cores=4,threads=1,sockets=1,maxcpus=4 \
+	-boot c \
+	-drive id=sata_disk1,file=$(DISK_1),if=none,format=raw \
+	-drive id=sata_disk2,file=$(DISK_2),if=none,format=raw \
+	-device ahci,id=ahci \
+	-device ide-hd,drive=sata_disk1,bus=ahci.0 \
+	-device ide-hd,drive=sata_disk2,bus=ahci.1 \
+	-serial stdio \
+	-vga std \
+	-rtc base=utc,clock=host \
+	-netdev user,id=n1 -device e1000,netdev=n1 \
+	-d guest_errors,int,cpu_reset \
+	-D $(DEBUG_DIR)/qemu.log \
+	-trace enable=all,file=./debug/trace.log
+
 
 gdb_debug:
 	# GDB Debuging
@@ -537,6 +552,10 @@ gdb_debug:
 		-s -S
 
 clean:
+	# -o stands or 
+	# Deleting libkernel.a and iso file
+	find build -type f \( -name '*.iso' -o -name 'libkernel.a' \) -delete
+
 	# Delete all .o and .d files recursively inside build/kernel directory
 	find $(BUILD_DIR)/kernel -type f \( -name '*.o' -o -name '*.d' \) -delete
 
@@ -548,17 +567,17 @@ hard_clean:
 	find $(BUILD_DIR) -type d -empty ! -path "$(BUILD_DIR)" -delete
 
 
-# ==============================================================================
+# =======================================================================================================================================
 user_programe:
 	make -C $(USER_MODULE_DIR)/
 
 	@echo "Successfully build user_program.elf"
-# ==============================================================================
+# =======================================================================================================================================
 
 
 
 # Full build (with external libraries)
-all: hard_clean fatfs lvgl tiny-regex ugui kernel linking user_programe image create_disks bios_run
+all: hard_clean kernel fatfs lvgl tiny-regex ugui linking user_programe image create_disks bios_run
 
 
 # Kernel-only build (no ext_lib)
@@ -567,7 +586,7 @@ build: clean kernel linking user_programe image bios_run
 
 default: build
 
-.PHONY: all build fatfs lvgl tiny-regex ugui kernel linking user_program build_image create_disks blank_disks ext2_format fat32_format help
+.PHONY: all build fatfs lvgl tiny-regex ugui external_libs kernel linking user_program build_image create_disks blank_disks ext2_format fat32_format disk_run help
 
 help:
 	@echo "Available targets:"
@@ -593,7 +612,7 @@ help:
 	@echo "  make fat32_format    - Format two disks with FAT32 Filesystem"
 	@echo "  make xt2_format      - Format two disks with EXT2 Filesystem"
 
-	@echo "  make user_programe   - Build user_program.elf from module/user_program.asm"
+	@echo "  make user_programe   - Build user_program.elf from module/user_main.c"
 
 	@echo "  make help            - To display this help menu."
 

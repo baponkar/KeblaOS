@@ -157,7 +157,7 @@ void start_bootstrap_cpu_core() {
 
     bsp_apic_int_init();        // Initialize APIC Interrupts
 
-    init_pmm();                 // Initialize Physical Memory Manager for the bootstrap core
+    // init_pmm();                 // Initialize Physical Memory Manager for the bootstrap core
 
     init_bs_paging();           // Initialize paging for the bootstrap core
 

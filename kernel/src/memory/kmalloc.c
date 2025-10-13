@@ -34,7 +34,6 @@ uint64_t kmalloc_a(uint64_t sz, int align)    // page aligned.
     bits need to be zero (otherwise they would interfere with the read/write/protection/accessed bits).
     */
 
-
     if(phys_mem_head >= USABLE_END_PHYS_MEM) {
         printf("kmalloc_a: Out of memory\n");
         return 0;
@@ -58,6 +57,7 @@ The kmalloc_p function is used to allocate memory while also optionally returnin
 of the allocated memory.
 */
 uint64_t kmalloc_p(uint64_t sz, uint64_t *phys){
+    
     if (phys)
     {   // phys (parameter): This is a pointer to a uint64_t variable where 
         // the physical address of the allocated memory will be stored.

@@ -13,7 +13,7 @@ void instll(){
 
     printf("Installing KeblaOS in the available Disk...........\n");
 
-    if(syscall_vfs_init("fat") != 0){
+    if(syscall_vfs_init("fat", 0) != 0){
         printf("VFS initialization is failed!\n");
     }else{
         printf("Successfully FAT32 VFS Created in disk 0.\n");
