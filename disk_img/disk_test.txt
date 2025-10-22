@@ -1,7 +1,0 @@
-
-https://hexed.it/
-
-https://iamkate.com/code/binary-file-viewer/
-
-
-xxd -s $((2048*512)) -l 512 disk_1.img | less
