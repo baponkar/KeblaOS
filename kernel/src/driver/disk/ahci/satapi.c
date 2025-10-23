@@ -398,6 +398,42 @@ bool satapi_read_capacity(HBA_PORT_T *port, uint32_t *last_lba, uint32_t *sector
 }
 
 
+bool satapi_eject(HBA_PORT_T *port) {
+    uint8_t cdb[12];
+    memset(cdb, 0, sizeof(cdb));
+
+    cdb[0] = 0x1B;   // START STOP UNIT
+    cdb[4] = 0x02;   // LOEJ=1, START=0 (eject tray)
+
+    printf("[SATAPI] Sending eject command...\n");
+
+    bool success = runAtapiCommand(port, cdb, sizeof(cdb), 0, 0, false);
+    if (success)
+        printf("[SATAPI] Tray ejected successfully.\n");
+    else
+        printf("[SATAPI] Eject command failed.\n");
+
+    return success;
+}
+
+bool satapi_load(HBA_PORT_T *port) {
+    uint8_t cdb[12];
+    memset(cdb, 0, sizeof(cdb));
+
+    cdb[0] = 0x1B;   // START STOP UNIT
+    cdb[4] = 0x03;   // LOEJ=1, START=1 (load tray)
+
+    printf("[SATAPI] Sending load (close tray) command...\n");
+
+    bool success = runAtapiCommand(port, cdb, sizeof(cdb), 0, 0, false);
+    if (success)
+        printf("[SATAPI] Tray loaded successfully.\n");
+    else
+        printf("[SATAPI] Load command failed.\n");
+
+    return success;
+}
+
 
 
 void test_satapi(HBA_PORT_T *port) {

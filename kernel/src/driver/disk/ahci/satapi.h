@@ -26,6 +26,9 @@ bool satapi_read_capacity(HBA_PORT_T *port, uint32_t *last_lba, uint32_t *sector
 
 bool satapi_inquiry(HBA_PORT_T *port);
 
+bool satapi_eject(HBA_PORT_T *port);
+bool satapi_load(HBA_PORT_T *port);
+
 void test_satapi(HBA_PORT_T *port);
 
 

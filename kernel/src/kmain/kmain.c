@@ -54,36 +54,7 @@ void kmain(){
     init_controllers();     // This have PCI Scan
 
 
-    // Test Disks
-    kebla_disk_init(0);
-    kebla_disk_init(1);
-    kebla_disk_init(2);
-    
-    // fatfs_test(0);
-    // iso9660_disk_test(2);
 
-    install_kebla_os(2, 0);
-
-
-    // install_kebla_os(2, 0);
-    // test_iso9660(disks[2].context);
-
-    // Example usage
-    // installer_context_t *installer = installer_init(disks[2].context, 0, example_progress_callback, example_status_callback);
-
-    // if (installer) {
-    //     bool success = install_operating_system(installer, true); // true = format disk
-    //     installer_cleanup(installer);
-    // }
-    
-    // disk_test(0);
-    // vfs_test(0);
-    // init_nvme();
-    // for(int i=0; i<disk_count; i++){
-    //     printf(" Disk-%d, Type-%d\n", i, disks[i].type);
-    //     detect_partition_table(i);
-    //     printf(" Detect Filesystem %d in Disk-0\n", detect_filesystem(i));
-    // }
     
     // mouse_init();
 
