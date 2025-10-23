@@ -89,7 +89,7 @@ FS_TYPE detect_filesystem(int disk_no) {
 }
 
 
-
+int vfs
 
 
 

@@ -183,6 +183,7 @@ static bool iso9660_find_file(
             result->sector = read_u32_le((uint8_t *)&record->extent_location_le);
             result->size = read_u32_le((uint8_t *)&record->data_length_le);
             result->is_dir = (record->file_flags & 0x02) != 0;
+            result->disk_no = disk_no;
             found = true;
             break;
         }
@@ -223,6 +224,7 @@ void *iso9660_open(int disk_no, char *path, int mode) {
             iso9660_file_t *opened_file = malloc(sizeof(iso9660_file_t));
             if (!opened_file) return NULL;
             memcpy(opened_file, &file_info, sizeof(iso9660_file_t));
+            opened_file->disk_no = disk_no;
             return opened_file;
         }
 
