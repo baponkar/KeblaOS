@@ -29,21 +29,30 @@ static uint16_t read_u16_le(const uint8_t *data) {
 static void parse_filename(const iso9660_dir_record_t *record, char *output, size_t output_size) {
     uint8_t name_len = record->file_id_length;
 
+    // Skip '.' and '..' entries
+    if (name_len == 1 && (record->file_id[0] == 0x00 || record->file_id[0] == 0x01)) {
+        output[0] = '\0';
+        return;
+    }
+
     // Handle version suffix (e.g., ";1")
     if (name_len >= 2 && record->file_id[name_len - 2] == ';') {
         name_len -= 2;
     }
 
+    // Copy filename safely
     size_t copy_len = (name_len < output_size - 1) ? name_len : output_size - 1;
     memcpy(output, record->file_id, copy_len);
     output[copy_len] = '\0';
 
-    // Replace weird chars
+    // Convert to uppercase (ISO9660 is uppercase-only)
     for (size_t i = 0; i < copy_len; i++) {
-        if (output[i] == '\0' || output[i] == '\x01')
-            output[i] = '_';
+        if (output[i] >= 'a' && output[i] <= 'z')
+            output[i] -= 32;
     }
 }
+
+
 
 // -------------------------------------------------------------
 // Core ISO9660 functions
