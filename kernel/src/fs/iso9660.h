@@ -98,6 +98,7 @@ int iso9660_unmount(int disk_no);
 
 void *iso9660_open(int disk_no, char *path, int mode);
 int iso9660_read(void *fp, char *buff, int size);
+int iso9660_get_fsize(void *fp);
 int iso9660_close(void *fp);
 
 

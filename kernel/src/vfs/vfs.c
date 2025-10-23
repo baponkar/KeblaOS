@@ -229,6 +229,7 @@ int vfs_setcp(int disk_no, int cp){
     }
 }
 
+#if FF_USE_STRFUNC
 
 int vfs_putc(int disk_no, void *fp, char c){
     if(disk_no >= disk_count) return -1;
@@ -262,22 +263,6 @@ int vfs_puts(int disk_no, char *str, void *cp){
 }
 
 
-int vfs_printf(int disk_no, void *fp, char *str){
-    if(disk_no >= disk_count) return -1;
-
-    Disk disk = disks[disk_no];
-
-    switch(disk.type){
-        case DISK_TYPE_AHCI_SATA:
-            return fatfs_printf(fp, str);
-            break;
-        default:
-            printf("VFS: Unsupported disk type %d for printf on disk %d\n", disk.type, disk_no);
-            return -1;
-    }
-}
-
-
 char *vfs_gets(int disk_no, char *buff, int len, void *fp){
     if(disk_no >= disk_count) return NULL;
 
@@ -293,6 +278,25 @@ char *vfs_gets(int disk_no, char *buff, int len, void *fp){
     }
 }
 
+#endif
+
+#if FF_PRINT_LLI
+
+int vfs_printf(int disk_no, void *fp, char *str){
+    if(disk_no >= disk_count) return -1;
+
+    Disk disk = disks[disk_no];
+
+    switch(disk.type){
+        case DISK_TYPE_AHCI_SATA:
+            return fatfs_printf(fp, str);
+            break;
+        default:
+            printf("VFS: Unsupported disk type %d for printf on disk %d\n", disk.type, disk_no);
+            return -1;
+    }
+}
+#endif
 
 void *vfs_open(int disk_no, char *path, int mode){
     if(disk_no >= disk_count) return NULL;
@@ -458,6 +462,10 @@ int vfs_readdir(int disk_no, void *dp, void *fno){
     return -1;
 }
 
+
+
+
+#if FF_USE_FIND
 int vfs_findfirst(int disk_no, void *dp, void *fno, char *path, char *pattern){
     if(!dp | !fno | !path | !pattern) return -1;
 
@@ -485,6 +493,9 @@ int vfs_findnext(int disk_no, void *dp, void *fno){
 
     return -1;
 }
+
+#endif
+
 
 int vfs_mkdir(int disk_no, char *path){
     if(!path) return -1;
@@ -674,6 +685,27 @@ int vfs_expand(int disk_no){
           return -1;
      }
 }
+
+
+
+int vfs_get_fsize(int disk_no, void *fp) {
+    Disk disk = disks[disk_no];
+    switch(disk.type){
+        case DISK_TYPE_SATAPI:
+            printf("VFS: Get_fsize operation not supported on ISO9660 (disk %d)\n", disk_no);
+            return iso9660_get_fsize(fp);
+            break;
+        case DISK_TYPE_AHCI_SATA:
+            return fatfs_get_fsize(fp);
+            break;
+        default:
+            printf("VFS: Unsupported disk type %d for get_fsize on disk %d\n", disk.type, disk_no);
+            return -1;
+    }
+}
+
+
+
 
 const char* vfs_error_string(int result){
 

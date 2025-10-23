@@ -34,6 +34,11 @@ typedef struct {
     bool valid;
 } FS_INFO;
 
+typedef struct {
+    FS_TYPE type;
+    void *context;
+} VFS_FILE;
+
 
 FS_TYPE detect_filesystem(int disk_no);
 
@@ -63,8 +68,12 @@ int vfs_sync(int disk_no, void * fp);
 void *vfs_opendir(int disk_no, char *path);
 int vfs_closedir(int disk_no, void *dp);
 int vfs_readdir(int disk_no, void *dp, void *fno);
+
+#if FF_USE_FIND
 int vfs_findfirst(int disk_no, void *dp, void *fno, char *path, char *pattern);
 int vfs_findnext(int disk_no, void *dp, void *fno);
+#endif 
+
 int vfs_mkdir(int disk_no, char *path);
 int vfs_unlink(int disk_no, char *path);
 int vfs_rename(int disk_no, char *old_path, char *new_path);
@@ -79,6 +88,9 @@ int vfs_getlabel(int disk_no, char *path, char* label, void *vsn);
 int vfs_setlabel(int disk_no, char *label);
 int vfs_forward(int disk_no);
 int vfs_expand(int disk_no);
+
+int vfs_get_fsize(int disk_no, void *fp);
+
 
 const char* vfs_error_string(int result);
 

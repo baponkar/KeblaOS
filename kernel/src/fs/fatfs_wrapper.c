@@ -123,6 +123,7 @@ int fatfs_setcp(int cp){
     f_setcp((WORD) cp);
 }
 
+#if FF_USE_STRFUNC
 // Put a Char in fp
 int fatfs_putc(void *fp, char c){
     return f_putc((TCHAR) c, (FIL*) fp);
@@ -133,15 +134,19 @@ int fatfs_puts(char *str, void *cp){
     return f_puts ((const TCHAR*) str, (FIL*) cp);	
 }
 
-// Printing file content
-int fatfs_printf(void *fp, char *str){
-    // return f_printf ((FIL*) fp, (const TCHAR*) str, ...);
-}
-
 //Get a string from the file
 char *fatfs_gets(char *buff, int len, void *fp){
     return (char *)f_gets ((TCHAR*) buff, len, (FIL*)fp);
 }
+#endif
+
+#if FF_PRINT_LLI
+// Printing file content
+int fatfs_printf(void *fp, char *str){
+    // return f_printf ((FIL*) fp, (const TCHAR*) str, ...);
+}
+#endif
+
 
 // open a file
 void *fatfs_open(char *path, int mode) {
@@ -223,6 +228,8 @@ int fatfs_readdir(void *dp, void *fno){
     return f_readdir((DIR*) dp, (FILINFO*) fno);
 }
 
+
+#if FF_USE_FIND
 int fatfs_findfirst(void *dp, void *fno, char *path, char *pattern){
     return f_findfirst((DIR*)dp, (FILINFO*)fno, (const TCHAR*)path, (const TCHAR*)pattern);
 }
@@ -232,6 +239,7 @@ int fatfs_findnext(void *dp, void *fno){
     return f_findnext ((DIR*) dp, (FILINFO*) fno);
 }
 
+#endif
 
 int fatfs_mkdir(char *path){
     return f_mkdir (path);
@@ -296,6 +304,14 @@ int fatfs_forward(){
 
 int fatfs_expand(){
     // f_expand (FIL* fp, FSIZE_t fsz, BYTE opt);
+}
+
+int fatfs_get_fsize(void *fp){
+    if(!fp) return -1;
+
+    FFOBJID	obj = ((FIL*)fp)->obj;
+
+    return (int)obj.objsize;
 }
 
 void fatfs_test(int disk_no){

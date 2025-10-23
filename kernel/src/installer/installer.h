@@ -4,78 +4,33 @@
 #include <stdbool.h>
 
 #pragma pack(push, 1)
-
-// ISO9660 Directory Record
 typedef struct {
-    uint8_t  length;
-    uint8_t  ext_attr_length;
-    uint32_t extent_location_le;
-    uint32_t extent_location_be;
-    uint32_t data_length_le;
-    uint32_t data_length_be;
-    uint8_t  date_time[7];
-    uint8_t  file_flags;
-    uint8_t  file_unit_size;
-    uint8_t  interleave_gap_size;
-    uint16_t volume_sequence_number_le;
-    uint16_t volume_sequence_number_be;
-    uint8_t  file_id_length;
-    char     file_id[1];  // Actually variable length
-} iso9660_dir_record_t;
-
-// ISO9660 Primary Volume Descriptor
-typedef struct {
-    uint8_t  type;                       // 0x01 for Primary Volume Descriptor
-    char     identifier[5];              // "CD001"
-    uint8_t  version;                    // 0x01
-    uint8_t  unused1;
-    char     system_id[32];
-    char     volume_id[32];
-    uint8_t  unused2[8];
-    uint32_t volume_space_size_le;       // Little-endian
-    uint32_t volume_space_size_be;       // Big-endian
-    uint8_t  unused3[32];
-    uint16_t volume_set_size_le;
-    uint16_t volume_set_size_be;
-    uint16_t volume_sequence_number_le;
-    uint16_t volume_sequence_number_be;
-    uint16_t logical_block_size_le;
-    uint16_t logical_block_size_be;
-    uint32_t path_table_size_le;
-    uint32_t path_table_size_be;
-    uint32_t path_table_location_le;
-    uint32_t path_table_location_be;
-    uint32_t optional_path_table_location_le;
-    uint32_t optional_path_table_location_be;
-    iso9660_dir_record_t root_directory_record;
-    char     volume_set_id[128];
-    char     publisher_id[128];
-    char     data_preparer_id[128];
-    char     application_id[128];
-    char     copyright_file_id[38];
-    char     abstract_file_id[36];
-    char     bibliographic_file_id[37];
-    char     creation_date[17];
-    char     modification_date[17];
-    char     expiration_date[17];
-    char     effective_date[17];
-    uint8_t  file_structure_version;
-    uint8_t  unused4;
-    uint8_t  application_data[512];
-    uint8_t  reserved[653];
-} iso9660_pvd_t;
-
+    uint64_t signature;           // "EFI PART" (45h 46h 49h 20h 50h 41h 52h 54h)
+    uint32_t revision;               // For GPT version 1.0, this is 0x00010000
+    uint32_t header_size;            // Size of the header in bytes (usually 92)
+    uint32_t header_crc32;           // CRC32 checksum of the header
+    uint32_t reserved;               // Must be 0
+    uint64_t current_lba;            // LBA of this header copy
+    uint64_t backup_lba;             // LBA of the alternate header
+    uint64_t first_usable_lba;       // First usable LBA for partitions (after header + entries)
+    uint64_t last_usable_lba;        // Last usable LBA for partitions (before backup header)
+    uint8_t  disk_guid[16];          // Unique disk GUID
+    uint64_t partition_entries_lba;  // Starting LBA of array of partition entries
+    uint32_t num_partition_entries;  // Number of partition entries (usually 128)
+    uint32_t partition_entry_size; // Size of each partition entry (usually 128)
+    uint32_t partition_entries_crc32;// CRC32 of partition entries array
+    uint8_t  reserved2[420];         // Padding to 512 bytes (sector size)
+} gpt_header_t;
 #pragma pack(pop)
 
-
-
-// Parsed ISO9660 File Entry
 typedef struct {
-    char     name[256];
-    uint32_t sector;
-    uint32_t size;
-    bool     is_dir;
-} iso9660_file_t;
+    uint8_t  partition_type_guid[16]; // Partition type GUID
+    uint8_t  unique_partition_guid[16];// Unique partition GUID
+    uint64_t starting_lba;            // Starting LBA of the partition
+    uint64_t ending_lba;              // Ending LBA of the partition
+    uint64_t attributes;              // Attribute flags
+    uint16_t partition_name[36];      // Partition name (UTF-16)
+} gpt_partition_entry_t;
 
 
 bool is_keblaos_installed(int disk_no);

@@ -171,24 +171,24 @@ bool create_complete_gpt(int disk_no) {
         0x87, 0xC0, 0x68, 0xB6, 0xB7, 0x26, 0x99, 0xC7 // Data4 (big-endian)
     };
 
-    memcpy(partitions[0].type_guid, fat32_type_guid, 16);
+    memcpy(partitions[0].partition_type_guid, fat32_type_guid, 16);
     
     // Generate partition GUID
     for(int i = 0; i < 16; i++) {
-        partitions[0].partition_guid[i] = 0x22 + i;
+        partitions[0].unique_partition_guid[i] = 0x22 + i;
     }
     
     // FIX: Don't use entire disk - leave space for backup GPT
-    partitions[0].first_lba = 2048;
-    partitions[0].last_lba = total_sectors - 34;  // Leave last 33 sectors for backup GPT
+    partitions[0].starting_lba= 2048;
+    partitions[0].ending_lba = total_sectors - 34;  // Leave last 33 sectors for backup GPT
     // Set EFI system partition attributes (bit 1 = legacy BIOS bootable)
     partitions[0].attributes = 0x8000000000000001; // OR 0x8000000000000001 for UEFI required
     
     // Partition name
     const char* name = "EFI System Partition";
     for(int i = 0; i < strlen(name) && i < 36; i++) {
-        partitions[0].name[i * 2] = name[i];  // UTF-16LE low byte
-        partitions[0].name[i * 2 + 1] = 0;    // UTF-16LE high byte
+        partitions[0].partition_name[i * 2] = name[i];  // UTF-16LE low byte
+        partitions[0].partition_name[i * 2 + 1] = 0;    // UTF-16LE high byte
     }
     
     // Calculate partition entries CRC32
@@ -261,7 +261,7 @@ void create_dirs(int disk_no){
         memset(fat_path, 0, sizeof(fat_path));                                  // Clearing the memory
         snprintf(fat_path, sizeof(fat_path), "%d:%s", disk_no, fat32_dirs[i]);  // Create Dir Path and store into fat_path
 
-        FRESULT res = vfs_mkdir(disk_no, fat_path);
+        int res = vfs_mkdir(disk_no, fat_path);
         fat_path[127] = '\0';                                                   // Ensure null-termination
         if (res == 0) {
             printf(" ✓ Created: %s\n", fat_path);
@@ -324,11 +324,9 @@ void copy_fils(int boot_disk_no, int iso_disk_no) {
     char fat_path[128];
 
     for (int i = 0; iso_files[i] != NULL && fat32_files[i] != NULL; i++) {
-        const char *iso_path = iso_files[i];
+        const char *iso_path = iso_files[i];            // Source path in ISO9660
+        snprintf(fat_path, sizeof(fat_path), "%s", fat32_files[i]); // Destination path in FAT32
 
-        snprintf(fat_path, sizeof(fat_path), "%s", fat32_files[i]);
-
-        printf(" → Copying: %s → %s\n", iso_path, fat_path);
 
         // Open source file on ISO
         void *iso_file = vfs_open(iso_disk_no, (char *)iso_path, FA_READ);
@@ -338,11 +336,19 @@ void copy_fils(int boot_disk_no, int iso_disk_no) {
             continue;
         }
 
-        // Get file size
-        uint32_t file_size = vfs_stat(iso_disk_no, iso_file);
-        if (file_size == 0) {
+        // Check the presence of the file
+        if (vfs_stat(iso_disk_no, iso_file, NULL) == 0) {
             printf("   ⚠ Empty file skipped: %s\n", iso_path);
             vfs_close(iso_disk_no, iso_file);
+            continue;
+        }
+
+        // Get file size
+        int file_size = vfs_get_fsize(iso_disk_no, iso_file);
+        if (file_size <= 0) {
+            printf("   ✗ Unable to get size for: %s\n", iso_path);
+            vfs_close(iso_disk_no, iso_file);
+            files_failed++;
             continue;
         }
 

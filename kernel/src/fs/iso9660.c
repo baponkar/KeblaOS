@@ -253,6 +253,12 @@ int iso9660_read(void *fp, char *buff, int size) {
     return size;
 }
 
+int iso9660_get_fsize(void *fp) {
+    if (!fp) return -1;
+    iso9660_file_t *file = (iso9660_file_t *)fp;
+    return file->size;
+}
+
 int iso9660_close(void *fp) {
     if (!fp) return -1;
     free(fp);
