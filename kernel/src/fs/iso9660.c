@@ -75,7 +75,7 @@ int iso9660_init(int disk_no) {
     for (int i = 16; i < 32; i++) {
         if (!kebla_disk_read(disk_no, i, 1, sector_buffer)) {
             printf("ISO9660: Failed to read sector %d\n", i);
-            return false;
+            return -1;
         }
 
         uint8_t vd_type = sector_buffer[0];
@@ -84,7 +84,7 @@ int iso9660_init(int disk_no) {
 
             if (memcmp(pvd->identifier, "CD001", 5) != 0) {
                 printf("ISO9660: Invalid volume descriptor\n");
-                return false;
+                return -1;
             }
 
             disks[disk_no].bytes_per_sector = read_u16_le((uint8_t *)&pvd->logical_block_size_le);
@@ -98,7 +98,7 @@ int iso9660_init(int disk_no) {
             printf("  Root: LBA=%u size=%u\n",
                    disks[disk_no].root_directory_sector,
                    disks[disk_no].root_directory_size);
-            return true;
+            return 0;
         }
 
         if (vd_type == 0xFF)
@@ -106,7 +106,7 @@ int iso9660_init(int disk_no) {
     }
 
     printf("ISO9660: No valid Primary Volume Descriptor found\n");
-    return false;
+    return -1;
 }
 
 int iso9660_mount(int disk_no) {
@@ -333,3 +333,38 @@ int iso9660_closedir(void *dirp) {
     return 0;
 }
 
+int iso9660_stat(int disk_no, char *path, void *fno) {
+    iso9660_file_t *file_info = (iso9660_file_t *)fno;
+
+    uint32_t sector = disks[disk_no].root_directory_sector;
+    uint32_t size = disks[disk_no].root_directory_size;
+
+    if (!iso9660_find_file(disk_no, sector, size, path, file_info))
+        return -1;
+
+    return 0;
+}
+
+int iso9660_check_media(void *ctx) {
+    HBA_PORT_T *port = (HBA_PORT_T *)ctx;
+    if (!port) return false;
+
+    // Check device presence
+    if ((port->ssts & 0x0F) != HBA_PORT_DET_PRESENT)
+        return false;
+
+    // Additional checks can be added here
+
+    return true;
+}
+
+void iso9660_test(int disk_no) {
+    Disk disk = disks[disk_no];
+    if (disk.type != DISK_TYPE_SATAPI) {
+        printf("ISO9660 Test: Disk %d is not SATAPI\n", disk_no);
+        return;
+    }
+
+    HBA_PORT_T *port = (HBA_PORT_T *)disk.context;
+    test_satapi(port);
+}

@@ -54,7 +54,18 @@ void kmain(){
     init_controllers();     // This have PCI Scan
 
 
+    if(disk_count <= 0){
+        if(kebla_get_disks() <= 0){
+            printf("[KMAIN] No Disk Found!\n");
+        }
+    }
 
+    if(!is_keblaos_installed(0)){
+        printf("KeblaOS is not installed on Disk 0. Starting installation...\n");
+        uefi_install(0, 1);   // SATAPI Disk is 1 & Bootable Disk is 0
+    }else{
+        printf("KeblaOS is already installed on Disk 0.\n");
+    }
     
     // mouse_init();
 

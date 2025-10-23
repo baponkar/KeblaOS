@@ -11,8 +11,13 @@ int fatfs_init(int disk_no);
 int fatfs_disk_status(int disk_no);
 
 int fatfs_mount(int disk_no);
+int fatfs_unmount(int disk_no);
 int fatfs_mkfs(int disk_no, int fs_type);
+
+#if FF_MULTI_PARTITION
 int fatfs_fdisk(int disk_no, void *ptbl, void* work);
+#endif
+
 int fatfs_setcp(int cp);
 int fatfs_putc(void *fp, char c);
 int fatfs_puts(char *str, void *cp);

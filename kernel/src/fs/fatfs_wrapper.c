@@ -96,10 +96,27 @@ int fatfs_mount(int disk_no){
     return mount_res;
 }
 
+int fatfs_unmount(int disk_no){
+    char path[16];
+    sprintf(path, "%d:", disk_no);
+    const TCHAR* root_path = (const TCHAR*) path;
+
+    return f_mount (NULL, root_path, 0);
+}
+
+#if FF_MULTI_PARTITION
+
+PARTITION VolToPart[FF_VOLUMES] = {
+        {0, 1},    /* "0:" ==> 1st partition in physical drive 0 */
+        {0, 2},    /* "1:" ==> 2nd partition in physical drive 0 */
+        {1, 0}     /* "2:" ==> Physical drive 1 as removable drive */
+};
+
 // Divide a physical drive into some partitions
 int fatfs_fdisk(int disk_no, void *ptbl, void* work){
     // return f_fdisk((BYTE) disk_no, (const LBA_t *) ptbl, work);
 }
+#endif
 
 // Set current code page
 int fatfs_setcp(int cp){

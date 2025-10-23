@@ -91,6 +91,8 @@ typedef struct {
 
 int iso9660_init(int disk_no);
 
+int iso9660_check_media(void *ctx);
+
 int iso9660_mount(int disk_no);
 int iso9660_unmount(int disk_no);
 
@@ -103,3 +105,6 @@ void *iso9660_opendir(int disk_no, char *path);
 int iso9660_readdir(void *dirp, iso9660_file_t *entry);
 int iso9660_closedir(void *dirp);
 
+int iso9660_stat(int disk_no, char *path, void *fno);
+
+void iso9660_test(int disk_no);
