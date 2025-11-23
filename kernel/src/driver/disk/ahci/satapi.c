@@ -300,26 +300,21 @@ bool satapi_write(HBA_PORT_T *port, uint32_t lba, uint32_t sector_count, void *b
 // Check if media is present
 bool satapi_check_media(HBA_PORT_T *port) {
     uint8_t cdb[12] = {0};
-    cdb[0] = 0x46; // GET CONFIGURATION command
-    cdb[7] = 0x00; // Starting feature number
-    cdb[8] = 0x02; // Allocation length MSB
-    cdb[9] = 0x00; // Allocation length LSB (512 bytes)
-    
-    void *buf = malloc(512);
-    if (!buf) return false;
-    memset(buf, 0, 512);
-    
-    uintptr_t buf_phys = vir_to_phys((uintptr_t)buf);
-    bool success = runAtapiCommand(port, cdb, 12, buf_phys, 512, false);
-    
-    if (success) {
-        uint8_t *resp = (uint8_t*)buf;
-        printf("Media present: %s\n", (resp[2] & 0x02) ? "Yes" : "No");
-    }
-    
-    free(buf);
+    cdb[0] = ATAPI_CMD_TEST_UNIT; // 0x00
+
+    bool success = runAtapiCommand(port, cdb, 12, 0, 0, false);
+
+    if (success)
+        printf(" Media present.\n");
+    else
+        printf(" No media or drive not ready.\n");
+
     return success;
 }
+
+
+
+
 
 uint16_t satapi_get_bytes_per_sector(HBA_PORT_T *port){
     uint8_t cdb[10] = {0};
@@ -337,7 +332,7 @@ uint16_t satapi_get_bytes_per_sector(HBA_PORT_T *port){
     if(success){
         uint32_t *data = (uint32_t*)buf;
         bytes_per_sector = __builtin_bswap32(data[1]); // Convert BE → LE
-        printf("SATAPI: Bytes per sector raw: %x -> %u\n", data[1], bytes_per_sector);
+        // printf("SATAPI: Bytes per sector raw: %x -> %u\n", data[1], bytes_per_sector);
     } else {
         printf("SATAPI: READ CAPACITY failed\n");
     }
@@ -363,7 +358,7 @@ uint64_t satapi_get_total_sectors(HBA_PORT_T *port){
         uint32_t *data = (uint32_t*)buf;
         // FIXED: Use data[0] for last LBA, then +1 for total sectors
         total_sectors = __builtin_bswap32(data[0]) + 1;
-        printf("SATAPI: Total sectors raw: %x -> %u\n", data[0], total_sectors);
+        // printf("SATAPI: Total sectors raw: %x -> %u\n", data[0], total_sectors);
     } else {
         printf("SATAPI: READ CAPACITY failed\n");
     }
@@ -439,7 +434,7 @@ bool satapi_load(HBA_PORT_T *port) {
 void test_satapi(HBA_PORT_T *port) {
     // First check what device we have
     if (!satapi_inquiry(port)) {
-        printf("SATAPI Inquiry failed\n");
+        printf(" SATAPI Inquiry failed!\n");
         return;
     }
     
@@ -452,7 +447,7 @@ void test_satapi(HBA_PORT_T *port) {
         // Read first sector
         void *buffer = malloc(sector_size);
         if (buffer && satapi_read(port, 0, 1, buffer)) {
-            printf("Successfully read first sector\n");
+            printf(" Successfully read first sector\n");
             // Process CD/DVD sector data here...
         }
         free(buffer);

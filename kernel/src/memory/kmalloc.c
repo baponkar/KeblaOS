@@ -13,7 +13,7 @@ extern volatile uint64_t phys_mem_head;
 
 
 // Low level memory allocation by usin base as phys_mem_head
-uint64_t kmalloc(uint64_t sz)       // vanilla (normal).
+uint64_t kmalloc(uint64_t sz)                   // vanilla (normal).
 {
     if(phys_mem_head >= USABLE_END_PHYS_MEM) return 0;
     uint64_t ptr = (uint64_t) phys_mem_head;    // memory allocate in current placement address
@@ -26,6 +26,7 @@ uint64_t kmalloc(uint64_t sz)       // vanilla (normal).
     Page Alignment: Page alignment ensures that memory addresses fall on boundaries that are 
     multiples of the page size (typically 4 KB for 64-bit systems).
 */
+
 
 uint64_t kmalloc_a(uint64_t sz, int align)    // page aligned.
 {
@@ -132,6 +133,7 @@ uint64_t kmalloc_aligned(uint64_t sz, uint64_t alignment) {
     
     return ptr;
 }
+
 
 void test_kmalloc(){
     printf("Test of kmalloc\n");

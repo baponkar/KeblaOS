@@ -1,3 +1,7 @@
+
+
+
+
 1. https://github.com/limine-bootloader/limine
 2. https://gcc.gnu.org/
 3. https://nasm.us/
@@ -9,6 +13,9 @@
 9. https://elm-chan.org/fsw/ff/00index_e.html
 10. https://www.nongnu.org/ext2-doc/ext2.html
 11. https://github.com/kokke/tiny-regex-c
+
+
+
 
 
 

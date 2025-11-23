@@ -127,6 +127,28 @@ static void print_hex(uint64_t n) {
     }
 }
 
+static void print_hex_padded(uint64_t value, int width, bool uppercase) {
+    const char *hex_chars = uppercase ? "0123456789ABCDEF" : "0123456789abcdef";
+    char buf[32];
+    int i = 0;
+
+    do {
+        buf[i++] = hex_chars[value & 0xF];
+        value >>= 4;
+    } while (value > 0 && i < (int)sizeof(buf));
+
+    // Pad with zeros if needed
+    while (i < width) {
+        buf[i++] = '0';
+    }
+
+    // Print in reverse order (MSB first)
+    for (int j = i - 1; j >= 0; j--) {
+        putchar(buf[j]);
+    }
+}
+
+
 // Print a Character 
 void putc(char c) {
     putchar(c);
@@ -144,6 +166,21 @@ void vprintf(const char* format, va_list args) {
     for (const char* ptr = format; *ptr != '\0'; ptr++) {
         if (*ptr == '%') {
             ptr++;
+
+            int width = 0;
+            bool zero_pad = false;
+
+            // Parse zero-padding flag
+            if(*ptr == '0'){
+                zero_pad = true;
+                ptr++;
+            }
+
+            // Parse width number (e.g. "02" or "08")
+            while(*ptr >= '0' && *ptr <= '9'){
+                width = width * 10 + (*ptr - '0');
+                ptr++;
+            }
 
             // Handle long/long long modifiers
             if (*ptr == 'l') {
@@ -178,37 +215,59 @@ void vprintf(const char* format, va_list args) {
             else {
                 // Handle single-character specifiers
                 switch (*ptr) {
-                    case 'd':
+                    case 'd':{
                         print_dec((int)va_arg(args, int));
                         break;
-                    case 'u':
+                    }
+                    case 'u':{
                         print_udec((unsigned int)va_arg(args, unsigned int));
                         break;
-                    case 'x':
-                        print_hex(va_arg(args, uint64_t));
+                    }
+                    
+                    case 'x': {
+                        uint64_t val = va_arg(args, uint64_t);
+                        if (width > 0 && zero_pad)
+                            print_hex_padded(val, width, false);
+                        else
+                            print_hex(val);
                         break;
-                    case 'b':
+                    }
+
+                    case 'X': {
+                        uint64_t val = va_arg(args, uint64_t);
+                        if (width > 0 && zero_pad)
+                            print_hex_padded(val, width, true);
+                        else
+                            print_hex(val);
+                        break;
+                    }
+                    case 'b':{
                         print_bin(va_arg(args, uint64_t));
                         break;
-                    case 'c':
+                    }
+                    case 'c':{
                         putchar((char)va_arg(args, int));
                         break;
-                    case 's':
+                    }
+                    case 's':{
                         print(va_arg(args, const char*));
                         break;
-                    case 'f':
+                    }
+                    case 'f':{
                         print_float(va_arg(args, double), 6); // Default precision: 6
                         break;
+                    }
                     case 'p': {
                         void* ptr_val = va_arg(args, void*);
                         uintptr_t addr = (uintptr_t)ptr_val;
                         print_hex(addr);
                         break;
                     }
-                    default:
+                    default:{
                         putchar('%');
                         putchar(*ptr);
                         break;
+                    }
                 }
             }
         } 

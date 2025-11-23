@@ -10,7 +10,6 @@ https://wiki.osdev.org/Identity_Paging
 https://web.archive.org/web/20160326061042/http://jamesmolloy.co.uk/tutorial_html/6.-Paging.html
 https://github.com/dreamportdev/Osdev-Notes/blob/master/04_Memory_Management/03_Paging.md
 https://stackoverflow.com/questions/18431261/how-does-x86-paging-work
-
 */ 
 
 
@@ -34,6 +33,7 @@ extern void enable_paging(uint64_t pml4_address);   // present in load_paging.as
 extern void disable_paging();                       // present in load_paging.asm
 
 pml4_t *kernel_pml4;
+pml4_t *limine_pml4;
 uint64_t bsp_cr3;
 
 // allocate a page with the free physical frame
@@ -47,13 +47,12 @@ void alloc_frame(page_t *page, int user, int is_writeable) {
         halt_kernel();
     }
 
-    set_frame(bit_no); // Mark the frame as used by passing the frame index
+    set_frame(bit_no);                      // Mark the frame as used by passing the frame index
 
     page->present = 1;                      // Mark it as present.
     page->rw = is_writeable;                // Should the page be writeable?
     page->user = user;                      // Should the page be user-mode?
     page->frame = (uint64_t) (USABLE_START_PHYS_MEM + (bit_no * FRAME_SIZE)) >> 12;     // Store physical base address
-    
 }
 
 
@@ -65,11 +64,17 @@ void free_frame(page_t *page)
     {
         uint64_t frame_addr = (uint64_t) page->frame << 12;  // Get the physical address of the frame
 
-        uint64_t bit_no = PHYS_ADDR_TO_BIT_NO(frame_addr);   // Convert the physical frame address into a bit number
-        
-        clear_frame(bit_no);                                // Frame is now free again from bitmap.
+        if (frame_addr >= USABLE_END_PHYS_MEM) {
+            printf("[PMM WARNING] free_frame: ignoring non-managed frame=%x (addr=%x)\n", page->frame, frame_addr);
+            page->frame = 0;
+            return;
+        }
 
-        page->frame = 0;                                    // Page now doesn't have a frame.
+        uint64_t bit_no = PHYS_ADDR_TO_BIT_NO(frame_addr);   // Convert the physical frame address into a bit number
+
+        clear_frame(bit_no);                                 // Frame is now free again from bitmap.
+
+        page->frame = 0;                                     // Page now doesn't have a frame.
     }
 }
 
@@ -114,15 +119,11 @@ void init_bs_paging()
             continue;
         }
 
-        // If the page is not present and frame address is null, allocate a frame for it
-        // if(!page->present || !page->frame) {
-        //     printf("[Debug] Already frame address is present for page at address: %x\n", addr);
-        //     page->user = 1; // Set user bit for lower half memory
-        //     continue;
-        // }
-
-        alloc_frame(page, 1, 1);    // page, user, rw
-        page->nx = 0;               // Clear the next pointer for the page
+        if (!page->present || !page->frame) {
+            alloc_frame(page, 1, 1);
+        }
+        page->user = 1;
+        page->nx = 0;
     }
 
     // Invalidate the TLB for the changes to take effect
@@ -139,17 +140,17 @@ void init_bs_paging_with_new_pml4() {
     bsp_cr3 = create_new_pml4();
     if (bsp_cr3 == 0) {
         printf("[Error] Failed to create new PML4 table\n");
-        halt_kernel(); // Halt the kernel if PML4 creation failed
+        halt_kernel();                                  // Halt the kernel if PML4 creation failed
     }
 
-    set_cr3_addr(bsp_cr3);  // Set the CR3 register to the new PML4 address
+    set_cr3_addr(bsp_cr3);                              // Set the CR3 register to the new PML4 address
     if(debug_on) printf(" Set CR3 to new PML4 address: %x\n", bsp_cr3);
 
-    kernel_pml4 = (pml4_t *) phys_to_vir(bsp_cr3); // Get the PML4 table pointer from the new CR3 address
+    kernel_pml4 = (pml4_t *) phys_to_vir(bsp_cr3);      // Get the PML4 table pointer from the new CR3 address
 
     // Updating Upper Half Memory Address
     for (uint64_t addr = HIGHER_HALF_START_ADDR; addr < HIGHER_HALF_START_ADDR + 0x100000; addr += PAGE_SIZE) {
-        page_t *page = get_page(addr, 1, kernel_pml4); // If not present, it will create a new page
+        page_t *page = get_page(addr, 1, kernel_pml4);  // If not present, it will create a new page
         if (!page) {
             printf("[Error] Failed to get page entry for address: %x\n", addr);
             continue;
@@ -157,9 +158,9 @@ void init_bs_paging_with_new_pml4() {
 
         if(page->present && page->frame) {
             if(debug_on) printf(" Page at address %x already present with frame %x\n", addr, page->frame << 12);
-            continue; // Skip if the page is already present
+            continue;                                   // Skip if the page is already present
         }
-        alloc_frame(page, 0, 1); // page, user, rw
+        alloc_frame(page, 0, 1);                        // page, user, rw
     }
 
     if(debug_on) printf(" [-] Successfully initialized Paging with new PML4 for Higher Half Kernel.\n");
@@ -174,9 +175,9 @@ void init_bs_paging_with_new_pml4() {
 
         if(page->present && page->frame) {
             if(debug_on) printf(" Page at address %x already present with frame %x\n", addr, page->frame << 12);
-            continue; // Skip if the page is already present
+            continue;                               // Skip if the page is already present
         }
-        alloc_frame(page, 1, 1); // page, user, rw
+        alloc_frame(page, 1, 1);                    // page, user, rw
     }
 
     // Invalidate the TLB for the changes to take effect

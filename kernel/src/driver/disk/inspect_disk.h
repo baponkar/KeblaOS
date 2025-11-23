@@ -15,7 +15,8 @@ typedef struct {
     uint8_t  end_chs[3];
     uint32_t lba_start;        // first LBA of partition
     uint32_t total_sectors;    // size in sectors
-} mbr_partition_entry_t;
+} mbr_partition_entry_t_1;
+
 
 // BIOS Parameter Block (FAT32)
 typedef struct {
@@ -49,6 +50,7 @@ typedef struct {
     uint8_t  VolLab[11];
     uint8_t  FilSysType[8];
 } __attribute__((packed)) fat32_bpb_t;
+
 
 // FSInfo sector (FAT32)
 typedef struct {

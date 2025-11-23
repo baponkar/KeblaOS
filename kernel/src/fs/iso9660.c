@@ -59,15 +59,12 @@ static void parse_filename(const iso9660_dir_record_t *record, char *output, siz
 // -------------------------------------------------------------
 
 int iso9660_init(int disk_no) {
-    if (disk_no >= disk_count) return false;
+    if (disk_no >= disk_count) return -1;
 
     Disk disk = disks[disk_no];
-    if (!disk.context || disk.type != DISK_TYPE_SATAPI)
-        return false;
-
-    if (!kebla_disk_init(disk_no)) {
-        printf("ISO9660: Failed to initialize %d\n", disk_no);
-        return false;
+    if (!disk.context || disk.type != DISK_TYPE_SATAPI){
+        printf("ISO9660: Disk %d is not SATAPI type\n", disk_no);
+        return -1;
     }
 
     uint8_t sector_buffer[2048];
@@ -93,11 +90,11 @@ int iso9660_init(int disk_no) {
             disks[disk_no].root_directory_size = read_u32_le((uint8_t *)&pvd->root_directory_record.data_length_le);
             disks[disk_no].pvd_sector = i;
 
-            printf("ISO9660: Mounted disk-%d\n", disk_no);
-            printf("  Volume: %s\n", pvd->volume_id);
-            printf("  Root: LBA=%u size=%u\n",
-                   disks[disk_no].root_directory_sector,
-                   disks[disk_no].root_directory_size);
+            // printf("ISO9660: Mounted disk-%d\n", disk_no);
+            // printf("  Volume: %s\n", pvd->volume_id);
+            // printf("  Root: LBA=%u size=%u\n",
+            //        disks[disk_no].root_directory_sector,
+            //        disks[disk_no].root_directory_size);
             return 0;
         }
 
@@ -115,10 +112,15 @@ int iso9660_mount(int disk_no) {
     Disk disk = disks[disk_no];
     if (disk.type != DISK_TYPE_SATAPI) return -1;
 
-    if (!iso9660_init(disk_no)) return -1;
+    // if (iso9660_init(disk_no) != 0) return -1;
 
-    if (!satapi_load((HBA_PORT_T *)disk.context))
+    printf("ISO9660: Mounted ISO9660 on disk %d\n", disk_no);
+
+    if (!satapi_load((HBA_PORT_T *)disk.context)){
         printf("ISO9660: Media load failed!\n");
+        return -1;
+    }
+        
 
     return 0;
 }
@@ -235,23 +237,34 @@ void *iso9660_open(int disk_no, char *path, int mode) {
     return NULL;
 }
 
+#define ISO9660_READ_CHUNK 32768
+
 int iso9660_read(void *fp, char *buff, int size) {
-    if (!fp || !buff || size <= 0) return -1;
     iso9660_file_t *file = (iso9660_file_t *)fp;
-
-
     Disk disk = disks[file->disk_no];
 
     if (size > file->size)
         size = file->size;
 
-    uint32_t sector_count = (size + disk.bytes_per_sector - 1) / disk.bytes_per_sector;
-    if (!kebla_disk_read(0, file->sector, sector_count, buff)) {
-        printf("ISO9660: Failed to read sector %u\n", file->sector);
-        return -1;
+    uint32_t total_read = 0;
+    uint32_t remaining = size;
+    uint32_t cur_sector = file->sector;
+
+    while (remaining > 0) {
+        uint32_t chunk = (remaining > ISO9660_READ_CHUNK) ? ISO9660_READ_CHUNK : remaining;
+        uint32_t sectors = (chunk + disk.bytes_per_sector - 1) / disk.bytes_per_sector;
+
+        if (!kebla_disk_read(file->disk_no, cur_sector, sectors, buff + total_read))
+            break;
+
+        total_read += chunk;
+        remaining -= chunk;
+        cur_sector += sectors;
     }
-    return size;
+
+    return total_read;
 }
+
 
 int iso9660_get_fsize(void *fp) {
     if (!fp) return -1;

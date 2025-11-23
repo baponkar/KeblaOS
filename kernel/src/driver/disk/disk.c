@@ -11,6 +11,7 @@
 
 #include  "../../memory/vmm.h"
 
+
 #include "../pci/pci.h"
 
 #include "ahci/sata_disk.h"
@@ -33,32 +34,39 @@ Disk current_disk;
 bool kebla_disk_status(int disk_no){
 
     if(!disks){
+        printf(" disks is NULL\n");
         return false;
     }
     if(disk_no > disk_count){
+        printf(" disk_no: %d, disk_count: %d\n", disk_no, disk_count);
         return false;
     }
 
     Disk disk = disks[disk_no];
     
     if(disk.type == DISK_TYPE_UNKNOWN){
+        printf(" Disk Type: %d\n", disk.type);
         return false;
     }
 
     if(disk.bytes_per_sector == 0){
+        printf(" Byte per Sector: %d\n", disk.bytes_per_sector);
         return false;
     }
 
     if(disk.total_sectors == 0){
+        printf(" Total Sectors: %d\n", disk.total_sectors);
         return false;
     }
 
     if(!disk.context){
+        printf(" Context: %x\n", disk.context);
         return false;
     }
 
     return true;
 }
+
 
 int kebla_get_disks(){
 
@@ -66,6 +74,10 @@ int kebla_get_disks(){
         disks = (Disk *)malloc(sizeof(Disk) * MAX_TOTAL_DISKS);
         memset(disks, 0, sizeof(Disk) * MAX_TOTAL_DISKS);
     } 
+    if(!disks){
+        printf(" Memory allocation for disks failed!\n");
+        return -1;
+    }
 
     for(int c_idx=0; c_idx < mass_storage_controllers_count; c_idx++){
         pci_device_t dev = mass_storage_controllers[c_idx];
@@ -86,12 +98,12 @@ int kebla_get_disks(){
                         HBA_PORT_T *port = &abar->ports[i];
                         int type = checkType(port);
                         if(type == AHCI_DEV_SATA){
-                            printf("controller no: %d, SATA Drive Found at port %d\n",c_idx, i);
+                            // printf("controller no: %d, SATA Drive Found at port %d\n",c_idx, i);
                             disks[disk_count].type = DISK_TYPE_AHCI_SATA;
                             disks[disk_count].context = (void *)&abar->ports[i];    // Rebase the port
                             disk_count++;
                         }else if(type == AHCI_DEV_SATAPI){
-                            printf("controller no: %d, SATAPI Drive Found at port %d\n", c_idx, i);
+                            // printf("controller no: %d, SATAPI Drive Found at port %d\n", c_idx, i);
                             disks[disk_count].type = DISK_TYPE_SATAPI;
                             disks[disk_count].context = (void *)&abar->ports[i];	// Rebase the port
                             disk_count++;
@@ -132,10 +144,11 @@ int kebla_get_disks(){
 }
 
 bool kebla_disk_init(int disk_no){
-
+    
     if(disk_count <= 0){
         if(kebla_get_disks() <= 0){
             printf("[DISK] No Disk Found!\n");
+            return false;
         }
     }
     
@@ -144,7 +157,10 @@ bool kebla_disk_init(int disk_no){
         return false;
     }
 
-    if(!disks[disk_no].context) return false;
+    if(!disks[disk_no].context) {
+        if(debug_on) printf("[DISK] Disk %x context is NULL\n", disk_no);
+        return false;
+    }
 
     if(disks[disk_no].type == DISK_TYPE_UNKNOWN){
         if(debug_on) printf("[DISK] Disk type is UNKNOWN!\n");
@@ -193,38 +209,25 @@ bool kebla_disk_read(int disk_no, uint64_t lba, uint32_t count, void* buf){
     }
 
     if(disk.type == DISK_TYPE_AHCI_SATA){
-        void *ctx =  (void *) disk.context;
-        if(ctx == NULL)
-        {
-            printf("[Disk] AHCI Context is NULL\n");
-            return false;
-        }
-
-        HBA_PORT_T *port = (HBA_PORT_T *) ctx;
-        if(port == NULL){
+        HBA_PORT_T *port = (HBA_PORT_T *) disk.context;
+        if(!port){
             printf("[Disk] AHCI Port is NULL\n");
             return false;
         }
         return sata_read(port, lba, count, (uintptr_t)vir_to_phys((uint64_t)buf));
     }else if(disk.type == DISK_TYPE_NVME){
-
-        // implementing nvme disk read
+        printf("[DISK] NVMe Read Not implemented yet!\n");
+        return false;
     }else if(disk.type == DISK_TYPE_SATAPI){
-        void *ctx =  (void *) disk.context;
-        if(ctx == NULL)
-        {
-            printf("[Disk] AHCI Context is NULL\n");
-            return false;
-        }
-
-        HBA_PORT_T *port = (HBA_PORT_T *) ctx;
+        HBA_PORT_T *port = (HBA_PORT_T *) disk.context;
         if(port == NULL){
             printf("[Disk] AHCI Port is NULL\n");
             return false;
         }
         return satapi_read(port, lba, count, buf);
-    }else if(disk.type == DISK_TYPE_SCSI){
-
+    }else{
+        printf("[DISK] Unsupported disk type %d\n", (uint64_t)disk.type);
+        return false;
     }
 
     return false;   // Unsupported disk type
@@ -236,8 +239,15 @@ bool kebla_disk_write(int disk_no, uint64_t lba, uint32_t count, void* buf) {
         printf("[DISK] disks is NULL\n");
         return false;
     }
+
+    if(disk_no > disk_count) return false;
     
     Disk disk = disks[disk_no];
+
+    if(lba + count > disk.total_sectors) {
+        printf(" Disk Error LBA : %d > Total Sectors: %d\n", lba + count, disk.total_sectors);
+        return false;
+    }
 
     if(disk.type == DISK_TYPE_UNKNOWN){
         printf("[DISK] Disk %d is NULL\n", disk_no);
@@ -262,7 +272,7 @@ bool kebla_disk_write(int disk_no, uint64_t lba, uint32_t count, void* buf) {
     }else if(disk.type == DISK_TYPE_NVME){
         // implementing nvme disk read
     }else if(disk.type == DISK_TYPE_SATAPI){
-         void *ctx =   disk.context;
+        void *ctx = disk.context;
         if(ctx == NULL)
         {
             printf("[Disk] AHCI Context is NULL\n");
@@ -276,7 +286,7 @@ bool kebla_disk_write(int disk_no, uint64_t lba, uint32_t count, void* buf) {
         }
         return satapi_write(port, lba, count, buf);
     }else if(disk.type == DISK_TYPE_SCSI){
-
+        return false;
     }
 
     return false;   // Unsupported disk type
@@ -299,6 +309,7 @@ int detect_partition_table(int disk_no) {
     if(disk_no > MAX_TOTAL_DISKS | disk_no > disk_count-1) return -1;
     if(!disks) return -1;
     Disk disk = disks[disk_no];
+
     uint8_t buffer[512];
 
     if (!kebla_disk_read(disk_no, 0, 1, buffer)) {
@@ -332,49 +343,80 @@ int detect_partition_table(int disk_no) {
 }
 
 
-void disk_test(int disk_no){
+void kebla_disk_test(int disk_no){
 
-    printf("[DISK] Testing Disk - %d\n", disk_no);
+    printf("[DISK] Testing Disk - %d....\n", disk_no);
 
     if(!kebla_disk_init(disk_no)){
         printf(" Disk initialization failed!\n");
-    }else{
-        printf(" Successfully Disk - %d (type: %d) initialized!\n", disk_no, DISK_TYPE_AHCI_SATA);
+    }
+    printf(" Successfully Disk - %d (type: %d) initialized!\n", disk_no, DISK_TYPE_AHCI_SATA);
+
+    if(!kebla_disk_status(disk_no)){
+        printf(" Disk status check failed!\n");
+        return;
     }
 
+    Disk disk = disks[disk_no];
     printf(" Disk No: %d, Type: %d, byt. per sect.: %d, tot. sect.: %d, context: %x\n",
         disk_no, disks[disk_no].type, disks[disk_no].bytes_per_sector, 
         disks[disk_no].total_sectors, (uint64_t)disks[disk_no].context);
 
-    detect_partition_table(disk_no);
+    const char* test_str = "KeblaOS Disk Test String!";
+    
+    switch(disk.type){
+        case DISK_TYPE_AHCI_SATA:
+            detect_partition_table(disk_no);
 
-    Disk disk = disks[disk_no];
+            uint8_t buffer[512];                        // Buffer to hold data (16 sectors of 512 bytes each)
 
-    if(disk.type == DISK_TYPE_AHCI_SATA){
-
-        uint8_t buffer[512];                        // Buffer to hold data (16 sectors of 512 bytes each)
-        memset(buffer, 0, sizeof(buffer));          // Clearing the buffer
-        
-        char *str_data = "Hello from KeblaOS!";
-        memcpy(buffer, str_data, strlen(str_data));
-
-        if(kebla_disk_write(disk_no, 2048, 1, (void *) str_data)){        // Writing At LBA 2048 in First Sector
+            // Writing Test
+            memcpy(buffer, test_str, strlen(test_str));
+            if(!kebla_disk_write(disk_no, 2048, 1, (void *) buffer)){        // Writing At LBA 2048 in First Sector
+                printf(" Write failed in disk - %d!\n", disk_no);
+                return;
+            }
             printf(" Write successful in disk %d.\n", disk_no);
-        } else {
-            printf(" Write failed in disk - %d!\n", disk_no);
-            return;
-        }
 
+            memset(buffer, 0, sizeof(buffer));          // Clearing the buffer
 
-        if(kebla_disk_read(disk_no, 2048, 1, buffer)){      // Reading LBA 0 and First sector into buffer
-            buffer[511] = '\0';
+            // Reading Test
+            memset(buffer, 0, sizeof(buffer));  // Clear buffer before reading
+            if(!kebla_disk_read(disk_no, 2048, 1, buffer)){      // Reading LBA 0 and First sector into buffer
+                buffer[511] = '\0';
+                printf(" Read failed in disk - %d!.\n", disk_no);
+                return;
+            }
             printf(" Read successful, buffer content: %s\n", buffer);
 
-        } else {
-            printf(" Read failed.\n");
-        }
-    } else {
-        printf(" Unsupported disk type for testing.\n");
+            break;
+        case DISK_TYPE_NVME:
+            printf(" NVMe Disk Test Not implemented yet!\n");
+            break;
+        case DISK_TYPE_SATAPI:
+            satapi_load((HBA_PORT_T *) disk.context);   // Load (Close Tray) before read/write
+
+            // Writing Test not supported for SATAPI (CD/DVD)
+            // memcpy(buffer, test_str, strlen(test_str));
+            // if(!kebla_disk_write(disk_no, 2048, 1, (void *) str_data)){        // Writing At LBA 2048 in First Sector
+            //     printf(" Write failed in disk - %d!\n", disk_no);
+            //     return;
+            // }
+
+            // Reading Test
+            uint8_t buff[2048];                             // Buffer to hold data (16 sectors of 512 bytes each)
+            memset(buff, 0, sizeof(buff));                // Clear buffer before reading
+
+            if(!kebla_disk_read(disk_no, 0, 1, buff)){      // Reading LBA 0 and First sector into buffer
+                buffer[2047] = '\0';
+                printf(" Read failed in disk - %d!.\n", disk_no);
+                return;
+            }
+            printf(" Read successful, buffer content: %s\n", buff);
+            break;
+        default:
+            printf(" Unsupported disk type: %d\n", (uint64_t)disk.type);
+            return;
     }
 
     printf("[DISK] Test Disk - %d Completed!\n\n", disk_no);
@@ -383,7 +425,25 @@ void disk_test(int disk_no){
 
 
 
+void print_disk_sector(int disk_no, uint64_t lba, uint64_t count) {
 
+    printf("Checking Disk %d Start Sector %d End Sector %d\n", disk_no, lba, lba + count - 1);
+    char buff[512];
+
+    for(int i = lba; i < lba+count; i++){
+        if(!kebla_disk_read(disk_no, i, 1, buff)){
+            printf(" Read Error Disk No: %d, LBA: %d", disk_no, i);
+            return;
+        }
+
+        for(int j = 0; j < 512; j++){
+            printf("%x ", buff[j]);
+             if ((j + 1) % 16 == 0) printf("\n");
+        }
+        printf("\n\n");
+        memset(buff, 0, sizeof(buff));
+    }
+}
 
 
 

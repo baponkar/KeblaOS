@@ -1,4 +1,6 @@
 
+
+
 /*
 Kernel.c
 Build Date  : 16-12-2024
@@ -27,6 +29,11 @@ extern ring_buffer_t* keyboard_buffer;          // To get the keyboard input
 extern Disk *disks;
 extern int disk_count; 
 
+int iso_disk_no = 0;    // The ISO SATAPI Disk which is mentioned in Makefile
+int boot_disk_no = 1;   // The SATA Disk Which will be used to install KeblaOS
+
+
+
 void kmain(){
 
     serial_init("Successfully Serial Printing initialized!\n");
@@ -50,28 +57,42 @@ void kmain(){
         return;
     }
 
-    // pci_scan();
     init_controllers();     // This have PCI Scan
 
-
-    if(disk_count <= 0){
-        if(kebla_get_disks() <= 0){
-            printf("[KMAIN] No Disk Found!\n");
-        }
+    disk_count = kebla_get_disks();
+    for(int i=0; i<disk_count; i++){
+        Disk disk = disks[i];
+        printf(" Disk %d (type %d)\n", i, disk.type);
     }
 
-    if(!is_keblaos_installed(0)){
-        printf("KeblaOS is not installed on Disk 0. Starting installation...\n");
-        uefi_install(0, 1);   // SATAPI Disk is 1 & Bootable Disk is 0
-    }else{
-        printf("KeblaOS is already installed on Disk 0.\n");
-    }
+    // kebla_disk_init(boot_disk_no);
+    // kebla_disk_init(iso_disk_no);
+    // kebla_disk_test(boot_disk_no);
     
-    // mouse_init();
+    // fatfs_test_1(boot_disk_no);
+    // vfs_test(boot_disk_no);
+
+    if(!is_keblaos_installed(boot_disk_no)){
+        uefi_install(boot_disk_no, iso_disk_no); 
+    }else{
+        printf("KeblaOS is already installed on Disk %d.\n", boot_disk_no);
+    }
+
+    // if(fatfs_mkfs(boot_disk_no, FM_FAT32 | FM_SFD) == 0){
+    //     printf(" Successfully FAT32 FS created.\n");
+    // }
+    
+    // fatfs_test(boot_disk_no);
+    // print_disk_sector(boot_disk_no, 2048, 1);
+    
+    // kfs_test();
+
+
+    mouse_init();
 
     // lvgl_test();
     // ugui_test_1();
-    // desktop_init();
+    desktop_init();
 
     // test_e1000_driver();
     // start();

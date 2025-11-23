@@ -9,8 +9,8 @@ References:
 
 #include "../driver/disk/disk.h"                
 
-#include "../fs/FatFs-R0.15b/source/ff.h"
-#include "../fs/FatFs-R0.15b/source/diskio.h"
+#include "../fs/FatFs-R.0.16/source/ff.h"
+#include "../fs/FatFs-R.0.16/source/diskio.h"
 
 #include "../fs/fatfs_wrapper.h"
 #include "../fs/iso9660.h"
@@ -28,7 +28,8 @@ References:
 #define SECTOR_SIZE 512
 
 
-FS_TYPE detect_filesystem(int disk_no) {
+
+VFS_TYPE detect_filesystem(int disk_no) {
     uint8_t sector[SECTOR_SIZE];
 
     // --- Step 1: read LBA 0 (MBR or Boot Sector) ---
@@ -93,58 +94,50 @@ FS_TYPE detect_filesystem(int disk_no) {
 
 
 int vfs_init(int disk_no) {
-    if (disk_no >= disk_count) return -1;
+    
+    if (disk_no >= disk_count){
+        printf("VFS: Invalid disk number %d\n", disk_no);
+        return -1;
+    } 
+
+    if(!disks){
+        printf("VFS: disks is NULL\n");
+        return -1;
+    }
 
     Disk disk = disks[disk_no];
-    
-    switch(disk.type) {
-        case DISK_TYPE_SATAPI:
-            // Initialize ISO9660 for SATAPI disks
-            if (iso9660_init(disk_no) == -1) {
-                printf("VFS: Failed to initialize ISO9660 on disk %d\n", disk_no);
-                return -1;
-            }
-            return 0;
-            break;
-
-        case DISK_TYPE_AHCI_SATA:
-            if(fatfs_init(disk_no) != FR_OK) {
-                printf("VFS: Failed to initialize FATFS on disk %d\n", disk_no);
-                return -1;
-            }
-            return 0;
-            break;
-            
-        case DISK_TYPE_NVME:
-        case DISK_TYPE_IDE_PATA:
-            // Other disk types can be initialized here
-            break;
-
-        default:
-            printf("VFS: Unsupported disk type %d for disk %d\n", disk.type, disk_no);
-            return -1;
+    if (disk.type == DISK_TYPE_SATAPI) {
+        return iso9660_init(disk_no);
+    } else if (disk.type == DISK_TYPE_AHCI_SATA) {
+        return fatfs_init(disk_no);
+    } else {
+        printf("VFS: Unsupported disk type %d for init on disk %d\n", disk.type, disk_no);
+        return -1;
     }
+    
     return 0;
 }
 
 
 int vfs_disk_status(int disk_no){
-    if(disk_no >= disk_count) return -1;
-
-    Disk disk = disks[disk_no];
-
-    if(disk.type == DISK_TYPE_SATAPI){
-        return iso9660_check_media(disk.context);
-    }else if(disk.type == DISK_TYPE_AHCI_SATA){
-        return fatfs_mount(disk_no);
+    if(!kebla_disk_status(disk_no)){
+        printf(" VFS: Disk %d status check failed!\n", disk_no);
+        return -1;
     }
-
-    return -1;
+    return 0;
 }
 
 
 int vfs_mount(int disk_no){
-    if(disk_no >= disk_count) return -1;
+    if(disk_no >= disk_count) {
+        printf("VFS: Invalid disk number %d\n", disk_no);
+        return -1;
+    }
+
+    if(!disks) {
+        printf("VFS: Disks not initialized!\n");
+        return -1;
+    }
 
     Disk disk = disks[disk_no];
 
@@ -152,9 +145,12 @@ int vfs_mount(int disk_no){
         return iso9660_mount(disk_no);
     }else if(disk.type == DISK_TYPE_AHCI_SATA){
         return fatfs_mount(disk_no);
+    }else{
+        printf("VFS: Unsupported disk type %d for mount on disk %d\n", disk.type, disk_no);
+        return -1;
     }
 
-    return -1;
+    return 0;
 }
 
 int vfs_unmount(int disk_no){
@@ -171,31 +167,31 @@ int vfs_unmount(int disk_no){
     return -1;
 }
 
-int vfs_mkfs(int disk_no, int fs_type){
-    if(disk_no >= disk_count) return -1;
 
-    Disk disk = disks[disk_no];
+int vfs_mkfs(int disk_no, VFS_TYPE fs_type){
 
-    switch(fs_type){
-        case VFS_FAT12:
-            return fatfs_mkfs(disk_no, FS_FAT12);
-            break;
-        case VFS_FAT16:
-            return fatfs_mkfs(disk_no, FS_FAT16);
-            break;
-        case VFS_FAT32:
-            return fatfs_mkfs(disk_no, FS_FAT32);
-            break;
-        case VFS_EXFAT:
-            return fatfs_mkfs(disk_no, FS_EXFAT);
-            break;
-        default:
-            printf("VFS: Unsupported filesystem type %d for mkfs on disk %d\n", fs_type, disk_no);
-            return -1;
+    if(disk_no >= disk_count){
+        printf("VFS: Invalid disk number %d\n", disk_no);
+        return -1;
+    } 
+
+    if(fs_type == VFS_FAT12){
+        return fatfs_mkfs(disk_no, FM_FAT);
+    }else if(fs_type == VFS_FAT16){
+        return fatfs_mkfs(disk_no, FM_FAT);
+    }else if(fs_type == VFS_FAT32){
+        printf(" Creating FAT32 Filesystem in Disk %d\n", disk_no);
+        return fatfs_mkfs(disk_no, FM_FAT32 | FM_SFD);
+    }else if(fs_type == VFS_EXFAT){
+        return fatfs_mkfs(disk_no, FM_EXFAT);
+    }else{
+        printf("VFS: Unsupported filesystem type %d for mkfs on disk %d\n", fs_type, disk_no);
+        return -1;
     }
 
-    return -1;
+    return 0;
 }
+
 
 #if FF_MULTI_PARTITION
 int vfs_fdisk(int disk_no, void *ptbl, void* work){
@@ -281,7 +277,6 @@ char *vfs_gets(int disk_no, char *buff, int len, void *fp){
 #endif
 
 #if FF_PRINT_LLI
-
 int vfs_printf(int disk_no, void *fp, char *str){
     if(disk_no >= disk_count) return -1;
 
@@ -493,12 +488,12 @@ int vfs_findnext(int disk_no, void *dp, void *fno){
 
     return -1;
 }
-
 #endif
 
 
 int vfs_mkdir(int disk_no, char *path){
     if(!path) return -1;
+    if(!disks) return -1;
 
     Disk disk = disks[disk_no];
 
@@ -507,10 +502,14 @@ int vfs_mkdir(int disk_no, char *path){
         return -1;
     }else if(disk.type == DISK_TYPE_AHCI_SATA){
         return fatfs_mkdir(path);
+    }else{
+        printf("VFS: Unsupported disk type %d for mkdir on disk %d\n", disk.type, disk_no);
+        return -1;
     }
 
     return -1;
 }
+
 
 
 int vfs_unlink(int disk_no, char *path){
@@ -692,7 +691,6 @@ int vfs_get_fsize(int disk_no, void *fp) {
     Disk disk = disks[disk_no];
     switch(disk.type){
         case DISK_TYPE_SATAPI:
-            printf("VFS: Get_fsize operation not supported on ISO9660 (disk %d)\n", disk_no);
             return iso9660_get_fsize(fp);
             break;
         case DISK_TYPE_AHCI_SATA:
@@ -721,16 +719,71 @@ const char* vfs_error_string(int result){
 
 
 void vfs_test(int disk_no){
+    if(disk_no >= disk_count) return;
+
+    if(!disks) return;
+
     Disk disk = disks[disk_no];
-    switch(disk.type){
-        case DISK_TYPE_SATAPI:
-            iso9660_test(disk_no);
-            break;
-        case DISK_TYPE_AHCI_SATA:
-            fatfs_test(disk_no);
-            break;
-        default:
-            printf("VFS: Unsupported disk type %d for test on disk %d\n", disk.type, disk_no);
-            break;
-    }
+    
+    // VFS Initializatiion
+   if(vfs_init(disk_no) != 0){
+        printf(" Error in initializing VFS in disk %d\n", disk_no);
+        return;
+   }
+   printf(" Successfully initialized VFS in disk %d\n", disk_no);
+
+   // Making FAT32 Filesystem
+   if(vfs_mkfs(disk_no, VFS_FAT32) != 0){
+        printf(" Error to create FAT32 Filesystem in disk %d\n", disk_no);
+        return;
+   }
+   printf(" Successfully created FAT32 Filesystem in Disk %d\n", disk_no);
+
+   // Mounting the Disk
+   if(vfs_mount(disk_no) != 0){
+        printf(" Error to mount disk %d\n", disk_no);
+        return;
+   }
+   printf(" Successfully mount Disk %d\n", disk_no);
+
+   // Creating a testfile test.txt
+   int flag = FA_CREATE_ALWAYS | FA_WRITE ;
+   void *test_file = vfs_open(disk_no, "1:/test.txt", flag);
+
+   if(!test_file){
+        printf(" Failed to create test.txt file\n");
+        return;
+   }
+   printf(" Successfully opened test.txt\n");
+
+   const char *text = "Hello from FATFS.\n";
+
+   char buff[256];
+   if(vfs_write(disk_no, test_file, text, strlen(text)) != 0){
+        printf(" failed to write into test.txt\n");
+        return;
+   }
+   printf(" successfully written in test.txt\n");
+
+   if(vfs_close(disk_no, test_file) != 0){
+        printf(" failed to close the file test.txt\n");
+        return;
+   }
+   printf(" Successfully closed the file test.txt\n");
+
+   // reopen
+   int flag_1 = FA_READ;
+   test_file = vfs_open(disk_no, "1:/test.txt", flag_1);
+   if(!test_file){
+        printf(" failed to reopen the test file\n");
+        return;
+   }
+
+   memset(buff, 0, sizeof(buff));
+   if(vfs_read(disk_no, test_file, buff, 255) != 0){
+        printf(" Failed to read the test file\n");
+        return;
+   }
+   buff[255] = '\0';
+   printf(" Successsfully read the test file: %s\n", buff);
 }

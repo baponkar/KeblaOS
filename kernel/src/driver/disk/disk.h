@@ -52,11 +52,11 @@ bool kebla_disk_write(int disk_no, uint64_t lba, uint32_t count, void* buf);
 // Helper functions
 int find_disk_type(int disk_no);
 int detect_partition_table(int disk_no);
-void disk_test(int disk_no);
+void kebla_disk_test(int disk_no);
 
 int get_total_disks();
 
-
+void print_disk_sector(int disk_no, uint64_t lba, uint64_t count);
 
 
 

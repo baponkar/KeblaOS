@@ -54,8 +54,10 @@
 #include "../fs/fatfs_wrapper.h"
 #include "../fs/iso9660.h"
 #include "../vfs/vfs.h"                      // Virtual FIle System 
+#include "../fs/kfs.h"
 
 // Installer
+#include "../installer/gpt_header.h"
 #include "../installer/installer.h"
 
 // ACPI
@@ -134,8 +136,8 @@
 #include "../../../ext_lib/limine-9.2.3/limine.h"   // bootloader info
 
 // FatFs Library
-#include "../fs/FatFs-R0.15b/source/ff.h"
-#include "../fs/FatFs-R0.15b/source/diskio.h"
+#include "../fs/FatFs-R.0.16/source/ff.h"
+#include "../fs/FatFs-R.0.16/source/diskio.h"
 
 // tiny-regex-c
 #include "../../../ext_lib/tiny-regex-c/re.h"

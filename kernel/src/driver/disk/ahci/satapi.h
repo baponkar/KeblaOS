@@ -16,7 +16,6 @@ bool runAtapiCommand(HBA_PORT_T *port, uint8_t *cdb, size_t cdb_len, uintptr_t b
 bool satapi_read(HBA_PORT_T *port, uint32_t lba, uint32_t sector_count, void *buffer);
 bool satapi_write(HBA_PORT_T *port, uint32_t lba, uint32_t sector_count,void *buffer);
 
-
 uint64_t satapi_get_total_sectors(HBA_PORT_T *port);
 uint16_t satapi_get_bytes_per_sector(HBA_PORT_T *port);
 

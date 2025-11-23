@@ -21,7 +21,7 @@ void print_mbr(int disk_no) {
     }
 
     printf("=== Master Boot Record (LBA 0) ===\n");
-    mbr_partition_entry_t *part = (mbr_partition_entry_t*)(buf + 446);
+    mbr_partition_entry_t_1 *part = (mbr_partition_entry_t_1*)(buf + 446);
 
     for (int i = 0; i < 4; i++) {
         printf("Partition %d:\n", i+1);
@@ -93,7 +93,7 @@ void inspect_fat32(int disk_no) {
     // Read partition 1 info from MBR
     uint8_t buf[SECTOR_SIZE];
     kebla_disk_read(disk_no, 0, 1, buf);
-    mbr_partition_entry_t *part = (mbr_partition_entry_t*)(buf + 446);
+    mbr_partition_entry_t_1 *part = (mbr_partition_entry_t_1*)(buf + 446);
     uint32_t part_lba = part[0].lba_start;   // Partition #1 start LBA
 
     // 2. Print VBR

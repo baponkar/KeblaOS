@@ -34,7 +34,7 @@ void set_frame(uint64_t bit_no) {
         printf("[PMM ERROR] bit_no=%llu >= nframes=%llu\n", bit_no, nframes);
     }
 
-    assert(bit_no < nframes); // check either bit_no is less than total nframes i.e. 0 to nframes-1
+    assert(bit_no < nframes);                        // check either bit_no is less than total nframes i.e. 0 to nframes-1
 
     uint64_t bitmap_idx = INDEX_FROM_BIT_NO(bit_no);
     uint64_t bitmap_off = OFFSET_FROM_BIT_NO(bit_no);
@@ -51,7 +51,6 @@ void clear_frame(uint64_t bit_no)
 {
     if (bit_no >= nframes) {
         printf("[PMM ERROR] bit_no=%llu >= nframes=%llu\n", bit_no, nframes);
-
     }
 
     assert(bit_no < nframes); // check either bit_no is less than total nframes i.e. 0 to nframes-1

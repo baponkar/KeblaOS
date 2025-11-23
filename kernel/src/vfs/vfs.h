@@ -5,29 +5,29 @@
 #include <stddef.h>
 
 typedef enum {
-    VFS_UNKNOWN = 0,
-    VFS_FAT12 = 1,
-    VFS_FAT16 = 2,
-    VFS_FAT32 = 3,
-    VFS_EXFAT = 4,
-    VFS_EXT2 = 5,
-    VFS_EXT3 = 6,
-    VFS_EXT4 = 7,
-    VFS_NTFS = 8,
-    VFS_UDF = 9,
-    VFS_NFS = 10,
-    VFS_SMB = 11,
-    VFS_SSHFS = 12,
-    VFS_WEBDEV = 13,
-    VFS_APFS = 14,
-    VFS_ISO9660 = 15,
-    VFS_TEMPFS = 16,
-    VFS_RAW = 17
-}FS_TYPE;
+    VFS_UNKNOWN,
+    VFS_FAT12,
+    VFS_FAT16,
+    VFS_FAT32,
+    VFS_EXFAT,
+    VFS_EXT2,
+    VFS_EXT3,
+    VFS_EXT4,
+    VFS_NTFS,
+    VFS_UDF,
+    VFS_NFS,
+    VFS_SMB,
+    VFS_SSHFS,
+    VFS_WEBDEV,
+    VFS_APFS,
+    VFS_ISO9660,
+    VFS_TEMPFS,
+    VFS_RAW
+}VFS_TYPE;
 
 
 typedef struct {
-    FS_TYPE type;
+    VFS_TYPE type;
     const char* name;
     uint64_t start_lba;
     uint32_t sector_size;
@@ -35,21 +35,22 @@ typedef struct {
 } FS_INFO;
 
 typedef struct {
-    FS_TYPE type;
+    VFS_TYPE type;
     void *context;
-} VFS_FILE;
+}VFS_FILE;
 
 
-FS_TYPE detect_filesystem(int disk_no);
+VFS_TYPE detect_filesystem(int disk_no);
 
 int vfs_init(int disk_no);
 
 int vfs_disk_status(int disk_no);
 int vfs_mount(int disk_no);
-int vfs_mkfs(int disk_no, int fs_type);
+int vfs_unmount(int disk_no);
+int vfs_mkfs(int disk_no, VFS_TYPE fs_type);
 
 #if FF_MULTI_PARTITION
-int vfs_fdisk(int disk_no, void *ptbl, void* work)
+int vfs_fdisk(int disk_no, void *ptbl, void* work);
 #endif
 
 int vfs_setcp(int disk_no, int cp);

@@ -63,7 +63,7 @@ void draw_button(Button* btn, const char* text) {
     if (btn->pressed) {
         bg_color = C_DARK_GRAY;     // Pressed color
     } else if (btn->hovered) {
-        bg_color = C_LIGHT_CORAL;  // Hover color
+        bg_color = C_LIGHT_CORAL;   // Hover color
     }
 
     // Border drawing (raised vs pressed)

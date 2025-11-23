@@ -32,5 +32,5 @@
         "vmm.h": "c",
         "*.clang-format": "c"
     },
-    "cmake.sourceDirectory": "B:/Git-Projects/GitHub/baponkar/KeblaOS/lvgl-9.2.2"
+    "cmake.sourceDirectory": "C:/Projects/C/KeblaOS/ext_lib/lvgl-9.3.0"
 }

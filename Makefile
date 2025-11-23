@@ -78,7 +78,7 @@ $(BUILD_DIR):
 	mkdir -p $@
 
 
-# ================================= Externel Library Build Start =============================================
+# ================================= Externel Library Build Start ========================================================================
 
 # 1. FatFs Library
 # FATFS_BUILD_DIR = build/ext_lib/FatFs
@@ -218,7 +218,7 @@ ugui: $(UGUI_LIB_FILE)
 external_libs: $(LVGL_LIB_FILE) $(UGUI_LIB_FILE) $(NUKLEAR_LIB_FILE) $(TINY_REGEX_LIB_FILE)
 
 
-# ============================================== Kernel Build  Start ===============================================
+# ============================================== Kernel Build  Start ====================================================================
 
 
 # 5. Kernel build
@@ -282,54 +282,36 @@ $(BUILD_INFO_FILE):
 # =====================================================================================================================================
 
 # Creating ISO image
-$(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBUG_DIR)/objdump.txt
+$(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBUG_DIR)/objdump.txt
+	mkdir -p build $(ISO_DIR)/boot $(ISO_DIR)/boot/limine $(ISO_DIR)/EFI/BOOT
 
-	# Creating build directory which will be used to create ISO image, kernel.bin and object files
-	mkdir -p build
-	
-	# Creating ISO directory which will be used to create ISO image 
-	mkdir -p $(ISO_DIR)/boot
-
-	# Copying files to ISO directory and creating directories 
 	cp image/boot_loader_wallpaper.bmp  $(ISO_DIR)/boot/boot_loader_wallpaper.bmp
-
 	cp -v $(BUILD_DIR)/kernel.bin $(ISO_DIR)/boot/
-
 	cp -v $(LIMINE_SRC_DIR)/limine.conf $(ISO_DIR)/boot/
-
-	mkdir -p $(ISO_DIR)/boot/limine
-	cp -v $(LIMINE_SRC_DIR)/limine-bios.sys $(LIMINE_SRC_DIR)/limine-bios-cd.bin $(LIMINE_SRC_DIR)/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
-	
-	mkdir -p $(ISO_DIR)/EFI/BOOT
-	cp -v $(LIMINE_SRC_DIR)/BOOTX64.EFI $(ISO_DIR)/EFI/BOOT/
-	cp -v $(LIMINE_SRC_DIR)/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
-
-	# Copy user_programe.elf file into boot 
 	cp -v $(USER_MODULE_DIR)/build/$(USER_PROGRAM_FILE).elf $(ISO_DIR)/boot/$(USER_PROGRAM_FILE).elf
+ 
+	cp -v $(LIMINE_SRC_DIR)/limine-bios.sys $(LIMINE_SRC_DIR)/limine-bios-cd.bin $(LIMINE_SRC_DIR)/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
+	cp -v $(LIMINE_SRC_DIR)/BOOTX64.EFI $(ISO_DIR)/EFI/BOOT/
+	
 
-	# Creating KeblaOS-0.11-image.iso file by using xorriso.
-	xorriso \
-		-as mkisofs \
+	xorriso -as mkisofs \
 		-b boot/limine/limine-bios-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \
 		--efi-boot boot/limine/limine-uefi-cd.bin \
 		-efi-boot-part --efi-boot-image \
 		--protective-msdos-label $(ISO_DIR) \
-		-o $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
+		-o $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso
 		
-	# install the Limine bootloader into an ISO file, specifically for BIOS-based booting.
-	$(LIMINE_SRC_DIR)/limine bios-install $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso
+	$(LIMINE_SRC_DIR)/limine bios-install $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso
+	# $(LIMINE_SRC_DIR)/limine bios-install $(DISK_DIR)/disk_1.img
 
-image: $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso $(BUILD_INFO_FILE)
+image: $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso $(BUILD_INFO_FILE)
 
 # ========================================================================================================================================
 
 
 blank_disk_1:
-	# Ensure disk directory exists
 	mkdir -p $(DISK_DIR)
-
-	# Ensure mount1 directory exists
 	mkdir -p $(DISK_DIR)/mnt1
 
 	# Clean previous mounts and loop device
@@ -341,26 +323,11 @@ blank_disk_1:
 	dd if=/dev/zero of=$(DISK_1) bs=1M count=1024
 	@echo "Created blank Disk-1 image"
 
-blank_disk_2:
-	# Ensure disk directory exists
-	mkdir -p $(DISK_DIR)
-
-	# Ensure mount2 directory exists
-	mkdir -p $(DISK_DIR)/mnt2
-
-	# Clean previous mounts and loop device
-	sudo umount $(DISK_DIR)/mnt2 || true
-	sudo umount /dev/loop2p1 || true
-	sudo losetup -d /dev/loop2 || true
-
-	# 1. Create Disk Image (512 MiB)
-	dd if=/dev/zero of=$(DISK_2) bs=1M count=512
-	@echo "Created blank Disk-2 image"
 
 # Creating two blank disks
 blank_disks:
 	make blank_disk_1
-	make blank_disk_2
+
 
 # Formatting disk_1.img and disk_2.img as FAT32
 fat32_format:
@@ -377,18 +344,6 @@ fat32_format:
 	'
 	@echo "Disk-1 Formatted first partition as FAT32"
 
-	# Disk - 2
-	parted $(DISK_DIR)/disk_2.img --script -- mklabel msdos
-	parted $(DISK_DIR)/disk_2.img --script -- mkpart primary fat32 1MiB 100%
-	@echo "Disk-2 image Partitioned (FAT32)"
-
-	@bash -c '\
-		LOOPDEV=$$(sudo losetup --show -fP $(DISK_DIR)/disk_2.img); \
-		sudo mkfs.vfat -F 32 $${LOOPDEV}p1; \
-		sudo losetup -d $$LOOPDEV; \
-	'
-	@echo "Disk-2 Formatted first partition as FAT32"
-
 
 # Formatting disk_1.img and disk_2.img as EXT2
 ext2_format:
@@ -404,15 +359,6 @@ ext2_format:
 	sudo mkfs.ext2 $${LOOPDEV_1}p1; \
 	sudo losetup -d $${LOOPDEV_1}
 
-	# Disk - 2
-	parted $(DISK_DIR)/disk_2.img --script -- mklabel msdos
-	parted $(DISK_DIR)/disk_2.img --script -- mkpart primary ext2 1MiB 100%
-	@echo "Disk-2 image Partitioned (EXT2)"
-
-	sudo losetup -fP $(DISK_2)
-	@LOOPDEV_2=$$(sudo losetup -j $(DISK_2) | cut -d: -f1); \
-	sudo mkfs.ext2 $${LOOPDEV_2}p1; \
-	sudo losetup -d $${LOOPDEV_2}
 
 
 create_disks:
@@ -421,12 +367,56 @@ create_disks:
 	mkdir -p $(DISK_DIR)/mnt1
 
 	make blank_disk_1
-	make blank_disk_2
 	make fat32_format
-	# make ext2_format
+
 	@echo "All Disk images are created and formatted."
 
 # =======================================================================================================================================
+
+# =======================================================================================================================================
+# Create a bootable HDD disk image using Limine bootloader
+bootable_disk:
+	@echo "================ Creating Bootable Disk Image with Limine ================"
+	mkdir -p $(DISK_DIR)
+	sudo umount $(DISK_DIR)/mnt1 || true
+	sudo losetup -D || true
+
+	# 1. Create a new blank disk image (1 GiB)
+	dd if=/dev/zero of=$(DISK_1) bs=1M count=1024
+	@echo "Created blank disk image $(DISK_1)"
+
+	# 2. Partition the disk with GPT and create an EFI System Partition (ESP)
+	parted $(DISK_1) --script -- mklabel gpt
+	parted $(DISK_1) --script -- mkpart EFI fat32 1MiB 512MiB
+	parted $(DISK_1) --script -- set 1 esp on
+	parted $(DISK_1) --script -- mkpart DATA fat32 512MiB 100%
+	@echo "GPT partitions created: [EFI FAT32 + Data FAT32]"
+
+	# 3. Setup loop device and format partitions
+	@bash -c '\
+		LOOPDEV=$$(sudo losetup --show -fP $(DISK_1)); \
+		echo "Using loop device: $$LOOPDEV"; \
+		sleep 1; \
+		sudo mkfs.vfat -F 32 -n LMBT $$LOOPDEV"p1"; \
+		sudo mkfs.vfat -F 32 -n DATA $$LOOPDEV"p2"; \
+		mkdir -p $(DISK_DIR)/mnt1; \
+		sudo mount $$LOOPDEV"p1" $(DISK_DIR)/mnt1; \
+		\
+		echo "Copying bootloader and kernel files..."; \
+		sudo mkdir -p $(DISK_DIR)/mnt1/boot/limine $(DISK_DIR)/mnt1/EFI/BOOT; \
+		sudo cp $(BUILD_DIR)/kernel.bin $(DISK_DIR)/mnt1/boot/; \
+		sudo cp $(USER_MODULE_DIR)/build/$(USER_PROGRAM_FILE).elf $(DISK_DIR)/mnt1/boot/; \
+		sudo cp $(LIMINE_SRC_DIR)/limine.conf $(DISK_DIR)/mnt1/boot/; \
+		sudo cp $(LIMINE_SRC_DIR)/limine-bios.sys $(LIMINE_SRC_DIR)/limine-bios-cd.bin $(LIMINE_SRC_DIR)/limine-uefi-cd.bin $(DISK_DIR)/mnt1/boot/limine/; \
+		sudo cp $(LIMINE_SRC_DIR)/BOOTX64.EFI $(DISK_DIR)/mnt1/EFI/BOOT/; \
+		sudo umount $(DISK_DIR)/mnt1; \
+		echo "Installing Limine bootloader on $$LOOPDEV..."; \
+		sudo $(LIMINE_SRC_DIR)/limine bios-install $$LOOPDEV; \
+		sudo losetup -d $$LOOPDEV; \
+		echo "Bootable disk successfully created: $(DISK_1)"; \
+	'
+	@echo "=========================================================================="
+
 
 # Run the OS in QEMU with BIOS boot and two sata disks drives
 bios_run:
@@ -435,21 +425,19 @@ bios_run:
 	-m 4096 \
 	-smp cores=4,threads=1,sockets=1,maxcpus=4 \
 	-boot d \
-	-drive id=sata_disk1,file=$(DISK_1),if=none,format=raw \
-	-drive id=sata_disk2,file=$(DISK_2),if=none,format=raw \
 	-device ahci,id=ahci \
-	-device ide-hd,drive=sata_disk1,bus=ahci.0 \
-	-device ide-hd,drive=sata_disk2,bus=ahci.1 \
-	-device ide-cd,drive=cdrom,bus=ahci.2 \
-	-drive id=cdrom,media=cdrom,file=$(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso,if=none \
+	-device ide-cd,drive=cdrom,bus=ahci.0 \
+	-device ide-hd,drive=sata_disk1,bus=ahci.1 \
+	-drive id=sata_disk1,file=$(DISK_1),if=none,format=raw \
+	-drive id=cdrom,media=cdrom,file=$(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso,if=none \
 	-serial stdio \
 	-vga std \
 	-rtc base=utc,clock=host \
 	-netdev user,id=n1 -device e1000,netdev=n1 \
 	-d guest_errors,int,cpu_reset \
 	-D $(DEBUG_DIR)/qemu.log \
-	-trace enable=all,file=./debug/trace.log
-	#-no-reboot
+	-trace enable=all,file=./debug/trace.log \
+	-no-reboot
 # To see available trace events about start_dma: qemu-system-x86_64 -trace help | grep -i start_dma
 # We can add -noo--rebboot to prevent rebooting after kernel panic
 
@@ -462,9 +450,7 @@ bios_run_nvme:
 	-boot d \
 	-device nvme,serial=nvme1,drive=nvme1 \
 	-drive id=nvme1,file=$(DISK_1),if=none,format=raw \
-	-device nvme,serial=nvme2,drive=nvme2 \
-	-drive id=nvme2,file=$(DISK_2),if=none,format=raw \
-	-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
+	-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso \
 	-serial stdio \
 	-vga std \
 	-rtc base=utc,clock=host \
@@ -472,6 +458,7 @@ bios_run_nvme:
 	-d guest_errors,int,cpu_reset \
 	-D $(DEBUG_DIR)/qemu.log
 	#-no-reboot
+
 
 # Run the OS in QEmu By using two ahci sata disks
 uefi_run:
@@ -484,9 +471,7 @@ uefi_run:
 		-device ahci,id=ahci \
 		-drive id=disk1,file=$(DISK_DIR)/disk_1.img,if=none,format=raw \
 		-device ide-hd,drive=disk1,bus=ahci.0 \
-		-drive id=disk2,file=$(DISK_DIR)/disk_2.img,if=none,format=raw \
-		-device ide-hd,drive=disk2,bus=ahci.1 \
-		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
+		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso \
 		-serial stdio \
 		-d guest_errors,int,cpu_reset \
 		-D $(DEBUG_DIR)/qemu.log \
@@ -497,7 +482,7 @@ uefi_run:
 		-net user
 
 
-# Running OS by QEmu by using two NVMe SATA Disks
+# Running OS by QEmu by using one NVMe SATA Disks
 uefi_nvme_run:
 	qemu-system-x86_64 \
 		-machine q35 \
@@ -506,26 +491,22 @@ uefi_nvme_run:
 		-boot d \
 		-device nvme,serial=nvme1,drive=nvme1 \
 		-drive id=nvme1,file=$(DISK_1),if=none,format=raw \
-		-device nvme,serial=nvme2,drive=nvme2 \
-		-drive id=nvme2,file=$(DISK_2),if=none,format=raw \
-		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
+		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso \
 		-serial stdio \
 		-vga std \
 		-bios /usr/share/ovmf/OVMF.fd \
 		-rtc base=utc,clock=host \
 		-net nic -net user
 
-if disk_run:
+bios_disk_run:
 	qemu-system-x86_64 \
 	-machine q35 \
 	-m 4096 \
 	-smp cores=4,threads=1,sockets=1,maxcpus=4 \
 	-boot c \
 	-drive id=sata_disk1,file=$(DISK_1),if=none,format=raw \
-	-drive id=sata_disk2,file=$(DISK_2),if=none,format=raw \
 	-device ahci,id=ahci \
 	-device ide-hd,drive=sata_disk1,bus=ahci.0 \
-	-device ide-hd,drive=sata_disk2,bus=ahci.1 \
 	-serial stdio \
 	-vga std \
 	-rtc base=utc,clock=host \
@@ -533,6 +514,38 @@ if disk_run:
 	-d guest_errors,int,cpu_reset \
 	-D $(DEBUG_DIR)/qemu.log \
 	-trace enable=all,file=./debug/trace.log
+
+uefi_disk_run:
+	qemu-system-x86_64 \
+	-machine q35 \
+	-m 4096 \
+	-smp cores=4,threads=1,sockets=1,maxcpus=4 \
+	-boot d \
+	-drive id=sata_disk1,file=$(DISK_1),if=none,format=raw \
+	-device ahci,id=ahci \
+	-device ide-hd,drive=sata_disk1,bus=ahci.0 \
+	-serial stdio \
+	-vga std \
+	-rtc base=utc,clock=host \
+	-netdev user,id=n1 -device e1000,netdev=n1 \
+	-d guest_errors,int,cpu_reset \
+	-D $(DEBUG_DIR)/qemu.log \
+	-trace enable=all,file=./debug/trace.log \
+	-drive if=pflash,format=raw,readonly=on,file=/usr/share/ovmf/OVMF.fd \
+	-drive if=pflash,format=raw,file=/usr/share/ovmf/OVMF.fd
+
+test:
+	sudo qemu-system-x86_64 \
+	-machine q35 \
+	-m 4096 \
+	-smp 4 \
+	-drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd \
+	-drive if=pflash,format=raw,file=/usr/share/OVMF/OVMF_VARS_4M.fd \
+	-drive file=disk_img/disk_1.img,if=virtio,format=raw \
+	-boot order=d \
+	-vga std \
+	-serial stdio
+
 
 
 gdb_debug:
@@ -543,7 +556,7 @@ gdb_debug:
 		-smp cores=4,threads=1,sockets=1,maxcpus=4 \
 		-boot d \
 		-hda $(DISK_DIR)/disk.img \
-		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-image.iso \
+		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso \
 		-serial stdio \
 		-d guest_errors,int,cpu_reset \
 		-D $(DEBUG_DIR)/qemu.log \
@@ -581,12 +594,12 @@ all: hard_clean kernel fatfs lvgl tiny-regex ugui linking user_programe image cr
 
 
 # Kernel-only build (no ext_lib)
-build: clean kernel linking user_programe image bios_run
+build: clean kernel linking user_programe image clean bios_run
 
 
 default: build
 
-.PHONY: all build fatfs lvgl tiny-regex ugui external_libs kernel linking user_program build_image create_disks blank_disks ext2_format fat32_format disk_run help
+.PHONY: all build fatfs lvgl tiny-regex ugui external_libs kernel linking user_program build_image create_disks blank_disks ext2_format fat32_format bios_disk_run uefi_disk_run help
 
 help:
 	@echo "Available targets:"
@@ -603,6 +616,9 @@ help:
 	@echo "  make uefi_run        - UEFI Run the target with two SATA Disks"
 	@echo "  make uefi_run_nvme   - UEFI Run with two NVMe Disks"
 
+	@echo "  make bios_disk_run	  - Run by using bootable SATA Disk by BIOS mode"
+	@echo "  make uefi_disk_run   - Run by using bootable Disk by UEFI mode"
+
 	@echo "  make gdb_debug       - Debugging By GDB"
 
 	@echo "  make clean           - Clean up kernel build artifacts"
@@ -613,6 +629,8 @@ help:
 	@echo "  make xt2_format      - Format two disks with EXT2 Filesystem"
 
 	@echo "  make user_programe   - Build user_program.elf from module/user_main.c"
+
+	@echo "  make bootable_disk	  - To create a Bootable Disk by Limine Bootloader."
 
 	@echo "  make help            - To display this help menu."
 

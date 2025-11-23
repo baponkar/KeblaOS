@@ -5,7 +5,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "FatFs-R0.15b/source/ff.h"
+#include "FatFs-R.0.16/source/ff.h"
+
+DWORD get_fattime(void);
+
 
 int fatfs_init(int disk_no);
 int fatfs_disk_status(int disk_no);
@@ -67,8 +70,8 @@ const char* fatfs_error_string(FRESULT result);
 
 void fatfs_test(int disk_no);
 
-
-
+void fatfs_test_1(int disk_no);
+void fatfs_comprehensive_test(int disk_no);
 
 
 
