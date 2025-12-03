@@ -1,0 +1,6 @@
+tree 921bd51cfbab4f77e7822ed85b7ae7e6c68eae90
+parent 396d2bf1fa3a17060d8110c8d345c39e8a529c6c
+author Bapon Kar <baponkar600@gmail.com> 1736274343 +0530
+committer Bapon Kar <baponkar600@gmail.com> 1736274343 +0530
+
+Updating idt_load.asm to store iret registers state, use cpuid to get processor name

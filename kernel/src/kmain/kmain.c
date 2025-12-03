@@ -72,11 +72,11 @@ void kmain(){
     // fatfs_test_1(boot_disk_no);
     // vfs_test(boot_disk_no);
 
-    if(!is_keblaos_installed(boot_disk_no)){
-        uefi_install(boot_disk_no, iso_disk_no); 
-    }else{
-        printf("KeblaOS is already installed on Disk %d.\n", boot_disk_no);
-    }
+    // if(!is_keblaos_installed(boot_disk_no)){
+    //     uefi_install(boot_disk_no, iso_disk_no); 
+    // }else{
+    //     printf("KeblaOS is already installed on Disk %d.\n", boot_disk_no);
+    // }
 
     // if(fatfs_mkfs(boot_disk_no, FM_FAT32 | FM_SFD) == 0){
     //     printf(" Successfully FAT32 FS created.\n");
@@ -86,13 +86,12 @@ void kmain(){
     // print_disk_sector(boot_disk_no, 2048, 1);
     
     // kfs_test();
-
-
-    mouse_init();
+    
+    // mouse_init();
 
     // lvgl_test();
     // ugui_test_1();
-    desktop_init();
+    // desktop_init();
 
     // test_e1000_driver();
     // start();
@@ -106,7 +105,7 @@ void kmain(){
     // Load and parse kernel modules by using limine bootloader
     // get_kernel_modules_info();
     // print_kernel_modules_info();
-    // load_user_elf_and_jump();
+    load_user_elf_and_jump();
 
     // acpi_poweroff();
     // acpi_reboot();

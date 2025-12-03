@@ -26,6 +26,7 @@ static uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t r
     return out;
 }
 
+
 // ------------------------------- Time Manage System Call -------------------------------
 
 time_t syscall_time(time_t *t) {
@@ -147,27 +148,24 @@ int64_t syscall_vfs_mkfs(int fs_type, char *disk){
 }
 
 
-int64_t syscall_vfs_init(char *fs_name, int disk_no) {
-    if (!fs_name) {
-        return -1;                  // Invalid path
-    }
-    return system_call((uint64_t)INT_VFS_INIT, (uint64_t) fs_name, (uint64_t) disk_no, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+int64_t syscall_vfs_init( int disk_no) {
+    return system_call((uint64_t)INT_VFS_INIT, (uint64_t) disk_no, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
 
-uint64_t syscall_mount(char *disk_path) {
+uint64_t syscall_mount(int disk_no) {
 
-    return system_call((uint64_t) INT_SYSCALL_MOUNT, (uint64_t) disk_path, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
+    return system_call((uint64_t) INT_SYSCALL_MOUNT, (uint64_t) disk_no, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
 }
 
 // Opening a file by path name
-uint64_t syscall_open(const char *path, uint64_t flags) {
+uint64_t syscall_open(int disk_no, const char *path, uint64_t flags) {
 
     if (!path) {
         return -1;                  // Invalid path
     }
 
-    return system_call((uint64_t) INT_SYSCALL_OPEN, (uint64_t) path, (uint64_t) flags, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_OPEN, (uint64_t) disk_no, (uint64_t) path, (uint64_t) flags, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
     
 }
 
@@ -180,22 +178,22 @@ uint64_t syscall_close(void *file) {
     return system_call((uint64_t) INT_SYSCALL_CLOSE, (uint64_t) file, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
-uint64_t syscall_read(void *file, uint64_t offset, void *buf, uint32_t size) {
+uint64_t syscall_read(int disk_no, void *file, uint64_t offset, void *buf, uint32_t size) {
     
     if (!file || !buf || size == 0) {
         return -1; // Invalid parameters
     }
 
-    return system_call((uint64_t) INT_SYSCALL_READ, (uint64_t) file, (uint64_t) offset, (uint64_t) buf, (uint64_t) size, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_READ, (uint64_t)disk_no, (uint64_t) file, (uint64_t) buf, (uint64_t) size, (uint64_t) 0, (uint64_t) 0);
 }
 
-uint64_t syscall_write(void *file, uint64_t offset, void *buf, uint32_t btw) {
+uint64_t syscall_write(int disk_no, void *file, uint64_t offset, void *buf, uint32_t btw) {
     
     if (!file || !buf || btw == 0) {
-        return (uint64_t)-1;    // Invalid parameters
+        return (uint64_t)-1;        // Invalid parameters
     }
 
-    return system_call((uint64_t) INT_SYSCALL_WRITE, (uint64_t) file, (uint64_t) offset, (uint64_t) buf, (uint64_t) btw, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_WRITE, (uint64_t)disk_no, (uint64_t) file, (uint64_t) offset, (uint64_t) buf, (uint64_t) btw, (uint64_t) 0);
 }
 
 uint64_t syscall_lseek(void *file, uint32_t offs) {
@@ -308,6 +306,7 @@ uint32_t syscall_get_pixel(int x, int y){
     return system_call((uint64_t)INT_VGA_GETPIXEL , (uint64_t)x, (uint64_t) y, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
+
 int syscall_cls_color(uint32_t color){
     system_call((uint64_t)INT_VGA_CLEAR , (uint64_t)color, (uint64_t)0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
     return 0;
@@ -338,6 +337,7 @@ int syscall_acpi_poweroff(uint32_t color){
     return 0;
 }
 
+
 int syscall_acpi_reboot(uint32_t color){
     system_call((uint64_t)INT_ACPI_REBOOT, (uint64_t)0, (uint64_t)0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
     return 0;
@@ -353,3 +353,10 @@ void serial_printf(const char *fmt, ...) {
 
     system_call(INT_SYSCALL_SERIAL_PRINT, (uint64_t)buf, (uint64_t)0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
+
+
+
+
+
+
+

@@ -155,12 +155,12 @@ uint64_t syscall_uheap_free(void *ptr, size_t size);
 
 // FatFs File Manage
 int64_t syscall_vfs_mkfs(int fs_type, char *disk);
-int64_t syscall_vfs_init(char *fs_name, int disk_no);
-uint64_t syscall_mount(char *path);
-uint64_t syscall_open(const char *path, uint64_t flags);
+int64_t syscall_vfs_init(int disk_no);
+uint64_t syscall_mount(int disk_no);
+uint64_t syscall_open(int disk_no, const char *path, uint64_t flags);
 uint64_t syscall_close(void *file);
-uint64_t syscall_read(void *file, uint64_t offset, void *buf, uint32_t size);
-uint64_t syscall_write(void *file, uint64_t offset, void *buf, uint32_t btw);
+uint64_t syscall_read(int disk_no, void *file, uint64_t offset, void *buf, uint32_t size);
+uint64_t syscall_write(int disk_no, void *file, uint64_t offset, void *buf, uint32_t btw);
 
 
 uint64_t syscall_lseek(void *file, uint32_t offs);

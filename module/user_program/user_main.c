@@ -25,13 +25,15 @@ void _start(){
 
     printf("\nWelcome! This is User Program \"user_main.c\"\n");
 
-    instll();
+    // instll();
 
     // regex_test();
 
     // user_syscall_test();
 
-    start_user_shell();
+    // start_user_shell();
+
+    user_syscall_test();
 
     while (true) {}     // Halt
 }

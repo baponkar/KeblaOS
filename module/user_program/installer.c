@@ -13,7 +13,7 @@ void instll(){
 
     printf("Installing KeblaOS in the available Disk...........\n");
 
-    if(syscall_vfs_init("fat", 0) != 0){
+    if(syscall_vfs_init( 0) != 0){
         printf("VFS initialization is failed!\n");
     }else{
         printf("Successfully FAT32 VFS Created in disk 0.\n");
@@ -26,7 +26,7 @@ void instll(){
         printf("Successfully Format Disk 0 with FAT32 Filesystem.\n");
     }
 
-    if(syscall_mount(disk) != 0){
+    if(syscall_mount(1) != 0){
         printf("Mount Device 0: is failed!\n");
     }else{
         printf("Mount Disk 0\n");
@@ -56,7 +56,7 @@ void instll(){
     // Now detect USB Disk which is containing Limine bootloader and Kernel.bin
     char *cdrom = "1:";
     
-    if(syscall_mount(cdrom) == 0){
+    if(syscall_mount(1) == 0){
         printf("Sucessfully mount cdrom\n");
     }
 

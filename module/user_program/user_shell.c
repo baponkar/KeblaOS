@@ -86,7 +86,7 @@ static void handle_command(int argc, char *argv[]) {
             printf("Usage: cat <file>\n");
             return;
         }
-        void *file = (void*)syscall_open(argv[1], FA_READ);
+        void *file = (void*)syscall_open(1, argv[1], FA_READ);
         
         if ((uint64_t)file == (uint64_t)-1 || (uint64_t)file == 0xFFFFFFFF) {
             printf("Cannot open file\n");
@@ -95,7 +95,7 @@ static void handle_command(int argc, char *argv[]) {
 
         char buffer[128];
         uint64_t read_bytes;
-        while ((read_bytes = syscall_read(file, 0, (void *)buffer, sizeof(buffer) - 1)) > 0) {
+        while ((read_bytes = syscall_read(1, file, 0, (void *)buffer, sizeof(buffer) - 1)) > 0) {
             buffer[read_bytes] = '\0';
             printf("%s", buffer);
         }
@@ -139,7 +139,7 @@ static void handle_command(int argc, char *argv[]) {
         char buffer[128];
         uint64_t read_bytes = 0;
 
-        void *file_node = (void*) syscall_open(filename, FA_OPEN_EXISTING | FA_READ | FA_WRITE);
+        void *file_node = (void*) syscall_open(1, filename, FA_OPEN_EXISTING | FA_READ | FA_WRITE);
 
         if (!is_fs_error((uint64_t)file_node)) {
             printf("%s file already present.\n", filename);
@@ -147,7 +147,7 @@ static void handle_command(int argc, char *argv[]) {
             if (!is_fs_error(syscall_lseek(file_node, 0)))
                 printf("Lseek is success\n");
 
-            read_bytes = syscall_read(file_node, 0, buffer, sizeof(buffer) - 1);
+            read_bytes = syscall_read(1, file_node, 0, buffer, sizeof(buffer) - 1);
             if ((int64_t)read_bytes <= 0) {
                 printf("File is empty or read failed\n");
             } else {
@@ -157,18 +157,18 @@ static void handle_command(int argc, char *argv[]) {
 
         } else {
             printf("Creating new file: %s\n", filename);
-            file_node = (void*) syscall_open(filename, FA_CREATE_ALWAYS | FA_READ | FA_WRITE);
+            file_node = (void*) syscall_open(1, filename, FA_CREATE_ALWAYS | FA_READ | FA_WRITE);
             if (is_fs_error((uint64_t)file_node)) {
                 printf("Failed to create file\n");
                 return;
             }
 
             char *str = "Hello from user_shell.c";
-            if (is_fs_error(syscall_write(file_node, 0, str, strlen(str)))) {
+            if (is_fs_error(syscall_write(1, file_node, 0, str, strlen(str)))) {
                 printf("Writing failed\n");
             } else {
                 syscall_lseek(file_node, 0);
-                read_bytes = syscall_read(file_node, 0, buffer, sizeof(buffer) - 1);
+                read_bytes = syscall_read(1, file_node, 0, buffer, sizeof(buffer) - 1);
                 if ((int64_t)read_bytes > 0) {
                     buffer[read_bytes] = '\0';
                     printf("File created and read back: %s\n", buffer);

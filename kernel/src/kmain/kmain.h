@@ -143,16 +143,12 @@
 #include "../../../ext_lib/tiny-regex-c/re.h"
 #include "../../../ext_lib/tiny-regex-c/re_test.h"
 
-// lvgl
-#include "../../../ext_lib/lvgl-9.3.0/lvgl.h"
-#include "../driver/vga/lvgl_fb.h"
-
 // nuklear
 
 
 // uGUI
 #include "../driver/vga/ugui_test.h"
-#include "../driver/vga/desktop.h"
+#include "../gui/desktop.h"
 
 // =======================================================================================
 

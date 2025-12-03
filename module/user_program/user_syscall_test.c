@@ -66,16 +66,31 @@ void user_syscall_test(){                      // _start define in user_linker_x
     // Timer Test
     // test_time_functions();
 
+    printf(" Initializing VFS on Disk 1\n");
+    int64_t vfs_init_res = syscall_vfs_init(1);
+    if(vfs_init_res != 0){
+        printf("VFS Initialization on Disk 1 failed!\n");
+        return;
+    }
+
+    printf("Mounting root directory \"/\"\n");
+    uint64_t mount_res = syscall_mount(1);
+    if(mount_res != 0){
+        printf("Mounting root directory failed!\n");
+        return;
+    }
+
+
     printf("Listing root directory \"/\"\n");
-    char *root_dir_path = "/";
+    char *root_dir_path = "1:/";
     if(syscall_list_dir(root_dir_path) != 0){
         printf("Listing %s directory failed!\n", root_dir_path);
     }
 
     printf("Creating file user_file.txt\n");
-    char *file_path = "/user_file.txt";
-    uint64_t flags = FA_READ | FA_WRITE | FA_OPEN_ALWAYS;
-    void *file_node = (void *)syscall_open(file_path, flags);
+    char *file_path = "1:/user_file.txt";
+    uint64_t flags = FA_CREATE_ALWAYS | FA_WRITE;
+    void *file_node = (void *)syscall_open(1, file_path, flags);
     if(file_node == NULL){
         printf("Opening or Creating file %s failed!\n", file_path);
         return;
@@ -83,19 +98,24 @@ void user_syscall_test(){                      // _start define in user_linker_x
 
     char *data = "This string written by user system call.";
     printf("Writing %s file with \"%s\"\n", file_path, data);
-    uint64_t write_res = syscall_write(file_node, 0, (void *)data, strlen(data));
+    uint64_t write_res = syscall_write(1, file_node, 0, (void *)data, strlen(data));
     if(write_res == 0){
         printf("Writing %s file failed!\n", file_path);
         return;
     }
+
+    syscall_close((void *)file_node);
+
+    file_node = (void *)syscall_open(1, file_path, FA_READ | FA_OPEN_EXISTING);
     
     printf("Reading %s file\n", file_path);
     char buf[128];
-    uint64_t read_res = syscall_read(file_node, 0, (void *)buf, 128);
+    uint64_t read_res = syscall_read(1, file_node, 0, (void *)buf, 128);
     if(read_res < 0){
         printf("Reding file %s is failed!\n", file_path);
         return;
     }
+    buf[127] = '\0';
     printf("%s content: %s\n", file_path, buf);
 
 
@@ -108,7 +128,7 @@ void user_syscall_test(){                      // _start define in user_linker_x
     printf("Writing again after changing file pointer\n");
     char *new_data = "This is a new string.";
     printf("Writing %s file with \"%s\"\n", file_path, new_data);
-    uint64_t write_res_1 = syscall_write(file_node, 0, (void *)new_data, (strlen(new_data) + strlen(data)));
+    uint64_t write_res_1 = syscall_write(1, file_node, 0, (void *)new_data, (strlen(new_data) + strlen(data)));
     if(write_res_1 == 0){
         printf("Writing %s file failed!\n", file_path);
         return;
@@ -116,7 +136,7 @@ void user_syscall_test(){                      // _start define in user_linker_x
 
     printf("Reading %s file again\n", file_path);
     char buf_1[128];
-    uint64_t read_res_1 = syscall_read(file_node, 0, (void *)buf_1, 128);
+    uint64_t read_res_1 = syscall_read(1, file_node, 0, (void *)buf_1, 128);
     if(read_res_1 < 0){
         printf("Reding file %s is failed!\n", file_path);
         return;
@@ -167,6 +187,12 @@ void user_syscall_test(){                      // _start define in user_linker_x
 
     halt();
 }
+
+
+
+
+
+
 
 
 

@@ -5,7 +5,7 @@
 
 
 [extern irq_handler]   ; defined in pic.c 
-[extern irq_handler]   ; defined in pic.c
+
 
 
 ; Setup Interrupt Request(IRQ)

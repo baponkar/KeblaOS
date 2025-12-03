@@ -54,7 +54,7 @@ static int copy_from_user(char *kernel_dst, const char *user_src, size_t max_len
     kernel_dst[i] = user_src[i];
     if (user_src[i] == '\0') break; // Stop at null terminator
   }
-  kernel_dst[max_len - 1] = '\0'; // Ensure termination
+  kernel_dst[max_len - 1] = '\0';   // Ensure termination
   return 0;
 }
 
@@ -81,9 +81,6 @@ static uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t r
 
     return out;
 }
-
-
-
 
 
 //  regs->rax is hold success(0) or error(-1) code
@@ -399,10 +396,11 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
 
             case INT_SYSCALL_READ: {  // 0x35
-                void* fp = (void*) regs->rdi;
+                int disk_no = regs->rdi;
+                void* fp = (void*) regs->rsi;
                 char* buff = (char*) regs->rdx;
                 size_t size = (size_t) regs->r10;
-                regs->rax = (uint64_t) vfs_read((int)0, fp, buff, size);
+                regs->rax = (uint64_t) vfs_read(disk_no, fp, buff, size);
                 break;
 
             }
@@ -448,6 +446,10 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             // ------------------- VFS Directory Manage ------------------------------------
 
             case INT_SYSCALL_LIST: {
+                printf("VFS List Directory Syscall Invoked\n");
+                int disk_no = (int) regs->rdi;
+                char *path = (char *)regs->rsi;
+                // regs->rax = (uint64_t) vfs_listdir(disk_no, path);
                 break;
             }
 
@@ -595,18 +597,20 @@ void int_syscall_init(){
 
 
 
+
+
 void int_syscall_test(){
 
     printf(".......System Call Test Start\n");
 
-    char *fs_name = "fat";
-    if(!system_call(INT_VFS_INIT, (uint64_t)fs_name , (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0)){
+    uint64_t res = system_call(INT_VFS_INIT, (uint64_t)1 , (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0);
+    if(res != 0){
         printf("VFS initialization failed!\n");
     }
 
     // VFS Test
-    char *disk = "0:";
-    uint64_t res = system_call(INT_SYSCALL_MOUNT, (uint64_t)disk , (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    char *disk = "1:";
+    res = system_call(INT_SYSCALL_MOUNT, (uint64_t)disk , (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
     if(res == 0){
         printf("Successfully Mounted\n");
     }else{
@@ -617,7 +621,7 @@ void int_syscall_test(){
 
     // List Directory
     const char *root_dir = "/";
-    system_call(INT_SYSCALL_LIST, (uint64_t) root_dir, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    system_call(INT_SYSCALL_LIST, (uint64_t)root_dir, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0);
 
 
     printf("Opening file /TESRFILE.TXT\n");
