@@ -60,3 +60,5 @@ lvgl-9.2.3/tests/test_images/
 build/*.a
 
 build/
+partition1.img
+disk_img/
