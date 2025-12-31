@@ -31,11 +31,17 @@ void _start(){
 
     // user_syscall_test();
 
-    // start_user_shell();
+    start_user_shell();
 
     user_syscall_test();
 
-    while (true) {}     // Halt
+    syscall_cls_color(0x000000); // Black
+    for(int i=0; i<5; i++){
+        syscall_set_pixel(10 + i, 10 + i, 0xFF0000);
+        sleep_seconds(1);
+    }
+
+    while (true){}     // Halt
 }
 
 

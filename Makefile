@@ -102,47 +102,6 @@ $(BUILD_DIR):
 # 	@echo "FatFs Build completed."
 
 
-
-
-# 2. LvGL Library
-
-# Defined in ext_lib/lvgl-9.3.0/lvgl.mk
-LVGL_PATH = ext_lib/lvgl-9.3.0 
-
-
-ASRCS += $(shell find $(LVGL_PATH)/src -type f -name '*.S')
-CSRCS += $(shell find $(LVGL_PATH)/src -type f -name '*.c')
-CSRCS += $(shell find $(LVGL_PATH)/demos -type f -name '*.c')
-CSRCS += $(shell find $(LVGL_PATH)/examples -type f -name '*.c')
-CXXEXT := .cpp
-CXXSRCS += $(shell find $(LVGL_PATH)/src -type f -name '*${CXXEXT}')
-
-AFLAGS += "-I$(LVGL_PATH)"
-CFLAGS += "-I$(LVGL_PATH)"
-CXXFLAGS += "-I$(LVGL_PATH)"
-
-
-LVGL_BUILD_DIR = build/ext_lib/lvgl
-LVGL_SRC_DIR   = ext_lib/lvgl-9.3.0
-LVGL_SRC_FILES := $(shell find ext_lib/lvgl-9.3.0/src -name '*.c')
-LVGL_OBJ_FILES := $(patsubst $(LVGL_SRC_DIR)/%.c, $(LVGL_BUILD_DIR)/%.o, $(LVGL_SRC_FILES))
-LVGL_LIB_FILE  := build/liblvgl.a
-
-build/ext_lib/lvgl:
-	mkdir -p $@
-
-build/ext_lib/lvgl/%.o: ext_lib/lvgl-9.3.0/%.c
-	@mkdir -p $(dir $@)
-	$(GCC) $(GCC_FLAG) $(GCC_STDLIB_FLAG) $(AFLAGS) $(CFLAGS) $(CXXFLAGS) -c $< -o $@
-
-
-build/liblvgl.a: $(LVGL_OBJ_FILES)
-	ar rcs $@ $^
-
-lvgl: build/liblvgl.a
-	@echo "LVGL Build completed."
-
-
 # 3. limine (I am using previus building files )
 # Nothing to build
 LIMINE_BUILD_DIR := build/ext_lib/limine-9.2.3
@@ -215,7 +174,7 @@ ugui: $(UGUI_LIB_FILE)
 
 
 # external_libs: $(FATFS_LIB_FILE) $(LVGL_LIB_FILE) $(UGUI_LIB_FILE) $(NUKLEAR_LIB_FILE) $(TINY_REGEX_LIB_FILE)
-external_libs: $(LVGL_LIB_FILE) $(UGUI_LIB_FILE) $(NUKLEAR_LIB_FILE) $(TINY_REGEX_LIB_FILE)
+external_libs: $(UGUI_LIB_FILE) $(NUKLEAR_LIB_FILE) $(TINY_REGEX_LIB_FILE)
 
 
 # ============================================== Kernel Build  Start ====================================================================
@@ -582,6 +541,7 @@ hard_clean:
 
 # =======================================================================================================================================
 user_programe:
+	rm -rf $(USER_MODULE_DIR)/build/*
 	make -C $(USER_MODULE_DIR)/
 
 	@echo "Successfully build user_program.elf"
@@ -599,7 +559,7 @@ build: clean kernel linking user_programe image clean bios_run
 
 default: build
 
-.PHONY: all build fatfs lvgl tiny-regex ugui external_libs kernel linking user_program build_image create_disks blank_disks ext2_format fat32_format bios_disk_run uefi_disk_run help
+.PHONY: all build fatfs tiny-regex ugui external_libs kernel linking user_program build_image create_disks blank_disks ext2_format fat32_format bios_disk_run uefi_disk_run help
 
 help:
 	@echo "Available targets:"

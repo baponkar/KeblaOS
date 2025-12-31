@@ -65,8 +65,8 @@ void kmain(){
         printf(" Disk %d (type %d)\n", i, disk.type);
     }
 
-    // kebla_disk_init(boot_disk_no);
-    // kebla_disk_init(iso_disk_no);
+    kebla_disk_init(boot_disk_no);
+    kebla_disk_init(iso_disk_no);
     // kebla_disk_test(boot_disk_no);
     
     // fatfs_test_1(boot_disk_no);
@@ -86,6 +86,12 @@ void kmain(){
     // print_disk_sector(boot_disk_no, 2048, 1);
     
     // kfs_test();
+
+    int_syscall_init();
+    // int_syscall_test();
+
+    // init_syscall(0);   // Initialize syscall for BSP (CPU 0)
+    // test_syscall();
     
     // mouse_init();
 

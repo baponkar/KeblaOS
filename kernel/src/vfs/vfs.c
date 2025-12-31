@@ -293,6 +293,7 @@ int vfs_printf(int disk_no, void *fp, char *str){
 }
 #endif
 
+#define MAX_PATH 260
 void *vfs_open(int disk_no, char *path, int mode){
     if(disk_no >= disk_count) return NULL;
 
@@ -301,6 +302,16 @@ void *vfs_open(int disk_no, char *path, int mode){
     if(disk.type == DISK_TYPE_SATAPI){
         return iso9660_open(disk_no, path, mode);
     }else if(disk.type == DISK_TYPE_AHCI_SATA){
+        // char* updated_path = path;
+        // if(path[1] == ':'){
+        //     updated_path = &path[2];
+        //     snprintf(updated_path - 2, 3, "%d:", disk_no);  // Update drive number
+        // }else{
+        //     char temp_path[MAX_PATH];
+        //     snprintf(temp_path, MAX_PATH, "%d:/%s", disk_no, path); // Prepend drive number
+        //     updated_path = temp_path;
+        // }
+        // return fatfs_open(updated_path, mode);
         return fatfs_open(path, mode);
     }
 
@@ -524,6 +535,7 @@ int vfs_unlink(int disk_no, char *path){
         return fatfs_unlink(path);
     }
 
+    printf("VFS: Unsupported disk type %d for unlink on disk %d\n", disk.type, disk_no);
     return -1;
 }
 
@@ -717,6 +729,15 @@ const char* vfs_error_string(int result){
     return "UNKNOWN_ERROR";
 }
 
+uint64_t vfs_listdir(int disk_no, char *path){
+    if(disk_no >= disk_count) return -1;
+
+    Disk disk = disks[disk_no];
+
+    if(disk.type == DISK_TYPE_AHCI_SATA){
+        return fatfs_listdir(path);
+    }
+}
 
 void vfs_test(int disk_no){
     if(disk_no >= disk_count) return;
@@ -751,15 +772,15 @@ void vfs_test(int disk_no){
    void *test_file = vfs_open(disk_no, "1:/test.txt", flag);
 
    if(!test_file){
-        printf(" Failed to create test.txt file\n");
+        printf(" Failed to create 1:/test.txt file\n");
         return;
    }
-   printf(" Successfully opened test.txt\n");
+   printf(" Successfully opened 1:/test.txt\n");
 
-   const char *text = "Hello from FATFS.\n";
+   const char *text = "Hello from VFS.\n";
 
    char buff[256];
-   if(vfs_write(disk_no, test_file, text, strlen(text)) != 0){
+   if(vfs_write(disk_no, test_file, text, strlen(text)) == -1){
         printf(" failed to write into test.txt\n");
         return;
    }

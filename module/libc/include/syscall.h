@@ -6,6 +6,13 @@
 
 #include "../include/time.h"
 
+enum syscall_number{
+    SYSCALL_PRINT = 1,
+    SYSCALL_READ  = 2,
+    SYSCALL_EXIT  = 3,
+};
+
+void test();
 
 enum int_syscall_number {
 
@@ -158,13 +165,13 @@ int64_t syscall_vfs_mkfs(int fs_type, char *disk);
 int64_t syscall_vfs_init(int disk_no);
 uint64_t syscall_mount(int disk_no);
 uint64_t syscall_open(int disk_no, const char *path, uint64_t flags);
-uint64_t syscall_close(void *file);
+uint64_t syscall_close(int disk_no, void *file);
 uint64_t syscall_read(int disk_no, void *file, uint64_t offset, void *buf, uint32_t size);
-uint64_t syscall_write(int disk_no, void *file, uint64_t offset, void *buf, uint32_t btw);
+uint64_t syscall_write(int disk_no, void *file, void *buf, uint32_t btw);
 
 
-uint64_t syscall_lseek(void *file, uint32_t offs);
-uint64_t syscall_unlink(char *path);
+uint64_t syscall_lseek(int disk_no, void *file, uint32_t offs);
+uint64_t syscall_unlink(int disk_no, char *path);
 
 
 // FatFs Directory Manage
@@ -172,9 +179,9 @@ uint64_t syscall_opendir(const char *path);
 uint64_t syscall_closedir(void * dir_ptr);
 uint64_t syscall_readdir(void * dir_ptr);
 uint64_t syscall_mkdir(void * dir_ptr);
-int syscall_list_dir(const char* path);
+uint64_t syscall_list_dir(int disk_no, char* path);
 
-int syscall_getcwd(void *buf, size_t size);
+int syscall_getcwd(int disk_no, void *buf, size_t size);
 int syscall_chdir(const char *path);
 int syscall_chdrive(const char *path);
 

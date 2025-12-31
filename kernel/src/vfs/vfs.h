@@ -92,6 +92,7 @@ int vfs_expand(int disk_no);
 
 int vfs_get_fsize(int disk_no, void *fp);
 
+uint64_t vfs_listdir(int disk_no, char *path);
 
 const char* vfs_error_string(int result);
 

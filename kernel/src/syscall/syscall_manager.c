@@ -86,49 +86,47 @@ void init_syscall(uint64_t cpu_id) {
 void syscall_handler(uint64_t syscall_num, uint64_t arg1, uint64_t arg2) {
     switch(syscall_num) {
         case SYSCALL_PRINT:
-            printf("Print Syscall called: arg1: %s, arg2: %s\n", (char *)arg1, (char *)arg2);
-            
-            if(arg1 == 0) {
-                printf("No string to print.\n");
-                break;
-            }
-            const char* str = (const char*)arg1;
-            printf("%s\n", str);  
-            break;
+            printf("Print Syscall called.\n");
+
+            // printf("arg1: %s, arg2: %d\n", (char*)arg1, (int)arg2);  
+            // break;
 
         case SYSCALL_READ:
             // Handle read syscall
             char* user_buf = (char*)arg1;
             uint64_t size = arg2;
             // Implement read logic here
-            break;
+            // break;
 
         case SYSCALL_EXIT:
             printf("User requested shell exit.\n");
-            break;
+            // break;
 
         default:
             printf("Unknown syscall: %d\n", (int) syscall_num);
-            break;
+            // break;
     }
 }
 
 
 
 void syscall(uint64_t num, uint64_t arg1, uint64_t arg2) {
+    uint64_t ret;
     __asm__ volatile (
         "syscall"
-        :
-        : "a"(num), "D"(arg1), "S"(arg2)
-        : "rcx", "r11", "memory"
+        : "=a"(ret)                         // output_operands
+        : "a"(num), "D"(arg1), "S"(arg2)    // input_operands
+        : "rcx", "r11", "memory"            // clobbered registers
     );
 }
 
 
 void test_syscall() {
 
+    char test_msg[] = "Hello from test_syscall!\n\0";
+
     // Test print syscall
-    syscall(SYSCALL_PRINT, (uint64_t)"Hello from syscall!\n", 0);
+    syscall(SYSCALL_PRINT, (uint64_t)test_msg, 0);
 
     // Test read syscall
     char buffer[100];

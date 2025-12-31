@@ -55,12 +55,12 @@ static void handle_command(int argc, char *argv[]) {
     } else if (strcmp(argv[0], "ls") == 0) {    // ✅
         if(argc < 2){
             char cwd[128];
-            int r = syscall_getcwd(cwd, sizeof(cwd));
+            int r = syscall_getcwd(1, cwd, sizeof(cwd));
             if(r==0){
-                int res = syscall_list_dir(cwd);
+                int res = syscall_list_dir(2, cwd);
             }
         }else{
-            int res = syscall_list_dir(argv[1]);
+            int res = syscall_list_dir(2, argv[1]);
         }
 
     } else if(strcmp(argv[0], "cd") == 0){
@@ -79,7 +79,7 @@ static void handle_command(int argc, char *argv[]) {
         }
     } else if(strcmp(argv[0], "cwd") == 0){
         char buf[256];
-        syscall_getcwd(buf, (sizeof(buf)-1));
+        syscall_getcwd(1, buf, (sizeof(buf)-1));
         printf("%s\n", buf);
     } else if (strcmp(argv[0], "cat") == 0) {  // ❌
         if (argc < 2) {
@@ -99,7 +99,7 @@ static void handle_command(int argc, char *argv[]) {
             buffer[read_bytes] = '\0';
             printf("%s", buffer);
         }
-        syscall_close(file);
+        syscall_close(1, file);
 
     } else if (strcmp(argv[0], "mkdir") == 0) { // ❌
         if (argc < 2) {
@@ -113,7 +113,7 @@ static void handle_command(int argc, char *argv[]) {
             printf("Usage: rm <file>\n");
             return;
         }
-        uint64_t result = syscall_unlink(argv[1]);
+        uint64_t result = syscall_unlink(1, argv[1]);
 
         if(!is_fs_error(result)){
             printf("Remove %s failed!\n", argv[1]);
@@ -144,7 +144,7 @@ static void handle_command(int argc, char *argv[]) {
         if (!is_fs_error((uint64_t)file_node)) {
             printf("%s file already present.\n", filename);
 
-            if (!is_fs_error(syscall_lseek(file_node, 0)))
+            if (!is_fs_error(syscall_lseek(1, file_node, 0)))
                 printf("Lseek is success\n");
 
             read_bytes = syscall_read(1, file_node, 0, buffer, sizeof(buffer) - 1);
@@ -164,10 +164,10 @@ static void handle_command(int argc, char *argv[]) {
             }
 
             char *str = "Hello from user_shell.c";
-            if (is_fs_error(syscall_write(1, file_node, 0, str, strlen(str)))) {
+            if (is_fs_error(syscall_write(1, file_node, str, strlen(str)))) {
                 printf("Writing failed\n");
             } else {
-                syscall_lseek(file_node, 0);
+                syscall_lseek(1, file_node, 0);
                 read_bytes = syscall_read(1, file_node, 0, buffer, sizeof(buffer) - 1);
                 if ((int64_t)read_bytes > 0) {
                     buffer[read_bytes] = '\0';
@@ -176,14 +176,14 @@ static void handle_command(int argc, char *argv[]) {
             }
         }
 
-        uint64_t close_res = syscall_close(file_node);
+        uint64_t close_res = syscall_close(1, file_node);
         if (close_res == 0){
             printf("File closed successfully\n");
         }else{
             printf("Failed to close file\n");
         }
 
-        uint64_t unlink_res = syscall_unlink(filename);
+        uint64_t unlink_res = syscall_unlink(1, filename);
         if (unlink_res == 0){
             printf("File deleted successfully\n");
         }else {

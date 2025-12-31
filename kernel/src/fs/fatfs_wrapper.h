@@ -64,7 +64,7 @@ int fatfs_expand();
 
 int fatfs_get_fsize(void *fp);
 
-
+int fatfs_listdir(char *path);
 const char* fatfs_error_string(FRESULT result);
 
 

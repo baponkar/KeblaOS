@@ -342,6 +342,33 @@ int fatfs_get_fsize(void *fp){
     return (int)obj.objsize;
 }
 
+int fatfs_listdir(char *path){
+    DIR dir;
+    FILINFO fno;
+    FRESULT res;
+
+    res = f_opendir(&dir, path);
+    if(res != FR_OK){
+        printf("FATFS: Failed to open directory %s with error %s\n", path, fatfs_error_string(res));
+        return -1;
+    }
+
+    printf("Listing directory: %s\n", path);
+    for(;;){
+        res = f_readdir(&dir, &fno);
+        if(res != FR_OK || fno.fname[0] == 0) break; // Break on error or end of dir
+
+        if(fno.fattrib & AM_DIR){
+            printf("<DIR>  %s\n", fno.fname);
+        } else {
+            printf("       %s  %lu bytes\n", fno.fname, fno.fsize);
+        }
+    }
+
+    f_closedir(&dir);
+    return 0;
+}
+
 
 void fatfs_test(int disk_no){
 

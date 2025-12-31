@@ -61,118 +61,145 @@ void halt(){
 
 void user_syscall_test(){                      // _start define in user_linker_x86.ld
 
-    printf("\nHello from users\'s program \'syscall_test.c\'\n");
+    int disk_no = 1;   // Boot Disk is 0, User Disk is 1
 
-    // Timer Test
-    // test_time_functions();
-
-    printf(" Initializing VFS on Disk 1\n");
-    int64_t vfs_init_res = syscall_vfs_init(1);
-    if(vfs_init_res != 0){
+    int64_t vfs_init_res = syscall_vfs_init(disk_no);
+    if(vfs_init_res == -1){
         printf("VFS Initialization on Disk 1 failed!\n");
         return;
     }
+    printf("VFS Initialization on Disk %d successful!\n", disk_no);
 
-    printf("Mounting root directory \"/\"\n");
-    uint64_t mount_res = syscall_mount(1);
-    if(mount_res != 0){
-        printf("Mounting root directory failed!\n");
+    uint64_t mount_res = syscall_mount(disk_no);
+    if(mount_res == -1){
+        printf("Mounting disk %d failed!\n", disk_no);
         return;
     }
+    printf("Mounting %d successful!\n", disk_no);
 
-
-    printf("Listing root directory \"/\"\n");
-    char *root_dir_path = "1:/";
-    if(syscall_list_dir(root_dir_path) != 0){
-        printf("Listing %s directory failed!\n", root_dir_path);
-    }
-
-    printf("Creating file user_file.txt\n");
-    char *file_path = "1:/user_file.txt";
+    // void snprintf(char* buf, size_t size, const char* format, ...)
+    char *file_path = "1:/TESTFILE.TXT";
     uint64_t flags = FA_CREATE_ALWAYS | FA_WRITE;
-    void *file_node = (void *)syscall_open(1, file_path, flags);
+    void *file_node = (void *)syscall_open(disk_no, file_path, flags);
     if(file_node == NULL){
         printf("Opening or Creating file %s failed!\n", file_path);
         return;
     }
+    printf("File %s opened or created successfully!\n\n", file_path);
 
-    char *data = "This string written by user system call.";
-    printf("Writing %s file with \"%s\"\n", file_path, data);
-    uint64_t write_res = syscall_write(1, file_node, 0, (void *)data, strlen(data));
-    if(write_res == 0){
+    // ----------------------------------------------------------------------------------
+    // char data[128] = "This string written by user system call.";
+
+    char *data = (char *)syscall_uheap_alloc(128, ALLOCATE_DATA);
+    memcpy(data, "This string written by user system call.", 40);
+
+    // printf("Writing data %s(length %d) to %s file\n", data, (int)strlen(data), file_path);
+
+    uint64_t write_res = syscall_write(disk_no, file_node, data, strlen(data));
+    if(write_res == -1){
         printf("Writing %s file failed!\n", file_path);
         return;
     }
+    printf("Writing to %s file successful! Wrote %d bytes.\n", file_path, write_res);
 
-    syscall_close((void *)file_node);
+    uint64_t close_res = syscall_close(disk_no, file_node);
+    if(close_res == -1){
+        printf("The file %s close failed!\n", file_path);
+        return;
+    }
+    printf("The file %s closed successfully!\n", file_path);
 
-    file_node = (void *)syscall_open(1, file_path, FA_READ | FA_OPEN_EXISTING);
+    // ----------------------------------------------------------------------------------
+    file_node = (void *)syscall_open(1, file_path, FA_READ | FA_OPEN_EXISTING | FA_WRITE);
+    if(file_node == NULL){
+        printf("Opening file %s failed!\n", file_path);
+        return;
+    }
+    printf("File %s opened successfully for reading!\n", file_path);
     
-    printf("Reading %s file\n", file_path);
+
     char buf[128];
-    uint64_t read_res = syscall_read(1, file_node, 0, (void *)buf, 128);
+    uint64_t read_res = syscall_read(disk_no, file_node, 0, buf, 127);
     if(read_res < 0){
         printf("Reding file %s is failed!\n", file_path);
         return;
     }
     buf[127] = '\0';
-    printf("%s content: %s\n", file_path, buf);
+    printf("Reading Successfull %s content: %s\n", file_path, buf);
 
 
-    printf("Changing File Pointer(LSEEK)\n");
-    uint64_t lseek_res = syscall_lseek(file_node, strlen(data));
+    uint64_t lseek_res = syscall_lseek(disk_no, file_node, strlen(data));
     if(lseek_res != 0){
         printf("Lseek Failed!\n");
     }
+    printf("Lseek Successful! File pointer moved to offset %d\n", strlen(data));
 
-    printf("Writing again after changing file pointer\n");
-    char *new_data = "This is a new string.";
-    printf("Writing %s file with \"%s\"\n", file_path, new_data);
-    uint64_t write_res_1 = syscall_write(1, file_node, 0, (void *)new_data, (strlen(new_data) + strlen(data)));
-    if(write_res_1 == 0){
+
+    char *new_data = (char *) syscall_uheap_alloc(128, ALLOCATE_DATA);
+    memcpy(new_data, "This is new data appended after lseek.", 40);
+    uint64_t write_res_1 = syscall_write(disk_no, file_node, new_data, strlen(new_data));
+    if(write_res_1 == -1){
         printf("Writing %s file failed!\n", file_path);
         return;
     }
+    printf("Writing to %s file successful! Wrote %d bytes.\n", file_path, write_res_1);
 
-    printf("Reading %s file again\n", file_path);
+
+    lseek_res = syscall_lseek(disk_no, file_node, 0);
+    if(lseek_res != 0){
+        printf("Lseek Failed!\n");
+    }
+    printf("Lseek Successful! File pointer moved to offset %d\n", 0);
+
     char buf_1[128];
-    uint64_t read_res_1 = syscall_read(1, file_node, 0, (void *)buf_1, 128);
+    uint64_t read_res_1 = syscall_read(disk_no, file_node, 0, buf_1, 127);
     if(read_res_1 < 0){
         printf("Reding file %s is failed!\n", file_path);
         return;
     }
-    printf("%s content: %s\n", file_path, buf);
+    buf_1[127] = '\0';
+    printf("Reading again successfull %s content: %s\n", file_path, buf_1);
 
-    printf("Closing the %s file\n", file_path);
-    uint64_t close_res = syscall_close((void *)file_node);
-    if(close_res != 0){
+
+    close_res = syscall_close(disk_no, (void *)file_node);
+    if(close_res == -1){
         printf("The file %s close failed!\n", file_path);
         return;
     }
+    printf("The file %s closed successfully!\n", file_path);
 
-    printf("Deleting %s file\n", file_path);
-    uint64_t unlink_res = syscall_unlink(file_path);
+
+    uint64_t unlink_res = syscall_unlink(disk_no, file_path);
     if(unlink_res != 0){
-        printf("file %s deeting failed!\n", file_path);
+        printf("file %s deleting failed! with error code %d\n", file_path, unlink_res);
         return;
     }
+    printf("file %s deleted successfully!\n", file_path);
 
+    uint64_t list_res = syscall_list_dir(disk_no, "1:/");
+    if(list_res != 0){
+        printf("Listing directory failed with error code %d\n", list_res);
+        return;
+    }
+    printf("Listing directory successful!\n");
+
+    // ------------------------------------------------------------------------
     // Process-Thread Tests
-    printf("Creating Process My_process\n");
     char *process_name = "My_process";
     void *process = syscall_create_process(process_name);
     if(!process){
         printf("Creating \"%s\"s process failed!\n", process_name);
         return;
     }
+    printf("Process \"%s\" created successfully!\n", process_name);
 
-    printf("Creating Thred thread_1\n");
     const char *thread_name_1 = "thread_1";
     void *thread_1 = syscall_create_thread(process, thread_name_1, (void *) &thread0_func, NULL);
      if(!thread_1){
         printf("Creating \"%s\"s process failed!\n", thread_name_1);
         return;
     }
+    
 
     printf("Creating Thred thread_2\n");
     const char *thread_name_2 = "thread_2";

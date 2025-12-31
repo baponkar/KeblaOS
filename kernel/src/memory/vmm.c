@@ -99,6 +99,20 @@ void vm_free(uint64_t *ptr) {
     flush_tlb(va);
 }
 
+bool is_user_virt_addr(uint64_t va){
+    if(va >= LOWER_HALF_START_ADDR && va < HIGHER_HALF_START_ADDR){
+        return true;
+    }
+    return false;
+}
+
+bool is_kernel_virt_addr(uint64_t va){
+    if(va >= HIGHER_HALF_START_ADDR){
+        return true;
+    }
+    return false;
+}
+
 // converting physical to virtual address
 uint64_t phys_to_vir(uint64_t pa){
     return pa + HHDM_OFFSET;

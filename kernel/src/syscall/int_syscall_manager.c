@@ -12,6 +12,7 @@ References:
 
 #include "../lib/string.h"  // for size_t
 #include "../lib/stdio.h"
+#include "../lib/stdlib.h"
 #include "../lib/errno.h"
 #include "../lib/time.h"
 
@@ -49,13 +50,23 @@ extern uint8_t get_core_id();
 
 // Helper: Copy string from user space to kernel buffer
 static int copy_from_user(char *kernel_dst, const char *user_src, size_t max_len) {
-  for (size_t i = 0; i < max_len; i++) {
-    // Safely copy byte-by-byte (implement safe memory access here)
-    kernel_dst[i] = user_src[i];
-    if (user_src[i] == '\0') break; // Stop at null terminator
-  }
-  kernel_dst[max_len - 1] = '\0';   // Ensure termination
-  return 0;
+    if (!kernel_dst || !user_src || max_len == 0) {
+        return -EINVAL; // Invalid argument
+    }
+
+    // Check if user_src is a valid user-space address
+    if (!is_user_virt_addr((uint64_t)user_src)) {
+        return -EFAULT; // Bad address
+    }
+
+    for (size_t i = 0; i < max_len; i++) {
+
+        kernel_dst[i] = user_src[i];    // // Safely copy byte-by-byte (implement safe memory access here)
+        if (user_src[i] == '\0') break; // Stop at null terminator
+    }
+    kernel_dst[max_len - 1] = '\0';   // Ensure termination
+
+    return 0;
 }
 
 
@@ -169,12 +180,14 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                     regs->rax = (uint64_t)(-1);
                 }
                 regs->rax = time;
+                break;
             }
 
             case INT_SYSCALL_GET_UP_TIME: {
                 uint8_t cpu_id = get_core_id();
                 uint64_t uptime = (uint64_t) get_uptime_seconds(cpu_id);
                 regs->rax = uptime;
+                break;
             }
             
             case INT_SYSCALL_KEYBOARD_READ: {
@@ -213,15 +226,29 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
 
             case INT_SYSCALL_PRINT: {   // 0x5A : Print a string
-                if (!regs->rdi) {
+
+                char *user_buff = (char *)regs->rdi;
+                if (!user_buff) {
                     printf("Invalid string pointer!\n");
                     regs->rax = (uint64_t)(-1);
                     break;
                 }
 
-                const char *str = (const char *)regs->rdi;
-                printf("%s", str);  
-                regs->rax = 0;  // success
+                int size = (int)regs->rsi;
+                if( size <= 0) {
+                    printf("Invalid string size!\n");
+                    regs->rax = (uint64_t)(-1);
+                    break;
+                }
+
+                // char kernel_buff[size + 1];
+                // kernel_buff[size] = '\0';
+                // copy_from_user(kernel_buff, user_buff, size);
+
+                // printf("%s", kernel_buff); 
+                printf("%s", user_buff);    // Directly print from user space (unsafe, for demo only)
+                regs->rax = 0;              // success
+
                 break;
             }
 
@@ -326,6 +353,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                 }
 
                 regs->rax = (process != NULL) ? (uint64_t) process : -1;
+                break;
             }
 
             // ------------------------- Thread Manage -----------------------------
@@ -373,17 +401,21 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             // --------------------------VFS File Manages--------------------------
             
             case INT_VFS_MKFS: {
-                regs->rax = (uint64_t)vfs_mkfs((int)regs->rdi, (VFS_TYPE)regs->rsi);
+                int disk_no = (int) regs->rdi;
+                VFS_TYPE type = (VFS_TYPE) regs->rsi;
+                regs->rax = (uint64_t)vfs_mkfs(disk_no, type);
                 break;
             }
 
             case INT_VFS_INIT: {
-                regs->rax = (uint64_t)vfs_init((int)regs->rdi);
+                int disk_no = (int) regs->rdi;
+                regs->rax = (uint64_t)vfs_init(disk_no);
                 break;
             }
 
             case INT_SYSCALL_MOUNT: { // 0x52
-                regs->rax = (uint64_t)vfs_mount((int)regs->rdi);
+                int disk_no = (int) regs->rdi;
+                regs->rax = (uint64_t)vfs_mount(disk_no);
                 break;
             }
 
@@ -405,12 +437,20 @@ registers_t *int_systemcall_handler(registers_t *regs) {
 
             }
 
-            case INT_SYSCALL_WRITE: {  // 0x36
+            case INT_SYSCALL_WRITE: {
+                
                 int disk_no = regs->rdi;
-                void* fp = (void*) regs->rsi;
-                char* buff = (char*) regs->rdx;
-                int filesize = (int) regs->r10;
-                regs->rax = (uint64_t)vfs_write(disk_no, fp, buff, filesize);
+                void* fp = (void*)regs->rsi;
+                char* user_buff = (char*)regs->rdx;
+                int size = (int)regs->r10;
+
+                if (!user_buff || size <= 0) {
+                    regs->rax = (uint64_t)(-1);
+                    break;
+                }   
+                int result = vfs_write(disk_no, fp, user_buff, size);
+
+                regs->rax = (uint64_t)result;
                 break;
             }
 
@@ -446,10 +486,9 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             // ------------------- VFS Directory Manage ------------------------------------
 
             case INT_SYSCALL_LIST: {
-                printf("VFS List Directory Syscall Invoked\n");
                 int disk_no = (int) regs->rdi;
                 char *path = (char *)regs->rsi;
-                // regs->rax = (uint64_t) vfs_listdir(disk_no, path);
+                regs->rax = (uint64_t) vfs_listdir(disk_no, path);
                 break;
             }
 
@@ -588,7 +627,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
 
 
 void int_syscall_init(){
-    irq_install(19, (void *)&int_systemcall_handler); 
+    // irq_install(19, (void *)&int_systemcall_handler); 
     irq_install(96, (void *)&int_systemcall_handler);     
 
     asm volatile("sti");

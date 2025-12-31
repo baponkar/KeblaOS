@@ -22,5 +22,9 @@ uint64_t vir_to_phys(uint64_t va);
 bool is_phys_addr(uint64_t addr);
 bool is_virt_addr(uint64_t addr);
 
+bool is_user_virt_addr(uint64_t va);
+bool is_kernel_virt_addr(uint64_t va);
+
+
 void test_vmm();
 void test_vmm_1();
