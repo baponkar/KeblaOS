@@ -110,7 +110,7 @@ void user_syscall_test(){                      // _start define in user_linker_x
     printf("The file %s closed successfully!\n", file_path);
 
     // ----------------------------------------------------------------------------------
-    file_node = (void *)syscall_open(1, file_path, FA_READ | FA_OPEN_EXISTING | FA_WRITE);
+    file_node = (void *)syscall_open(disk_no, file_path, FA_READ | FA_OPEN_EXISTING | FA_WRITE);
     if(file_node == NULL){
         printf("Opening file %s failed!\n", file_path);
         return;
@@ -133,6 +133,15 @@ void user_syscall_test(){                      // _start define in user_linker_x
         printf("Lseek Failed!\n");
     }
     printf("Lseek Successful! File pointer moved to offset %d\n", strlen(data));
+
+    char *drive = (char *)syscall_uheap_alloc(4, ALLOCATE_DATA);
+    snprintf((char *)drive, sizeof(drive), "%d:/", disk_no);
+    uint64_t chdir_res = syscall_chdrive(disk_no, drive);
+    if(chdir_res != 0){
+        printf("Changing drive to %s failed! with error code %d\n", drive, chdir_res);
+        return;
+    }
+    printf("Changing drive to %s successful!\n", drive);
 
 
     char *new_data = (char *) syscall_uheap_alloc(128, ALLOCATE_DATA);
@@ -182,6 +191,18 @@ void user_syscall_test(){                      // _start define in user_linker_x
         return;
     }
     printf("Listing directory successful!\n");
+
+ 
+    char *gcwd_buf = (char *)syscall_uheap_alloc(256, ALLOCATE_DATA);
+    uint64_t gcwd_res = syscall_getcwd(disk_no, gcwd_buf, 256);
+    if(gcwd_res == 0){
+        gcwd_buf[255] = '\0';
+        printf("Current Working Directory: \"%s\"\n", gcwd_buf);
+    }else{
+        printf("Get Current Working Directory System call failed! with error code: %d\n", gcwd_res);
+        return;
+    }
+    
 
     // ------------------------------------------------------------------------
     // Process-Thread Tests

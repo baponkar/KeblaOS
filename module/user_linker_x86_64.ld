@@ -1,7 +1,7 @@
 ENTRY(_start)
 
 SECTIONS {
-    . = 0x401000;
+    . = 0x401000;       /* beginning of the region */
 
     .text : {
         *(.text.user)

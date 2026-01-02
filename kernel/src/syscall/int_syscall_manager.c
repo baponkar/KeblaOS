@@ -523,9 +523,17 @@ registers_t *int_systemcall_handler(registers_t *regs) {
 
             case INT_SYSCALL_GETCWD: {
                 int disk_no = (int) regs->rdi;
-                char *buff = (char *)regs->rsi;
+                char *user_buff = (char *)regs->rsi;
                 int len = (int) regs->rdx;
-                regs->rax = vfs_getcwd(disk_no, buff, len);
+
+                char kernel_buff[256];
+                memset(kernel_buff, 0, sizeof(kernel_buff));
+                regs->rax = vfs_getcwd(disk_no, kernel_buff, len);
+                
+                for(int i = 0; i < len; i++){
+                    user_buff[i] = kernel_buff[i];
+                    if(kernel_buff[i] == '\0') break;
+                }
                 break;
             }
 

@@ -81,6 +81,14 @@ void kmain(){
     // if(fatfs_mkfs(boot_disk_no, FM_FAT32 | FM_SFD) == 0){
     //     printf(" Successfully FAT32 FS created.\n");
     // }
+
+    char buff[128];
+    memset(buff, 0, strlen(buff));
+    if(fatfs_getcwd(buff, sizeof(buff)) == -1){
+        printf("get_cwd failed!\n");
+        return;
+    }
+    printf("buff : %s\n", buff);
     
     // fatfs_test(boot_disk_no);
     // print_disk_sector(boot_disk_no, 2048, 1);

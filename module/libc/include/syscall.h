@@ -183,7 +183,7 @@ uint64_t syscall_list_dir(int disk_no, char* path);
 
 int syscall_getcwd(int disk_no, void *buf, size_t size);
 int syscall_chdir(const char *path);
-int syscall_chdrive(const char *path);
+int syscall_chdrive(int disk_no, const char *path);
 
 
 // Process Manage

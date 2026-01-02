@@ -430,6 +430,7 @@ void fatfs_test(int disk_no){
     }
 
     char cwd_buf[25];
+    memset(cwd_buf, 0, strlen(cwd_buf));
     if(fatfs_getcwd(cwd_buf, sizeof(cwd_buf)) == 0){
         cwd_buf[24] = '\0';
         printf(" Current Working Directory: %s\n", cwd_buf);

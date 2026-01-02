@@ -263,10 +263,12 @@ uint64_t syscall_list_dir(int disk_no, char* path){
 
 
 int syscall_getcwd(int disk_no, void *buf, size_t size){
-    if(!buf || !size){
+    if(!buf || size <= 0){
+        printf("Invalid parameters for getcwd syscall!disk_no=%d, buf=%p, size=%d\n", disk_no, buf, size);
         return -1;
     }
-    return system_call((uint64_t)INT_SYSCALL_GETCWD, (uint64_t)disk_no, (uint64_t)buf, (uint64_t) size, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    
+    return system_call((uint64_t)INT_SYSCALL_GETCWD, (uint64_t)disk_no, (uint64_t)buf, (uint64_t)size, (uint64_t)0, (uint64_t)0, (uint64_t)0);
 }
 
 int syscall_chdir(const char *path){
@@ -277,11 +279,11 @@ int syscall_chdir(const char *path){
 }
 
 
-int syscall_chdrive(const char *path){
+int syscall_chdrive(int disk_no, const char *path){
     if(!path){
         return -1;
     }
-    return system_call((uint64_t)INT_SYSCALL_CHDRIVE, (uint64_t)path, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t)INT_SYSCALL_CHDRIVE, (uint64_t)disk_no, (uint64_t)path, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
 

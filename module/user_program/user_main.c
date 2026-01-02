@@ -17,13 +17,18 @@
 #include "process_thread_test.h"
 #include "user_syscall_test.h"
 
-
+__attribute__((section(".data")))
+int user_data_var = 12345;
+char user_data_str[] = "Hello from User Data Segment!";
 
 
 __attribute__((section(".text")))
 void _start(){
 
     printf("\nWelcome! This is User Program \"user_main.c\"\n");
+
+    printf("user_data_var = %d\n", user_data_var);
+    printf("user_data_str = %s\n", user_data_str);
 
     // instll();
 
@@ -32,8 +37,6 @@ void _start(){
     // user_syscall_test();
 
     start_user_shell();
-
-    user_syscall_test();
 
     syscall_cls_color(0x000000); // Black
     for(int i=0; i<5; i++){

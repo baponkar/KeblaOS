@@ -78,10 +78,11 @@ static void handle_command(int argc, char *argv[]) {
             }
         }
     } else if(strcmp(argv[0], "cwd") == 0){
-        char buf[256];
-        syscall_getcwd(1, buf, (sizeof(buf)-1));
+        char *buf = (char *)syscall_uheap_alloc(256, ALLOCATE_DATA);
+        syscall_getcwd(1, buf, 256);
+        buf[255] = '\0';
         printf("%s\n", buf);
-    } else if (strcmp(argv[0], "cat") == 0) {  // ❌
+    } else if (strcmp(argv[0], "cat") == 0) {
         if (argc < 2) {
             printf("Usage: cat <file>\n");
             return;
