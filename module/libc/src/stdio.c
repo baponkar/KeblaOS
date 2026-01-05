@@ -1,24 +1,24 @@
 
 #include "../include/syscall.h"
 #include "../include/stdarg.h"
-
+#include "../include/string.h"
 #include "../include/stdio.h"
 
 void putc(char c) {
-    char str[2];
-    str[0] = c;
-    str[1] = '\0';
-    syscall_print(str);  // ✅ Safe: null-terminated string
+    syscall_putc(c);
 }
 
 
 void puts(const char* str) {
-    if (str) {
-        syscall_print(str);
+    if (!str) return;
+    
+    while(*str) {
+        putc(*str++);
     }
 }
 
 static void print_udec(uint64_t value) {
+
     char buf[32];
     int i = 0;
 
@@ -37,7 +37,7 @@ static void print_udec(uint64_t value) {
 }
 
 void print_dec(uint64_t n) {
-    char buffer[21]; // Enough for 64-bit integer
+    char buffer[21];                        // Enough for 64-bit integer
     int i = 0;
     if (n == 0) {
         putc('0');
@@ -53,8 +53,8 @@ void print_dec(uint64_t n) {
 }
 
 void print_float(double num, int precision) {
-    if (precision < 0) precision = 0; // Ensure non-negative precision
-    if (precision > 20) precision = 20; // Limit precision to avoid overflow
+    if (precision < 0) precision = 0;       // Ensure non-negative precision
+    if (precision > 20) precision = 20;     // Limit precision to avoid overflow
 
     // Handle negative numbers
     if (num < 0) {

@@ -13,6 +13,13 @@
 9. https://elm-chan.org/fsw/ff/00index_e.html
 10. https://www.nongnu.org/ext2-doc/ext2.html
 11. https://github.com/kokke/tiny-regex-c
+12. https://chat.deepseek.com/
+13. https://chatgpt.com/
+14. https://gemini.google.com/
+15. https://grok.com/
+16. https://hexed.it/
+17. https://github.com/mpetch
+
 
 
 

@@ -65,13 +65,16 @@ int syscall_keyboard_read(uint8_t *buffer, size_t size) {
     return system_call((uint64_t) INT_SYSCALL_KEYBOARD_READ, (uint64_t) buffer, (uint64_t) size, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
+int syscall_putc(char c) {
+    return system_call((uint64_t) INT_SYSCALL_PUTCHAR, (uint64_t) c, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
 
-int syscall_print(const char *msg) {
-    if (!msg) {
+int syscall_print(const char *msg, int len) {
+    if (!msg || len <= 0) {
         return -1; // Invalid message
     }
 
-    return system_call((uint64_t) INT_SYSCALL_PRINT, (uint64_t) msg, (uint64_t) strlen(msg), (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_PRINT, (uint64_t)msg, (uint64_t)len, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
 int syscall_exit() {
@@ -137,37 +140,37 @@ void *syscall_delete_thread(void *thread){
 
 
 // ------------------------------- VFS Manage ------------------------
-int64_t syscall_vfs_mkfs(int fs_type, char *disk){
+uint64_t syscall_vfs_mkfs(int disk_no, int fs_type){
     if(fs_type < 0x1){
         return -1;
     }
-    
-    if(!disk){
+
+    if(disk_no < 0){
         return -1;
     }
 
-    return system_call((uint64_t)INT_VFS_MKFS, (uint64_t) fs_type, (uint64_t) disk, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t)INT_VFS_MKFS, (uint64_t) disk_no, (uint64_t)fs_type, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0);
 }
 
 
-int64_t syscall_vfs_init( int disk_no) {
-    return system_call((uint64_t)INT_VFS_INIT, (uint64_t) disk_no, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+uint64_t syscall_vfs_init( int disk_no) {
+    return system_call((uint64_t)INT_VFS_INIT, (uint64_t) disk_no, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0);
 }
 
 
 uint64_t syscall_mount(int disk_no) {
 
-    return system_call((uint64_t) INT_SYSCALL_MOUNT, (uint64_t) disk_no, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0); 
+    return system_call((uint64_t) INT_SYSCALL_MOUNT, (uint64_t)disk_no, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0); 
 }
 
 // Opening a file by path name
 uint64_t syscall_open(int disk_no, const char *path, uint64_t flags) {
 
     if (!path) {
-        return -1;                  // Invalid path
+        return -1;    // Invalid path
     }
 
-    return system_call((uint64_t) INT_SYSCALL_OPEN, (uint64_t) disk_no, (uint64_t) path, (uint64_t) flags, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_OPEN, (uint64_t)disk_no, (uint64_t)path, (uint64_t)flags, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
     
 }
 
@@ -180,7 +183,7 @@ uint64_t syscall_close(int disk_no, void *file) {
     return system_call((uint64_t)INT_SYSCALL_CLOSE, (uint64_t)disk_no, (uint64_t)file, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0);
 }
 
-uint64_t syscall_read(int disk_no, void *file, uint64_t offset, void *buf, uint32_t size) {
+uint64_t syscall_read(int disk_no, void *file, void *buf, uint32_t size) {
     
     if (!file || !buf || size == 0) {
         return -1; // Invalid parameters
@@ -206,12 +209,12 @@ uint64_t syscall_lseek(int disk_no, void *file, uint32_t offs) {
     return system_call((uint64_t) INT_SYSCALL_LSEEK, (uint64_t)disk_no, (uint64_t) file, (uint64_t) offs, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
-uint64_t syscall_truncate(char *path, uint32_t offset) {
+uint64_t syscall_truncate(int disk_no, char *path, uint32_t offset) {
     if (!path) {
         return -1;                  // Invalid parameters
     }
 
-    return system_call((uint64_t) INT_SYSCALL_TRUNCATE, (uint64_t) path, (uint64_t) offset, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t)INT_SYSCALL_TRUNCATE, (uint64_t) disk_no, (uint64_t) path, (uint64_t) offset, (uint64_t)0, (uint64_t)0, (uint64_t)0);
 }
 
 uint64_t syscall_unlink(int disk_no,char *path){
@@ -219,37 +222,37 @@ uint64_t syscall_unlink(int disk_no,char *path){
         return (uint64_t)-1;
     }
 
-    return system_call((uint64_t)INT_SYSCALL_UNLINK, (uint64_t)disk_no, (uint64_t) path, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t)INT_SYSCALL_UNLINK, (uint64_t)disk_no, (uint64_t) path, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0);
 }
 
-uint64_t syscall_opendir(const char *path){
+uint64_t syscall_opendir(int disk_no, const char *path){
     if(!path) {
         return -1;
     }
 
-    return system_call((uint64_t) INT_SYSCALL_OPENDIR, (uint64_t) path, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t)INT_SYSCALL_OPENDIR, (uint64_t)disk_no, (uint64_t)path, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0);
 }
 
-uint64_t syscall_closedir(void * dir_ptr){
+uint64_t syscall_closedir(int disk_no, void * dir_ptr){
     if(!dir_ptr){
         return -1;
     }
-    return system_call((uint64_t) INT_SYSCALL_CLOSEDIR, (uint64_t) dir_ptr, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_CLOSEDIR, (uint64_t) disk_no, (uint64_t) dir_ptr, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
 
-uint64_t syscall_readdir(void * dir_ptr){
+uint64_t syscall_readdir(int disk_no, void * dir_ptr){
     if(!dir_ptr){
         return -1;
     }
-    return system_call((uint64_t) INT_SYSCALL_READDIR, (uint64_t) dir_ptr, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t) INT_SYSCALL_READDIR, (uint64_t) disk_no, (uint64_t) dir_ptr, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
-uint64_t syscall_mkdir(void * dir_ptr){
+uint64_t syscall_mkdir(int disk_no, void *dir_ptr){
     if(!dir_ptr){
         return -1;
     }
-    return system_call((uint64_t) INT_SYSCALL_MKDIR, (uint64_t) dir_ptr, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t)INT_SYSCALL_MKDIR, (uint64_t)disk_no, (uint64_t)dir_ptr, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0);
 }
 
 
@@ -271,11 +274,12 @@ int syscall_getcwd(int disk_no, void *buf, size_t size){
     return system_call((uint64_t)INT_SYSCALL_GETCWD, (uint64_t)disk_no, (uint64_t)buf, (uint64_t)size, (uint64_t)0, (uint64_t)0, (uint64_t)0);
 }
 
-int syscall_chdir(const char *path){
+int syscall_chdir(int disk_no, const char *path){
     if(!path){
+        printf("Invalid parameters for chdir syscall! disk_no=%d, path=%p\n", disk_no, path);
         return -1;
     }
-    return system_call((uint64_t)INT_SYSCALL_CHDIR, (uint64_t)path, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+    return system_call((uint64_t)INT_SYSCALL_CHDIR, (uint64_t)disk_no, (uint64_t)path, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
 

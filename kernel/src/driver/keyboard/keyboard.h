@@ -25,8 +25,8 @@
 #define NUM_8      0x00000009
 #define NUM_9      0x0000000A
 #define NUM_0      0x0000000B
-#define MINUS      0x0000000C // '-'
-#define EQUAL      0x0000000D // '='
+#define MINUS      0x0000000C   // '-'
+#define EQUAL      0x0000000D   // '='
 #define BACKSPACE  0x0000000E
 #define TAB        0x0000000F
 #define Q          0x00000010
@@ -39,8 +39,8 @@
 #define I          0x00000017
 #define O          0x00000018
 #define P          0x00000019
-#define LBRACKET   0x0000001A // '['
-#define RBRACKET   0x0000001B // ']'
+#define LBRACKET   0x0000001A   // '['
+#define RBRACKET   0x0000001B   // ']'
 #define ENTER      0x0000001C
 #define CTRL       0x0000001D
 #define A          0x0000001E
@@ -52,7 +52,7 @@
 #define J          0x00000024
 #define K          0x00000025
 #define L          0x00000026
-#define SEMICOLON  0x00000027 // ''
+#define SEMICOLON  0x00000027 // ';'
 #define APOSTROPHE 0x00000028 // '\''
 #define BACKTICK   0x00000029 // '`'
 #define LSHIFT     0x0000002A
@@ -118,8 +118,6 @@
 void initKeyboard();
 void enableKeyboard();
 void disableKeyboard();
-
-
 
 bool is_printable(char ch);
 

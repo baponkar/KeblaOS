@@ -17,18 +17,40 @@
 #include "process_thread_test.h"
 #include "user_syscall_test.h"
 
+
 __attribute__((section(".data")))
-int user_data_var = 12345;
-char user_data_str[] = "Hello from User Data Segment!";
+char welcome_msg[38] = "Hello from User Program user_main.c!\n";
+int res;
+int boot_disk_no = 0;  // Boot Disk is 0
+int user_disk_no = 1;  // User Disk is 1
 
 
 __attribute__((section(".text")))
 void _start(){
 
-    printf("\nWelcome! This is User Program \"user_main.c\"\n");
+    printf("%s\n", welcome_msg);
 
-    printf("user_data_var = %d\n", user_data_var);
-    printf("user_data_str = %s\n", user_data_str);
+    uint64_t res = syscall_vfs_init(user_disk_no);
+    if(res != 0){
+        printf("VFS Initialization on Disk %d failed!\n", user_disk_no);    
+        return;
+    }
+    printf("VFS Initialization on Disk %d successful!\n", user_disk_no);
+
+    res = syscall_mount(user_disk_no);
+    if(res != 0){
+        printf("Mounting Disk %d failed!\n", user_disk_no);    
+        return;
+    }
+    printf("Mounting Disk %d successful!\n", user_disk_no);
+
+
+    res = syscall_chdrive(user_disk_no, "1:/");
+    if(res != 0){
+        printf("Changing Drive to 1:/ failed!\n");
+        return;
+    }
+    printf("Changing Drive to 1:/ successful!\n");
 
     // instll();
 
@@ -37,12 +59,6 @@ void _start(){
     // user_syscall_test();
 
     start_user_shell();
-
-    syscall_cls_color(0x000000); // Black
-    for(int i=0; i<5; i++){
-        syscall_set_pixel(10 + i, 10 + i, 0xFF0000);
-        sleep_seconds(1);
-    }
 
     while (true){}     // Halt
 }

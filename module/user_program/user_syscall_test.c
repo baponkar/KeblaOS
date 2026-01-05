@@ -119,7 +119,7 @@ void user_syscall_test(){                      // _start define in user_linker_x
     
 
     char buf[128];
-    uint64_t read_res = syscall_read(disk_no, file_node, 0, buf, 127);
+    uint64_t read_res = syscall_read(disk_no, file_node, buf, 127);
     if(read_res < 0){
         printf("Reding file %s is failed!\n", file_path);
         return;
@@ -161,7 +161,7 @@ void user_syscall_test(){                      // _start define in user_linker_x
     printf("Lseek Successful! File pointer moved to offset %d\n", 0);
 
     char buf_1[128];
-    uint64_t read_res_1 = syscall_read(disk_no, file_node, 0, buf_1, 127);
+    uint64_t read_res_1 = syscall_read(disk_no, file_node, buf_1, 127);
     if(read_res_1 < 0){
         printf("Reding file %s is failed!\n", file_path);
         return;

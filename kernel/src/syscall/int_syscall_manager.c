@@ -216,6 +216,38 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                         if (ch == '\n' ||  ch == '\r') {
                             break;
                         }
+
+                        if( ch == '\b') { // Handle backspace
+                            if (read_count > 0) {
+                                read_count--;
+                            }
+                            continue;
+                        }
+
+                        if( ch < 32 || ch > 126) {
+                            continue; // Ignore non-printable characters
+                        }
+                        
+                        if(ch == 0x0000001D){ // Ctrl
+                            continue; 
+                        }
+
+                        if(ch == 0xFFFFFFFF){ // Invalid char
+                            continue;
+                        }
+
+                        // if(ch == 0x0000003A){ // caps lock
+                        //     continue; 
+                        // }
+
+                        if(ch == 0x00000036){   // Right Shift
+                            continue;
+                        }
+                        
+                        if(ch == 0x0000002A){   // Left Shift
+                            continue;
+                        }
+
                         user_buf[read_count++] = ch;
                     }
                 }
@@ -225,7 +257,14 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                 break;
             }
 
-            case INT_SYSCALL_PRINT: {   // 0x5A : Print a string
+            case INT_SYSCALL_PUTCHAR: {     // 0x5D : Print a character
+                char c = (char)regs->rdi;
+                putc(c);                    // Print to VGA
+                regs->rax = 0;              // success
+                break;
+            }
+
+            case INT_SYSCALL_PRINT: {               // 0x5A : Print a string
 
                 char *user_buff = (char *)regs->rdi;
                 if (!user_buff) {
@@ -236,18 +275,18 @@ registers_t *int_systemcall_handler(registers_t *regs) {
 
                 int size = (int)regs->rsi;
                 if( size <= 0) {
-                    printf("Invalid string size!\n");
+                    printf("Invalid string size! size: %d\n", size);
                     regs->rax = (uint64_t)(-1);
                     break;
                 }
 
-                // char kernel_buff[size + 1];
-                // kernel_buff[size] = '\0';
-                // copy_from_user(kernel_buff, user_buff, size);
+                char kernel_buff[size + 1];     // +1 for null terminator
+                kernel_buff[size] = '\0';
+                copy_from_user(kernel_buff, user_buff, size);
 
-                // printf("%s", kernel_buff); 
-                printf("%s", user_buff);    // Directly print from user space (unsafe, for demo only)
-                regs->rax = 0;              // success
+                printf("%s", kernel_buff); 
+                // printf("%s", user_buff);     // Directly print from user space (unsafe, for demo only)
+                regs->rax = 0;                  // success
 
                 break;
             }
@@ -432,6 +471,7 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                 void* fp = (void*) regs->rsi;
                 char* buff = (char*) regs->rdx;
                 size_t size = (size_t) regs->r10;
+                
                 regs->rax = (uint64_t) vfs_read(disk_no, fp, buff, size);
                 break;
 
@@ -526,14 +566,8 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                 char *user_buff = (char *)regs->rsi;
                 int len = (int) regs->rdx;
 
-                char kernel_buff[256];
-                memset(kernel_buff, 0, sizeof(kernel_buff));
-                regs->rax = vfs_getcwd(disk_no, kernel_buff, len);
+                regs->rax = vfs_getcwd(disk_no, user_buff, len);
                 
-                for(int i = 0; i < len; i++){
-                    user_buff[i] = kernel_buff[i];
-                    if(kernel_buff[i] == '\0') break;
-                }
                 break;
             }
 

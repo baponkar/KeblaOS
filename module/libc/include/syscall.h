@@ -108,7 +108,9 @@ enum int_syscall_number {
     INT_ACPI_REBOOT             = 111,
 
     // Serial Print
-    INT_SYSCALL_SERIAL_PRINT    = 112
+    INT_SYSCALL_SERIAL_PRINT    = 112,
+
+    INT_SYSCALL_PUTCHAR          = 113
 
 };
 
@@ -152,7 +154,8 @@ enum allocation_type {
 };
 
 int syscall_keyboard_read(uint8_t *buffer, size_t size);
-int syscall_print(const char *msg);
+int syscall_putc(char c);
+int syscall_print(const char *msg, int len);
 int syscall_exit();
 int syscall_print_rax();
 
@@ -161,28 +164,29 @@ uint64_t syscall_uheap_free(void *ptr, size_t size);
 
 
 // FatFs File Manage
-int64_t syscall_vfs_mkfs(int fs_type, char *disk);
-int64_t syscall_vfs_init(int disk_no);
+uint64_t syscall_vfs_mkfs(int disk_no, int fs_type);
+uint64_t syscall_vfs_init(int disk_no);
 uint64_t syscall_mount(int disk_no);
 uint64_t syscall_open(int disk_no, const char *path, uint64_t flags);
 uint64_t syscall_close(int disk_no, void *file);
-uint64_t syscall_read(int disk_no, void *file, uint64_t offset, void *buf, uint32_t size);
+uint64_t syscall_read(int disk_no, void *file, void *buf, uint32_t size);
 uint64_t syscall_write(int disk_no, void *file, void *buf, uint32_t btw);
 
 
 uint64_t syscall_lseek(int disk_no, void *file, uint32_t offs);
+uint64_t syscall_truncate(int disk_no, char *path, uint32_t offset);
 uint64_t syscall_unlink(int disk_no, char *path);
 
 
 // FatFs Directory Manage
-uint64_t syscall_opendir(const char *path);
-uint64_t syscall_closedir(void * dir_ptr);
-uint64_t syscall_readdir(void * dir_ptr);
-uint64_t syscall_mkdir(void * dir_ptr);
+uint64_t syscall_opendir(int disk_no, const char *path);
+uint64_t syscall_closedir(int disk_no, void * dir_ptr);
+uint64_t syscall_readdir(int disk_no, void * dir_ptr);
+uint64_t syscall_mkdir(int disk_no, void *dir_ptr);
 uint64_t syscall_list_dir(int disk_no, char* path);
 
 int syscall_getcwd(int disk_no, void *buf, size_t size);
-int syscall_chdir(const char *path);
+int syscall_chdir(int disk_no, const char *path);
 int syscall_chdrive(int disk_no, const char *path);
 
 

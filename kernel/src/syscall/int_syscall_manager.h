@@ -101,8 +101,9 @@ enum int_syscall_number {
     INT_ACPI_REBOOT             = 111,
 
     // Serial Print
-    INT_SYSCALL_SERIAL_PRINT    = 112
+    INT_SYSCALL_SERIAL_PRINT    = 112,
 
+    INT_SYSCALL_PUTCHAR          = 113
  
 };
 

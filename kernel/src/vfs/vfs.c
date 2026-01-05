@@ -305,14 +305,15 @@ void *vfs_open(int disk_no, char *path, int mode){
         // char* updated_path = path;
         // if(path[1] == ':'){
         //     updated_path = &path[2];
-        //     snprintf(updated_path - 2, 3, "%d:", disk_no);  // Update drive number
+        //     snprintf(updated_path - 2, 3, "%d:", disk_no);          // Update drive number
         // }else{
         //     char temp_path[MAX_PATH];
         //     snprintf(temp_path, MAX_PATH, "%d:/%s", disk_no, path); // Prepend drive number
         //     updated_path = temp_path;
         // }
-        // return fatfs_open(updated_path, mode);
         return fatfs_open(path, mode);
+    }else{
+        printf("VFS: Unsupported disk type %d for open on disk %d\n", disk.type, disk_no);
     }
 
     return NULL;
@@ -503,8 +504,7 @@ int vfs_findnext(int disk_no, void *dp, void *fno){
 
 
 int vfs_mkdir(int disk_no, char *path){
-    if(!path) return -1;
-    if(!disks) return -1;
+    if(!path || !disks) return -1;
 
     Disk disk = disks[disk_no];
 
@@ -737,6 +737,7 @@ uint64_t vfs_listdir(int disk_no, char *path){
     if(disk.type == DISK_TYPE_AHCI_SATA){
         return fatfs_listdir(path);
     }
+    return -1;
 }
 
 void vfs_test(int disk_no){

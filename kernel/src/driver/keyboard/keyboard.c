@@ -1,6 +1,7 @@
+
 /*
-https://wiki.osdev.org/PS/2_Keyboard
-https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_Keyboard_Support.md
+    https://wiki.osdev.org/PS/2_Keyboard
+    https://github.com/dreamportdev/Osdev-Notes/blob/master/02_Architecture/09_Add_Keyboard_Support.md
 */
 
 #include "../../arch/interrupt/pic/pic.h"
@@ -83,12 +84,9 @@ static int getScanCode(){
 static bool getKeyState(){
     char key_state = (char) inb(0x60) & 0x80;    // Press down return 0x0000000, or released return 0xffffff80
 
-    // Key Released
-    if((uint64_t)key_state == 0xFFFFFF80){
+    if((uint64_t)key_state == 0xFFFFFF80){      // Key Released
        return false;
-    }
-    // Key Pressed
-    else{
+    }else{                                      // Key Pressed
         return true;
     }
 }
@@ -132,11 +130,12 @@ static void handel_backspace_key(bool keyPressed){
     }
 }
 
+
 static void handel_del_key(bool keyPressed){
     int cur_pos_col;
     if(keyPressed == true){
-        //del_manage();   // updating screen
-        cur_pos_col = get_cursor_pos_x() - 2; // 2 for cursor size
+        //del_manage();                         // updating screen
+        cur_pos_col = get_cursor_pos_x() - 2;   // 2 for cursor size
     }
 }
 
@@ -149,9 +148,6 @@ static void key_ctrl(uint32_t scanCode, bool keyPress){
             break;
         case UNKNOWN:
             break;
-        case ESC:       // ESC Key
-            // beep();
-            break;
         case ENTER:     // Enter Key Manage
             // handel_enter_key(keyPress);
             entered_keys = 0; 
@@ -159,6 +155,9 @@ static void key_ctrl(uint32_t scanCode, bool keyPress){
         case CTRL:      // CTRL
             break;
         case ALT:       // ALT
+            break;
+        case ESC:       // ESC Key
+            // beep();
             break;
         case F1:        // F1
             break;
@@ -180,12 +179,12 @@ static void key_ctrl(uint32_t scanCode, bool keyPress){
             break;
         case F10:       // F10
             break;
-        case DELETE:    // DELETEete key
-            handel_del_key(keyPress);
-            break;
         case F11:       // F11
             break;
         case F12:       // F12
+            break;
+        case DELETE:    // DELETE key
+            handel_del_key(keyPress);
             break;
         case LSHIFT:    // Left shift key
             handel_shift_key(keyPress);
@@ -226,7 +225,7 @@ static void key_ctrl(uint32_t scanCode, bool keyPress){
             }
             break;   
     }
-    apic_send_eoi();
+    // apic_send_eoi();
 }
 
 
@@ -240,7 +239,6 @@ static void keyboardHandler(registers_t *regs) {
     if (pressed && keyboard_buffer) {
         char c = scanCodeToChar(scancode);
         ring_buffer_push(keyboard_buffer, c);
-        
     }
 
     apic_send_eoi();
@@ -267,6 +265,9 @@ void initKeyboard(){
     if(debug_on) printf(" [-] Successfully KEYBOARD initialized.\n");
 
 }
+
+
+
 
 void enableKeyboard(){
     irq_install(KEYBOARD_IRQ, (void *) &keyboardHandler);

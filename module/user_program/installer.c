@@ -20,7 +20,7 @@ void instll(){
     }
 
     char *disk = "0:";
-    if(syscall_vfs_mkfs(2, disk)){
+    if(syscall_vfs_mkfs(2, 1) != 0){
         printf("Formatting first disk failed!\n");
     }else{
         printf("Successfully Format Disk 0 with FAT32 Filesystem.\n");
@@ -35,19 +35,19 @@ void instll(){
     char *boot_dir = "0:/boot";
     char *limine_dir = "0:/boot/limine";
     char *EFI_dir = "0:/EFI";
-    if((syscall_mkdir((void *) boot_dir) == -1) || (syscall_mkdir((void *) limine_dir) == -1)){
+    if((syscall_mkdir(1, (void *) boot_dir) == -1) || (syscall_mkdir(1, (void *) limine_dir) == -1)){
         printf("Creating /boot directory failed!\n");
     }
 
-    if(syscall_mkdir((void *) limine_dir) == -1){
+    if(syscall_mkdir(1, (void *) limine_dir) == -1){
         printf("Creating /boot/limine directory failed!\n");
     }
 
-    if(syscall_mkdir((void *) limine_dir) == -1){
+    if(syscall_mkdir(1, (void *) limine_dir) == -1){
         printf("Creating /boot/limine directory failed!\n");
     }
 
-    if(syscall_mkdir((void *) EFI_dir) == -1){
+    if(syscall_mkdir(1, (void *) EFI_dir) == -1){
         printf("Creating /EFI directory failed!\n");
     }
 

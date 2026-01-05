@@ -279,6 +279,7 @@ void int_to_base_str(unsigned int num, char* buffer, int base) {
 }
 
 
+// Find first occurrence of character c in string str
 char* strchr(const char* str, int c) {
     while (*str) {
         if (*str == (char)c) {
@@ -298,7 +299,7 @@ char* strchr(const char* str, int c) {
 
 
 static char *next_token = 0;
-
+// Tokenize string str using delimiters in delim
 char *strtok(char *str, const char *delim) {
     if (str) {
         next_token = str;
