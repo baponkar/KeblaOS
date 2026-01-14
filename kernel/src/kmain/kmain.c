@@ -1,6 +1,3 @@
-
-
-
 /*
 Kernel.c
 Build Date  : 16-12-2024
@@ -32,7 +29,8 @@ extern int disk_count;
 int iso_disk_no = 0;    // The ISO SATAPI Disk which is mentioned in Makefile
 int boot_disk_no = 1;   // The SATA Disk Which will be used to install KeblaOS
 
-
+int boot_ld = 0;
+int user_ld = 1;
 
 void kmain(){
 
@@ -59,25 +57,54 @@ void kmain(){
 
     init_controllers();     // This have PCI Scan
 
-
-    kebla_disk_init(boot_disk_no);
     kebla_disk_init(iso_disk_no);
+    // kebla_disk_init(boot_disk_no);
     // kebla_disk_test(boot_disk_no);
+
+    for(int i = 0; i < disk_count; i++){
+        Disk disk = disks[i];
+
+        printf("disk: %d, type: %d\n", i, disk.type);
+    }
     
     // fatfs_test_1(boot_disk_no);
     // vfs_test(boot_disk_no);
+    
 
     // if(!is_keblaos_installed(boot_disk_no)){
     //     uefi_install(boot_disk_no, iso_disk_no); 
     // }else{
     //     printf("KeblaOS is already installed on Disk %d.\n", boot_disk_no);
     // }
+    // uefi_install(iso_disk_no, boot_disk_no);
+
+    if(disks[iso_disk_no].type != DISK_TYPE_SATAPI ||  disks[iso_disk_no].type == DISK_TYPE_AHCI_SATA || disks[iso_disk_no].type == DISK_TYPE_NVME){
+        boot_disk_no = iso_disk_no;
+
+        init_user_space(boot_disk_no, user_ld);
+
+    }else{
+        if(is_os_installed(boot_disk_no, boot_ld) == false){
+            if(uefi_install(iso_disk_no, boot_disk_no) != 0){
+                printf("Failed to UEFI Install KeblaOS in Disk %d failed!\n", boot_disk_no);
+            }
+            printf("Successfully KeblaOS is Installed(UEFI) in Disk %d\n", boot_disk_no);
+
+            if(create_user_dirs(boot_disk_no) != 0){
+                printf("Failed to Create User Directories and Files\n");
+            }
+            printf("Successfully Created directories and files in Disk %d Partition 1.\n", boot_disk_no);
+        }
+    }
+    
 
     // if(fatfs_mkfs(boot_disk_no, FM_FAT32 | FM_SFD) == 0){
     //     printf(" Successfully FAT32 FS created.\n");
     // }
     
     // fatfs_test(boot_disk_no);
+    // fatfs_test_1(boot_disk_no);
+    // fatfs_test_multi_partition(boot_disk_no);
     // print_disk_sector(boot_disk_no, 2048, 1);
     
     // kfs_test();
@@ -104,8 +131,8 @@ void kmain(){
     // init_user_mode();
 
     // Load and parse kernel modules by using limine bootloader
-    // get_kernel_modules_info();
-    // print_kernel_modules_info();
+    get_kernel_modules_info();
+    print_kernel_modules_info();
     load_user_elf_and_jump();
 
     // acpi_poweroff();
@@ -118,6 +145,8 @@ void kmain(){
 
     // switch_to_core(2);
     
+    for (;;) {}     // Halt the kernel here
+
     halt_kernel();
 }
 

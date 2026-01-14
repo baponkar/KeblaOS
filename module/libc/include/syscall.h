@@ -6,6 +6,8 @@
 
 #include "../include/time.h"
 
+#define FF_MULTI_PARTITION	1
+
 enum syscall_number{
     SYSCALL_PRINT = 1,
     SYSCALL_READ  = 2,
@@ -110,7 +112,9 @@ enum int_syscall_number {
     // Serial Print
     INT_SYSCALL_SERIAL_PRINT    = 112,
 
-    INT_SYSCALL_PUTCHAR          = 113
+    INT_SYSCALL_PUTCHAR          = 113,
+    INT_SYSCALL_CLEARING_PARTITION_TABLE = 114,
+    INT_SYSCALL_UPDATE_PARTITION_MAPPING = 115
 
 };
 
@@ -162,9 +166,12 @@ int syscall_print_rax();
 uint64_t syscall_uheap_alloc(size_t size, enum allocation_type type);
 uint64_t syscall_uheap_free(void *ptr, size_t size);
 
+#if FF_MULTI_PARTITION
+uint64_t syscall_fdisk(int disk_no, void *ptbl, void* work);
+#endif
 
 // FatFs File Manage
-uint64_t syscall_vfs_mkfs(int disk_no, int fs_type);
+uint64_t syscall_vfs_mkfs(int pd, int ld, int fs_type);
 uint64_t syscall_vfs_init(int disk_no);
 uint64_t syscall_mount(int disk_no);
 uint64_t syscall_open(int disk_no, const char *path, uint64_t flags);

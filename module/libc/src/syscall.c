@@ -5,6 +5,8 @@
 
 #include "../include/syscall.h"
 
+
+
 // Userside system call function to manage all system call
 static uint64_t system_call(uint64_t rax, uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t r10, uint64_t r8, uint64_t r9){
     
@@ -140,16 +142,16 @@ void *syscall_delete_thread(void *thread){
 
 
 // ------------------------------- VFS Manage ------------------------
-uint64_t syscall_vfs_mkfs(int disk_no, int fs_type){
+uint64_t syscall_vfs_mkfs(int pd, int ld, int fs_type){
     if(fs_type < 0x1){
         return -1;
     }
 
-    if(disk_no < 0){
+    if(pd < 0){
         return -1;
     }
 
-    return system_call((uint64_t)INT_VFS_MKFS, (uint64_t) disk_no, (uint64_t)fs_type, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0);
+    return system_call((uint64_t)INT_VFS_MKFS, (uint64_t)pd, (uint64_t) ld, (uint64_t)fs_type, (uint64_t)0, (uint64_t)0, (uint64_t)0);
 }
 
 
@@ -157,6 +159,15 @@ uint64_t syscall_vfs_init( int disk_no) {
     return system_call((uint64_t)INT_VFS_INIT, (uint64_t) disk_no, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0);
 }
 
+#if FF_MULTI_PARTITION
+uint64_t syscall_fdisk(int disk_no, void *ptbl, void* work) {
+    if (disk_no < 0 || !ptbl || !work) {
+        return -1; // Invalid parameters
+    }
+
+    return system_call((uint64_t) INT_SYSCALL_FDISK, (uint64_t) disk_no, (uint64_t) ptbl, (uint64_t) work, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
+}
+#endif
 
 uint64_t syscall_mount(int disk_no) {
 
@@ -316,8 +327,7 @@ uint32_t syscall_get_pixel(int x, int y){
 
 
 int syscall_cls_color(uint32_t color){
-    system_call((uint64_t)INT_VGA_CLEAR , (uint64_t)color, (uint64_t)0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
-    return 0;
+    return system_call((uint64_t)INT_VGA_CLEAR , (uint64_t)color, (uint64_t)0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
 }
 
 

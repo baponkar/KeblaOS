@@ -45,13 +45,15 @@ VFS_TYPE detect_filesystem(int disk_no);
 int vfs_init(int disk_no);
 
 int vfs_disk_status(int disk_no);
-int vfs_mount(int disk_no);
-int vfs_unmount(int disk_no);
-int vfs_mkfs(int disk_no, VFS_TYPE fs_type);
+int vfs_mount(int disk_no, int logical_drive);
+int vfs_unmount(int disk_no, int logical_drive);
+int vfs_mkfs(int pd, int logical_drive, VFS_TYPE fs_type);
 
 #if FF_MULTI_PARTITION
 int vfs_fdisk(int disk_no, void *ptbl, void* work);
 #endif
+
+
 
 int vfs_setcp(int disk_no, int cp);
 int vfs_putc(int disk_no, void *fp, char c);
@@ -59,7 +61,7 @@ int vfs_puts(int disk_no, char *str, void *cp);
 int vfs_printf(int disk_no, void *fp, char *str);
 char *vfs_gets(int disk_no, char *buff, int len, void *fp);
 
-void *vfs_open(int disk_no, char *path, int mode);
+void *vfs_open(int pd_no, char *path, int mode);
 int vfs_close(int disk_no, void *fp);
 int vfs_read(int disk_no, void *fp, char *buff, int size);
 int vfs_write(int disk_no, void *fp, char *buff, int filesize);
@@ -95,6 +97,11 @@ int vfs_get_fsize(int disk_no, void *fp);
 uint64_t vfs_listdir(int disk_no, char *path);
 
 const char* vfs_error_string(int result);
+
+
+#if FF_MULTI_PARTITION
+void vfs_test_multi_partition(int physical_disk);
+#endif
 
 void vfs_test(int disk_no);
 

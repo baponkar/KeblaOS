@@ -120,7 +120,18 @@ uint64_t phys_to_vir(uint64_t pa){
 
 // converting virtual to physical address
 uint64_t vir_to_phys(uint64_t va){
-    return va - HHDM_OFFSET;
+    // printf("[VIR_TO_PHYS] Called with virt=%p\n", (void*)va);
+    if(va == 0){
+        printf("[Error] VMM: Address is NULL!\n");
+        return 0;
+    }
+    if(va <= HHDM_OFFSET){
+        printf("[Error] VMM: Address is not a higher half virtual address!\n");
+        return 0;
+    }
+    uint64_t phys = va - HHDM_OFFSET;
+    // printf("[VIR_TO_PHYS] Converted %x -> %x\n", (void*)va, (void*)phys);
+    return phys;
 }
 
 bool is_phys_addr(uint64_t addr){

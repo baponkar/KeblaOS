@@ -13,14 +13,14 @@ void instll(){
 
     printf("Installing KeblaOS in the available Disk...........\n");
 
-    if(syscall_vfs_init( 0) != 0){
+    if(syscall_vfs_init(0) != 0){
         printf("VFS initialization is failed!\n");
     }else{
         printf("Successfully FAT32 VFS Created in disk 0.\n");
     }
 
     char *disk = "0:";
-    if(syscall_vfs_mkfs(2, 1) != 0){
+    if(syscall_vfs_mkfs(1, 2, 1) != 0){
         printf("Formatting first disk failed!\n");
     }else{
         printf("Successfully Format Disk 0 with FAT32 Filesystem.\n");

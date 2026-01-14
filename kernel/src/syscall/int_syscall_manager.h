@@ -103,7 +103,7 @@ enum int_syscall_number {
     // Serial Print
     INT_SYSCALL_SERIAL_PRINT    = 112,
 
-    INT_SYSCALL_PUTCHAR          = 113
+    INT_SYSCALL_PUTCHAR          = 113,
  
 };
 

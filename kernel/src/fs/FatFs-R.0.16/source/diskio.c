@@ -21,9 +21,8 @@
 #include "diskio.h"		/* Declarations of disk functions */
 
 
-// Sector 2048(Decimal)/0x800(Hex), Address: 0x100000
-#define LBA_OFFSET  0x800	/* This offset is safe to use disk without overwritten MBR and GPT*/
-// #define LBA_OFFSET 0
+
+#define LBA_OFFSET 0
 
 
 DSTATUS disk_status (
@@ -64,6 +63,12 @@ DRESULT disk_write (
 	UINT count			/* Number of sectors to write */
 )
 {
+	// Check if 'sector' looks like a pointer (has high bits set)
+    if(sector > 0xFFFF800000000000ULL) {
+        printf("[CRITICAL] Sector parameter looks like a pointer: %x\n", sector);
+        return RES_PARERR;
+    }
+
 	// return RES_PARERR;
 	#if FF_FS_READONLY
 		return RES_WRPRT;

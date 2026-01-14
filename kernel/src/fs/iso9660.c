@@ -67,7 +67,7 @@ int iso9660_init(int disk_no) {
         return -1;
     }
 
-    uint8_t sector_buffer[2048];
+    uint8_t *sector_buffer = (uint8_t *)malloc(2048);
 
     for (int i = 16; i < 32; i++) {
         if (!kebla_disk_read(disk_no, i, 1, sector_buffer)) {
@@ -95,6 +95,7 @@ int iso9660_init(int disk_no) {
             // printf("  Root: LBA=%u size=%u\n",
             //        disks[disk_no].root_directory_sector,
             //        disks[disk_no].root_directory_size);
+
             return 0;
         }
 
@@ -102,12 +103,14 @@ int iso9660_init(int disk_no) {
             break;
     }
 
+    free(sector_buffer);
+
     printf("ISO9660: No valid Primary Volume Descriptor found\n");
     return -1;
 }
 
 int iso9660_mount(int disk_no) {
-    if (disk_no >= disk_count) return -1;
+    if (disk_no >= disk_count || !disks) return -1;
 
     Disk disk = disks[disk_no];
     if (disk.type != DISK_TYPE_SATAPI) return -1;
@@ -126,7 +129,7 @@ int iso9660_mount(int disk_no) {
 }
 
 int iso9660_unmount(int disk_no) {
-    if (disk_no >= disk_count) return -1;
+    if (disk_no >= disk_count || !disks) return -1;
 
     Disk disk = disks[disk_no];
     if (disk.type != DISK_TYPE_SATAPI) return -1;
@@ -148,10 +151,12 @@ static bool iso9660_find_file(
     const char *filename,
     iso9660_file_t *result)
 {
+    if (disk_no >= disk_count || !disks || dir_sector <= 0 || dir_size <= 0 || !filename || !result) return false;
     Disk disk = disks[disk_no];
     uint8_t *buffer = malloc(dir_size);
     if (!buffer) return false;
 
+    if(disk.bytes_per_sector <= 0) return false;
     uint32_t sector_count = (dir_size + disk.bytes_per_sector - 1) / disk.bytes_per_sector;
     if (!kebla_disk_read(disk_no, dir_sector, sector_count, buffer)) {
         free(buffer);
@@ -199,7 +204,7 @@ static bool iso9660_find_file(
 }
 
 void *iso9660_open(int disk_no, char *path, int mode) {
-    if (disk_no >= disk_count) return NULL;
+    if (disk_no >= disk_count || !disks || !path) return NULL;
 
     Disk disk = disks[disk_no];
     if (disk.type != DISK_TYPE_SATAPI) return NULL;
@@ -240,6 +245,7 @@ void *iso9660_open(int disk_no, char *path, int mode) {
 #define ISO9660_READ_CHUNK 32768
 
 int iso9660_read(void *fp, char *buff, int size) {
+    if(!fp || !buff || size <= 0 || !disks) return -1;
     iso9660_file_t *file = (iso9660_file_t *)fp;
     Disk disk = disks[file->disk_no];
 
@@ -253,6 +259,8 @@ int iso9660_read(void *fp, char *buff, int size) {
     while (remaining > 0) {
         uint32_t chunk = (remaining > ISO9660_READ_CHUNK) ? ISO9660_READ_CHUNK : remaining;
         uint32_t sectors = (chunk + disk.bytes_per_sector - 1) / disk.bytes_per_sector;
+
+        if(disk.bytes_per_sector <= 0) break;
 
         if (!kebla_disk_read(file->disk_no, cur_sector, sectors, buff + total_read))
             break;
@@ -283,6 +291,7 @@ int iso9660_close(void *fp) {
 // -------------------------------------------------------------
 
 void *iso9660_opendir(int disk_no, char *path) {
+    if (disk_no >= disk_count || !path || !disks) return NULL;
     iso9660_file_t dir_info;
 
     uint32_t sector = disks[disk_no].root_directory_sector;
@@ -299,10 +308,10 @@ void *iso9660_opendir(int disk_no, char *path) {
         size = dir_info.size;
     }
 
-    iso9660_dir_t *dir = malloc(sizeof(iso9660_dir_t));
+    iso9660_dir_t *dir = (iso9660_dir_t *) malloc(sizeof(iso9660_dir_t));
     if (!dir) return NULL;
 
-    dir->buffer = malloc(size);
+    dir->buffer = (uint8_t *) malloc(size);
     if (!dir->buffer) {
         free(dir);
         return NULL;
@@ -364,7 +373,7 @@ int iso9660_stat(int disk_no, char *path, void *fno) {
     return 0;
 }
 
-int iso9660_check_media(void *ctx) {
+bool iso9660_check_media(void *ctx) {
     HBA_PORT_T *port = (HBA_PORT_T *)ctx;
     if (!port) return false;
 
@@ -378,6 +387,7 @@ int iso9660_check_media(void *ctx) {
 }
 
 void iso9660_test(int disk_no) {
+    if (disk_no >= disk_count || !disks) return;
     Disk disk = disks[disk_no];
     if (disk.type != DISK_TYPE_SATAPI) {
         printf("ISO9660 Test: Disk %d is not SATAPI\n", disk_no);

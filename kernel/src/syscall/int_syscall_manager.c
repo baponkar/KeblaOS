@@ -440,9 +440,10 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             // --------------------------VFS File Manages--------------------------
             
             case INT_VFS_MKFS: {
-                int disk_no = (int) regs->rdi;
-                VFS_TYPE type = (VFS_TYPE) regs->rsi;
-                regs->rax = (uint64_t)vfs_mkfs(disk_no, type);
+                int pd = (int) regs->rdi;
+                int disk_no = (int) regs->rsi;
+                VFS_TYPE type = (VFS_TYPE) regs->rdx;
+                regs->rax = (uint64_t)vfs_mkfs(pd, disk_no, type);
                 break;
             }
 
@@ -454,7 +455,8 @@ registers_t *int_systemcall_handler(registers_t *regs) {
 
             case INT_SYSCALL_MOUNT: { // 0x52
                 int disk_no = (int) regs->rdi;
-                regs->rax = (uint64_t)vfs_mount(disk_no);
+                int logical_drive = (int) regs->rsi;
+                regs->rax = (uint64_t)vfs_mount(disk_no, logical_drive);
                 break;
             }
 
@@ -562,11 +564,20 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             }
 
             case INT_SYSCALL_GETCWD: {
-                int disk_no = (int) regs->rdi;
+                int disk_no = (int)regs->rdi;
                 char *user_buff = (char *)regs->rsi;
-                int len = (int) regs->rdx;
+                int len = (int)regs->rdx;
 
-                regs->rax = vfs_getcwd(disk_no, user_buff, len);
+                char kernel_buff[MAX_PATH_LEN];
+                memset(kernel_buff, 0, MAX_PATH_LEN);
+
+                memcpy(kernel_buff, user_buff, (len < MAX_PATH_LEN ? len : MAX_PATH_LEN));
+
+                regs->rax = vfs_getcwd(disk_no, kernel_buff, len);
+
+                // Copy back to user space
+                memcpy(user_buff, kernel_buff, (len < MAX_PATH_LEN ? len : MAX_PATH_LEN));
+
                 
                 break;
             }
@@ -574,7 +585,13 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             case INT_SYSCALL_CHDIR: {
                 int disk_no = (int) regs->rdi;
                 char *path = (char *)regs->rsi;
-                regs->rax = vfs_chdir(disk_no, path);
+
+                char buff[MAX_PATH_LEN];
+                memset(buff, 0, MAX_PATH_LEN);
+
+                memcpy(buff, path, (strlen(path) < MAX_PATH_LEN ? strlen(path) : MAX_PATH_LEN));
+                regs->rax = vfs_chdir(disk_no, buff);
+
                 break;
             }
 
@@ -582,6 +599,16 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                 int disk_no = (int) regs->rdi;
                 char *path = (char *)regs->rsi;
                 regs->rax = vfs_chdrive(disk_no, path);
+                break;
+            }
+
+            // --------------------------- MULTI PARTITION ----------------------------
+
+            case INT_SYSCALL_FDISK: {
+                int disk_no = (int) regs->rdi;
+                void *ptbl = (void *) regs->rsi;
+                void *work = (void *) regs->rdx;
+                regs->rax = (uint64_t)vfs_fdisk(disk_no, ptbl, work);
                 break;
             }
 

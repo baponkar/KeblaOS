@@ -1,6 +1,7 @@
 
 #include "../driver/vga/vga_term.h"
 #include "stdlib.h"
+#include "../memory/kheap.h"
 
 #include "string.h"
 
@@ -247,6 +248,7 @@ char *strdup(const char *str) {
     if (str == NULL) return NULL;
     
     size_t len = strlen(str) + 1;  // +1 for null terminator
+    // char *copy = kheap_alloc(len, ALLOCATE_DATA);
     char *copy = malloc(len);
     
     if (copy != NULL) {

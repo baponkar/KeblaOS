@@ -22,7 +22,7 @@ __attribute__((section(".data")))
 char welcome_msg[38] = "Hello from User Program user_main.c!\n";
 int res;
 int boot_disk_no = 0;  // Boot Disk is 0
-int user_disk_no = 1;  // User Disk is 1
+int user_disk_no = 0;  // User Disk is 1
 
 
 __attribute__((section(".text")))
@@ -37,6 +37,12 @@ void _start(){
     }
     printf("VFS Initialization on Disk %d successful!\n", user_disk_no);
 
+    res = syscall_chdrive(user_disk_no, "1:/");
+    if(res != 0){
+        printf("VFS Cange Drive %d failed!\n", user_disk_no);
+        return;
+    }
+
     res = syscall_mount(user_disk_no);
     if(res != 0){
         printf("Mounting Disk %d failed!\n", user_disk_no);    
@@ -44,13 +50,6 @@ void _start(){
     }
     printf("Mounting Disk %d successful!\n", user_disk_no);
 
-
-    res = syscall_chdrive(user_disk_no, "1:/");
-    if(res != 0){
-        printf("Changing Drive to 1:/ failed!\n");
-        return;
-    }
-    printf("Changing Drive to 1:/ successful!\n");
 
     // instll();
 

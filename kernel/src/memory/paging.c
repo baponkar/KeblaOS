@@ -65,7 +65,7 @@ void free_frame(page_t *page)
         uint64_t frame_addr = (uint64_t) page->frame << 12;  // Get the physical address of the frame
 
         if (frame_addr >= USABLE_END_PHYS_MEM) {
-            printf("[PMM WARNING] free_frame: ignoring non-managed frame=%x (addr=%x)\n", page->frame, frame_addr);
+            // printf("[PMM WARNING] free_frame: ignoring non-managed frame=%x (addr=%x)\n", page->frame, frame_addr);
             page->frame = 0;
             return;
         }

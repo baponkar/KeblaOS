@@ -514,7 +514,7 @@ gdb_debug:
 		-m 4096 \
 		-smp cores=4,threads=1,sockets=1,maxcpus=4 \
 		-boot d \
-		-hda $(DISK_DIR)/disk.img \
+		-hda $(DISK_DIR)/disk_1.img \
 		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso \
 		-serial stdio \
 		-d guest_errors,int,cpu_reset \

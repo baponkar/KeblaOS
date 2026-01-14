@@ -170,6 +170,9 @@ bool kebla_disk_init(int disk_no){
         disks[disk_no].bytes_per_sector = sata_get_bytes_per_sector(disks[disk_no].context);
         disks[disk_no].total_sectors = sata_get_total_sectors(disks[disk_no].context);
         if(debug_on) printf("[DISK] Successfully initialized AHCI SATA Disk %d\n", disk_no);
+        Disk disk = disks[disk_no];
+        if(debug_on) printf("[DISK] Disk No: %d, type:%d, Sector Space: %d Byte, Total Sectors: %d\n", 
+            disk_no, disk.type, disk.bytes_per_sector, disk.total_sectors);
         return true;
     }else if(disks[disk_no].type == DISK_TYPE_NVME){
         if(debug_on) printf("[DISK] NVMe Filesystem Not implemented yet!\n");
@@ -184,7 +187,11 @@ bool kebla_disk_init(int disk_no){
         disks[disk_no].root_directory_size = 0;
         disks[disk_no].pvd_sector = 0;
 
+        Disk disk = disks[disk_no];
+
         if(debug_on) printf("[DISK] Successfully initialized AHCI SATAPI Disk %d\n", disk_no);
+        if(debug_on) printf("[DISK] Disk No: %d, type:%d, Sector Space: %d Byte, Total Sectors: %d\n", 
+            disk_no, disk.type, disk.bytes_per_sector, disk.total_sectors);
         return true;
     }else{
         if(debug_on) printf("[DISK] Currenty not supporting %d type disk type!\n", (uint64_t)disks[disk_no].type);
@@ -205,6 +212,11 @@ bool kebla_disk_read(int disk_no, uint64_t lba, uint32_t count, void* buf){
 
     if(disk.type == DISK_TYPE_UNKNOWN){
         printf("[DISK] Disk %d is NULL\n", disk_no);
+        return false;
+    }
+
+    if(!buf){
+        printf("[DISK] Buffer is NULL\n");
         return false;
     }
 
@@ -244,8 +256,13 @@ bool kebla_disk_write(int disk_no, uint64_t lba, uint32_t count, void* buf) {
     
     Disk disk = disks[disk_no];
 
+    // ADD DEBUG INFO
+    // printf("[DISK WRITE] Disk %d: lba=%x, count=%x, total=%x, buf=%x\n", 
+    //        disk_no, lba, count, disk.total_sectors, buf);
+    
     if(lba + count > disk.total_sectors) {
-        printf(" Disk Error LBA : %d > Total Sectors: %d\n", lba + count, disk.total_sectors);
+        printf("[DISK ERROR] Write exceeds boundary: lba=%x + count=%x = %x > %x\n",
+               lba, count, lba + count, disk.total_sectors);
         return false;
     }
 

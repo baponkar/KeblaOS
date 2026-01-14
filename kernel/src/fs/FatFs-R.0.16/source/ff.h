@@ -421,11 +421,11 @@ void ff_mutex_give (int vol);		/* Unlock sync object */
 #define CREATE_LINKMAP	((FSIZE_t)0 - 1)
 
 /* Format options (2nd argument of f_mkfs function) */
-#define FM_FAT		0x01
-#define FM_FAT32	0x02
-#define FM_EXFAT	0x04
-#define FM_ANY		0x07
-#define FM_SFD		0x08
+#define FM_FAT		0x01	// FAT12/16 volume
+#define FM_FAT32	0x02	// FAT32 volume
+#define FM_EXFAT	0x04	// exFAT volume
+#define FM_ANY		0x07	// Auto detect volume format
+#define FM_SFD		0x08	// Single partition format
 
 /* Filesystem type (FATFS.fs_type) */
 #define FS_FAT12	1

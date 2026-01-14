@@ -95,27 +95,20 @@ VFS_TYPE detect_filesystem(int disk_no) {
 
 int vfs_init(int disk_no) {
     
-    if (disk_no >= disk_count){
-        printf("VFS: Invalid disk number %d\n", disk_no);
+    if (disk_no >= disk_count || !disks){
+        printf("VFS Error: disk_no: %d, !disks: %d\n", disk_no, (uint64_t)!disks);
         return -1;
     } 
 
-    if(!disks){
-        printf("VFS: disks is NULL\n");
-        return -1;
-    }
-
     Disk disk = disks[disk_no];
+
     if (disk.type == DISK_TYPE_SATAPI) {
         return iso9660_init(disk_no);
     } else if (disk.type == DISK_TYPE_AHCI_SATA) {
-        return fatfs_init(disk_no);
-    } else {
-        printf("VFS: Unsupported disk type %d for init on disk %d\n", disk.type, disk_no);
-        return -1;
+        return fatfs_init(disk_no) == 0 ? 0: -1;
     }
-    
-    return 0;
+    printf("VFS: Unsupported disk type %d for init on disk %d\n", disk.type, disk_no);
+    return -1;
 }
 
 
@@ -128,9 +121,14 @@ int vfs_disk_status(int disk_no){
 }
 
 
-int vfs_mount(int disk_no){
+int vfs_mount(int disk_no, int logical_drive){
     if(disk_no >= disk_count) {
         printf("VFS: Invalid disk number %d\n", disk_no);
+        return -1;
+    }
+
+    if(logical_drive >= FF_VOLUMES) {
+        printf("VFS: Invalid logical drive number %d\n", logical_drive);
         return -1;
     }
 
@@ -144,7 +142,7 @@ int vfs_mount(int disk_no){
     if(disk.type == DISK_TYPE_SATAPI){
         return iso9660_mount(disk_no);
     }else if(disk.type == DISK_TYPE_AHCI_SATA){
-        return fatfs_mount(disk_no);
+        return fatfs_mount(logical_drive);
     }else{
         printf("VFS: Unsupported disk type %d for mount on disk %d\n", disk.type, disk_no);
         return -1;
@@ -153,7 +151,7 @@ int vfs_mount(int disk_no){
     return 0;
 }
 
-int vfs_unmount(int disk_no){
+int vfs_unmount(int disk_no, int logical_drive){
     if(disk_no >= disk_count) return -1;
 
     Disk disk = disks[disk_no];
@@ -161,55 +159,66 @@ int vfs_unmount(int disk_no){
     if(disk.type == DISK_TYPE_SATAPI){
         return iso9660_unmount(disk_no);
     }else if(disk.type == DISK_TYPE_AHCI_SATA){
-        return fatfs_unmount(disk_no);
+        return fatfs_unmount(logical_drive);
     }
 
     return -1;
 }
 
 
-int vfs_mkfs(int disk_no, VFS_TYPE fs_type){
+int vfs_mkfs(int pd, int logical_drive, VFS_TYPE fs_type){
 
-    if(disk_no >= disk_count){
-        printf("VFS: Invalid disk number %d\n", disk_no);
+    if (pd >= disk_count || logical_drive < 0 || !disks ) return -1;
+
+    Disk disk = disks[pd];
+
+    if(disk.type == DISK_TYPE_SATAPI){
+        printf("FATFS: MKFS function is not effective in SATAPI Disk\n");
         return -1;
-    } 
-
-    if(fs_type == VFS_FAT12){
-        return fatfs_mkfs(disk_no, FM_FAT);
-    }else if(fs_type == VFS_FAT16){
-        return fatfs_mkfs(disk_no, FM_FAT);
-    }else if(fs_type == VFS_FAT32){
-        printf(" Creating FAT32 Filesystem in Disk %d\n", disk_no);
-        return fatfs_mkfs(disk_no, FM_FAT32 | FM_SFD);
-    }else if(fs_type == VFS_EXFAT){
-        return fatfs_mkfs(disk_no, FM_EXFAT);
+    }else if(disk.type == DISK_TYPE_AHCI_SATA){
+        switch(fs_type){
+            case VFS_UNKNOWN:
+                printf("VFS: Cannot create filesystem of type UNKNOWN on disk %d\n", logical_drive);
+                return -1;
+            case VFS_FAT12:
+                return fatfs_mkfs(logical_drive, FM_FAT);
+            case VFS_FAT16:
+                return fatfs_mkfs(logical_drive, FM_FAT);
+            case VFS_FAT32:
+                return fatfs_mkfs(logical_drive, FM_FAT32);
+            case VFS_EXFAT:
+                return fatfs_mkfs(logical_drive, FM_EXFAT);
+            default:
+                printf("VFS: Unsupported filesystem type %d for mkfs on disk %d\n", fs_type, logical_drive);
+                return -1;
+        }
     }else{
-        printf("VFS: Unsupported filesystem type %d for mkfs on disk %d\n", fs_type, disk_no);
         return -1;
     }
-
     return 0;
 }
 
 
-#if FF_MULTI_PARTITION
-int vfs_fdisk(int disk_no, void *ptbl, void* work){
-    if(disk_no >= disk_count) return -1;
+#ifdef FF_MULTI_PARTITION
+extern PARTITION VolToPart[FF_VOLUMES];
+int vfs_fdisk(int physical_disk_no, void *ptbl, void* work){
+    if(physical_disk_no >= disk_count || !disks || !ptbl) return -1;
 
-    Disk disk = disks[disk_no];
+    Disk disk = disks[physical_disk_no];
 
     switch(disk.type){
         case DISK_TYPE_AHCI_SATA:
-            return fatfs_fdisk(disk_no, ptbl, work);
+            return fatfs_fdisk(physical_disk_no, ptbl, work);
             break;
         default:
-            printf("VFS: Unsupported disk type %d for fdisk on disk %d\n", disk.type, disk_no);
+            printf("VFS: Unsupported disk type %d for fdisk on disk %d\n", disk.type, physical_disk_no);
             return -1;
     }
 }
+
 #endif
 
+// Set code page for the given disk
 int vfs_setcp(int disk_no, int cp){
     if(disk_no >= disk_count) return -1;
 
@@ -294,13 +303,15 @@ int vfs_printf(int disk_no, void *fp, char *str){
 #endif
 
 #define MAX_PATH 260
-void *vfs_open(int disk_no, char *path, int mode){
-    if(disk_no >= disk_count) return NULL;
+void *vfs_open(int pd_no, char *path, int mode){
+    if(pd_no >= disk_count || !disks){
+        return NULL;
+    } 
 
-    Disk disk = disks[disk_no];
+    Disk disk = disks[pd_no];
 
     if(disk.type == DISK_TYPE_SATAPI){
-        return iso9660_open(disk_no, path, mode);
+        return iso9660_open(pd_no, path, mode);
     }else if(disk.type == DISK_TYPE_AHCI_SATA){
         // char* updated_path = path;
         // if(path[1] == ':'){
@@ -313,7 +324,7 @@ void *vfs_open(int disk_no, char *path, int mode){
         // }
         return fatfs_open(path, mode);
     }else{
-        printf("VFS: Unsupported disk type %d for open on disk %d\n", disk.type, disk_no);
+        printf("VFS: Unsupported disk type %d for open on disk %d\n", disk.type, pd_no);
     }
 
     return NULL;
@@ -555,14 +566,14 @@ int vfs_rename(int disk_no, char *old_path, char *new_path){
 }
 
 int vfs_stat(int disk_no, char *path, void *fno){
-    if(!path | !fno) return -1;
+    if(!path) return -1;
 
     Disk disk = disks[disk_no];
 
     if(disk.type == DISK_TYPE_SATAPI){
         return iso9660_stat(disk_no, path, fno);
     }else if(disk.type == DISK_TYPE_AHCI_SATA){
-        return fatfs_stat(path, fno);
+        return fatfs_stat(path);
     }
 
     return -1;
@@ -737,10 +748,17 @@ uint64_t vfs_listdir(int disk_no, char *path){
     if(disk.type == DISK_TYPE_AHCI_SATA){
         return fatfs_listdir(path);
     }
+
+    if(disk.type == DISK_TYPE_SATAPI){
+        printf("VFS: Listdir operation not supported on ISO9660 (disk %d)\n", disk_no);
+        return -1;
+    }
     return -1;
 }
 
+
 void vfs_test(int disk_no){
+
     if(disk_no >= disk_count) return;
 
     if(!disks) return;
@@ -755,14 +773,14 @@ void vfs_test(int disk_no){
    printf(" Successfully initialized VFS in disk %d\n", disk_no);
 
    // Making FAT32 Filesystem
-   if(vfs_mkfs(disk_no, VFS_FAT32) != 0){
+   if(vfs_mkfs(disk_no, 0, VFS_FAT32) != 0){
         printf(" Error to create FAT32 Filesystem in disk %d\n", disk_no);
         return;
    }
    printf(" Successfully created FAT32 Filesystem in Disk %d\n", disk_no);
 
    // Mounting the Disk
-   if(vfs_mount(disk_no) != 0){
+   if(vfs_mount(disk_no, 0) != 0){
         printf(" Error to mount disk %d\n", disk_no);
         return;
    }

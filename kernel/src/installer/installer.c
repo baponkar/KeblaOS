@@ -17,6 +17,8 @@
     10  https://wiki.osdev.org/MBR_(x86)
 */
 
+
+
 #include "../../../ext_lib/limine-9.2.3/limine-bios-hdd.h"
 
 
@@ -33,10 +35,9 @@
 
 #include "installer.h"
 
-
 extern const uint8_t binary_limine_hdd_bin_data[];
 
-const char *iso_files[] = {
+static const char *iso_files[] = {
     "/BOOT.CAT",
 
     "/BOOT/LIMINE/LIMINE_B.BIN",
@@ -52,8 +53,7 @@ const char *iso_files[] = {
     NULL
 };
 
-const char *fat32_dirs[] = {
-    "/",
+static const char *boot_dirs[] = {
     "/boot",
     "/boot/limine",
     "/efi",
@@ -61,7 +61,7 @@ const char *fat32_dirs[] = {
     NULL
 };
 
-const char *fat32_files[] = {
+static const char *boot_files[] = {
     "/boot.cat",
 
     "/boot/limine/limine_bios_cd.bin",      
@@ -76,6 +76,16 @@ const char *fat32_files[] = {
     "/efi/boot/bootx64.efi",
     NULL
 };
+
+
+
+#if FF_MULTI_PARTITION
+#define FIRST_PARTITON_SIZE 100         // 100 MB
+#define SECOND_PARTITION_PERCENTAGE 90  // Remaining 90%
+#define SECTOR_SIZE 512                 // 512 Bytes
+extern PARTITION VolToPart[FF_VOLUMES];
+#define MB2SECTOR(mb)((mb * 1024 * 1024) / SECTOR_SIZE)
+#endif
 
 // Write only the stage2 portion of binary_limine_hdd_bin_data into safe LBA (e.g. 34)
 bool write_limine_stage2_embedding(int disk_no) {
@@ -154,313 +164,450 @@ bool write_fat32_fs_at_2048(int disk_no) {
 }
 
 
-// This function will create directories in boot disk
-void create_dirs(int disk_no){
+static int prepare_boot_disk(int pd){
 
-    char fat_path[128];
+    // ================= Make Partition ===============================
+    int ld_1 = 0;   // First Logical drive
+    int ld_2 = 1;   // Second Logical drive
 
-    for(int i=0; fat32_dirs[i] != NULL; i++){
-        memset(fat_path, 0, sizeof(fat_path));                                  // Clearing the memory
-        snprintf(fat_path, sizeof(fat_path), "%d:%s", disk_no, fat32_dirs[i]);  // Create Dir Path and store into fat_path
+     // Drive "0:" -> partition 1
+    VolToPart[ld_1].pd = pd; 
+    VolToPart[ld_1].pt = ld_1 + 1;     // Partition 1
 
-        int res = vfs_mkdir(disk_no, fat_path);                                 // Creating directory in boot disk
-        fat_path[127] = '\0';                                                   // Ensure null-termination
-        if (res == 0) {
-            printf(" ✓ Created: %s\n", fat_path);
-        } else {
-            printf(" ✗ Failed to create: %s\n", fat_path);
-            continue;
-        }
+    // Drive "1:" -> partition 2
+    VolToPart[ld_2].pd = pd;  
+    VolToPart[ld_2].pt = ld_2 + 1;     // Partition 2
+
+    // 100 MB for first partiotion and remaining for second partition
+    uint32_t plist[] = {100*1024*2, 100};    
+
+    uint8_t *work = malloc(65536);
+    if(!work){
+        printf("Memory allocation for working buffer work is failed!\n");
+        return -1;
     }
+
+    if(vfs_fdisk(pd, plist, work) != 0){
+        printf("VFS FDISK in Disk %d Failed!\n", pd);
+        return -1;
+    }
+    printf("VFS FDISK in Disk %d Success!Boot Partition: %d MB & User Partiotion remaining.\n", pd, 100);
+
+    if(!work){
+        free(work);
+    }
+
+    // ==================== 1st Partition ====================================
+    if(vfs_mkfs(pd, ld_1, VFS_FAT32) != 0){
+        printf("VFS MKFS in Disk %d: partiton %d failed!\n", pd, 1);
+        return -1;
+    }
+    printf("VFS MKFS in Disk %d: partition %d Success!\n", pd, 2);
+
+    if(vfs_mount(pd, ld_1) != 0){
+        printf("VFS Mount id Disk %d: partition %d failed!\n", pd, 1);
+        return -1;
+    }
+    printf("VFS Mount id Disk %d: partition %d Success!\n", pd, 1);
+
+    // ==================== 2nd Partition ======================================
+    if(vfs_mkfs(pd, ld_2, VFS_FAT32) != 0){
+        printf("VFS MKFS in Disk %d: partiton %d failed!\n", pd, 2);
+        return -1;
+    }
+    printf("VFS MKFS in Disk %d: partition %d Success!\n", pd, 2);
+
+    if(vfs_mount(pd, ld_2) != 0){
+        printf("VFS Mount id Disk %d: partition %d failed!\n", pd, 2);
+        return -1;
+    }
+    printf("VFS Mount id Disk %d: partition %d Success!\n", pd, 2);
+
+    return 0;
 }
 
-// This function will copy files from iso dist into boot disk
-void copy_fils(int boot_disk_no, int iso_disk_no) {
-    printf("\n[INSTALLER] Copying system files from ISO to Boot Disk...\n");
+// Creating boot directories in pd and partition ld
+static int create_boot_dirs(int pd, int ld){
 
-    int files_copied = 0;
-    int files_failed = 0;
+    char path[128];
+
+    snprintf(path, sizeof(path), "%d:", ld);
+
+    if(vfs_chdrive(pd, path) != 0){
+        printf("VFS Change Drive into %d: is failed!\n", ld);
+        return -1;
+    }
+    // printf("VFS Change Drive into %d: is Success!\n", ld);
+    
+
+    for(int i = 0; boot_dirs[i] != NULL; i++){
+        memset(path, 0, sizeof(path));
+        snprintf(path, sizeof(path), "%d:%s", ld, boot_dirs[i]);    // Path: "0:"
+
+        if(vfs_mkdir(pd, path) != 0){
+            printf("VFS MKDIR in Path %s failed!\n", path);
+            return -1;
+            break;
+        }
+        // printf("VFS MKDIR in Path %s Success!\n", path);
+    }
+
+    printf("Successfully created boot directories in Disk %d in Partition %d\n", pd, ld);
+
+    return 0;
+}
+
+// This function copy boot files from iso_disk into boot_disk
+static int copy_boot_files(int iso_pd, int boot_pd, int ld){
 
     char iso_path[128];
-    char fat_path[128];
+    char boot_path[128];
 
-
-    for (int i = 0; iso_files[i] != NULL && fat32_files[i] != NULL; i++) {
+    for(int i=0; iso_files[i] != NULL; i++){
+        // ---------------- Manage ISO Boot Files --------------------------------
         memset(iso_path, 0, sizeof(iso_path));
-        memset(fat_path, 0, sizeof(fat_path));                                 
+        snprintf(iso_path, sizeof(iso_path), "%d:%s", iso_pd, iso_files[i]);
 
-        snprintf(iso_path, sizeof(iso_path), "%d:%s", iso_disk_no, iso_files[i]);       // Source path in ISO9660 
-        snprintf(fat_path, sizeof(fat_path), "%d:%s", boot_disk_no, fat32_files[i]);    // Destination path in FAT32
-
-        // Open source file on ISO
-        void *iso_file = vfs_open(iso_disk_no, (char *) iso_files[i], FA_READ);
-        if (!iso_file) {
-            printf("   ✗ Source not found: %s\n",  iso_files[i]);
-            files_failed++;
-            continue;
+        void *iso_file = vfs_open(iso_pd, (char *)iso_files[i], FA_READ);
+        if(!iso_file){
+            printf("Open file %s in Disk %d is failed!\n", iso_files[i], iso_pd);
+            return -1;
         }
+        // printf("Success in opening file %s\n", iso_path);
 
-        // Check the presence of the file
-        if (vfs_stat(iso_disk_no, iso_file, NULL) == 0) {
-            printf("   ⚠ Empty file skipped: %s\n", iso_path);
-            vfs_close(iso_disk_no, iso_file);
-            continue;
+        if (vfs_stat(iso_pd, iso_file, NULL) == 0){
+            printf("Empty File: %s\n", iso_path);
+            vfs_close(iso_pd, iso_path);
+            return -1;
         }
+        // printf("Success in statistics file %s\n", iso_path);
 
-        // Get file size
-        int file_size = vfs_get_fsize(iso_disk_no, iso_file);
+        int file_size = vfs_get_fsize(iso_pd, iso_file);
         if (file_size <= 0) {
-            printf("   ✗ Unable to get size for: %s\n", iso_path);
-            vfs_close(iso_disk_no, iso_file);
-            files_failed++;
-            continue;
+            printf("Unable to get size for: %s\n", iso_path);
+            vfs_close(iso_pd, iso_file);
+            return -1;
         }
+        // printf("Success in get file size %s, size: %d\n", iso_path, file_size);
 
-        // Allocate temporary buffer
-        void *file_data = kheap_alloc(file_size, ALLOCATE_DATA);
+        void *file_data = malloc(file_size);
         if (!file_data) {
-            printf("   ✗ Memory allocation failed for: %s\n", iso_path);
-            vfs_close(iso_disk_no, iso_file);
-            files_failed++;
-            continue;
+            printf("Memory allocation failed for: %s\n", iso_path);
+            vfs_close(iso_pd, iso_file);
+            return -1;
         }
+        
 
-        // Read ISO file contents
-        uint32_t bytes_read = vfs_read(iso_disk_no, iso_file, file_data, file_size);
-        vfs_close(iso_disk_no, iso_file);
+        uint32_t bytes_read = vfs_read(iso_pd, iso_file, file_data, file_size);
+        if(bytes_read <= 0){
+            printf(" Failed to read file %s\n", iso_path);
+            return -1;
+        }
+        // printf("Successfully read %d bytes from %s\n", bytes_read, iso_path);
+
+        if(vfs_close(iso_pd, iso_file) != 0){
+            printf("%s close failed!\n", iso_path);
+            return -1;
+        }
+        // printf("Successfully closed file %s\n", iso_path);
 
         if (bytes_read != file_size) {
-            printf("   ✗ Read error on %s (%u/%u bytes)\n", iso_path, bytes_read, file_size);
-            kheap_free(file_data, file_size);
-            files_failed++;
-            continue;
+            printf("Read error on %s (%u/%u bytes)\n", "/BOOT.CAT", bytes_read, file_size);
+            free(file_data);
+            return -1;
         }
+        // printf("Success in read file %s\n", iso_path);
+
+        // ---------------------------- Manage Boot Files -------------------------
+        memset(boot_path, 0, sizeof(boot_path));
+        snprintf(boot_path, sizeof(boot_path), "%d:%s", ld, boot_files[i]);
 
         // Create destination file
-        void *fat_file = vfs_open(boot_disk_no, fat_path, FA_CREATE_ALWAYS | FA_WRITE);
+        void *fat_file = vfs_open(boot_pd, boot_path, FA_CREATE_ALWAYS | FA_WRITE);
         if (!fat_file) {
-            printf("   ✗ Failed to create destination: %s\n", fat_path);
-            kheap_free(file_data, file_size);
-            files_failed++;
-            continue;
+            printf("Failed to create destination: %s\n", boot_path);
+            free(file_data);
+            return -1;
         }
+        // printf(" Success open file %s\n", boot_path);
 
         // Write contents
-        uint32_t bytes_written = vfs_write(boot_disk_no, fat_file, file_data, file_size);
-        vfs_sync(boot_disk_no, fat_file);
-        vfs_close(boot_disk_no, fat_file);
-        // kheap_free(file_data, file_size);
+        uint32_t bytes_written = vfs_write(boot_pd, fat_file, file_data, file_size);
+        if(bytes_written <= 0){
+            printf(" Failed to write file %s\n", boot_path);
+            return -1;
+        }
+        // printf(" Successfully written %d bytes in file %s\n", bytes_written, boot_path);
+
+        if(vfs_sync(boot_pd, fat_file) != 0){
+            printf(" Failed to sync to file %s\n", boot_path);
+            return -1;
+        }
+        // printf(" Successfully sync file %s\n", boot_path);
+
+        if(vfs_close(boot_pd, fat_file) != 0){
+            printf(" Failed to close file: %s !\n", boot_path);
+            return -1;
+        }
+        // printf(" Successfully closed file %s\n", boot_path);
+
 
         if (bytes_written != file_size) {
-            printf("   ✗ Write error on %s (%u/%u bytes)\n", fat_path, bytes_written, file_size);
-            files_failed++;
+            printf("Write error on %s (%u/%u bytes)\n", boot_path, bytes_written, file_size);
+            return -1;
         } 
-        printf("   ✓ Copied successfully (%u bytes) into %s\n", file_size, fat_path);
-        files_copied++;
+
+        printf(">>>> Successfully copied %s into %s\n", iso_path, boot_path);
+
+        free(file_data);
     }
 
-    printf("\n[INSTALLER] Copy Summary:\n");
-    printf("   ✓ Files Copied: %d\n", files_copied);
-    printf("   ✗ Files Failed: %d\n", files_failed);
+    return 0;
 }
 
+// This function would install OS in boot_pd from iso_pd
+int uefi_install(int iso_pd, int boot_pd){
 
-// Check either KeblaOS installed or not
-bool is_keblaos_installed( int boot_disk_no) {
+    printf("Installing KeblaOS in Disk %d from Disk %d\n", boot_pd, iso_pd);
 
-    uint8_t sector[512];
 
-    printf("\nChecking if KeblaOS is installed on disk %d...\n", boot_disk_no);
-
-    if(!kebla_disk_init(boot_disk_no)){
-        printf(" Disk %d Initialization failed\n", boot_disk_no);
-        return false;
+    // ============================ ISO Disk Initialization ===========================
+    if(vfs_init(iso_pd) != 0){
+        printf("VFS Initialization in Disk %d is Failed!\n", iso_pd);
+        return -1;
     }
-    printf(" Successfully Disk initialization in Disk %d\n", boot_disk_no);
-
-    if(vfs_init(boot_disk_no) != 0 ){
-        printf(" VFS Initialization failed in Disk %d\n", boot_disk_no);
-        return false;
+    printf("VFS Initialization in Bootable Disk %d is success!\n", iso_pd);
+    
+    if(vfs_mount(iso_pd, 0) != 0){
+        printf("VFS Mounted Bootable Disk %d is Failed!\n", iso_pd);
+        return -1;
     }
-    printf(" Successfully initialized VFS in Disk %d\n", boot_disk_no);
+    printf("VFS Mount Bootable Disk %d is Success!\n", iso_pd);
+
+    // ============================= Boot Disk Initialization ==========================
+
+    if(vfs_init(boot_pd) != 0){
+        printf("VFS Initialization in Boot Disk %d is failed!\n", boot_pd);
+        return -1;
+    }
+    printf("VFS Initialization in Disk %d is success\n", boot_pd);
+
+    if(prepare_boot_disk(boot_pd) != 0){
+        printf("Prearing Main Disk %d is failed\n", boot_pd);
+        return -1;
+    }
+    printf("Successfully Create two partition in Main disk %d and mounted\n", boot_pd);
 
     
-    if(vfs_disk_status(boot_disk_no) != 0){
-        printf(" Disk %d Status error!\n", boot_disk_no);
+    if(create_boot_dirs(boot_pd, 0) != 0){
+        printf("Creating Directories in Main Disk %d Partition %d failed!\n", boot_pd, 0);
+    }
+    printf("Successfully Created directories in Main Disk %d partition %d\n", boot_pd, 0);
+
+    if(copy_boot_files(iso_pd, boot_pd, 0) != 0){
+        printf("Failed to Copy files from Boot Disk %d into Main Disk %d partition %d\n", iso_pd, boot_pd, 0);
+        return -1;
+    }
+    printf("Successfully Copyied files from boot disk %d into main disk %d partition %d\n", iso_pd, boot_pd, 0);
+
+    // ======================== Put Marker in Boot Directory =====================
+
+    char *marker_path = "0:/.os_installed";
+
+    void *mark_file = vfs_open(boot_pd, marker_path, FA_CREATE_ALWAYS | FA_WRITE);
+    if(!mark_file){
+        printf("Failed to Open %s in Disk %d: %d\n", marker_path, boot_pd, 0);
+        return -1;
+    }
+    printf("Successfully Opened %s\n", marker_path);
+
+    char *installation_text = "Successfully KeblaOS is installed in this disk.";
+
+    if(vfs_write(boot_pd, mark_file, installation_text, strlen(installation_text)) == -1){
+        printf("Failed to write into test.txt\n");
+        return -1;
+    }
+    printf("Successfully written in %s\n", marker_path);
+
+    if(vfs_sync(boot_pd, mark_file) == -1){
+        printf("Failed to Sync the file %s\n", marker_path);
+        return -1;
+    }
+    printf("Successfully Sync file %s\n", marker_path);
+
+    if(vfs_close(boot_pd, mark_file) == -1){
+        printf("Failed to Close The File %s\n", marker_path);
+    }
+    printf("Successfully Closed File %s\n", marker_path);
+
+    return 0;
+}
+
+// Checking either OS in installed in boot_pd at partition ld
+bool is_os_installed(int boot_pd, int ld){
+
+    printf("Checking Installation KeblaOS in Disk %d...\n", boot_pd);
+
+    if(vfs_init(boot_pd) != 0){
+        printf("VFS Initialization in Disk %d is Failed!\n", boot_pd);
         return false;
     }
-    printf(" Disk %d Status ok\n", boot_disk_no);
+    printf("VFS Initialization in Disk %d is Success!\n", boot_pd);
 
-
-    // ===== 1. Check Protective MBR =====
-    if (!kebla_disk_read(boot_disk_no, 0, 1, sector)) {
-        printf(" ✗ Failed to read MBR sector\n");
+    if(vfs_mount(boot_pd, ld) != 0){
+        printf("Mount Faied in Disk %d Partition %d\n", boot_pd, ld);
         return false;
     }
+    printf("Successfully Mount Disk %d Partition %d\n", boot_pd, ld);
 
-    // Signature 0x55AA at offset 510–511
-    if (sector[510] != 0x55 || sector[511] != 0xAA) {
-        printf(" ✗ Invalid MBR signature\n");
+    char boot_root[6];
+    snprintf(boot_root, sizeof(boot_root), "%d:", ld);
+
+    if(vfs_chdrive(boot_pd, boot_root) != 0){
+        printf("Change Drive in user disk %d at partition %d\n", boot_pd, ld);
         return false;
     }
+    printf("Successfully Change drive in %d at partition %d\n", boot_pd, ld);
 
-    // Partition type 0xEE for GPT protective MBR
-    if (sector[450] != 0xEE) {
-        printf(" ✗ Not a GPT Protective MBR (type=0x%x)\n", sector[450]);
+    char *marker_path = "0:/.os_installed";
+
+    void *mark_file = vfs_open(boot_pd, marker_path, FA_READ);
+    if(!mark_file){
+        printf("Failed to Open %s in Disk %d: %d\n", marker_path, boot_pd, 0);
         return false;
     }
-    printf(" ✓ Protective MBR found\n");
+    printf("Successfully opened %s\n", marker_path);
 
-    // ===== 2. Check GPT Header =====
-    uint8_t gpt_header[512];
-    if (!kebla_disk_read(boot_disk_no, 1, 1, gpt_header)) {
-        printf(" ✗ Failed to read GPT header\n");
+    char *comp_text = "Successfully KeblaOS is installed in this disk.";
+
+    char buff[56];
+
+    if(vfs_read(boot_pd, mark_file, buff, sizeof(buff)) <= 0){
+        printf("Failed to read %s\n", marker_path);
         return false;
     }
+    printf("Successfully read file %s\n", marker_path);
 
-    // Check GPT signature "EFI PART"
-    uint64_t sig = *(uint64_t*)gpt_header;
-    if (sig != 0x5452415020494645ULL) {
-        printf(" ✗ GPT header signature not found\n");
+    if(strncmp(buff, comp_text, strlen(comp_text)) != 0 ){
+        printf("text .os_installed not matched\n");
         return false;
     }
-    printf(" ✓ GPT header found\n");
+    printf("text in .os_installed matched\n");
 
-    // ===== 3. Check FAT32 filesystem presence =====
-    FRESULT res = vfs_mount(boot_disk_no);
-    if (res != FR_OK) {
-        printf(" ✗ FAT32 mount failed: %s\n", fatfs_error_string(res));
-        return false;
-    }
-    printf(" ✓ FAT32 filesystem mounted successfully\n");
+    // char user_root[6];
+    // snprintf(user_root, sizeof(user_root), "%d:", ld);
 
-    // ===== 4. Check for essential KeblaOS boot files =====
-    for (int i = 0; fat32_files[i] != NULL; i++) {
-        FILINFO fno;
-        memset(&fno, 0, sizeof(FILINFO));
+    // if(vfs_chdrive(boot_pd, user_root) != 0){
+    //     printf("Change Drive in user disk %d at partition %d\n", boot_pd, ld);
+    //     return false;
+    // }
+    // printf("Successfully Change drive in %d at partition %d\n", boot_pd, ld);
 
-        char path[128];
-        sprintf(path, "%d:%s", boot_disk_no, fat32_files[i]);
+    // char home_path[65];
 
-        res = vfs_stat(boot_disk_no, path, &fno);
-        if (res != FR_OK) {
-            printf(" ✗ Missing critical file: %s\n\n", path);
-            if(vfs_unmount(boot_disk_no) != FR_OK){
-                printf(" VFS Unmount failed in Disk %d\n", boot_disk_no);
-            }
-            return false;
-        }
-        printf(" ✓ Found: %s (%u bytes)\n", path, (unsigned)fno.fsize);
-    }
+    // snprintf(home_path, sizeof(home_path), "%d:/home/keblaos.txt", ld);
 
-    // ===== 5. Optional: verify kernel ELF signature =====
-    void *kernel_buf = NULL;
-    uint32_t kernel_size = 0;
+    // int res = vfs_stat(boot_pd, home_path, NULL);
+    // if( res != 0){
+    //     printf("%s not found! with error code: %d\n", home_path, res);
+    //     vfs_unmount(boot_pd, ld);
+    //     return false;
+    // }
+    // printf("%s found!\n", home_path);
     
-    // Check kernel file format
-    char kernel_path[128];
-    sprintf(kernel_path, "%d:/boot/kernel.bin", boot_disk_no);
-    if( vfs_open(boot_disk_no, kernel_path, FA_READ) == NULL) {
-        printf(" ✗ Failed to open kernel file for verification\n\n");
-        if(vfs_unmount(boot_disk_no) != FR_OK){
-                printf(" VFS Unmount failed in Disk %d\n", boot_disk_no);
-            }
-        return false;
-    }
+    // for(int i = 0; boot_files[i] != NULL; i++){
+    //     if(boot_files[i] == "/boot/kernel.bin" || boot_files[i] == "/boot.cat" || boot_files[i] == "/efi/boot/bootx64.efi"){
+    //         continue;
+    //     }
+    //     memset(path, 0, sizeof(path));
+    //     snprintf(path, sizeof(path), "%d:%s", ld, boot_files[i]);
 
-    if(vfs_unmount(boot_disk_no) != FR_OK){
-        printf(" VFS Unmount failed in Disk %d\n", boot_disk_no);
-    }
+    //     // if(!vfs_open(boot_disk_no, path, FA_READ)){
+    //     //     printf("%s is not found in disk %d!\n", path, boot_disk_no);
+    //     //     return false;
+    //     // }
+    //     // printf("%s is present in disk.\n", path);
 
-    printf(" ✅ KeblaOS installation verified successfully on disk %d\n\n", boot_disk_no);
+    //     if(vfs_stat(boot_disk_no, path, NULL) != 0){
+    //         printf("%s is not found in disk %d!\n", path, boot_disk_no);
+    //         return false;
+    //     }
+    //     printf("%s is present in disk.\n", path);
+    // }
 
     return true;
 }
 
+int create_user_dirs(int pd){
 
-void uefi_install(int boot_disk_no, int iso_disk_no){
+    int user_ld = 1;
 
-    printf("\nInstalling KeblaOS in %d ...\n", boot_disk_no);
-
-    if(!kebla_disk_init(iso_disk_no)){
-        printf(" Disk %d Initialization failed\n", iso_disk_no);
-        return;
-    }else{
-        printf(" Successfully Disk initialization in Disk %d\n", iso_disk_no);
-    }
+    char root_path[4];
+    snprintf(root_path, sizeof(root_path), "%d:", user_ld);
     
-    // if(!kebla_disk_init(boot_disk_no)){
-    //     printf(" Disk %d Initialization failed\n", boot_disk_no);
-    //     return;
-    // }else{
-    //     printf(" Successfully Disk initialization in Disk %d\n", boot_disk_no);
-    // }
-    
-    // ======================================= PMBR & GPT ==================================================================
-
-    if(!create_complete_gpt(boot_disk_no)){
-        printf(" Failed to write GPT Header!\n");
-        return;
-    }else{
-        printf(" Successfully Complete GPT Header written!\n");
+    if(vfs_chdrive(pd, root_path) != 0){
+        printf("Changing Drive into Partition %d Failed!\n", user_ld);
+        return -1;
     }
-    
-    if(!write_limine_stage2_embedding(boot_disk_no)){
-        printf(" Failed to Written bootloader!\n");
-        return;
-    }else{
-        printf(" Successfully written Limine Stage 2\n");
-    }
-    
-    // ================================= Making ISO9660 File System in ISO Disk ============================================
-    if(vfs_init(iso_disk_no) != 0){
-        printf(" Failed to initialize VFS in Disk %d\n", iso_disk_no);
-        return;
-    }else{
-        printf(" Successfully initialized VFS in Disk %d\n", iso_disk_no);
-    }
+    printf("Successfully change drive %d\n", user_ld);
 
-    // ================================= Making FAT32 Filesystem in Boot Disk ==============================================
-    // if(vfs_init(boot_disk_no) != 0){
-    //     printf(" Failed to initialize VFS in Disk %d\n", boot_disk_no);
-    //     return;
-    // }else{
-    //     printf(" Successfully initialized VFS in Disk %d\n", boot_disk_no);
-    // }
+    // Creating Home Directory
+    char home_path[64];
+    snprintf(home_path, sizeof(home_path), "%d:/home", user_ld);
 
-    if(vfs_mkfs(boot_disk_no, VFS_FAT32) != 0){
-        printf(" VFS MKFS failed in Disk %d\n", boot_disk_no);
-        return;
-    }else{
-        printf(" Successfully created FAT32 Filesystem in Disk %d at Sector 2048\n", boot_disk_no);
+    if(vfs_mkdir(pd, home_path) != 0){
+        printf("Failed to create directory %s\n", home_path);
+        return -1;
     }
+    printf("Successfully Created %s in Disk %d\n", home_path, pd);
 
-    // ======================================= VFS Mounting ================================================================
-    if(vfs_mount(iso_disk_no) != 0){
-        printf(" VFS Mount failed in Disk %d\n", iso_disk_no);
-        return;
-    }else{
-        printf(" Successfully mounted VFS in Disk %d\n", iso_disk_no);
+    // Creating keblaos.txt file
+    char file_path[64];
+    snprintf(file_path, sizeof(file_path), "%d:/home/keblaos.txt", user_ld);
+
+    // Creating a Test File
+    void *test_file = vfs_open(pd, file_path, FA_CREATE_ALWAYS | FA_WRITE | FA_READ);
+    if(!test_file){
+        printf("Failed to open file %s\n", file_path);
+        return -1;
     }
-    
-    if(vfs_mount(boot_disk_no) != 0){
-        printf(" VFS Mount failed in Disk %d\n", boot_disk_no);
-        return;
-    }else{
-        printf(" Successfully mounted VFS in Disk %d\n", boot_disk_no);
+    printf("Successfully opened file %s\n", file_path);
+
+    char data[64];
+    memcpy(data, "KeblaOS\nThis file is created by Disk Initialization.\n", sizeof(data));
+
+    if(vfs_write(pd, test_file, data, sizeof(data)) <= 0){
+        printf("Failed to write data in %d:/home/keblaos.txt\n", user_ld);
+        return -1;
     }
-    
-    
-    // ======================================= File Copying ================================================================
-    create_dirs(boot_disk_no);
-    copy_fils(boot_disk_no, iso_disk_no);
+    printf("Successfully written data into %d:/home/keblaos.txt\n", user_ld);
 
-    printf(" Successfully Written bootloader\n");
-
-    // ======================================== Success ======================================================================
-    printf(" Installation complete!\n");
+    if(vfs_close(pd, test_file) != 0){
+        printf("Failed to close the file %s\n", test_file);
+        return -1;
+    }
+    printf("Successfully close the file %s\n", file_path);
 }
 
+void init_user_space(int boot_pd, int user_ld){
 
+    if(vfs_init(boot_pd) != 0){
+        printf("VFS Initialization in Disk %d is Failed!\n", boot_pd);
+        return;
+    }
+    printf("VFS Initialization in Disk %d is Success!\n", boot_pd);
 
+    char path[6];
+    sprintf(path, "%d:/", user_ld);
+    if(vfs_chdrive(boot_pd, path) != 0){
+        printf("Change Drive %s failed!\n", path);
+        return;
+    }
+    printf("Successfully Change drive %s\n", path);
 
+    if(vfs_mount(boot_pd, user_ld) != 0){
+        printf("VFS Mount id Disk %d: partition %d failed!\n", boot_pd, 2);
+        return;
+    }
+    printf("VFS Mount id Disk %d: partition %d Success!\n", boot_pd, 2);
+}

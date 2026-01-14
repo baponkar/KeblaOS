@@ -22,6 +22,12 @@ bool sata_read(HBA_PORT_T* port, size_t _lba, size_t _count, uintptr_t _buf_phys
     uintptr_t buf_phys_addr = _buf_phys_addr;
 
     uint64_t total_sectors = sata_get_total_sectors(port);
+
+    if(total_sectors <= 0){
+        printf("[SATA] Total Sectors: %d in port %x\n", total_sectors, (uint64_t) port);
+        return false;
+    }
+
     if(total_sectors > 0 && lba + count > total_sectors){
         printf("[SATA] Total Sectors: %d, LBA: %d, Count: %d, LBA + Count: %d\n", 
             total_sectors, lba, count, (lba + count));

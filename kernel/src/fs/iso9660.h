@@ -91,7 +91,7 @@ typedef struct {
 
 int iso9660_init(int disk_no);
 
-int iso9660_check_media(void *ctx);
+bool iso9660_check_media(void *ctx);
 
 int iso9660_mount(int disk_no);
 int iso9660_unmount(int disk_no);

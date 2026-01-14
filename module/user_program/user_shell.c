@@ -17,8 +17,16 @@ extern int boot_disk_no;
 extern int user_disk_no;
 
 static void print_prompt() {
-    printf("ksh> ");
+    char cwd[256];
+
+    int res = syscall_getcwd(user_disk_no, cwd, sizeof(cwd));
+    if (res == 0) {
+        printf("ksh:%s>> ", cwd);
+    } else {
+        printf("ksh>> ");
+    }
 }
+
 
 // This function reads input from the keyboard into the buffer
 void read_input(char *buf, size_t size) {
@@ -118,8 +126,6 @@ static void handle_command(int argc, char *argv[]) {
 
         char buffer[256];
         uint64_t read_bytes = syscall_read(user_disk_no, file, buffer, sizeof(buffer) - 1);
-
-        printf("Contents of %s:\n", path);
 
         if (read_bytes > 0) {
             buffer[read_bytes] = '\0'; // Null-terminate the string
@@ -225,7 +231,7 @@ static void handle_command(int argc, char *argv[]) {
         // Open file for appending
         void *file = (void*)syscall_open(user_disk_no, argv[1], FA_OPEN_ALWAYS | FA_WRITE);
         
-        if ((uint64_t)file != 0) {
+        if (!file) {
             printf("Cannot open file %s for editing\n", argv[1]);
             return;
         }
@@ -274,7 +280,7 @@ static void handle_command(int argc, char *argv[]) {
         
         void *file = (void*)syscall_open(user_disk_no, argv[1], FA_OPEN_APPEND | FA_WRITE);
         
-        if ((uint64_t)file != 0) {
+        if (!file) {
             printf("Cannot open file %s for appending\n", argv[1]);
             return;
         }
@@ -302,8 +308,17 @@ static void handle_command(int argc, char *argv[]) {
         
         syscall_close(user_disk_no, file);
 
+    } else if (strcmp(argv[0], "clear") == 0 || strcmp(argv[0], "cls") == 0) {
+
+        // Clear screen with black background
+        if(syscall_cls_color(0xFF000000) != 0){   // RGB: black
+            printf("Failed to clear screen!\n");
+        }  
+
     }else if (strcmp(argv[0], "help") == 0) {
         printf("Available commands:\n");
+        printf("  help - Show this help message\n");
+        printf("  clear/cls - Clear the screen\n");
         printf("  exit - Exit the shell\n");
         printf("  echo <text> - Print text to the console\n");
         printf("  ls [dir] - List files in directory (default is current)\n");
@@ -317,7 +332,6 @@ static void handle_command(int argc, char *argv[]) {
         printf("  edit <file> - Edit a file (append mode)\n");
         printf("  cd <path> - Change Directory.\n");
         printf("  cwd - Current Working Directory.\n");
-
     } else {
         printf("\nUnknown command: %s\n", argv[0]);
         printf("Type 'help' for a list of commands.\n");

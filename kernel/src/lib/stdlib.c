@@ -125,6 +125,9 @@ long atol(const char *str) {
     return result * sign;
 }
 
+
+
+
 /* ---------- Memory management ---------- */
 void *malloc(size_t size) {
     if (size == 0) return NULL;
@@ -152,7 +155,7 @@ void free(void *ptr) {
     
     // Validate magic number to detect corruption
     if (header->magic != MAGIC) {
-        printf("[Heap Error] Invalid free: corrupted header or bad pointer\n");
+        printf("Memory Header magic number corrupted:%x\n", header->magic);
         return;
     }
     
