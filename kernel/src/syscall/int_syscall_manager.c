@@ -460,6 +460,13 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                 break;
             }
 
+            case INT_SYSCALL_UNMOUNT: {
+                int pd = (int) regs->rdi;
+                int ld = (int) regs->rsi;
+
+                regs->rax = (uint64_t) vfs_unmount(pd, ld);
+            }
+
             case INT_SYSCALL_OPEN: { // 0x51
                 int disk_no = regs->rdi;
                 char *path = (char *)regs->rsi;

@@ -24,31 +24,16 @@ int res;
 int boot_disk_no = 0;  // Boot Disk is 0
 int user_disk_no = 0;  // User Disk is 1
 
+int boot_pd = 0;
+
+int boot_ld = 0;
+int user_ld = 1;
+
 
 __attribute__((section(".text")))
 void _start(){
 
     printf("%s\n", welcome_msg);
-
-    uint64_t res = syscall_vfs_init(user_disk_no);
-    if(res != 0){
-        printf("VFS Initialization on Disk %d failed!\n", user_disk_no);    
-        return;
-    }
-    printf("VFS Initialization on Disk %d successful!\n", user_disk_no);
-
-    res = syscall_chdrive(user_disk_no, "1:/");
-    if(res != 0){
-        printf("VFS Cange Drive %d failed!\n", user_disk_no);
-        return;
-    }
-
-    res = syscall_mount(user_disk_no);
-    if(res != 0){
-        printf("Mounting Disk %d failed!\n", user_disk_no);    
-        return;
-    }
-    printf("Mounting Disk %d successful!\n", user_disk_no);
 
 
     // instll();

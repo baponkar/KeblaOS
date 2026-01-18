@@ -169,9 +169,14 @@ uint64_t syscall_fdisk(int disk_no, void *ptbl, void* work) {
 }
 #endif
 
-uint64_t syscall_mount(int disk_no) {
+uint64_t syscall_mount(int pd , int ld) {
 
-    return system_call((uint64_t) INT_SYSCALL_MOUNT, (uint64_t)disk_no, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0); 
+    return system_call((uint64_t) INT_SYSCALL_MOUNT, (uint64_t)pd, (uint64_t)ld, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0); 
+}
+
+uint64_t syscall_unmount(int pd , int ld) {
+
+    return system_call((uint64_t) INT_SYSCALL_UNMOUNT, (uint64_t)pd, (uint64_t)ld, (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0); 
 }
 
 // Opening a file by path name

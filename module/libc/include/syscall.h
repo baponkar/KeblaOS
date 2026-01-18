@@ -114,7 +114,8 @@ enum int_syscall_number {
 
     INT_SYSCALL_PUTCHAR          = 113,
     INT_SYSCALL_CLEARING_PARTITION_TABLE = 114,
-    INT_SYSCALL_UPDATE_PARTITION_MAPPING = 115
+    INT_SYSCALL_UPDATE_PARTITION_MAPPING = 115,
+    INT_SYSCALL_UNMOUNT = 116
 
 };
 
@@ -173,7 +174,8 @@ uint64_t syscall_fdisk(int disk_no, void *ptbl, void* work);
 // FatFs File Manage
 uint64_t syscall_vfs_mkfs(int pd, int ld, int fs_type);
 uint64_t syscall_vfs_init(int disk_no);
-uint64_t syscall_mount(int disk_no);
+uint64_t syscall_mount(int pd, int ld);
+uint64_t syscall_unmount(int pd, int ld);
 uint64_t syscall_open(int disk_no, const char *path, uint64_t flags);
 uint64_t syscall_close(int disk_no, void *file);
 uint64_t syscall_read(int disk_no, void *file, void *buf, uint32_t size);

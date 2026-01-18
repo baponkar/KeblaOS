@@ -57,7 +57,7 @@ void kmain(){
 
     init_controllers();     // This have PCI Scan
 
-    kebla_disk_init(iso_disk_no);
+    kebla_disk_init(iso_disk_no);   // Initialize first Disk either ISO or SATA/NVMe Disk
     // kebla_disk_init(boot_disk_no);
     // kebla_disk_test(boot_disk_no);
 
@@ -67,36 +67,31 @@ void kmain(){
         printf("disk: %d, type: %d\n", i, disk.type);
     }
     
-    // fatfs_test_1(boot_disk_no);
-    // vfs_test(boot_disk_no);
-    
-
-    // if(!is_keblaos_installed(boot_disk_no)){
-    //     uefi_install(boot_disk_no, iso_disk_no); 
-    // }else{
-    //     printf("KeblaOS is already installed on Disk %d.\n", boot_disk_no);
-    // }
-    // uefi_install(iso_disk_no, boot_disk_no);
 
     if(disks[iso_disk_no].type != DISK_TYPE_SATAPI ||  disks[iso_disk_no].type == DISK_TYPE_AHCI_SATA || disks[iso_disk_no].type == DISK_TYPE_NVME){
         boot_disk_no = iso_disk_no;
 
-        init_user_space(boot_disk_no, user_ld);
-
+        init_user_space(boot_disk_no, boot_ld, user_ld);
+        
     }else{
         if(is_os_installed(boot_disk_no, boot_ld) == false){
             if(uefi_install(iso_disk_no, boot_disk_no) != 0){
                 printf("Failed to UEFI Install KeblaOS in Disk %d failed!\n", boot_disk_no);
+            }else{
+                printf("Successfully KeblaOS is Installed(UEFI) in Disk %d:%d\n", boot_disk_no, boot_ld);
             }
-            printf("Successfully KeblaOS is Installed(UEFI) in Disk %d\n", boot_disk_no);
 
             if(create_user_dirs(boot_disk_no) != 0){
-                printf("Failed to Create User Directories and Files\n");
+                printf("Failed to Create User Directories and Files in %d:%d\n", boot_disk_no, user_ld);
+            }else{
+                printf("Successfully Created directories and files in Disk %d:%d.\n", boot_disk_no, user_ld);
             }
-            printf("Successfully Created directories and files in Disk %d Partition 1.\n", boot_disk_no);
         }
     }
     
+    
+    // fatfs_test_1(boot_disk_no);
+    // vfs_test(boot_disk_no);
 
     // if(fatfs_mkfs(boot_disk_no, FM_FAT32 | FM_SFD) == 0){
     //     printf(" Successfully FAT32 FS created.\n");
@@ -131,8 +126,8 @@ void kmain(){
     // init_user_mode();
 
     // Load and parse kernel modules by using limine bootloader
-    get_kernel_modules_info();
-    print_kernel_modules_info();
+    // get_kernel_modules_info();
+    // print_kernel_modules_info();
     load_user_elf_and_jump();
 
     // acpi_poweroff();
@@ -145,7 +140,6 @@ void kmain(){
 
     // switch_to_core(2);
     
-    for (;;) {}     // Halt the kernel here
 
     halt_kernel();
 }

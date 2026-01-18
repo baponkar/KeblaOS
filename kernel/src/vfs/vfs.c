@@ -152,7 +152,7 @@ int vfs_mount(int disk_no, int logical_drive){
 }
 
 int vfs_unmount(int disk_no, int logical_drive){
-    if(disk_no >= disk_count) return -1;
+    if(disk_no >= disk_count || !disks) return -1;
 
     Disk disk = disks[disk_no];
 

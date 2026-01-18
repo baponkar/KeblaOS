@@ -78,8 +78,8 @@ int fatfs_mkfs(int ld, int fs_type) {
     opt.au_size = 0;
     
     // Try larger buffer
-    size_t buffer_size = 8 * 1024;  // 8KB
-    BYTE *work = (BYTE *)kheap_alloc(buffer_size, ALLOCATE_DATA);
+    size_t buffer_size = 16 * 1024;  // 16 KB
+    BYTE *work = (BYTE *)malloc(buffer_size);
 
     if(!work) {
         printf("FATFS: Failed to allocate any work buffer\n");
@@ -88,12 +88,12 @@ int fatfs_mkfs(int ld, int fs_type) {
 
     memset(work, 0, buffer_size);
 
-    char root_path[12];
+    char root_path[4];
     snprintf(root_path, sizeof(root_path), "%d:", ld);
     
     FRESULT res = f_mkfs(root_path, &opt, work, buffer_size);
     
-    kheap_free(work, buffer_size);
+    free(work);
     
     if(res != FR_OK) {
         printf("FATFS: MKFS failed with error: %s\n", fatfs_error_string(res));
@@ -110,13 +110,11 @@ int fatfs_mount(int ld){
     }
     memset(fs_array[ld], 0, sizeof(FATFS));
 
-    
-    
     char path[16];
     memset(path, 0, sizeof(path));
     sprintf(path, "%d:", ld);
 
-    BYTE mount_opt = 0;  // 1 = immediate mount with detection, 0 = delay mount
+    BYTE mount_opt = 1;  // 1 = immediate mount with detection, 0 = delay mount
 
     FRESULT res = f_mount(fs_array[ld], (const TCHAR*) path, mount_opt);
 

@@ -1,3 +1,5 @@
+
+
 /*
     Description: This Function will Install KeblaOS in a Disk from Bootable Disk.
     Developing Date: 18-10-2025
@@ -34,6 +36,13 @@
 #include "gpt_header.h"
 
 #include "installer.h"
+
+
+#if FF_MULTI_PARTITION
+#define FIRST_PARTITON_SIZE_IN_MB 100       // 100 MB
+#define SECOND_PARTITION_PERCENTAGE 100     // Remaining 90%
+extern PARTITION VolToPart[FF_VOLUMES];
+#endif
 
 extern const uint8_t binary_limine_hdd_bin_data[];
 
@@ -78,14 +87,6 @@ static const char *boot_files[] = {
 };
 
 
-
-#if FF_MULTI_PARTITION
-#define FIRST_PARTITON_SIZE 100         // 100 MB
-#define SECOND_PARTITION_PERCENTAGE 90  // Remaining 90%
-#define SECTOR_SIZE 512                 // 512 Bytes
-extern PARTITION VolToPart[FF_VOLUMES];
-#define MB2SECTOR(mb)((mb * 1024 * 1024) / SECTOR_SIZE)
-#endif
 
 // Write only the stage2 portion of binary_limine_hdd_bin_data into safe LBA (e.g. 34)
 bool write_limine_stage2_embedding(int disk_no) {
@@ -163,7 +164,7 @@ bool write_fat32_fs_at_2048(int disk_no) {
     return kebla_disk_write(disk_no, 2048, 1, sector);
 }
 
-
+// Creating Two Partition, Making FAT32 Filesystem in those partition and Mount both Logical Drive
 static int prepare_boot_disk(int pd){
 
     // ================= Make Partition ===============================
@@ -179,7 +180,9 @@ static int prepare_boot_disk(int pd){
     VolToPart[ld_2].pt = ld_2 + 1;     // Partition 2
 
     // 100 MB for first partiotion and remaining for second partition
-    uint32_t plist[] = {100*1024*2, 100};    
+    
+    int sectors = FIRST_PARTITON_SIZE_IN_MB * 1024 * 2; // 1024 Bytes have 2 Sector
+    uint32_t plist[] = {sectors, SECOND_PARTITION_PERCENTAGE};    
 
     uint8_t *work = malloc(65536);
     if(!work){
@@ -191,7 +194,7 @@ static int prepare_boot_disk(int pd){
         printf("VFS FDISK in Disk %d Failed!\n", pd);
         return -1;
     }
-    printf("VFS FDISK in Disk %d Success!Boot Partition: %d MB & User Partiotion remaining.\n", pd, 100);
+    printf("VFS FDISK in Disk %d Success! (%d MB, Total - %d MB)\n", pd, FIRST_PARTITON_SIZE_IN_MB , FIRST_PARTITON_SIZE_IN_MB );
 
     if(!work){
         free(work);
@@ -199,29 +202,29 @@ static int prepare_boot_disk(int pd){
 
     // ==================== 1st Partition ====================================
     if(vfs_mkfs(pd, ld_1, VFS_FAT32) != 0){
-        printf("VFS MKFS in Disk %d: partiton %d failed!\n", pd, 1);
+        printf("VFS MKFS in Disk %d:%d failed!\n", pd, ld_1);
         return -1;
     }
-    printf("VFS MKFS in Disk %d: partition %d Success!\n", pd, 2);
+    printf("VFS MKFS in Disk %d:%d Success!\n", pd, ld_1);
 
     if(vfs_mount(pd, ld_1) != 0){
-        printf("VFS Mount id Disk %d: partition %d failed!\n", pd, 1);
+        printf("VFS Mount id Disk %d:%d failed!\n", pd, ld_1);
         return -1;
     }
-    printf("VFS Mount id Disk %d: partition %d Success!\n", pd, 1);
+    printf("VFS Mount id Disk %d:%d Success!\n", pd, ld_1);
 
     // ==================== 2nd Partition ======================================
     if(vfs_mkfs(pd, ld_2, VFS_FAT32) != 0){
-        printf("VFS MKFS in Disk %d: partiton %d failed!\n", pd, 2);
+        printf("VFS MKFS in Disk %d:%d failed!\n", pd, ld_2);
         return -1;
     }
-    printf("VFS MKFS in Disk %d: partition %d Success!\n", pd, 2);
+    printf("VFS MKFS in Disk %d:%d Success!\n", pd, ld_2);
 
     if(vfs_mount(pd, ld_2) != 0){
-        printf("VFS Mount id Disk %d: partition %d failed!\n", pd, 2);
+        printf("VFS Mount id Disk %d:%d failed!\n", pd, ld_2);
         return -1;
     }
-    printf("VFS Mount id Disk %d: partition %d Success!\n", pd, 2);
+    printf("VFS Mount id Disk %d:%d Success!\n", pd, ld_2);
 
     return 0;
 }
@@ -234,7 +237,7 @@ static int create_boot_dirs(int pd, int ld){
     snprintf(path, sizeof(path), "%d:", ld);
 
     if(vfs_chdrive(pd, path) != 0){
-        printf("VFS Change Drive into %d: is failed!\n", ld);
+        printf("VFS Change Drive into %d:%d: is failed!\n", pd, ld);
         return -1;
     }
     // printf("VFS Change Drive into %d: is Success!\n", ld);
@@ -245,20 +248,20 @@ static int create_boot_dirs(int pd, int ld){
         snprintf(path, sizeof(path), "%d:%s", ld, boot_dirs[i]);    // Path: "0:"
 
         if(vfs_mkdir(pd, path) != 0){
-            printf("VFS MKDIR in Path %s failed!\n", path);
+            printf("VFS MKDIR in Path %d:%s failed!\n", pd, path);
             return -1;
             break;
         }
         // printf("VFS MKDIR in Path %s Success!\n", path);
     }
 
-    printf("Successfully created boot directories in Disk %d in Partition %d\n", pd, ld);
+    // printf("Successfully created boot directories in Disk %d:%d\n", pd, ld);
 
     return 0;
 }
 
 // This function copy boot files from iso_disk into boot_disk
-static int copy_boot_files(int iso_pd, int boot_pd, int ld){
+static int copy_boot_files(int iso_pd, int boot_pd, int boot_ld){
 
     char iso_path[128];
     char boot_path[128];
@@ -266,7 +269,7 @@ static int copy_boot_files(int iso_pd, int boot_pd, int ld){
     for(int i=0; iso_files[i] != NULL; i++){
         // ---------------- Manage ISO Boot Files --------------------------------
         memset(iso_path, 0, sizeof(iso_path));
-        snprintf(iso_path, sizeof(iso_path), "%d:%s", iso_pd, iso_files[i]);
+        snprintf(iso_path, sizeof(iso_path), "%d:%s", iso_pd, iso_files[i]);    // 0:
 
         void *iso_file = vfs_open(iso_pd, (char *)iso_files[i], FA_READ);
         if(!iso_file){
@@ -291,12 +294,14 @@ static int copy_boot_files(int iso_pd, int boot_pd, int ld){
         // printf("Success in get file size %s, size: %d\n", iso_path, file_size);
 
         void *file_data = malloc(file_size);
+
         if (!file_data) {
             printf("Memory allocation failed for: %s\n", iso_path);
             vfs_close(iso_pd, iso_file);
             return -1;
         }
-        
+
+        memset(file_data, 0, file_size);
 
         uint32_t bytes_read = vfs_read(iso_pd, iso_file, file_data, file_size);
         if(bytes_read <= 0){
@@ -305,6 +310,7 @@ static int copy_boot_files(int iso_pd, int boot_pd, int ld){
         }
         // printf("Successfully read %d bytes from %s\n", bytes_read, iso_path);
 
+
         if(vfs_close(iso_pd, iso_file) != 0){
             printf("%s close failed!\n", iso_path);
             return -1;
@@ -312,7 +318,7 @@ static int copy_boot_files(int iso_pd, int boot_pd, int ld){
         // printf("Successfully closed file %s\n", iso_path);
 
         if (bytes_read != file_size) {
-            printf("Read error on %s (%u/%u bytes)\n", "/BOOT.CAT", bytes_read, file_size);
+            printf("Read error on %s (%d/%d bytes)\n", iso_path, bytes_read, file_size);
             free(file_data);
             return -1;
         }
@@ -320,12 +326,12 @@ static int copy_boot_files(int iso_pd, int boot_pd, int ld){
 
         // ---------------------------- Manage Boot Files -------------------------
         memset(boot_path, 0, sizeof(boot_path));
-        snprintf(boot_path, sizeof(boot_path), "%d:%s", ld, boot_files[i]);
+        snprintf(boot_path, sizeof(boot_path), "%d:%s", boot_ld, boot_files[i]);
 
         // Create destination file
         void *fat_file = vfs_open(boot_pd, boot_path, FA_CREATE_ALWAYS | FA_WRITE);
         if (!fat_file) {
-            printf("Failed to create destination: %s\n", boot_path);
+            printf("Failed to create file: %s\n", boot_path);
             free(file_data);
             return -1;
         }
@@ -334,32 +340,68 @@ static int copy_boot_files(int iso_pd, int boot_pd, int ld){
         // Write contents
         uint32_t bytes_written = vfs_write(boot_pd, fat_file, file_data, file_size);
         if(bytes_written <= 0){
-            printf(" Failed to write file %s\n", boot_path);
+            printf("Failed to write file %s\n", boot_path);
             return -1;
         }
         // printf(" Successfully written %d bytes in file %s\n", bytes_written, boot_path);
 
+
+        // ===============================================================================
+
+        // Checking encoding
+        // text_encoding_t iso_enc_type = detect_encoding(file_data, file_size);
+        // printf(" ISO File:%s, Encoding Type: %d\n", iso_path, iso_enc_type);
+
+        // fat_file = vfs_open(boot_pd, boot_path, FA_OPEN_EXISTING | FA_READ);
+        // text_encoding_t fat_enc_type = detect_encoding(fat_file, file_size);
+        // printf(" Fat File:%s, Encoding Type: %d\n", boot_path, fat_enc_type);
+
+
+        // uint8_t *utf8_buf = ;
+        // size_t utf8_size;
+
+        // if (change_file_encoding(file_data, file_size, iso_enc_type, &utf8_buf, &utf8_size) == 0) {
+        //     vfs_write(boot_pd, fat_file, utf8_buf, utf8_size);
+        //     free(utf8_buf);
+        // } else {
+        //     printf("Encoding conversion failed\n");
+        // }
+
+
+        if(memcmp(boot_path, "0:/boot/limine.conf", strlen(boot_path)) == 0){
+            char *text = "TIMEOUT: 0 \nDEFAULT_ENTRY: 1 \nVERBOSE: yes \nSMP: yes \nTEXTMODE: no \nGRAPHICS: yes \nINTERFACE_BRANDING: KeblaOS v0.17.3 \nINTERFACE_BRANDING_COLOR: 4 \nWALLPAPER: boot():/boot/boot_loader_wallpaper.bmp \nWALLPAPER_STYLE: centered \n/KeblaOS \n\tPROTOCOL: limine \n\tKERNEL_PATH: boot():/boot/kernel.bin \n\tMODULE_PATH: boot():/boot/user_main.elf";
+            int len = vfs_write(boot_pd, fat_file, text, strlen(text));
+            if(len > 0){
+                printf("Success written config\n");
+            }
+        }
+
+        // =================================================================================
+        
+
+
         if(vfs_sync(boot_pd, fat_file) != 0){
-            printf(" Failed to sync to file %s\n", boot_path);
+            printf("Failed to sync file %s\n", boot_path);
             return -1;
         }
         // printf(" Successfully sync file %s\n", boot_path);
 
         if(vfs_close(boot_pd, fat_file) != 0){
-            printf(" Failed to close file: %s !\n", boot_path);
+            printf("Failed to close file: %s !\n", boot_path);
             return -1;
         }
         // printf(" Successfully closed file %s\n", boot_path);
 
 
         if (bytes_written != file_size) {
-            printf("Write error on %s (%u/%u bytes)\n", boot_path, bytes_written, file_size);
+            printf("Write error on %s (%d/%d bytes)\n", boot_path, bytes_written, file_size);
             return -1;
         } 
 
+        free(file_data);
+
         printf(">>>> Successfully copied %s into %s\n", iso_path, boot_path);
 
-        free(file_data);
     }
 
     return 0;
@@ -368,10 +410,11 @@ static int copy_boot_files(int iso_pd, int boot_pd, int ld){
 // This function would install OS in boot_pd from iso_pd
 int uefi_install(int iso_pd, int boot_pd){
 
-    printf("Installing KeblaOS in Disk %d from Disk %d\n", boot_pd, iso_pd);
+    printf("\nInstalling KeblaOS in Disk %d from Disk %d...\n", boot_pd, iso_pd);
 
 
     // ============================ ISO Disk Initialization ===========================
+
     if(vfs_init(iso_pd) != 0){
         printf("VFS Initialization in Disk %d is Failed!\n", iso_pd);
         return -1;
@@ -386,6 +429,9 @@ int uefi_install(int iso_pd, int boot_pd){
 
     // ============================= Boot Disk Initialization ==========================
 
+    int boot_ld = 0;
+    int user_ld = 1;
+
     if(vfs_init(boot_pd) != 0){
         printf("VFS Initialization in Boot Disk %d is failed!\n", boot_pd);
         return -1;
@@ -399,16 +445,16 @@ int uefi_install(int iso_pd, int boot_pd){
     printf("Successfully Create two partition in Main disk %d and mounted\n", boot_pd);
 
     
-    if(create_boot_dirs(boot_pd, 0) != 0){
-        printf("Creating Directories in Main Disk %d Partition %d failed!\n", boot_pd, 0);
+    if(create_boot_dirs(boot_pd, boot_ld) != 0){
+        printf("Creating Directories in Disk %d:%d failed!\n", boot_pd, boot_ld);
     }
-    printf("Successfully Created directories in Main Disk %d partition %d\n", boot_pd, 0);
+    printf("Successfully Created boot directories in Disk %d:%d\n", boot_pd, boot_ld);
 
-    if(copy_boot_files(iso_pd, boot_pd, 0) != 0){
-        printf("Failed to Copy files from Boot Disk %d into Main Disk %d partition %d\n", iso_pd, boot_pd, 0);
+    if(copy_boot_files(iso_pd, boot_pd, boot_ld) != 0){
+        printf("Failed to Copy files from Boot Disk %d into Main Disk %d:%d\n", iso_pd, boot_pd, boot_ld);
         return -1;
     }
-    printf("Successfully Copyied files from boot disk %d into main disk %d partition %d\n", iso_pd, boot_pd, 0);
+    printf("Successfully Copyied files from boot disk %d into main disk %d:%d\n", iso_pd, boot_pd, boot_ld);
 
     // ======================== Put Marker in Boot Directory =====================
 
@@ -416,7 +462,7 @@ int uefi_install(int iso_pd, int boot_pd){
 
     void *mark_file = vfs_open(boot_pd, marker_path, FA_CREATE_ALWAYS | FA_WRITE);
     if(!mark_file){
-        printf("Failed to Open %s in Disk %d: %d\n", marker_path, boot_pd, 0);
+        printf("Failed to Open %s in Disk %d:%d\n", marker_path, boot_pd, boot_ld);
         return -1;
     }
     printf("Successfully Opened %s\n", marker_path);
@@ -455,25 +501,25 @@ bool is_os_installed(int boot_pd, int ld){
     printf("VFS Initialization in Disk %d is Success!\n", boot_pd);
 
     if(vfs_mount(boot_pd, ld) != 0){
-        printf("Mount Faied in Disk %d Partition %d\n", boot_pd, ld);
+        printf("Mount Faied in Disk %d:%d\n", boot_pd, ld);
         return false;
     }
-    printf("Successfully Mount Disk %d Partition %d\n", boot_pd, ld);
+    printf("Successfully Mount Disk %d:%d\n", boot_pd, ld);
 
     char boot_root[6];
     snprintf(boot_root, sizeof(boot_root), "%d:", ld);
 
     if(vfs_chdrive(boot_pd, boot_root) != 0){
-        printf("Change Drive in user disk %d at partition %d\n", boot_pd, ld);
+        printf("Change Drive in user disk %d:%d\n", boot_pd, ld);
         return false;
     }
-    printf("Successfully Change drive in %d at partition %d\n", boot_pd, ld);
+    printf("Successfully Change drive in %d:%d\n", boot_pd, ld);
 
     char *marker_path = "0:/.os_installed";
 
     void *mark_file = vfs_open(boot_pd, marker_path, FA_READ);
     if(!mark_file){
-        printf("Failed to Open %s in Disk %d: %d\n", marker_path, boot_pd, 0);
+        printf("Failed to Open %s in Disk %d:%d\n", marker_path, boot_pd, 0);
         return false;
     }
     printf("Successfully opened %s\n", marker_path);
@@ -587,15 +633,29 @@ int create_user_dirs(int pd){
         return -1;
     }
     printf("Successfully close the file %s\n", file_path);
+
+    return 0;
 }
 
-void init_user_space(int boot_pd, int user_ld){
+void init_user_space(int boot_pd, int boot_ld, int user_ld){
 
     if(vfs_init(boot_pd) != 0){
         printf("VFS Initialization in Disk %d is Failed!\n", boot_pd);
         return;
     }
     printf("VFS Initialization in Disk %d is Success!\n", boot_pd);
+
+    // if(vfs_mount(boot_pd, boot_ld) != 0){
+    //     printf("VFS Mount in Disk %d:%d is failed!\n", boot_pd, boot_ld);
+    //     return;
+    // }
+    // printf("VFS Mount on Disk %d:%d is success!\n", boot_pd, boot_ld);
+
+    if(vfs_mount(boot_pd, user_ld) != 0){
+        printf("VFS Mount in Disk %d:%d failed!\n", boot_pd, 2);
+        return;
+    }
+    printf("Successfully Mount  Disk %d:%d!\n", boot_pd, 2);
 
     char path[6];
     sprintf(path, "%d:/", user_ld);
@@ -605,9 +665,133 @@ void init_user_space(int boot_pd, int user_ld){
     }
     printf("Successfully Change drive %s\n", path);
 
-    if(vfs_mount(boot_pd, user_ld) != 0){
-        printf("VFS Mount id Disk %d: partition %d failed!\n", boot_pd, 2);
-        return;
-    }
-    printf("VFS Mount id Disk %d: partition %d Success!\n", boot_pd, 2);
+    vfs_listdir(boot_pd, "1:/");
 }
+
+
+text_encoding_t detect_encoding(const uint8_t *buf, size_t size) {
+    if (size >= 4) {
+        if (buf[0] == 0xFF && buf[1] == 0xFE && buf[2] == 0x00 && buf[3] == 0x00)
+            return ENC_UTF32_LE;
+        if (buf[0] == 0x00 && buf[1] == 0x00 && buf[2] == 0xFE && buf[3] == 0xFF)
+            return ENC_UTF32_BE;
+    }
+
+    if (size >= 2) {
+        if (buf[0] == 0xFF && buf[1] == 0xFE)
+            return ENC_UTF16_LE;
+        if (buf[0] == 0xFE && buf[1] == 0xFF)
+            return ENC_UTF16_BE;
+    }
+
+    if (size >= 3) {
+        if (buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF)
+            return ENC_UTF8_BOM;
+    }
+
+    // Heuristic: check if it looks like UTF-16 without BOM
+    size_t zero_count = 0;
+    for (size_t i = 1; i < size; i += 2) {
+        if (buf[i] == 0x00)
+            zero_count++;
+    }
+    if (zero_count > size / 4)
+        return ENC_UTF16_LE;   // common case in Windows text files
+
+    // Check valid UTF-8 sequences
+    size_t i = 0;
+    while (i < size) {
+        if (buf[i] < 0x80) {
+            i++;
+        } else if ((buf[i] & 0xE0) == 0xC0 && i + 1 < size &&
+                   (buf[i+1] & 0xC0) == 0x80) {
+            i += 2;
+        } else if ((buf[i] & 0xF0) == 0xE0 && i + 2 < size &&
+                   (buf[i+1] & 0xC0) == 0x80 &&
+                   (buf[i+2] & 0xC0) == 0x80) {
+            i += 3;
+        } else {
+            return ENC_UNKNOWN;
+        }
+    }
+
+    return ENC_UTF8; // valid UTF-8 without BOM (ASCII is subset)
+}
+
+
+
+int change_file_encoding(const uint8_t *buf, size_t size, text_encoding_t enc_type,  uint8_t **out_buf, size_t *out_size)
+{
+    if (!buf || size == 0 || !out_buf || !out_size)
+        return -1;
+
+    // If already UTF-8 / ASCII without BOM, just copy
+    if (enc_type == ENC_UTF8 || enc_type == ENC_ASCII) {
+        *out_buf = malloc(size + 1);
+        if (!*out_buf) return -1;
+        memcpy(*out_buf, buf, size);
+        (*out_buf)[size] = 0;
+        *out_size = size;
+        return 0;
+    }
+
+    // Skip UTF-8 BOM
+    if (enc_type == ENC_UTF8_BOM) {
+        if (size < 3) return -1;
+        *out_buf = malloc(size - 2);
+        if (!*out_buf) return -1;
+        memcpy(*out_buf, buf + 3, size - 3);
+        (*out_buf)[size - 3] = 0;
+        *out_size = size - 3;
+        return 0;
+    }
+
+    // UTF-16 to UTF-8
+    if (enc_type == ENC_UTF16_LE || enc_type == ENC_UTF16_BE) {
+        const uint16_t *in = (const uint16_t *)buf;
+        size_t words = size / 2;
+
+        size_t max_out = words * 3 + 1;
+        uint8_t *out = malloc(max_out);
+        if (!out) return -1;
+
+        size_t j = 0;
+        for (size_t i = 0; i < words; i++) {
+            uint16_t wc = in[i];
+
+            if (enc_type == ENC_UTF16_BE)
+                wc = (wc >> 8) | (wc << 8);     // swap endian
+
+            if (i == 0 && wc == 0xFEFF)         // skip BOM
+                continue;
+
+            if (wc <= 0x7F) {
+                out[j++] = wc;
+            } else if (wc <= 0x7FF) {
+                out[j++] = 0xC0 | (wc >> 6);
+                out[j++] = 0x80 | (wc & 0x3F);
+            } else {
+                out[j++] = 0xE0 | (wc >> 12);
+                out[j++] = 0x80 | ((wc >> 6) & 0x3F);
+                out[j++] = 0x80 | (wc & 0x3F);
+            }
+        }
+
+        out[j] = 0;
+        *out_buf = out;
+        *out_size = j;
+        return 0;
+    }
+
+    return -1;
+}
+
+
+
+
+
+
+
+
+
+

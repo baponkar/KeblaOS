@@ -104,6 +104,8 @@ enum int_syscall_number {
     INT_SYSCALL_SERIAL_PRINT    = 112,
 
     INT_SYSCALL_PUTCHAR          = 113,
+
+    INT_SYSCALL_UNMOUNT = 116
  
 };
 
