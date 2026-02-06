@@ -298,7 +298,12 @@ bool fat32_read_cluster_chain(int disk_no, uint32_t start_cluster, void *buffer,
 
 
 
-bool fat32_write_cluster_chain(int disk_no, const void *buffer, uint32_t size, uint32_t *first_cluster) {
+bool fat32_write_cluster_chain(
+    int disk_no,
+    const void *buffer,
+    uint32_t size,
+    uint32_t *first_cluster)
+{
     const uint8_t *buf = (const uint8_t *)buffer;
     uint32_t cluster_size = get_cluster_size_bytes();
     uint32_t written = 0;
@@ -306,8 +311,12 @@ bool fat32_write_cluster_chain(int disk_no, const void *buffer, uint32_t size, u
     uint32_t prev_cluster = 0;
     uint32_t curr_cluster = 0;
 
+    uint8_t *temp = malloc(cluster_size);
+    if (!temp) return false;
+
     while (written < size) {
         if (!fat32_allocate_cluster(disk_no, &curr_cluster)) {
+            free(temp);
             return false;
         }
 
@@ -317,13 +326,16 @@ bool fat32_write_cluster_chain(int disk_no, const void *buffer, uint32_t size, u
             *first_cluster = curr_cluster;
         }
 
-        uint32_t to_write = (size - written > cluster_size) ? cluster_size : (size - written);
+        uint32_t to_write =
+            (size - written > cluster_size)
+            ? cluster_size
+            : (size - written);
 
-        uint8_t temp[cluster_size];
         memset(temp, 0, cluster_size);
         memcpy(temp, buf + written, to_write);
 
         if (!fat32_write_cluster(disk_no, curr_cluster, temp)) {
+            free(temp);
             return false;
         }
 
@@ -331,9 +343,11 @@ bool fat32_write_cluster_chain(int disk_no, const void *buffer, uint32_t size, u
         prev_cluster = curr_cluster;
     }
 
-    fat32_set_next_cluster(disk_no, prev_cluster, 0x0FFFFFFF); // EOF
+    fat32_set_next_cluster(disk_no, prev_cluster, 0x0FFFFFFF);
+    free(temp);
     return true;
 }
+
 
 
 
@@ -462,7 +476,7 @@ void fat32_format_83_name(const char *name, char out[11]) {
     }
 }
 
-bool fat32_create_dir_entry(int disk_no, uint32_t parent_cluster, const char *name, uint8_t attr, uint32_t first_cluster ) {
+bool fat32_create_dir_entry(int disk_no, uint32_t parent_cluster, const char *name, uint8_t attr, uint32_t first_cluster , uint32_t file_size) {
     uint32_t entry_cluster, entry_offset;
 
     if (!fat32_find_free_dir_entry(
@@ -491,7 +505,7 @@ bool fat32_create_dir_entry(int disk_no, uint32_t parent_cluster, const char *na
     entry->DIR_Attr = attr;
     entry->DIR_FstClusHI = (first_cluster >> 16) & 0xFFFF;
     entry->DIR_FstClusLO = first_cluster & 0xFFFF;
-    entry->DIR_FileSize = 0;
+    entry->DIR_FileSize = file_size;
 
     fat32_write_cluster(disk_no, entry_cluster, buf);
     free(buf);
@@ -549,7 +563,7 @@ bool fat32_mkdir_internal(int disk_no, uint32_t parent_cluster, const char *name
         parent_cluster,
         name,
         ATTR_DIRECTORY,
-        new_cluster
+        new_cluster, 0
     );
 }
 
@@ -661,6 +675,38 @@ bool fat32_set_volume_label(int disk_no, const char *label) {
     bool ok = fat32_write_cluster(disk_no, root_cluster, buf);
     free(buf);
     return ok;
+}
+
+bool fat32_create_test_file(int disk_no) {
+    const char *filename = "TEST.TXT";
+    const char *content  = "Hello from KeblaOS FAT32!\n";
+
+    uint32_t root_cluster = bpb->BPB_RootClus;
+    uint32_t first_cluster = 0;
+
+    /* 1. Write data to cluster chain */
+    if (!fat32_write_cluster_chain(
+            disk_no,
+            content,
+            strlen(content),
+            &first_cluster)) {
+        printf("Failed to write file data\n");
+        return false;
+    }
+
+    /* 2. Create directory entry in root */
+    if (!fat32_create_dir_entry(
+            disk_no,
+            root_cluster,
+            filename,
+            ATTR_ARCHIVE,
+            first_cluster, strlen(content))) {
+        printf("Failed to create directory entry\n");
+        return false;
+    }
+
+    printf("TEST.TXT created successfully\n");
+    return true;
 }
 
 

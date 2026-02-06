@@ -1,13 +1,9 @@
 # Last Updated 06-02-2026 11:13
 
 
-
-
 *.crt
 *.priv
 *.signed
-
-
 
 
 # ignoring following directories

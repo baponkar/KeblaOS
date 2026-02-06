@@ -97,11 +97,24 @@ void kmain(){
         printf("Failed to create FAT32 Volume on ESP Partition.\n");
     }
 
-    if(fat32_mkdir_root(boot_disk_no, "TESTDIR")){
-        printf("Successfully created directory\n");
+    if(fat32_mkdir_root(boot_disk_no, "BOOT")){
+        printf("Successfully created BOOT directory\n");
     }else{
-        printf("Failed to create Directtory\n");
+        printf("Failed to create BOOT Directtory\n");
     }
+
+    if(fat32_mkdir_root(boot_disk_no, "EFI")){
+        printf("Successfully created EFI directory\n");
+    }else{
+        printf("Failed to create EFI Directtory\n");
+    }
+
+    if(fat32_create_test_file(boot_disk_no)){
+        printf("Successfully created TEST.TXT\n");
+    }else{
+        printf("Failed to create TEST.TXT\n");
+    }
+
 
     // Install KeblaOS in ESP Partition
     // if(esp_install(iso_disk_no, boot_disk_no) != 0){

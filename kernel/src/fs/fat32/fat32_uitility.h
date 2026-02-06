@@ -58,7 +58,7 @@ bool fat32_validate_cluster_chain(int disk_no, uint32_t start_cluster);
 bool fat32_find_free_dir_entry(int disk_no, uint32_t dir_cluster, uint32_t *out_cluster, uint32_t *out_offset);
 void fat32_format_83_name(const char *name, char out[11]);
 
-bool fat32_create_dir_entry(int disk_no, uint32_t parent_cluster, const char *name, uint8_t attr, uint32_t first_cluster );
+bool fat32_create_dir_entry(int disk_no, uint32_t parent_cluster, const char *name, uint8_t attr, uint32_t first_cluster , uint32_t file_size);
 
 bool fat32_init_directory( int disk_no,  uint32_t dir_cluster, uint32_t parent_cluster );
 bool fat32_mkdir_internal(int disk_no, uint32_t parent_cluster, const char *name) ;
@@ -66,8 +66,14 @@ bool fat32_mkdir_internal(int disk_no, uint32_t parent_cluster, const char *name
 bool fat32_dir_exists(int disk_no, uint32_t dir_cluster, const char *name);
 bool fat32_mkdir_root(int disk_no, const char *name);
 
+bool fat32_create_test_file(int disk_no);
 
-bool fat32_set_volume_label(int disk_no, const char *label);
+
+
+
+
+
+
 
 
 
