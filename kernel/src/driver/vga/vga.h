@@ -43,7 +43,7 @@ void draw_image_with_transparency(int x, int y,  const uint64_t *image_data, int
 void load_image_with_animation(int x, int y, const uint64_t* image_data, int img_width, int img_height);
 
 
-
+void draw_milkyway_galaxy(int center_x, int center_y, int scale);
 
 
 

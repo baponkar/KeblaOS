@@ -12,6 +12,7 @@ https://wiki.osdev.org/ISO_9660
 #include "../../../lib/string.h"
 
 #include "../../../memory/vmm.h"
+#include "../../../memory/kheap.h"
 
 #include "satapi.h"
 
@@ -44,16 +45,16 @@ void AtpiPortRebase(HBA_PORT_T *port)
 
     // Allocate memory (same as your working SATA version)
     const size_t ALLOC_SIZE = 64 * 1024;
-    void *base_virt = (void *) malloc(ALLOC_SIZE);
+    void *base_virt = (void *) kheap_alloc(ALLOC_SIZE, ALLOCATE_DATA);
     if (!base_virt) {
-        printf("AtpiPortRebase: malloc failed\n");
+        printf("AtpiPortRebase: kheap_alloc failed\n");
         return;
     }
 
     uintptr_t base_phys = vir_to_phys((uintptr_t)base_virt);
     if (base_phys == 0) {
         printf("AtpiPortRebase: vir_to_phys returned 0\n");
-        free(base_virt);
+        kheap_free(base_virt, ALLOCATE_DATA);
         return;
     }
 
@@ -183,14 +184,14 @@ bool satapi_inquiry(HBA_PORT_T *port) {
     cdb[0] = ATAPI_CMD_INQUIRY;
     cdb[4] = 36; // allocation length
 
-    void *buf = malloc(36);
+    void *buf = kheap_alloc(36, ALLOCATE_DATA);
     if (!buf) return false;
     memset(buf, 0, 36);
 
     uintptr_t buf_phys = vir_to_phys((uintptr_t)buf);
     if (!runAtapiCommand(port, cdb, 12, buf_phys, 36, false)) {
         printf("Inquiry failed\n");
-        free(buf);
+        kheap_free(buf, 36);
         return false;
     }
 
@@ -224,8 +225,8 @@ bool satapi_inquiry(HBA_PORT_T *port) {
         case 0x07: printf(" (Optical memory device)\n"); break;
         default: printf(" (Unknown)\n"); break;
     }
-    
-    free(buf);
+
+    kheap_free(buf, 36);
     return true;
 }
 
@@ -320,7 +321,7 @@ uint16_t satapi_get_bytes_per_sector(HBA_PORT_T *port){
     uint8_t cdb[10] = {0};
     cdb[0] = 0x25; // Read Capacity Command
 
-    void *buf = malloc(8);
+    void *buf = kheap_alloc(8, ALLOCATE_DATA);
     if(!buf) return 0;
     memset(buf, 0, 8);
 
@@ -337,7 +338,7 @@ uint16_t satapi_get_bytes_per_sector(HBA_PORT_T *port){
         printf("SATAPI: READ CAPACITY failed\n");
     }
 
-    free(buf);  // FIXED: Use actual allocated size
+    kheap_free(buf, 36);  // FIXED: Use actual allocated size
     return bytes_per_sector;
 }
 
@@ -345,7 +346,7 @@ uint64_t satapi_get_total_sectors(HBA_PORT_T *port){
     uint8_t cdb[10] = {0};
     cdb[0] = 0x25; // Read Capacity Command
 
-    void *buf = malloc(8);
+    void *buf = kheap_alloc(8, ALLOCATE_DATA);
     if(!buf) return 0;
     memset(buf, 0, 8);
 
@@ -363,7 +364,7 @@ uint64_t satapi_get_total_sectors(HBA_PORT_T *port){
         printf("SATAPI: READ CAPACITY failed\n");
     }
 
-    free(buf);  // FIXED: Use actual allocated size
+    kheap_free(buf, 36);  // FIXED: Use actual allocated size
     return total_sectors;
 }
 
@@ -372,7 +373,7 @@ bool satapi_read_capacity(HBA_PORT_T *port, uint32_t *last_lba, uint32_t *sector
     uint8_t cdb[10] = {0};
     cdb[0] = 0x25; // READ CAPACITY command
     
-    void *buf = malloc(8);
+    void *buf = kheap_alloc(8, ALLOCATE_DATA);
     if (!buf) return false;
     memset(buf, 0, 8);
     
@@ -387,8 +388,8 @@ bool satapi_read_capacity(HBA_PORT_T *port, uint32_t *last_lba, uint32_t *sector
         printf("SATAPI Capacity: Last LBA=%u, Sector Size=%u bytes\n", 
                *last_lba, *sector_size);
     }
-    
-    free(buf);
+
+    kheap_free(buf, 36);
     return success;
 }
 
@@ -445,12 +446,12 @@ void test_satapi(HBA_PORT_T *port) {
     uint32_t last_lba, sector_size;
     if (satapi_read_capacity(port, &last_lba, &sector_size)) {
         // Read first sector
-        void *buffer = malloc(sector_size);
+        void *buffer = kheap_alloc(sector_size, ALLOCATE_DATA);
         if (buffer && satapi_read(port, 0, 1, buffer)) {
             printf(" Successfully read first sector\n");
             // Process CD/DVD sector data here...
         }
-        free(buffer);
+        kheap_free(buffer, sector_size);
     }
 }
 

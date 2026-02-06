@@ -12,6 +12,7 @@ Author       : Baponkar
 
 #include "stdio.h"
 #include "string.h"
+#include "assert.h"
 
 #include "stdlib.h"
 
@@ -155,7 +156,7 @@ void free(void *ptr) {
     
     // Validate magic number to detect corruption
     if (header->magic != MAGIC) {
-        printf("Memory Header magic number corrupted:%x\n", header->magic);
+        printf("Memory Header magic number corrupted:%x/%x\n", header->magic, MAGIC);
         return;
     }
     

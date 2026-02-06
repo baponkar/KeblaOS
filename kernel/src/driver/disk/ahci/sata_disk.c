@@ -111,7 +111,7 @@ uint64_t sata_get_total_sectors(HBA_PORT_T* port) {
 }
 
 
-uint32_t sata_get_bytes_per_sector(HBA_PORT_T* port) {
+uint16_t sata_get_bytes_per_sector(HBA_PORT_T* port) {
     void *identify_buf = (void *) kheap_alloc(512, ALLOCATE_DATA);
     if (identify_buf == NULL) {
         printf(" [SATA] Memory allocation for IDENTIFY buffer failed!\n");

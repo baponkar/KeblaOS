@@ -13,10 +13,10 @@ References:
 #include "../fs/FatFs-R.0.16/source/diskio.h"
 
 #include "../fs/fatfs_wrapper.h"
-#include "../fs/iso9660.h"
+#include "../fs/iso9660/iso9660.h"
 
 #include "../lib/stdio.h"
-#include "../lib/stdlib.h"
+// #include "../lib/stdlib.h"
 #include "../lib/string.h"
 #include "../lib/limit.h"
 #include "../lib/errno.h"
@@ -121,7 +121,7 @@ int vfs_disk_status(int disk_no){
 }
 
 
-int vfs_mount(int disk_no, int logical_drive){
+int vfs_mount(int disk_no, int logical_drive, int mount_opt){
     if(disk_no >= disk_count) {
         printf("VFS: Invalid disk number %d\n", disk_no);
         return -1;
@@ -142,7 +142,7 @@ int vfs_mount(int disk_no, int logical_drive){
     if(disk.type == DISK_TYPE_SATAPI){
         return iso9660_mount(disk_no);
     }else if(disk.type == DISK_TYPE_AHCI_SATA){
-        return fatfs_mount(logical_drive);
+        return fatfs_mount(logical_drive, mount_opt);
     }else{
         printf("VFS: Unsupported disk type %d for mount on disk %d\n", disk.type, disk_no);
         return -1;
@@ -185,7 +185,9 @@ int vfs_mkfs(int pd, int logical_drive, VFS_TYPE fs_type){
             case VFS_FAT16:
                 return fatfs_mkfs(logical_drive, FM_FAT);
             case VFS_FAT32:
-                return fatfs_mkfs(logical_drive, FM_FAT32);
+                FRESULT res = fatfs_mkfs(logical_drive, FM_FAT32);
+                printf(" VFS: FAT32 mkfs result code: %s\n", fatfs_error_string(res));
+                return res == FR_OK ? 0 : -1;
             case VFS_EXFAT:
                 return fatfs_mkfs(logical_drive, FM_EXFAT);
             default:
@@ -199,7 +201,7 @@ int vfs_mkfs(int pd, int logical_drive, VFS_TYPE fs_type){
 }
 
 
-#ifdef FF_MULTI_PARTITION
+#if F_MULTI_PARTITION
 extern PARTITION VolToPart[FF_VOLUMES];
 int vfs_fdisk(int physical_disk_no, void *ptbl, void* work){
     if(physical_disk_no >= disk_count || !disks || !ptbl) return -1;
@@ -619,6 +621,7 @@ int vfs_chdir(int disk_no, char *path){
      }
 }
 
+#if F_MULTI_PARTITION
 int vfs_chdrive(int disk_no, char *path){
     Disk disk = disks[disk_no];
      if(disk.type == DISK_TYPE_SATAPI){
@@ -630,6 +633,7 @@ int vfs_chdrive(int disk_no, char *path){
           return -1;
      }
 }
+#endif
 
 
 int vfs_getcwd(int disk_no, char *buff, int len){
@@ -780,7 +784,7 @@ void vfs_test(int disk_no){
    printf(" Successfully created FAT32 Filesystem in Disk %d\n", disk_no);
 
    // Mounting the Disk
-   if(vfs_mount(disk_no, 0) != 0){
+   if(vfs_mount(disk_no, 0, 0) != 0){
         printf(" Error to mount disk %d\n", disk_no);
         return;
    }

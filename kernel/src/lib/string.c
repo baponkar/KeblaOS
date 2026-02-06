@@ -28,6 +28,8 @@ void *memcpy(void *dest, const void *src, size_t n) {
 
 
 void *memset(void *s, int c, size_t n) {
+    // Checking This memory have Header or not
+    
     uint8_t *p = (uint8_t *) s; // making uint8_t pointer from void pointer
 
     for (size_t i = 0; i < n; i++) {
@@ -248,8 +250,8 @@ char *strdup(const char *str) {
     if (str == NULL) return NULL;
     
     size_t len = strlen(str) + 1;  // +1 for null terminator
-    // char *copy = kheap_alloc(len, ALLOCATE_DATA);
-    char *copy = malloc(len);
+    char *copy = kheap_alloc(len, ALLOCATE_DATA);
+    // char *copy = malloc(len);
     
     if (copy != NULL) {
         memcpy(copy, str, len);

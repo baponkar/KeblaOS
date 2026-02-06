@@ -40,6 +40,7 @@ References:
 #include "../../../lib/stdlib.h"
 
 #include "../../../memory/vmm.h"
+#include "../../../memory/kheap.h"
 
 #include "ahci.h"
 
@@ -156,7 +157,7 @@ void portRebase(HBA_PORT_T *port)
     // Allocate a physically contiguous region for this port:
     // Make it large enough for CLB (1K), FB (1K), CTBA area (8K), plus margin.
     const size_t ALLOC_SIZE = 64 * 1024; // 64 KiB to be safe
-    void *base_virt = (void *) malloc(ALLOC_SIZE);
+    void *base_virt = (void *) kheap_alloc(ALLOC_SIZE, ALLOCATE_DATA);
     if (!base_virt) {
         printf("[AHCI] portRebase: malloc failed\n");
         return;

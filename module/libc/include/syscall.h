@@ -174,7 +174,7 @@ uint64_t syscall_fdisk(int disk_no, void *ptbl, void* work);
 // FatFs File Manage
 uint64_t syscall_vfs_mkfs(int pd, int ld, int fs_type);
 uint64_t syscall_vfs_init(int disk_no);
-uint64_t syscall_mount(int pd, int ld);
+uint64_t syscall_mount(int pd, int ld, int mount_opt);
 uint64_t syscall_unmount(int pd, int ld);
 uint64_t syscall_open(int disk_no, const char *path, uint64_t flags);
 uint64_t syscall_close(int disk_no, void *file);

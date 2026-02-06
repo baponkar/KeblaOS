@@ -22,20 +22,17 @@
 
 
 
-#define LBA_OFFSET 0
+#define LBA_OFFSET 2048  	/* Offset for KeblaOS disks (first 2048 sectors are reserved) */
+#define ESP_SECTORS 204800  /* Number of sectors in ESP partition (100MB) */
 
 
-DSTATUS disk_status (
-	BYTE pdrv		/* Physical drive nmuber to identify the drive */
-)
+DSTATUS disk_status (BYTE pdrv)
 {
 	if(!kebla_disk_status((int) pdrv)) return STA_NOINIT;
 	return 0;
 }
 
-DSTATUS disk_initialize (
-	BYTE pdrv				/* Physical drive nmuber to identify the drive */
-)
+DSTATUS disk_initialize (BYTE pdrv)
 {
 	if(!kebla_disk_init((int)pdrv)) return STA_NOINIT;
 	return 0;
@@ -84,26 +81,38 @@ DRESULT disk_write (
 
 DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void *buff)
 {
+    uint8_t mbr[512];
+    
     switch (cmd)
     {
         case CTRL_SYNC:
             return RES_OK;
+            
         case GET_SECTOR_SIZE:
             *(WORD*)buff = 512;
             return RES_OK;
+            
         case GET_BLOCK_SIZE:
             *(DWORD*)buff = 1;
             return RES_OK;
+            
         case GET_SECTOR_COUNT:
-            *(DWORD*)buff = disks[(int)pdrv].total_sectors;
+            // Return actual total sectors
+            *(LBA_t*)buff = ESP_SECTORS;
             return RES_OK;
+            
+        case MMC_GET_TYPE:          /* Get card type flags (1 byte) */
+        case MMC_GET_CSD:           /* Read CSD (16 bytes) */
+        case MMC_GET_CID:           /* Read CID (16 bytes) */
+        case MMC_GET_OCR:           /* Read OCR (4 bytes) */
+        case MMC_GET_SDSTAT:        /* Read SD status (64 bytes) */
+        case ATA_GET_REV:           /* Get F/W revision (16 bytes) */
+        case ATA_GET_MODEL:         /* Get model name (40 bytes) */
+        case ATA_GET_SN:            /* Get serial number (20 bytes) */
+            return RES_OK;
+            
         default:
             return RES_PARERR;
     }
 }
-
-
-
-
-
 

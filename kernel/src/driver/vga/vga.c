@@ -229,4 +229,109 @@ void load_image_with_animation(int x, int y, const uint64_t* image_data, int img
     cls_color(COLOR_BLACK ); // Clear screen again
 }
 
+#define RAND_MAX 0x7FFFFFFF
 
+// Milky Way galaxy drawing function
+void draw_milkyway_galaxy(int center_x, int center_y, int scale) {
+    // Galaxy parameters based on scale
+    int bulge_radius = scale * 3;           // Central bulge
+    int arm_count = 4;                      // Number of spiral arms
+    int star_count = scale * 50;            // Number of stars
+    int arm_length = scale * 15;            // Length of spiral arms
+    
+    // Galaxy colors
+    uint32_t bulge_color = 0xFFFFA500;      // Orange-yellow for central bulge
+    uint32_t arm_color = 0xFF4169E1;        // Royal blue for dense arm regions
+    uint32_t star_color = 0xFFFFFFFF;       // White for stars
+    uint32_t dust_color = 0xFF8B4513;       // Brown for dust lanes
+    uint32_t halo_color = 0xFF483D8B;       // Dark blue for galactic halo
+    
+    // Draw galactic halo (faint background glow)
+    for (int r = scale * 20; r > 0; r -= 5) {
+        uint32_t color = halo_color & 0x00FFFFFF;  // Remove alpha
+        color |= (0x10 + (r * 2)) << 24;           // Fade out with distance
+        draw_circle(center_x, center_y, r, color);
+    }
+    
+    // Draw central bulge with gradient
+    for (int r = bulge_radius; r > 0; r--) {
+        uint32_t color = bulge_color;
+        // Make center brighter
+        uint8_t alpha = 0x30 + (r * 0x10);
+        color = (color & 0x00FFFFFF) | (alpha << 24);
+        draw_circle(center_x, center_y, r, color);
+    }
+    
+    // Draw spiral arms
+    for (int arm = 0; arm < arm_count; arm++) {
+        double angle_offset = (2 * 3.14159 * arm) / arm_count;
+        
+        for (int i = 0; i < arm_length; i++) {
+            double t = i / (double)arm_length;
+            double radius = 10 + t * (scale * 12);
+            double angle = angle_offset + t * 10;  // Spiral angle
+            
+            // Spiral arm coordinates
+            int arm_x = center_x + (int)(radius * cos(angle));
+            int arm_y = center_y + (int)(radius * sin(angle));
+            
+            // Draw arm segment
+            int arm_width = (int)((1 - t * 0.7) * 3);  // Arms get thinner
+            draw_filled_circle(arm_x, arm_y, arm_width, arm_color);
+            
+            // Add dust lanes along arms
+            if (i % 5 == 0) {
+                int dust_x = center_x + (int)((radius - 2) * cos(angle + 0.1));
+                int dust_y = center_y + (int)((radius - 2) * sin(angle + 0.1));
+                draw_filled_circle(dust_x, dust_y, 2, dust_color);
+            }
+        }
+    }
+    
+    // Draw stars with random distribution (more dense near center)
+    for (int i = 0; i < star_count; i++) {
+        // Generate polar coordinates
+        double angle = ((double)rand() / RAND_MAX) * 2 * 3.14159;
+        double distance = pow((double)rand() / RAND_MAX, 2) * scale * 18;
+        
+        // Convert to cartesian
+        int star_x = center_x + (int)(distance * cos(angle));
+        int star_y = center_y + (int)(distance * sin(angle));
+        
+        // Star size and brightness vary
+        int star_size = 1 + (rand() % 3);
+        uint8_t brightness = 0xC0 + (rand() % 0x3F);
+        uint32_t color = (brightness << 16) | (brightness << 8) | brightness;
+        
+        // Add some colorful stars (blue giants, red dwarfs)
+        if (rand() % 20 == 0) {
+            if (rand() % 2) color = 0xFF4169E1;  // Blue
+            else color = 0xFFFF4500;            // Red-orange
+        }
+        
+        draw_filled_circle(star_x, star_y, star_size, color);
+    }
+    
+    // Draw a few bright core stars
+    for (int i = 0; i < 15; i++) {
+        int offset_x = (rand() % (bulge_radius * 2)) - bulge_radius;
+        int offset_y = (rand() % (bulge_radius * 2)) - bulge_radius;
+        draw_filled_circle(center_x + offset_x, center_y + offset_y, 2, 0xFFFFFF00);
+    }
+    
+    // Add some globular clusters in the halo
+    for (int i = 0; i < 8; i++) {
+        double angle = ((double)rand() / RAND_MAX) * 2 * 3.14159;
+        double distance = scale * 15 + (rand() % (scale * 10));
+        
+        int cluster_x = center_x + (int)(distance * cos(angle));
+        int cluster_y = center_y + (int)(distance * sin(angle));
+        
+        // Draw small cluster of stars
+        for (int j = 0; j < 20; j++) {
+            int offset_x = (rand() % 8) - 4;
+            int offset_y = (rand() % 8) - 4;
+            draw_filled_circle(cluster_x + offset_x, cluster_y + offset_y, 1, 0xFFF0F0F0);
+        }
+    }
+}

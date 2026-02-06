@@ -456,7 +456,8 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             case INT_SYSCALL_MOUNT: { // 0x52
                 int disk_no = (int) regs->rdi;
                 int logical_drive = (int) regs->rsi;
-                regs->rax = (uint64_t)vfs_mount(disk_no, logical_drive);
+                int mount_opt = (int) regs->rdx;
+                regs->rax = (uint64_t)vfs_mount(disk_no, logical_drive, mount_opt);
                 break;
             }
 
@@ -605,7 +606,11 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             case INT_SYSCALL_CHDRIVE: {
                 int disk_no = (int) regs->rdi;
                 char *path = (char *)regs->rsi;
+                #if F_MULTI_PARTITION
                 regs->rax = vfs_chdrive(disk_no, path);
+                #else
+                regs->rax = (uint64_t)(-1); // Not supported
+                #endif
                 break;
             }
 
@@ -615,7 +620,11 @@ registers_t *int_systemcall_handler(registers_t *regs) {
                 int disk_no = (int) regs->rdi;
                 void *ptbl = (void *) regs->rsi;
                 void *work = (void *) regs->rdx;
+                #if F_MULTI_PARTITION
                 regs->rax = (uint64_t)vfs_fdisk(disk_no, ptbl, work);
+                #else
+                regs->rax = (uint64_t)(-1); // Not supported
+                #endif
                 break;
             }
 

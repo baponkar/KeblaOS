@@ -26,7 +26,7 @@ void instll(){
         printf("Successfully Format Disk 0 with FAT32 Filesystem.\n");
     }
 
-    if(syscall_mount(1,0) != 0){
+    if(syscall_mount(1,0, 0) != 0){
         printf("Mount Device 0: is failed!\n");
     }else{
         printf("Mount Disk 0\n");
@@ -56,7 +56,7 @@ void instll(){
     // Now detect USB Disk which is containing Limine bootloader and Kernel.bin
     char *cdrom = "1:";
     
-    if(syscall_mount(0, 1) == 0){
+    if(syscall_mount(0, 1, 0) == 0){
         printf("Sucessfully mount cdrom\n");
     }
 

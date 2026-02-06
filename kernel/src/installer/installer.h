@@ -32,3 +32,4 @@ int change_file_encoding(const uint8_t *buf, size_t size, text_encoding_t enc_ty
 
 
 
+static int mark_efi_system_partition(int disk_no);

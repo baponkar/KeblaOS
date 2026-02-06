@@ -1,12 +1,13 @@
 
 // https://elm-chan.org/fsw/ff/
+// https://allthingsembedded.com/2018/12/29/adding-gpt-support-to-fatfs/
 
 
 #include "FatFs-R.0.16/source/ff.h"
 #include "FatFs-R.0.16/source/diskio.h"
 #include "FatFs-R.0.16/source/ffconf.h"
 
-#include "../lib/stdlib.h"
+// #include "../lib/stdlib.h"
 #include "../lib/stdio.h"
 #include "../lib/string.h"
 #include "../lib/stdlib.h"
@@ -16,8 +17,8 @@
 
 #include "fatfs_wrapper.h"
 
+FATFS* fs_array[FF_VOLUMES] = {0};
 
-FATFS *fs_array[FF_VOLUMES] = {NULL};
 
 /* Error code to string conversion */
 const char* fatfs_error_string(FRESULT result)
@@ -68,24 +69,25 @@ int fatfs_disk_status(int disk_no){
 
 // Making FATFS on the given logical drive
 int fatfs_mkfs(int ld, int fs_type) {
+
     if(ld < 0) return -1;
     
-    MKFS_PARM opt;          
-    opt.fmt = fs_type;
-    opt.n_fat = 1;
-    opt.align = 0;
-    opt.n_root = 0;
-    opt.au_size = 0;
-    
-    // Try larger buffer
-    size_t buffer_size = 16 * 1024;  // 16 KB
-    BYTE *work = (BYTE *)malloc(buffer_size);
+    MKFS_PARM opt;  
+    memset(&opt, 0, sizeof(MKFS_PARM));
 
+    opt.fmt = fs_type;  // FM_FAT, FM_FAT32 | FM_SFD, etc.
+    opt.n_fat = 1;      // Number of FATs
+    opt.align = 0;      // Use default alignment
+    opt.n_root = 0;     // Use default number of root directory entries
+    opt.au_size = 0;    // Use default cluster size
+    
+
+    size_t buffer_size = 16 * 1024;  // 16 KB
+    BYTE *work = (BYTE *)kheap_alloc(buffer_size, ALLOCATE_DATA);
     if(!work) {
         printf("FATFS: Failed to allocate any work buffer\n");
         return -1;
     }
-
     memset(work, 0, buffer_size);
 
     char root_path[4];
@@ -93,28 +95,26 @@ int fatfs_mkfs(int ld, int fs_type) {
     
     FRESULT res = f_mkfs(root_path, &opt, work, buffer_size);
     
-    free(work);
+    kheap_free(work, buffer_size);
     
     if(res != FR_OK) {
         printf("FATFS: MKFS failed with error: %s\n", fatfs_error_string(res));
         return -1;
     }
     
-    return (int)res;
+    return 0;
 }
 
 // Mounting FATFS on the given logical drive
-int fatfs_mount(int ld){
+int fatfs_mount(int ld, int mount_opt){  // 1 = immediate mount with detection, 0 = delay mount
     if(!fs_array[ld]){
-        fs_array[ld] = (FATFS *)malloc(sizeof(FATFS));
+        fs_array[ld] = (FATFS *)kheap_alloc(sizeof(FATFS), ALLOCATE_DATA);
     }
     memset(fs_array[ld], 0, sizeof(FATFS));
 
     char path[16];
     memset(path, 0, sizeof(path));
     sprintf(path, "%d:", ld);
-
-    BYTE mount_opt = 1;  // 1 = immediate mount with detection, 0 = delay mount
 
     FRESULT res = f_mount(fs_array[ld], (const TCHAR*) path, mount_opt);
 
@@ -138,10 +138,7 @@ int fatfs_unmount(int ld){
 
 
 #if FF_MULTI_PARTITION
-PARTITION VolToPart[FF_VOLUMES] = {
-    {1, 1},     // "0:" ==> 1st partition in physical drive 1
-    {1, 2}      // "1:" ==> 2nd partition in physical drive 1
-};
+PARTITION VolToPart[FF_VOLUMES] = {};
 #endif
 
 
@@ -187,13 +184,13 @@ void *fatfs_open(char *path, int mode) {
 
     if (!path) return NULL;
 
-    FIL *fp = (FIL *)malloc(sizeof(FIL));  // dynamically allocate
+    FIL *fp = (FIL *)kheap_alloc(sizeof(FIL), ALLOCATE_DATA);  // dynamically allocate
     if (!fp) return NULL;
 
     FRESULT res = f_open(fp, (const TCHAR*) path, (BYTE) mode);
     if (res != FR_OK) {
         printf("Failed to open %s with error code %d\n", path, mode);
-        free(fp);
+        kheap_free(fp, sizeof(FIL));
         return NULL;
     }
 
@@ -205,7 +202,7 @@ void *fatfs_open(char *path, int mode) {
 int fatfs_close(void *fp){
     if(!fp) return -1;
     FRESULT res = f_close((FIL*) fp);
-    free(fp);
+    kheap_free(fp, sizeof(FIL));
 
     return res;
 }
@@ -276,7 +273,9 @@ int fatfs_findnext(void *dp, void *fno){
 #endif
 
 int fatfs_mkdir(char *path){
-    return f_mkdir((const TCHAR*) path) == FR_OK ? 0 : -1;
+    FRESULT res = f_mkdir((const TCHAR*) path);
+    printf("fatfs_mkdir: Creating directory %s, result: %s\n", path, fatfs_error_string(res));
+    return res == FR_OK ? 0 : -1;
 }
 
 int fatfs_unlink(char *path){
@@ -288,7 +287,7 @@ int fatfs_rename(char *old_path, char *new_path){
 }
 
 int fatfs_stat(char *path){
-    FILINFO* fno = (FILINFO*) malloc(sizeof(FILINFO));
+    FILINFO* fno = (FILINFO*) kheap_alloc(sizeof(FILINFO), ALLOCATE_DATA);
     return f_stat((const TCHAR*) path, (FILINFO*) fno);
 }
 
@@ -305,10 +304,12 @@ int fatfs_chdir(char *path){
    return f_chdir((const TCHAR*) path);
 }
 
+#if FF_MULTI_PARTITION
 // Change current drive
 int fatfs_chdrive(char *path){
     return f_chdrive((const TCHAR*) path);	
 }
+#endif
 
 // In fatfs_getcwd, add bounds checking
 int fatfs_getcwd(char *buff, int len) {
@@ -324,12 +325,12 @@ int fatfs_getcwd(char *buff, int len) {
 //  Get number of free clusters on the drive
 int fatfs_getfree(char *path ){
     DWORD nclast;
-    FATFS **fatfs = (FATFS **)malloc(sizeof(FATFS*));
+    FATFS **fatfs = (FATFS **)kheap_alloc(sizeof(FATFS*), ALLOCATE_DATA);
     if(!fatfs) return -1;
 
     FRESULT res = f_getfree ((const TCHAR*) path, (DWORD*) &nclast, fatfs);
 
-    free(fatfs);
+    kheap_free(fatfs, sizeof(FATFS*));
 
     return res;
 }
@@ -388,80 +389,168 @@ int fatfs_listdir(char *path){
 }
 
 
-
-void fatfs_test(int disk_no){
-
-    printf("[FATFS] Starting FatFS Testing....\n");
-
-    if(fatfs_init(disk_no) == 0){
-        printf(" Successfully initialized Disk %d\n", disk_no);
-    }
-
-    if(fatfs_mkfs(disk_no, FM_FAT32 | FM_SFD) == 0){
-        printf(" Successfully made FAT32 Filesystem in Disk %d\n", disk_no);
-    }
-
-    if(fatfs_mount(disk_no) == 0){
-        printf(" Successfully mounted Disk %d\n", disk_no);
-    }
-
-    int flag = FA_CREATE_ALWAYS | FA_WRITE ;
-    void *test_file = fatfs_open("1:/testfile.txt", flag);
-    if(test_file != NULL){
-        printf(" Successfully open 1:/testfile.txt\n");
-    }
-
-    const char *text = "Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! Hello from FATFS! ";
-    if(test_file != NULL){
-        int bytes_written = fatfs_write(test_file, text, strlen(text));
-        if(bytes_written > 0){
-            printf(" Successfully wrote %d bytes in 1:/testfile.txt\n", bytes_written);
-        } else {
-            printf(" Write failed!\n");
+// Check disk and filesystem status
+void fatfs_check_disk_status(int physical_disk, int logical_drive) {
+    printf("\n=== Disk Status Check ===\n");
+    
+    // Check physical disk status
+    int status = fatfs_disk_status(physical_disk);
+    printf("Physical disk %d status: %d\n", physical_disk, status);
+    
+    // Check if we can read sector 0
+    BYTE buffer[512];
+    if(disk_read(physical_disk, buffer, 0, 1) == RES_OK) {
+        printf("Successfully read sector 0\n");
+        
+        // Check for FAT signature
+        if(buffer[510] == 0x55 && buffer[511] == 0xAA) {
+            printf("MBR signature found (0x55AA)\n");
+            
+            // Check partition type
+            uint8_t partition_type = buffer[450]; // Adjust based on your partition layout
+            printf("Partition type at 0x1C2: 0x%02X\n", partition_type);
+            
+            if(partition_type == 0x0B || partition_type == 0x0C) {
+                printf("FAT32 partition detected\n");
+            } else if(partition_type == 0x04 || partition_type == 0x06) {
+                printf("FAT16 partition detected\n");
+            }
         }
+    } else {
+        printf("Failed to read sector 0\n");
     }
-
-    if(fatfs_sync(test_file) == 0){
-        printf(" Successfully synced file\n");
+    
+    // Check logical drive
+    char path[4];
+    snprintf(path, sizeof(path), "%d:", logical_drive);
+    printf("Logical drive path: %s\n", path);
+    
+    // Try to get volume label
+    char label[12];
+    DWORD vsn;
+    if(f_getlabel(path, label, &vsn) == FR_OK) {
+        printf("Volume label: %s\n", label);
     }
-
-    if(fatfs_close(test_file) == 0){
-        printf(" Successfully Closed 1:/testfile.txt\n");
-    }
-
-    test_file = fatfs_open("1:/testfile.txt", FA_READ);
-    if(test_file != NULL){
-        printf(" Successfully opened 1:/testfile.txt again\n");
-    }
-
-    if(fatfs_lseek(test_file, 4) == 0){
-        printf(" Successfully change pointer offset 4\n");
-    }
-
-    char read_buff[128];
-    if(fatfs_read(test_file, read_buff, 127) == 0){
-        read_buff[127] = '\0';
-        printf(" Reading Successfull: %s\n", read_buff);
-    }
-
-    if(fatfs_close(test_file) == 0){
-        printf(" Successfully Closed 1:/testfile.txt\n");
-    }
-
-    char cwd_buf[25];
-    memset(cwd_buf, 0, strlen(cwd_buf));
-    if(fatfs_getcwd(cwd_buf, sizeof(cwd_buf)) == 0){
-        cwd_buf[24] = '\0';
-        printf(" Current Working Directory: %s\n", cwd_buf);
-    }
-
-    if(fatfs_unmount(disk_no) == 0){
-        printf(" Successfully Unmount The Disk\n");
-    }
-
-    printf("[FatFS] Successfully Completed FatFS\n");
 }
 
+
+void fatfs_test(int disk_no){
+    printf("[FATFS] Starting FatFS Testing....\n");
+
+    // Initialize the physical disk
+    if(fatfs_init(disk_no) != 0){
+        printf("Failed to initialize Disk %d\n", disk_no);
+        return;
+    }
+    printf("Successfully initialized Disk %d\n", disk_no);
+
+    // For testing, we'll use logical drive 0
+    int logical_drive = 0;
+    
+    // Mount the filesystem
+    if(fatfs_mount(logical_drive, 0) != FR_OK){
+        printf("Failed to mount Disk %d as logical drive %d\n", disk_no, logical_drive);
+        return;
+    }
+    printf("Successfully mounted physical disk %d as logical drive %d\n", disk_no, logical_drive);
+
+    // Change to logical drive 0
+    char drive_path[4];
+    snprintf(drive_path, sizeof(drive_path), "%d:", logical_drive);
+    fatfs_chdrive(drive_path);
+    
+    // Get current directory
+    char cwd_buf[256];
+    if(fatfs_getcwd(cwd_buf, sizeof(cwd_buf)) == 0){
+        printf("Current Working Directory: %s\n", cwd_buf);
+    }
+
+    // Create file path
+    char filepath[256];
+    snprintf(filepath, sizeof(filepath), "%d:/testfile.txt", logical_drive);
+    
+    // Try to create and write file
+    printf("Attempting to open: %s\n", filepath);
+    
+    int flag = FA_CREATE_ALWAYS | FA_WRITE;
+    void *test_file = fatfs_open(filepath, flag);
+    
+    if(test_file == NULL){
+        printf("Failed to create file. Checking if directory exists...\n");
+        
+        // Try to list root directory
+        fatfs_listdir(drive_path);
+        return;
+    }
+    printf("Successfully opened %s for writing\n", filepath);
+
+    // Write to file
+    const char *text = "Hello from FATFS! This is a test file.\n";
+    int bytes_written = fatfs_write(test_file, (char*)text, strlen(text));
+    if(bytes_written > 0){
+        printf("Successfully wrote %d bytes to file\n", bytes_written);
+    } else {
+        printf("Write failed!\n");
+    }
+
+    // Sync and close
+    if(fatfs_sync(test_file) == 0){
+        printf("Successfully synced file\n");
+    }
+
+    if(fatfs_close(test_file) == 0){
+        printf("Successfully closed file after writing\n");
+    }
+
+    // Now read it back
+    test_file = fatfs_open(filepath, FA_READ);
+    if(test_file == NULL){
+        printf("Failed to open file for reading\n");
+    } else {
+        printf("Successfully opened file for reading\n");
+        
+        // Seek to beginning (though not necessary for fresh open)
+        if(fatfs_lseek(test_file, 0) == 0){
+            printf("Seek to beginning successful\n");
+        }
+
+        char read_buff[256];
+        int bytes_read = fatfs_read(test_file, read_buff, sizeof(read_buff)-1);
+        if(bytes_read >= 0){
+            read_buff[bytes_read] = '\0';
+            printf("Read %d bytes: %s\n", bytes_read, read_buff);
+        } else {
+            printf("Read failed!\n");
+        }
+
+        fatfs_close(test_file);
+        printf("Closed file after reading\n");
+    }
+
+    // List directory contents
+    printf("\nListing root directory:\n");
+    fatfs_listdir(drive_path);
+
+    // Get free space
+    DWORD free_clusters;
+    FATFS *fs;
+    FRESULT res = f_getfree(drive_path, &free_clusters, &fs);
+    if(res == FR_OK){
+        printf("\nFree clusters: %lu\n", free_clusters);
+        printf("Sectors per cluster: %lu\n", fs->csize);
+        printf("Total space: %lu KB\n", 
+               (fs->n_fatent - 2) * fs->csize * 512 / 1024);
+        printf("Free space: %lu KB\n", 
+               free_clusters * fs->csize * 512 / 1024);
+    }
+
+    // Unmount
+    if(fatfs_unmount(logical_drive) == 0){
+        printf("Successfully unmounted logical drive %d\n", logical_drive);
+    }
+
+    printf("[FatFS] Test completed\n");
+}
 
 #if FF_MULTI_PARTITION
 void fatfs_test_1(int disk_no) {
@@ -479,7 +568,7 @@ void fatfs_test_1(int disk_no) {
     VolToPart[logical_drive_2].pt = partition_2;  // Partition 2
 
     size_t buffer_size = 65536;  // 64KB
-    BYTE* work = (BYTE*)malloc(buffer_size);        // 64K buffer
+    BYTE* work = (BYTE*)kheap_alloc(buffer_size, ALLOCATE_DATA);        // 64K buffer
     if(!work) {
         printf("Failed to allocate %zu bytes for formatting buffer\n", buffer_size);
         return;
@@ -495,12 +584,12 @@ void fatfs_test_1(int disk_no) {
 
     if(res != FR_OK){      
         printf("FATFS: FDISK failed on physical drive %d with error %s\n", disk_no, fatfs_error_string(res));
-        free(work);
+        kheap_free(work, buffer_size);
         return;
     }
     printf("FATFS: FDISK succeeded on physical drive %d\n", disk_no);
 
-    free(work);
+    kheap_free(work, buffer_size);
     work = NULL;
 
     res = fatfs_mkfs(logical_drive_1, FM_FAT32);      // Create FAT volume on the logical drive 0
@@ -517,14 +606,14 @@ void fatfs_test_1(int disk_no) {
     }
 
 
-    res = fatfs_mount(logical_drive_1);                  // mount logical drive 0
+    res = fatfs_mount(logical_drive_1, 0);                  // mount logical drive 0
     if(res != FR_OK){      
         printf("FATFS: mounting failed on logical drive 0 with error %s\n", fatfs_error_string(res));
         return;
     }
 
 
-    res = fatfs_mount(logical_drive_2);                    // mount logical drive 1
+    res = fatfs_mount(logical_drive_2, 0);                    // mount logical drive 1
     if(res != FR_OK){      
         printf("FATFS: mounting failed on logical drive 1 with error %s\n", fatfs_error_string(res));
         return;
@@ -562,11 +651,129 @@ void fatfs_test_1(int disk_no) {
 
 
 
+void my_fatfs_test(){
 
-
-
-
-
+    FATFS fs;
+    FIL fil;
+    DIR dir;
+    FILINFO fno;
+    FRESULT fr;
+    UINT bw;
+    
+    printf("Initializing FatFs with GPT partition at LBA 2048...\n");
+    
+    // 1. Mount the filesystem
+    fr = f_mount(&fs, "0:", 1);
+    if (fr != FR_OK) {
+        printf("Mount failed: %d\n", fr);
+        return;
+    }
+    printf("✓ Filesystem mounted successfully\n");
+    
+    // 2. Get filesystem information
+    DWORD fre_clust, fre_sect, tot_sect;
+    FATFS *fs2;
+    
+    fr = f_getfree("0:", &fre_clust, &fs2);
+    if (fr == FR_OK) {
+        tot_sect = (fs2->n_fatent - 2) * fs2->csize;
+        fre_sect = fre_clust * fs2->csize;
+        printf("Total: %lu KB, Free: %lu KB\n", 
+               tot_sect / 2, fre_sect / 2);  // Assuming 512B sectors
+    }
+    
+    // 3. List root directory
+    printf("\n=== Root Directory Contents ===\n");
+    fr = f_opendir(&dir, "/");
+    if (fr == FR_OK) {
+        while (f_readdir(&dir, &fno) == FR_OK && fno.fname[0] != 0) {
+            if (fno.fattrib & AM_DIR) {
+                printf("  [DIR]  %s/\n", fno.fname);
+            } else {
+                printf("  [FILE] %s (%lu bytes)\n", fno.fname, fno.fsize);
+            }
+        }
+        f_closedir(&dir);
+    }
+    
+    // 4. Create a directory
+    printf("\nCreating directory...\n");
+    fr = f_mkdir("/TESTDIR");
+    if (fr == FR_OK) {
+        printf("✓ Directory created: /TESTDIR\n");
+    } else if (fr == FR_EXIST) {
+        printf("Directory already exists\n");
+    } else {
+        printf("Failed to create directory: %d\n", fr);
+    }
+    
+    // 5. Create and write a file
+    printf("\nCreating file...\n");
+    fr = f_open(&fil, "/testfile.txt", FA_WRITE | FA_CREATE_ALWAYS);
+    if (fr == FR_OK) {
+        const char *text = "This is a sample text written by FatFs\n";
+        fr = f_write(&fil, text, strlen(text), &bw);
+        f_close(&fil);
+        
+        if (fr == FR_OK && bw == strlen(text)) {
+            printf("✓ File written successfully: %u bytes\n", bw);
+        } else {
+            printf("Write failed: %d, bytes written: %u\n", fr, bw);
+        }
+    } else {
+        printf("Cannot open file: %d\n", fr);
+    }
+    
+    // 6. Read the file back
+    printf("\nReading file...\n");
+    fr = f_open(&fil, "/testfile.txt", FA_READ);
+    if (fr == FR_OK) {
+        char buffer[128];
+        fr = f_read(&fil, buffer, sizeof(buffer) - 1, &bw);
+        f_close(&fil);
+        
+        if (fr == FR_OK) {
+            buffer[bw] = 0;
+            printf("File content: %s", buffer);
+        }
+    }
+    
+    // 7. Create file in subdirectory
+    printf("\nCreating file in subdirectory...\n");
+    fr = f_open(&fil, "/TESTDIR/subfile.txt", FA_WRITE | FA_CREATE_ALWAYS);
+    if (fr == FR_OK) {
+        f_printf(&fil, "File created in subdirectory\n");
+        f_printf(&fil, "Timestamp: %lu\n", get_fattime());
+        f_close(&fil);
+        printf("✓ Subdirectory file created\n");
+    }
+    
+    // 8. List TESTDIR contents
+    printf("\n=== TESTDIR Contents ===\n");
+    fr = f_opendir(&dir, "/TESTDIR");
+    if (fr == FR_OK) {
+        while (f_readdir(&dir, &fno) == FR_OK && fno.fname[0] != 0) {
+            printf("  %s\n", fno.fname);
+        }
+        f_closedir(&dir);
+    }
+    
+    // 9. Get file information
+    printf("\nGetting file info...\n");
+    fr = f_stat("/testfile.txt", &fno);
+    if (fr == FR_OK) {
+        printf("File: %s\n", fno.fname);
+        printf("Size: %lu bytes\n", fno.fsize);
+        printf("Attributes: 0x%02X\n", fno.fattrib);
+        printf("Timestamp: %u/%u/%u, %u:%u\n",
+               (fno.fdate >> 9) + 1980, (fno.fdate >> 5) & 15, fno.fdate & 31,
+               fno.ftime >> 11, (fno.ftime >> 5) & 63);
+    }
+    
+    // 10. Unmount
+    f_unmount("0:");
+    printf("\n✓ Filesystem unmounted\n");
+}
 
 
 

@@ -36,3 +36,4 @@ void color_print(const char* text, uint32_t color);
 void draw_cursor();
 
 
+void draw_progress_bar(int progress, int total, int width);

@@ -182,6 +182,11 @@ void vprintf(const char* format, va_list args) {
                 ptr++;
             }
 
+            if(*ptr == '%'){
+                putchar('%');
+                continue;
+            }
+
             // Handle long/long long modifiers
             if (*ptr == 'l') {
                 ptr++;

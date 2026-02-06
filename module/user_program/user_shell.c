@@ -7,6 +7,7 @@
 #include "../libc/include/syscall.h"
 #include "../libc/include/stdio.h"
 #include "../libc/include/string.h"
+#include "../libc/include/stdlib.h"
 
 #include "user_shell.h"
 
@@ -68,6 +69,18 @@ static void handle_command(int argc, char *argv[]) {
     if(strcmp(argv[0], "exit") == 0){
         syscall_exit();
 
+    }else if(strcmp(argv[0], "mount") == 0) {
+        if(argc < 3){
+            printf("Usage: mount <pd> <ld> <opt>\n");
+        }else{
+            int pd = atoi(argv[1]);
+            int ld = atoi(argv[2]);
+            int opt = atoi(argv[3]);
+            
+            if(syscall_mount(pd, ld, opt) == 0){
+                printf("Mount in Disk %d:%d is failed!\n", pd, ld);
+            }
+        }
     }else if (strcmp(argv[0], "echo") == 0){
         for (int i = 1; i < argc; i++) {
             printf("%s ", argv[i]);
@@ -332,6 +345,7 @@ static void handle_command(int argc, char *argv[]) {
         printf("  edit <file> - Edit a file (append mode)\n");
         printf("  cd <path> - Change Directory.\n");
         printf("  cwd - Current Working Directory.\n");
+        printf("  mount - mount <pd>:<ld> disk path\n");
     } else {
         printf("\nUnknown command: %s\n", argv[0]);
         printf("Type 'help' for a list of commands.\n");

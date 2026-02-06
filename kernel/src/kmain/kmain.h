@@ -46,19 +46,21 @@
 #include "../driver/disk/ahci/satapi.h"     // SATAPI Driver
 #include "../driver/disk/disk.h"            // Disk structure and functions
 #include "../driver/disk/inspect_disk.h"
-#include "../driver/disk/detect_disk.h"
 #include "../driver/disk/nvme/nvme.h"       // NVMe Driver
 
 
 // File System
 #include "../fs/fatfs_wrapper.h"
-#include "../fs/iso9660.h"
-#include "../vfs/vfs.h"                      // Virtual FIle System 
-#include "../fs/kfs.h"
+#include "../fs/iso9660/iso9660.h"                      
+#include "../fs/kfs/kfs.h"
+#include "../fs/fat32/fat32.h"
+#include "../fs/fat32/fat32_uitility.h"
+#include "../vfs/vfs.h"                     // Virtual FIle System
 
 // Installer
-#include "../installer/gpt_header.h"
+#include "../installer/gpt.h"
 #include "../installer/installer.h"
+#include "../installer/installer_1.h"
 
 // ACPI
 #include "../sys/acpi/acpi.h"                 // init_acpi

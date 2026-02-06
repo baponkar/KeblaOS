@@ -340,3 +340,85 @@ void toggle_cursor() {
     // Update the cursor drawing.
     draw_cursor();
 }
+
+// Function to draw a progress bar at current cursor position
+void draw_progress_bar(int progress, int total, int width) {
+    
+    if (width <= 0) {
+        width = fb0_width - cur_x; // Use remaining screen width by default
+    }
+    
+    // Save current cursor position
+    int saved_x = cur_x;
+    int saved_y = cur_y;
+    
+    // Move cursor to the desired position (current y + 1, x = 0)
+    int bar_y = saved_y + font_height;
+    int bar_x = 0;
+    
+    // Ensure we don't go beyond screen height
+    if (bar_y >= fb0_height - font_height) {
+        scroll_up();
+        bar_y -= font_height;
+        saved_y -= font_height; // Adjust saved position too
+    }
+    
+    // Draw progress bar border
+    uint32_t border_color = COLOR_GRAY;
+    uint32_t fill_color = COLOR_CYAN;
+    uint32_t text_color = COLOR_WHITE;
+    
+    // Draw top border
+    for (int i = 0; i < width; i++) {
+        set_pixel(bar_x + i, bar_y, border_color);
+    }
+    
+    // Draw bottom border
+    for (int i = 0; i < width; i++) {
+        set_pixel(bar_x + i, bar_y + font_height - 1, border_color);
+    }
+    
+    // Draw left border
+    for (int i = 0; i < font_height; i++) {
+        set_pixel(bar_x, bar_y + i, border_color);
+    }
+    
+    // Draw right border
+    for (int i = 0; i < font_height; i++) {
+        set_pixel(bar_x + width - 1, bar_y + i, border_color);
+    }
+    
+    // Calculate fill width
+    float percentage = (float)progress / total;
+    int fill_width = (int)((width - 2) * percentage); // -2 for borders
+    
+    // Fill the progress bar
+    for (int row = 1; row < font_height - 1; row++) {
+        for (int col = 1; col < width - 1; col++) {
+            if (col <= fill_width) {
+                set_pixel(bar_x + col, bar_y + row, fill_color);
+            } else {
+                set_pixel(bar_x + col, bar_y + row, back_color);
+            }
+        }
+    }
+    
+    // Draw percentage text in the middle of the bar
+    char percentage_str[16];
+    int percent = (int)(percentage * 100);
+    snprintf(percentage_str, sizeof(percentage_str), "%d %%", percent);
+    
+    // Calculate text position (centered)
+    int text_len = strlen(percentage_str);
+    int text_x = bar_x + (width - text_len * (font_width / 2)) / 2;
+    int text_y = bar_y + (font_height - font_height) / 2;
+    
+    // Draw the percentage text
+    draw_string(text_x, text_y, percentage_str, text_color);
+    
+    // Restore original cursor position
+    cur_x = saved_x;
+    cur_y = saved_y;
+}
+
+

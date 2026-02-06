@@ -70,7 +70,7 @@ void user_syscall_test(){                      // _start define in user_linker_x
     }
     printf("VFS Initialization on Disk %d successful!\n", disk_no);
 
-    uint64_t mount_res = syscall_mount(disk_no, 1);
+    uint64_t mount_res = syscall_mount(disk_no, 1, 0);
     if(mount_res == -1){
         printf("Mounting disk %d failed!\n", disk_no);
         return;

@@ -45,7 +45,7 @@ VFS_TYPE detect_filesystem(int disk_no);
 int vfs_init(int disk_no);
 
 int vfs_disk_status(int disk_no);
-int vfs_mount(int disk_no, int logical_drive);
+int vfs_mount(int disk_no, int logical_drive, int mount_opt);
 int vfs_unmount(int disk_no, int logical_drive);
 int vfs_mkfs(int pd, int logical_drive, VFS_TYPE fs_type);
 

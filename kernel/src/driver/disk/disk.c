@@ -10,6 +10,7 @@
 #include "../../lib/stdlib.h"
 
 #include  "../../memory/vmm.h"
+#include "../../memory/kheap.h"
 
 
 #include "../pci/pci.h"
@@ -67,17 +68,23 @@ bool kebla_disk_status(int disk_no){
     return true;
 }
 
-
+// Initialize and detect disks connected to the system
 int kebla_get_disks(){
 
     if(!disks){
-        disks = (Disk *)malloc(sizeof(Disk) * MAX_TOTAL_DISKS);
-        memset(disks, 0, sizeof(Disk) * MAX_TOTAL_DISKS);
+        disks = (Disk *)kheap_alloc(sizeof(Disk) * MAX_TOTAL_DISKS, ALLOCATE_DATA);
+        if(!disks) return -1;
     } 
-    if(!disks){
-        printf(" Memory allocation for disks failed!\n");
-        return -1;
+    memset(disks, 0, sizeof(Disk) * MAX_TOTAL_DISKS);
+
+    for(int i=0; i < MAX_TOTAL_DISKS; i++){
+        disks[i].type = DISK_TYPE_UNKNOWN;
+        disks[i].bytes_per_sector = 0;
+        disks[i].total_sectors = 0;
+        disks[i].context = NULL;
+        disks[i].initialized = false;
     }
+    
 
     for(int c_idx=0; c_idx < mass_storage_controllers_count; c_idx++){
         pci_device_t dev = mass_storage_controllers[c_idx];
@@ -101,11 +108,28 @@ int kebla_get_disks(){
                             // printf("controller no: %d, SATA Drive Found at port %d\n",c_idx, i);
                             disks[disk_count].type = DISK_TYPE_AHCI_SATA;
                             disks[disk_count].context = (void *)&abar->ports[i];    // Rebase the port
+                            disks[disk_count].bytes_per_sector = sata_get_bytes_per_sector(&abar->ports[i]);
+                            disks[disk_count].total_sectors = sata_get_total_sectors(&abar->ports[i]);
+                            
+                            if(disks[disk_count].bytes_per_sector <= 0 || disks[disk_count].total_sectors <= 0){
+                                continue;
+                            }else{
+                                disks[disk_count].initialized = true;
+                                if(debug_on) printf("[DISK] Disk No: %d, type:%d, Sector Space: %d Byte, Total Sectors: %d\n", 
+                                disk_count, disks[disk_count].type, disks[disk_count].bytes_per_sector, disks[disk_count].total_sectors);
+                            }
+
+                            
                             disk_count++;
                         }else if(type == AHCI_DEV_SATAPI){
                             // printf("controller no: %d, SATAPI Drive Found at port %d\n", c_idx, i);
                             disks[disk_count].type = DISK_TYPE_SATAPI;
                             disks[disk_count].context = (void *)&abar->ports[i];	// Rebase the port
+                            disks[disk_count].bytes_per_sector = satapi_get_bytes_per_sector(&abar->ports[i]);
+                            disks[disk_count].total_sectors = satapi_get_total_sectors(&abar->ports[i]);
+                            
+                            if(debug_on) printf("[DISK] Disk No: %d, type:%d, Sector Space: %d Byte, Total Sectors: %d\n", 
+                                disk_count, disks[disk_count].type, disks[disk_count].bytes_per_sector, disks[disk_count].total_sectors);
                             disk_count++;
                         }else if(type == AHCI_DEV_SEMB){
                             // printf("Port: %d, AHCI Device Type: %d\n", i,  AHCI_DEV_SEMB);
@@ -145,13 +169,7 @@ int kebla_get_disks(){
 
 bool kebla_disk_init(int disk_no){
     
-    if(disk_count <= 0){
-        if(kebla_get_disks() <= 0){
-            printf("[DISK] No Disk Found!\n");
-            return false;
-        }
-    }
-    
+
     if(disk_no < 0 || disk_no >= MAX_TOTAL_DISKS){
         if(debug_on) printf("[DISK] Invalid disk_no\n");
         return false;
@@ -162,25 +180,51 @@ bool kebla_disk_init(int disk_no){
         return false;
     }
 
+    if(disks[disk_no].initialized){
+        if(debug_on) printf("[DISK] Disk %d is already initialized\n", disk_no);
+        return true;
+    }
+
     if(disks[disk_no].type == DISK_TYPE_UNKNOWN){
         if(debug_on) printf("[DISK] Disk type is UNKNOWN!\n");
         return false;
     }else if(disks[disk_no].type == DISK_TYPE_AHCI_SATA){
         portRebase(disks[disk_no].context);
-        disks[disk_no].bytes_per_sector = sata_get_bytes_per_sector(disks[disk_no].context);
-        disks[disk_no].total_sectors = sata_get_total_sectors(disks[disk_no].context);
-        if(debug_on) printf("[DISK] Successfully initialized AHCI SATA Disk %d\n", disk_no);
         Disk disk = disks[disk_no];
-        if(debug_on) printf("[DISK] Disk No: %d, type:%d, Sector Space: %d Byte, Total Sectors: %d\n", 
-            disk_no, disk.type, disk.bytes_per_sector, disk.total_sectors);
+
+        uint64_t bytes_per_sector = sata_get_bytes_per_sector(disk.context);
+        uint64_t total_sectors = sata_get_total_sectors(disk.context);
+
+        if(bytes_per_sector <= 0 || total_sectors <= 0){
+            return false;
+        }
+
+        disk.bytes_per_sector = bytes_per_sector;
+        disk.total_sectors = total_sectors;
+        disk.initialized = true;
+
+        if(debug_on) printf("[DISK] Disk No: %d, Type: %d, Sector Size: %d Byte, Total Sectors: %d\n", 
+            disk_no, disk.type, bytes_per_sector, total_sectors);
+
+        if(debug_on) printf(" Successfully initialized AHCI SATA Disk %d\n", disk_no);
+        
+        
         return true;
+
     }else if(disks[disk_no].type == DISK_TYPE_NVME){
+
         if(debug_on) printf("[DISK] NVMe Filesystem Not implemented yet!\n");
+        
         return false;
+
     }else if(disks[disk_no].type == DISK_TYPE_SATAPI){
         AtpiPortRebase(disks[disk_no].context);
         disks[disk_no].bytes_per_sector = satapi_get_bytes_per_sector(disks[disk_no].context);
         disks[disk_no].total_sectors = satapi_get_total_sectors(disks[disk_no].context);
+
+        if(disks[disk_no].bytes_per_sector <= 0 || disks[disk_no].total_sectors <= 0){
+            return false;
+        }
 
         // Below values are set when iso9660 fs initialized
         disks[disk_no].root_directory_sector = 0;
@@ -189,9 +233,12 @@ bool kebla_disk_init(int disk_no){
 
         Disk disk = disks[disk_no];
 
-        if(debug_on) printf("[DISK] Successfully initialized AHCI SATAPI Disk %d\n", disk_no);
+        
         if(debug_on) printf("[DISK] Disk No: %d, type:%d, Sector Space: %d Byte, Total Sectors: %d\n", 
             disk_no, disk.type, disk.bytes_per_sector, disk.total_sectors);
+
+        if(debug_on) printf(" Successfully initialized AHCI SATAPI Disk %d\n", disk_no);
+        
         return true;
     }else{
         if(debug_on) printf("[DISK] Currenty not supporting %d type disk type!\n", (uint64_t)disks[disk_no].type);
@@ -261,7 +308,7 @@ bool kebla_disk_write(int disk_no, uint64_t lba, uint32_t count, void* buf) {
     //        disk_no, lba, count, disk.total_sectors, buf);
     
     if(lba + count > disk.total_sectors) {
-        printf("[DISK ERROR] Write exceeds boundary: lba=%x + count=%x = %x > %x\n",
+        printf("[DISK ERROR] Write exceeds boundary: %x (LBA) + %x (COUNT) = %x > %x (Total Sectors)\n",
                lba, count, lba + count, disk.total_sectors);
         return false;
     }
@@ -308,6 +355,50 @@ bool kebla_disk_write(int disk_no, uint64_t lba, uint32_t count, void* buf) {
 
     return false;   // Unsupported disk type
 }
+
+#define MAX_BATCH_SIZE 20480
+int clear_disk(int disk_no, int *progress){
+
+    printf("Formatting Disk %d: \n", disk_no);
+
+    *progress = 0;
+
+    if(!disks) return -1;
+
+    if(disk_no < 0) {
+        printf("Invalid disk number %d for formatting.\n", disk_no);
+        return -1;
+    }
+    uint64_t total_sectors = disks[disk_no].total_sectors;
+    const uint64_t SECTOR_SIZE = disks[disk_no].bytes_per_sector;
+
+
+
+    uint8_t *buffer = kheap_alloc(SECTOR_SIZE * MAX_BATCH_SIZE, ALLOCATE_DATA);
+    if (!buffer) {
+        printf("Failed to allocate memory for formatting disk %d.\n", disk_no);
+        return -1;
+    }
+    memset(buffer, 0, SECTOR_SIZE * 2048);
+
+    for (uint64_t lba = 0; lba < total_sectors; lba += 2048) {
+        *progress = (int)((lba * 100) / total_sectors);
+            printf("\rProgress: %d %%", *progress);
+        uint32_t sectors_to_write = (lba + 2048 <= total_sectors) ? 2048 : (total_sectors - lba);
+        if (!kebla_disk_write(disk_no, lba, sectors_to_write, buffer)) {
+            printf("Failed to format disk %d at LBA %d\n", disk_no, lba);
+            kheap_free(buffer, SECTOR_SIZE * 2048);
+            return -1;
+        }
+    }
+
+    kheap_free(buffer, SECTOR_SIZE * 2048);
+
+    printf("\n");
+
+    return 0;
+}
+
 
 int find_disk_type(int disk_no) {
     if(disk_no > MAX_TOTAL_DISKS | disk_no > disk_count-1) return -1;

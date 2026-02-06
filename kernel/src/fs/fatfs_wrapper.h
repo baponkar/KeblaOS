@@ -37,7 +37,7 @@ int fatfs_init(int pdrv);
 int fatfs_disk_status(int disk_no);
 
 int fatfs_mkfs(int ld, int fs_type);
-int fatfs_mount(int ld);
+int fatfs_mount(int ld, int mount_opt);
 int fatfs_unmount(int ld);
 
 
@@ -80,7 +80,9 @@ int fatfs_stat(char *path);
 int fatfs_chmod(char *path, int attr, int mask);
 int fatfs_utime(char *path, void *fno);
 int fatfs_chdir(char *path);
+#if F_MULTI_PARTITION
 int fatfs_chdrive(char *path);
+#endif
 int fatfs_getcwd(char *buff, int len);
 int fatfs_getfree(char *path);
 int fatfs_getlabel(char *path, char* label, void *vsn);
@@ -97,11 +99,13 @@ int fatfs_listdir(char *path);
 void fatfs_test_1(int disk_no);
 #endif
 
+void fatfs_check_disk_status(int physical_disk, int logical_drive);
+
 void fatfs_test(int disk_no);
 
 
 
-
+void my_fatfs_test();
 
 
 
