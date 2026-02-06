@@ -69,12 +69,12 @@ void kmain(){
     }
     printf("Total %d Disks Found.\n", disk_count);
 
-    // int progress;
-    // if(clear_disk(boot_disk_no, &progress) != 0){
-    //     printf("Failed to clear Disk %d.\n", boot_disk_no);
-    // }else{
-    //     printf("Successfully cleared Disk %d.\n", boot_disk_no);
-    // }
+    int progress;
+    if(clear_disk(boot_disk_no, &progress) != 0){
+        printf("Failed to clear Disk %d.\n", boot_disk_no);
+    }else{
+        printf("Successfully cleared Disk %d.\n", boot_disk_no);
+    }
  
     // Sector layout for ESP and Data partitions
     uint64_t esp_start_lba = 2048;    // 2048

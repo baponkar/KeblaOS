@@ -498,7 +498,8 @@ bool fat32_create_dir_entry(int disk_no, uint32_t parent_cluster, const char *na
     return true;
 }
 
-bool fat32_init_directory( int disk_no,  uint32_t dir_cluster, uint32_t parent_cluster ) {
+bool fat32_init_directory(int disk_no, uint32_t dir_cluster, uint32_t parent_cluster)
+{
     uint32_t cluster_size = get_cluster_size_bytes();
     uint8_t *buf = malloc(cluster_size);
     if (!buf) return false;
@@ -506,22 +507,31 @@ bool fat32_init_directory( int disk_no,  uint32_t dir_cluster, uint32_t parent_c
     memset(buf, 0, cluster_size);
 
     FAT32_DirectoryEntry *dot = (FAT32_DirectoryEntry *)buf;
+
     FAT32_DirectoryEntry *dotdot = (FAT32_DirectoryEntry *)(buf + 32);
 
-    fat32_format_83_name(".", dot->DIR_Name);
+    /* "." entry */
+    memset(dot->DIR_Name, ' ', 11);
+    dot->DIR_Name[0] = '.';
     dot->DIR_Attr = ATTR_DIRECTORY;
     dot->DIR_FstClusLO = dir_cluster & 0xFFFF;
     dot->DIR_FstClusHI = dir_cluster >> 16;
+    dot->DIR_FileSize = 0;
 
-    fat32_format_83_name("..", dotdot->DIR_Name);
+    /* ".." entry */
+    memset(dotdot->DIR_Name, ' ', 11);
+    dotdot->DIR_Name[0] = '.';
+    dotdot->DIR_Name[1] = '.';
     dotdot->DIR_Attr = ATTR_DIRECTORY;
     dotdot->DIR_FstClusLO = parent_cluster & 0xFFFF;
     dotdot->DIR_FstClusHI = parent_cluster >> 16;
+    dotdot->DIR_FileSize = 0;
 
-    fat32_write_cluster(disk_no, dir_cluster, buf);
+    bool ok = fat32_write_cluster(disk_no, dir_cluster, buf);
     free(buf);
-    return true;
+    return ok;
 }
+
 
 bool fat32_mkdir_internal(int disk_no, uint32_t parent_cluster, const char *name) {
     uint32_t new_cluster;
