@@ -30,7 +30,7 @@ char* strchr(const char* str, int c);       // The function char* strchr(const c
 char *strtok(char *str, const char *delim); // is used in C to split a string into tokens (substrings) based on a set of delimiter characters.
 char *strrchr(const char *str, int c);      // is used to find the last occurrence of a character in a C string
 
-char *strdup(const char *str);
+char *strdup(const char *str);              // Copy string 
 
 void clear_buffer(char *buffer, int size);
 void int_to_str(int num, char* buffer);

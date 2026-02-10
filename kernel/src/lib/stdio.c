@@ -230,7 +230,7 @@ void vprintf(const char* format, va_list args) {
                     }
                     
                     case 'x': {
-                        uint64_t val = va_arg(args, uint64_t);
+                        uint64_t val = va_arg(args, unsigned int);
                         if (width > 0 && zero_pad)
                             print_hex_padded(val, width, false);
                         else
@@ -239,7 +239,7 @@ void vprintf(const char* format, va_list args) {
                     }
 
                     case 'X': {
-                        uint64_t val = va_arg(args, uint64_t);
+                        uint64_t val = va_arg(args, unsigned int);
                         if (width > 0 && zero_pad)
                             print_hex_padded(val, width, true);
                         else
@@ -247,7 +247,7 @@ void vprintf(const char* format, va_list args) {
                         break;
                     }
                     case 'b':{
-                        print_bin(va_arg(args, uint64_t));
+                        print_bin(va_arg(args, unsigned int));
                         break;
                     }
                     case 'c':{

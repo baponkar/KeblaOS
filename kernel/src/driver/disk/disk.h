@@ -44,6 +44,7 @@ extern int disk_count;
 
 
 int  kebla_get_disks();
+void kebla_disk_check();
 bool kebla_disk_init(int disk_no);
 bool kebla_disk_status(int disk_no);
 

@@ -2,16 +2,17 @@
 
 #include "../driver/disk/disk.h"
 
-#include "../../lib/stdio.h"
-#include "../../lib/stdlib.h"
-#include "../../lib/string.h"
+#include "../lib/stdio.h"
+#include "../lib/stdlib.h"
+#include "../lib/string.h"
+#include "../lib/ctype.h"
 
-#include "../../memory/kheap.h"
-
-#include "../../driver/disk/ahci/satapi.h"
+#include "../driver/disk/ahci/satapi.h"
 
 #include "iso9660.h"
 
+
+#define ISO_BLOCK_SIZE 2048
 
 
 
@@ -19,16 +20,29 @@
 // Utility functions
 // -------------------------------------------------------------
 
+// Converting little enadian encode into 32 bit value
 static uint32_t read_u32_le(const uint8_t *data) {
     return data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
 }
 
+// Converting little endian encode into 16 bit value
 static uint16_t read_u16_le(const uint8_t *data) {
     return data[0] | (data[1] << 8);
 }
 
+static bool read_iso_block(int disk_no, uint32_t block_no, void *buffer){
+    uint8_t lba = block_no * ISO_BLOCK_SIZE;
+
+    if(!kebla_disk_read(disk_no, lba, ISO_BLOCK_SIZE, buffer)){
+        return false;
+    }
+
+    return true;
+}
+
 // Parse directory record filename
 static void parse_filename(const iso9660_dir_record_t *record, char *output, size_t output_size) {
+
     uint8_t name_len = record->file_id_length;
 
     // Skip '.' and '..' entries
@@ -47,11 +61,16 @@ static void parse_filename(const iso9660_dir_record_t *record, char *output, siz
     memcpy(output, record->file_id, copy_len);
     output[copy_len] = '\0';
 
+    // Remove ;1
+    char *semi = strchr(output, ';');
+    if (semi) *semi = '\0';
+
     // Convert to uppercase (ISO9660 is uppercase-only)
     for (size_t i = 0; i < copy_len; i++) {
-        if (output[i] >= 'a' && output[i] <= 'z')
-            output[i] -= 32;
+        // if (output[i] >= 'a' && output[i] <= 'z') output[i] -= 32;
+        output[i] = toupper(output[i]);
     }
+
 }
 
 
@@ -61,23 +80,33 @@ static void parse_filename(const iso9660_dir_record_t *record, char *output, siz
 // -------------------------------------------------------------
 
 int iso9660_init(int disk_no) {
-    if (disk_no >= disk_count || !disks) return -1;
+
+    if (disk_no >= disk_count || !disks) {
+        return -1;
+    }
 
     Disk disk = disks[disk_no];
+
     if (!disk.context || disk.type != DISK_TYPE_SATAPI){
         printf("ISO9660: Disk %d is not SATAPI type\n", disk_no);
         return -1;
     }
 
-    uint8_t *sector_buffer = (uint8_t *)kheap_alloc(2048, ALLOCATE_DATA);
+    uint8_t *sector_buffer = (uint8_t *)malloc(ISO_BLOCK_SIZE);
+    if(!sector_buffer){
+        return -1;
+    }
 
+    // Skip first 16 Sectors 
     for (int i = 16; i < 32; i++) {
-        if (!kebla_disk_read(disk_no, i, 1, sector_buffer)) {
+
+        if (!kebla_disk_read(disk_no, i, 4, sector_buffer)) {
             printf("ISO9660: Failed to read sector %d\n", i);
             return -1;
         }
 
         uint8_t vd_type = sector_buffer[0];
+
         if (vd_type == 0x01) {
             iso9660_pvd_t *pvd = (iso9660_pvd_t *)sector_buffer;
 
@@ -92,41 +121,42 @@ int iso9660_init(int disk_no) {
             disks[disk_no].root_directory_size = read_u32_le((uint8_t *)&pvd->root_directory_record.data_length_le);
             disks[disk_no].pvd_sector = i;
 
-            // printf("ISO9660: Mounted disk-%d\n", disk_no);
-            // printf("  Volume: %s\n", pvd->volume_id);
-            // printf("  Root: LBA=%u size=%u\n",
-            //        disks[disk_no].root_directory_sector,
-            //        disks[disk_no].root_directory_size);
+            printf("ISO9660: Initialized disk %d, Volume ID %s, Root LBA %u, Size %u\n",
+                 disk_no,  pvd->volume_id, disks[disk_no].root_directory_sector, disks[disk_no].root_directory_size);
 
             return 0;
-        }
-
-        if (vd_type == 0xFF)
+        } else if(vd_type == 0xFF){
             break;
+        }else{
+            break;
+        }
     }
 
-    kheap_free(sector_buffer, 2048);
+    free(sector_buffer);
 
     printf("ISO9660: No valid Primary Volume Descriptor found\n");
+
     return -1;
 }
 
 int iso9660_mount(int disk_no) {
+
     if (disk_no >= disk_count || !disks) return -1;
 
     Disk disk = disks[disk_no];
     if (disk.type != DISK_TYPE_SATAPI) return -1;
 
-    // if (iso9660_init(disk_no) != 0) return -1;
+    if (iso9660_init(disk_no) != 0) return -1;
 
-    printf("ISO9660: Mounted ISO9660 on disk %d\n", disk_no);
+    if(!disk.context) return -1;
 
     if (!satapi_load((HBA_PORT_T *)disk.context)){
         printf("ISO9660: Media load failed!\n");
         return -1;
     }
         
-
+    printf("ISO9660: Mounted ISO9660 on disk %d\n", disk_no);
+    
     return 0;
 }
 
@@ -134,7 +164,10 @@ int iso9660_unmount(int disk_no) {
     if (disk_no >= disk_count || !disks) return -1;
 
     Disk disk = disks[disk_no];
+
     if (disk.type != DISK_TYPE_SATAPI) return -1;
+
+    if(!disk.context) return -1;
 
     if (!satapi_eject((HBA_PORT_T *)disk.context))
         printf("ISO9660: Media eject failed!\n");
@@ -146,33 +179,33 @@ int iso9660_unmount(int disk_no) {
 // File/Directory access
 // -------------------------------------------------------------
 
-static bool iso9660_find_file(
-    int disk_no,
-    uint32_t dir_sector,
-    uint32_t dir_size,
-    const char *filename,
-    iso9660_file_t *result)
+static bool iso9660_find_file(int disk_no, uint32_t dir_sector, uint32_t dir_size, const char *filename, iso9660_file_t *result)
 {
-    if (disk_no >= disk_count || !disks || dir_sector <= 0 || dir_size <= 0 || !filename || !result) return false;
-    Disk disk = disks[disk_no];
-    uint8_t *buffer = kheap_alloc(dir_size, ALLOCATE_DATA);
+    if (disk_no >= disk_count || !disks || dir_sector < 0 || dir_size <= 0 || !filename || !result) return false;
+    
+    uint8_t *buffer = malloc(dir_size);
     if (!buffer) return false;
 
-    if(disk.bytes_per_sector <= 0) return false;
-    uint32_t sector_count = (dir_size + disk.bytes_per_sector - 1) / disk.bytes_per_sector;
-    if (!kebla_disk_read(disk_no, dir_sector, sector_count, buffer)) {
-        kheap_free(buffer, dir_size);
+    uint32_t sector_size = disks[disk_no].bytes_per_sector;
+
+    if(sector_size <= 0) return false;
+
+    uint32_t sector_count = (dir_size + sector_size - 1) / sector_size;
+
+    if(!kebla_disk_read(disk_no, dir_sector, sector_count, buffer)) {
+        free(buffer);
         return false;
     }
 
     uint8_t *ptr = buffer;
+    if(!ptr) return false;
     uint32_t processed = 0;
     bool found = false;
 
     while (processed < dir_size) {
         iso9660_dir_record_t *record = (iso9660_dir_record_t *)ptr;
         if (record->length == 0) {
-            uint32_t skip = disk.bytes_per_sector - (processed % disk.bytes_per_sector);
+            uint32_t skip = sector_size - (processed % sector_size);
             ptr += skip;
             processed += skip;
             continue;
@@ -201,27 +234,84 @@ static bool iso9660_find_file(
         processed += record->length;
     }
 
-    kheap_free(buffer, dir_size);
+    free(buffer);
+
     return found;
 }
 
-void *iso9660_open(int disk_no, char *path, int mode) {
+int iso9660_stat(int disk_no, char *path, void *fno)
+{
+    if (disk_no >= disk_count || !disks || !path || !fno){
+        return -1;
+    }
+        
+
+    iso9660_file_t *file_info = (iso9660_file_t *)fno;
+
+    uint32_t cur_sector = disks[disk_no].root_directory_sector;
+    uint32_t cur_size   = disks[disk_no].root_directory_size;
+
+    if (path[0] == '/') // Ignoring leading slash
+        path++;
+
+    if (path[0] == '\0')
+        return -1;
+
+    char *path_copy = strdup(path);
+    char *token = strtok(path_copy, "/");
+
+    while (token != NULL) {
+        if (!iso9660_find_file(disk_no, cur_sector, cur_size, token, file_info)) {
+            free(path_copy);
+            return -1;
+        }
+
+        token = strtok(NULL, "/");
+
+        if (token != NULL) {
+            if (!file_info->is_dir) {
+                free(path_copy);
+                return -1;
+            }
+
+            cur_sector = file_info->sector;
+            cur_size   = file_info->size;
+        }
+    }
+
+    free(path_copy);
+
+    return 0;
+}
+
+
+void *iso9660_open(int disk_no, char *path) {
     if (disk_no >= disk_count || !disks || !path) return NULL;
 
-    Disk disk = disks[disk_no];
-    if (disk.type != DISK_TYPE_SATAPI) return NULL;
+    if (disks[disk_no].type != DISK_TYPE_SATAPI) return NULL;
 
-    uint32_t cur_sector = disk.root_directory_sector;
-    uint32_t cur_size = disk.root_directory_size;
+    uint32_t cur_sector = disks[disk_no].root_directory_sector;
+    uint32_t cur_size = disks[disk_no].root_directory_size;
     iso9660_file_t file_info;
+
+    // Skip leading slash if present
+    if (path[0] == '/') {
+        path++;
+    }
+
+    // Handle root directory case
+    if (path[0] == '\0') {
+        printf("ISO9660: Cannot open root directory as file\n");
+        return NULL;
+    }
 
     char *path_copy = strdup(path);
     char *token = strtok(path_copy, "/");
 
     while (token != NULL) {
         if (!iso9660_find_file(disk_no, cur_sector, cur_size, token, &file_info)) {
-            printf("ISO9660: %s not found!\n", token);
-            kheap_free(path_copy, strlen(path_copy) + 1);
+            printf("ISO9660: '%s' not found!\n", token);
+            free(path_copy);
             return NULL;
         }
 
@@ -229,8 +319,8 @@ void *iso9660_open(int disk_no, char *path, int mode) {
             cur_sector = file_info.sector;
             cur_size = file_info.size;
         } else {
-            kheap_free(path_copy, strlen(path_copy) + 1);
-            iso9660_file_t *opened_file = kheap_alloc(sizeof(iso9660_file_t), ALLOCATE_DATA);
+            free(path_copy);
+            iso9660_file_t *opened_file = malloc(sizeof(iso9660_file_t));
             if (!opened_file) return NULL;
             memcpy(opened_file, &file_info, sizeof(iso9660_file_t));
             opened_file->disk_no = disk_no;
@@ -240,7 +330,8 @@ void *iso9660_open(int disk_no, char *path, int mode) {
         token = strtok(NULL, "/");
     }
 
-    kheap_free(path_copy, strlen(path_copy) + 1);
+    free(path_copy);
+
     return NULL;
 }
 
@@ -284,7 +375,7 @@ int iso9660_get_fsize(void *fp) {
 
 int iso9660_close(void *fp) {
     if (!fp) return -1;
-    kheap_free(fp, sizeof(iso9660_file_t));
+    free(fp);
     return 0;
 }
 
@@ -310,12 +401,12 @@ void *iso9660_opendir(int disk_no, char *path) {
         size = dir_info.size;
     }
 
-    iso9660_dir_t *dir = (iso9660_dir_t *) kheap_alloc(sizeof(iso9660_dir_t), ALLOCATE_DATA);
+    iso9660_dir_t *dir = (iso9660_dir_t *) malloc(sizeof(iso9660_dir_t));
     if (!dir) return NULL;
 
-    dir->buffer = (uint8_t *) kheap_alloc(size, ALLOCATE_DATA);
+    dir->buffer = (uint8_t *) malloc(size);
     if (!dir->buffer) {
-        kheap_free(dir, sizeof(iso9660_dir_t));
+        free(dir);
         return NULL;
     }
 
@@ -358,22 +449,12 @@ int iso9660_readdir(void *dirp, iso9660_file_t *entry) {
 int iso9660_closedir(void *dirp) {
     iso9660_dir_t *dir = (iso9660_dir_t *)dirp;
     if (!dir) return -1;
-    kheap_free(dir->buffer, dir->size);
-    kheap_free(dir, sizeof(iso9660_dir_t));
+    free(dir->buffer);
+    free(dir);
     return 0;
 }
 
-int iso9660_stat(int disk_no, char *path, void *fno) {
-    iso9660_file_t *file_info = (iso9660_file_t *)fno;
 
-    uint32_t sector = disks[disk_no].root_directory_sector;
-    uint32_t size = disks[disk_no].root_directory_size;
-
-    if (!iso9660_find_file(disk_no, sector, size, path, file_info))
-        return -1;
-
-    return 0;
-}
 
 bool iso9660_check_media(void *ctx) {
     HBA_PORT_T *port = (HBA_PORT_T *)ctx;
@@ -388,17 +469,77 @@ bool iso9660_check_media(void *ctx) {
     return true;
 }
 
+void iso9660_test(int disk_no, char *test_path) {
 
-
-
-void iso9660_test(int disk_no) {
-    if (disk_no >= disk_count || !disks) return;
-    Disk disk = disks[disk_no];
-    if (disk.type != DISK_TYPE_SATAPI) {
-        printf("ISO9660 Test: Disk %d is not SATAPI\n", disk_no);
+    // Initial Critical Testing
+    if (disk_no >= disk_count || !disks) {
+        printf("ISO9660 Test: Invalid Disk No %d!\n", disk_no);
         return;
     }
 
-    HBA_PORT_T *port = (HBA_PORT_T *)disk.context;
-    test_satapi(port);
+    if(!test_path){
+        printf("ISO9600_Test: Null test_path pointer!\n");
+        return;
+    }
+
+    Disk disk = disks[disk_no];
+
+    if(disk.type != DISK_TYPE_SATAPI) {
+        printf("ISO9660 Test: Disk %d is not SATAPI!\n", disk_no);
+        return;
+    }
+
+    // Mount the ISO9660 FS 
+    if(iso9660_mount(disk_no) != 0){
+        printf("ISO9660 Test: Failed to mount the disk %d!\n");
+        return;
+    }
+    printf("ISO9660 Test: Successfully mounted Disk %d\n", disk_no);
+
+    // Checking presence of the file
+    iso9660_file_t file_info;
+    if(iso9660_stat(disk_no, test_path, &file_info) != 0){
+        printf("ISO9660 Test: File %s is not present!\n", test_path);
+        return;
+    }
+    printf("ISO9660 Test: File %s is present.\n", test_path);
+
+    // Opening the above file
+    void *file_ptr = iso9660_open(disk_no, test_path);
+    if(!file_ptr){
+        printf("ISO9660 Test: Failed to open %s!\n", test_path);
+        return;
+    }
+    printf("ISO9660 Test: Successfully  open %s!\n", test_path);
+
+    // Getting File size
+    int file_size = iso9660_get_fsize(file_ptr);
+    if(file_size <= 0){
+        printf("ISO9660 Test: Invalid To Get File Size!\n");
+        return;
+    }
+    printf("ISO9660 Test: Successfully Get File Size: %d\n", file_size);
+
+    // Reading the opened file
+    char *buff = malloc(file_size);
+    if(!buff){
+        printf("ISO9660 Test: Memory allocation is failed!\n");
+        return;
+    }
+
+    // Reading the file
+    int rb = iso9660_read(file_ptr, buff, file_size);
+    if(rb  <= 0){
+        printf("ISO9660 Test: Readig file %s is failed!\n", test_path);
+        free(buff);
+        return;
+    }
+    printf("ISO9660 Test: Sucessfully read %d bytes from %s!\n", rb, test_path);
+
+    free(buff);
+
+    printf("ISO9660 Test: %s Content: %s\n", test_path, buff);
+
 }
+
+

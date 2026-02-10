@@ -69,52 +69,15 @@ void kmain(){
     }
     printf("Total %d Disks Found.\n", disk_count);
 
-    int progress;
-    if(clear_disk(boot_disk_no, &progress) != 0){
-        printf("Failed to clear Disk %d.\n", boot_disk_no);
-    }else{
-        printf("Successfully cleared Disk %d.\n", boot_disk_no);
-    }
- 
-    // Sector layout for ESP and Data partitions
-    uint64_t esp_start_lba = 2048;    // 2048
-    uint64_t total_sectors = disks[boot_disk_no].total_sectors;
-    uint64_t sector_size = disks[boot_disk_no].bytes_per_sector;
-    uint64_t esp_sectors = 100 * 1024 * 1024 / sector_size;     // 100MB ESP
-    uint64_t data_sectors = total_sectors - esp_sectors - 2048; // Rest for Data Partition
 
-    // Create GPT enable ESP and Data Partitions
-    if(create_esp_and_data_partitions(boot_disk_no, esp_sectors, data_sectors, total_sectors)){
-        printf("Created ESP and Data Partitions on Disk %d successfully.\n", boot_disk_no);
+    if(format_disk_and_install(iso_disk_no, boot_disk_no)){
+        printf("Successfully Install KeblaOS in Disk %d!\n", boot_disk_no);
     }else{
-        printf("Failed to create ESP and Data Partitions on Disk %d.\n", boot_disk_no);
+        printf("Failed to Install KeblaOS in Disk %d!\n", boot_disk_no);
     }
 
-    // Create FAT32 Volume  at LBA 2048
-    if(create_fat32_volume(boot_disk_no, esp_start_lba, (uint32_t)esp_sectors)){
-        printf("Created FAT32 Volume on ESP Partition successfully.\n");
-    }else{
-        printf("Failed to create FAT32 Volume on ESP Partition.\n");
-    }
 
-    if(fat32_mkdir_root(boot_disk_no, "BOOT")){
-        printf("Successfully created BOOT directory\n");
-    }else{
-        printf("Failed to create BOOT Directtory\n");
-    }
-
-    if(fat32_mkdir_root(boot_disk_no, "EFI")){
-        printf("Successfully created EFI directory\n");
-    }else{
-        printf("Failed to create EFI Directtory\n");
-    }
-
-    if(fat32_create_test_file(boot_disk_no)){
-        printf("Successfully created TEST.TXT\n");
-    }else{
-        printf("Failed to create TEST.TXT\n");
-    }
-
+    // fat32_install(iso_disk_no, boot_disk_no);
 
     // Install KeblaOS in ESP Partition
     // if(esp_install(iso_disk_no, boot_disk_no) != 0){

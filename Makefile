@@ -52,7 +52,8 @@ GCC_FLAG = -g -Wall \
 	-mcmodel=kernel \
 	-msse \
 	-msse2
-GCC_STDLIB_FLAG = -Ikernel/src/lib -Iext_lib/lvgl-9.3.0 -Iext_lib/lvgl-9.3.0/src
+
+GCC_STDLIB_FLAG = -Ikernel/src/lib
 
 
 # Assembler
@@ -133,22 +134,6 @@ tiny-regex: build/lib-tiny-regex.a
 
 
 
-# 4. nuklear-4.12.7
-NUKLEAR_SRC_DIR   = ext_lib/Nuklear-4.12.7/src
-NUKLEAR_INCLUDE   = -I$(NUKLEAR_SRC_DIR)
-
-# Just compile your backend that includes nuklear.h
-NUKLEAR_OBJ_FILES = build/nuklear_vga_backend.o
-
-$(NUKLEAR_OBJ_FILES): kernel/src/gui/nuklear_vga_backend.c
-	@mkdir -p $(dir $@)
-	$(GCC) $(GCC_FLAG) $(GCC_STDLIB_FLAG) $(NUKLEAR_INCLUDE) -c $< -o $@
-
-nuklear: $(NUKLEAR_OBJ_FILES)
-	@echo "Nuklear (header-only) build completed."
-
-
-
 # 5. ugui
 UGUI_BUILD_DIR = build/ext_lib/UGUI
 UGUI_SRC_DIR   = ext_lib/UGUI
@@ -174,7 +159,7 @@ ugui: $(UGUI_LIB_FILE)
 
 
 # external_libs: $(FATFS_LIB_FILE) $(LVGL_LIB_FILE) $(UGUI_LIB_FILE) $(NUKLEAR_LIB_FILE) $(TINY_REGEX_LIB_FILE)
-external_libs: $(UGUI_LIB_FILE) $(NUKLEAR_LIB_FILE) $(TINY_REGEX_LIB_FILE)
+external_libs: $(UGUI_LIB_FILE) $(TINY_REGEX_LIB_FILE)
 
 
 # ============================================== Kernel Build  Start ====================================================================
@@ -217,8 +202,7 @@ kernel: build/libkernel.a
 
 
 # Rule to link all object files into a single kernel binary
-# $(BUILD_DIR)/kernel.bin: $(KERNEL_LIB_FILE) $(FATFS_LIB_FILE) $(LVGL_LIB_FILE) $(TINY_REGEX_LIB_FILE) $(UGUI_LIB_FILE) $(NUKLEAR_LIB_FILE)
-$(BUILD_DIR)/kernel.bin: $(KERNEL_LIB_FILE) $(LVGL_LIB_FILE) $(TINY_REGEX_LIB_FILE) $(UGUI_LIB_FILE) $(NUKLEAR_LIB_FILE)
+$(BUILD_DIR)/kernel.bin: $(KERNEL_LIB_FILE) $(TINY_REGEX_LIB_FILE) $(UGUI_LIB_FILE)
 	$(LD) $(LD_FLAG) -T kernel_linker_x86_64.ld -o $@ $^
 
 
@@ -514,14 +498,18 @@ gdb_debug:
 		-m 4096 \
 		-smp cores=4,threads=1,sockets=1,maxcpus=4 \
 		-boot d \
-		-hda $(DISK_DIR)/disk_1.img \
-		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso \
+		-device ahci,id=ahci \
+		-device ide-cd,drive=cdrom,bus=ahci.0 \
+		-device ide-hd,drive=sata_disk1,bus=ahci.1 \
+		-drive id=sata_disk1,file=$(DISK_1),if=none,format=raw \
+		-drive id=cdrom,media=cdrom,file=$(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso,if=none \
 		-serial stdio \
 		-d guest_errors,int,cpu_reset \
 		-D $(DEBUG_DIR)/qemu.log \
 		-vga std \
 		-rtc base=utc,clock=host \
 		-s -S
+
 
 clean:
 	# -o stands or 
@@ -550,7 +538,7 @@ user_programe:
 
 
 # Full build (with external libraries)
-all: hard_clean kernel fatfs lvgl tiny-regex ugui linking user_programe image create_disks bios_run
+all: hard_clean kernel fatfs tiny-regex ugui linking user_programe image create_disks bios_run
 
 
 # Kernel-only build (no ext_lib)

@@ -5,7 +5,7 @@
  * Checks the given expression. If it evaluates to 0 (false),
  * prints an error message with file and line information and halts.
  */
-#define assert(expr)                                                 \
+#define assert(expr)                                                \
     do {                                                             \
         if (!(expr)) {                                               \
             printf("Assertion failed: ");                            \

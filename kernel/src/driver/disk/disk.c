@@ -72,7 +72,7 @@ bool kebla_disk_status(int disk_no){
 int kebla_get_disks(){
 
     if(!disks){
-        disks = (Disk *)kheap_alloc(sizeof(Disk) * MAX_TOTAL_DISKS, ALLOCATE_DATA);
+        disks = (Disk *)malloc(sizeof(Disk) * MAX_TOTAL_DISKS);
         if(!disks) return -1;
     } 
     memset(disks, 0, sizeof(Disk) * MAX_TOTAL_DISKS);
@@ -119,7 +119,6 @@ int kebla_get_disks(){
                                 disk_count, disks[disk_count].type, disks[disk_count].bytes_per_sector, disks[disk_count].total_sectors);
                             }
 
-                            
                             disk_count++;
                         }else if(type == AHCI_DEV_SATAPI){
                             // printf("controller no: %d, SATAPI Drive Found at port %d\n", c_idx, i);
@@ -127,6 +126,14 @@ int kebla_get_disks(){
                             disks[disk_count].context = (void *)&abar->ports[i];	// Rebase the port
                             disks[disk_count].bytes_per_sector = satapi_get_bytes_per_sector(&abar->ports[i]);
                             disks[disk_count].total_sectors = satapi_get_total_sectors(&abar->ports[i]);
+                            
+                            if(disks[disk_count].bytes_per_sector <= 0 || disks[disk_count].total_sectors <= 0){
+                                continue;
+                            }else{
+                                disks[disk_count].initialized = true;
+                                if(debug_on) printf("[DISK] Disk No: %d, type:%d, Sector Space: %d Byte, Total Sectors: %d\n", 
+                                disk_count, disks[disk_count].type, disks[disk_count].bytes_per_sector, disks[disk_count].total_sectors);
+                            }
                             
                             if(debug_on) printf("[DISK] Disk No: %d, type:%d, Sector Space: %d Byte, Total Sectors: %d\n", 
                                 disk_count, disks[disk_count].type, disks[disk_count].bytes_per_sector, disks[disk_count].total_sectors);
@@ -165,6 +172,42 @@ int kebla_get_disks(){
     }
 
     return disk_count;
+}
+
+void kebla_disk_check(){
+    if(!disks){
+        printf("DISK: Allocation for memory disks is failed!\n");
+    }
+
+    if(disk_count <= 0){
+        printf("DISK: No valid disk found i.e. Total found disk: %d\n", disk_count);
+    }
+
+    for(int i=0; i<disk_count; i++){
+        Disk disk = disks[i];
+
+        bool initialized = disk.initialized;           
+        DiskType type = disk.type;              
+        uint16_t bytes_per_sector = disk.bytes_per_sector;  
+        uint64_t total_sectors = disk.total_sectors;     
+
+        uint32_t root_directory_sector = disk.root_directory_sector; 
+        uint32_t root_directory_size = disk.root_directory_size;   
+        uint32_t pvd_sector = disk.pvd_sector;            
+
+        void* context = disk.context;   
+        
+        printf("Disk: %d\n", i);
+        printf(" Initialized: %d\n", initialized);
+        printf(" Type: %d\n", type);
+        printf(" Byte / Sector: %d\n", bytes_per_sector);
+        printf(" Total sectors: %d\n", total_sectors);
+        printf(" Root Directory Sector: %d\n", root_directory_sector);
+        printf(" Root Directory Size: %d\n", root_directory_size);
+        printf(" PVD Sector: %d\n",pvd_sector );
+        printf(" Context: %p\n", context);
+
+    }
 }
 
 bool kebla_disk_init(int disk_no){
@@ -250,15 +293,18 @@ bool kebla_disk_init(int disk_no){
 
 bool kebla_disk_read(int disk_no, uint64_t lba, uint32_t count, void* buf){
 
+    if(disk_no >= disk_count){
+        printf("[DISK] Invalid Disk No %d\n", disk_no);
+        return false;
+    }
+
     if(!disks){
         printf("[DISK] disks is NULL\n");
         return false;
     }
 
-    Disk disk = disks[disk_no];
-
-    if(disk.type == DISK_TYPE_UNKNOWN){
-        printf("[DISK] Disk %d is NULL\n", disk_no);
+    if(lba < 0 || count <= 0){
+        printf("[DISK] LBA %d, Count %d\n", lba, count);
         return false;
     }
 
@@ -267,7 +313,15 @@ bool kebla_disk_read(int disk_no, uint64_t lba, uint32_t count, void* buf){
         return false;
     }
 
-    if(disk.type == DISK_TYPE_AHCI_SATA){
+    Disk disk = disks[disk_no];
+
+    // ADD DEBUG INFO
+    // printf("[DISK READ] Disk %d: lba=%x, count=%x, total=%x, buf=%x\n", disk_no, lba, count, disk.total_sectors, buf);
+
+    if(disk.type == DISK_TYPE_UNKNOWN){
+        printf("[DISK] Disk %d Type is Unknown\n", disk_no);
+        return false;
+    }else if(disk.type == DISK_TYPE_AHCI_SATA){
         HBA_PORT_T *port = (HBA_PORT_T *) disk.context;
         if(!port){
             printf("[Disk] AHCI Port is NULL\n");
@@ -293,13 +347,26 @@ bool kebla_disk_read(int disk_no, uint64_t lba, uint32_t count, void* buf){
 }
 
 bool kebla_disk_write(int disk_no, uint64_t lba, uint32_t count, void* buf) {
+
+    if(disk_no >= disk_count){
+        printf("[DISK] Invalid Disk No %d\n", disk_no);
+        return false;
+    }
     
     if(!disks){
         printf("[DISK] disks is NULL\n");
         return false;
     }
 
-    if(disk_no > disk_count) return false;
+    if(lba < 0 || count <= 0){
+        printf("[DISK] LBA %d, Count %d\n", lba, count);
+        return false;
+    }
+
+    if(!buf){
+        printf("[DISK] Buffer is NULL\n");
+        return false;
+    }
     
     Disk disk = disks[disk_no];
 
@@ -356,43 +423,62 @@ bool kebla_disk_write(int disk_no, uint64_t lba, uint32_t count, void* buf) {
     return false;   // Unsupported disk type
 }
 
-#define MAX_BATCH_SIZE 20480
+uint16_t MAX_BATCH_SIZE = 2048;
+
 int clear_disk(int disk_no, int *progress){
 
     printf("Formatting Disk %d: \n", disk_no);
 
+    if(!disks || disk_no >= disk_count || disk_no < 0){
+        printf("[DISK] Invalid Disk No %d\n", disk_no);
+    }
+
+    if(!progress){
+        printf("[DISK] progress is %p\n", progress);
+    }
     *progress = 0;
 
     if(!disks) return -1;
 
-    if(disk_no < 0) {
-        printf("Invalid disk number %d for formatting.\n", disk_no);
+    Disk *disk = &disks[disk_no];
+
+    uint64_t total_sectors = disk->total_sectors;
+    uint16_t sector_size = disk->bytes_per_sector;
+
+    if(total_sectors <= 0){
+        printf("Total Sectors: %d\n", total_sectors);
         return -1;
     }
-    uint64_t total_sectors = disks[disk_no].total_sectors;
-    const uint64_t SECTOR_SIZE = disks[disk_no].bytes_per_sector;
 
+    if(sector_size <= 0){
+        printf("Sector Size: %d\n", sector_size);
+        sector_size = 512;
+    }
 
+    uint16_t buffer_size =512 * MAX_BATCH_SIZE;
 
-    uint8_t *buffer = kheap_alloc(SECTOR_SIZE * MAX_BATCH_SIZE, ALLOCATE_DATA);
+    uint8_t *buffer = malloc(buffer_size); // allocating 2048 * 512 = 10 MB size
     if (!buffer) {
         printf("Failed to allocate memory for formatting disk %d.\n", disk_no);
         return -1;
     }
-    memset(buffer, 0, SECTOR_SIZE * 2048);
+    memset(buffer, 0, buffer_size);
 
-    for (uint64_t lba = 0; lba < total_sectors; lba += 2048) {
+    for (uint64_t lba = 0; lba < total_sectors; lba += MAX_BATCH_SIZE) {
         *progress = (int)((lba * 100) / total_sectors);
-            printf("\rProgress: %d %%", *progress);
-        uint32_t sectors_to_write = (lba + 2048 <= total_sectors) ? 2048 : (total_sectors - lba);
+        printf("\rProgress: %d %%", *progress);
+
+        uint32_t sectors_to_write = (lba + MAX_BATCH_SIZE <= total_sectors) ? MAX_BATCH_SIZE : (total_sectors - lba);
         if (!kebla_disk_write(disk_no, lba, sectors_to_write, buffer)) {
             printf("Failed to format disk %d at LBA %d\n", disk_no, lba);
-            kheap_free(buffer, SECTOR_SIZE * 2048);
+            free(buffer);
             return -1;
         }
     }
 
-    kheap_free(buffer, SECTOR_SIZE * 2048);
+    memset(buffer, 0, sector_size * MAX_BATCH_SIZE);
+
+    free(buffer);
 
     printf("\n");
 

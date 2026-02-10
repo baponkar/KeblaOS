@@ -131,10 +131,13 @@ long atol(const char *str) {
 
 /* ---------- Memory management ---------- */
 void *malloc(size_t size) {
-    if (size == 0) return NULL;
+    if (size <= 0){
+        printf("[MALLOC] Size %d\n", size);
+        return NULL;
+    } 
     
     // Allocate space for header + user data
-    size_t total_size = HEADER_SIZE + size;
+    size_t total_size = HEADER_SIZE + size + TAILER_SIZE;
     malloc_header_t *header = (malloc_header_t*)kheap_alloc(total_size, ALLOCATE_DATA);
     
     if (!header) return NULL;
@@ -143,26 +146,58 @@ void *malloc(size_t size) {
     header->size = size;
     header->magic = MAGIC;
     // next/prev can be used for heap management if needed
+
+    void *tailer_ptr = (void *) header + HEADER_SIZE + size;
+    memset(tailer_ptr, 0,  TAILER_SIZE);
     
     // Return pointer to user data (after header)
     return (void*)((uint8_t*)header + HEADER_SIZE);
 }
 
+// void free(void *ptr) {
+//     if (ptr == NULL) return;
+    
+//     // Get header from user pointer
+//     malloc_header_t *header = (malloc_header_t*)((uint8_t*)ptr - HEADER_SIZE);
+    
+//     // Validate magic number to detect corruption
+//     if (header->magic != MAGIC) {
+//         printf("Memory Header magic number corrupted: [%x/%x]\n", header->magic, MAGIC);
+//         return;
+//     }
+    
+//     size_t total_size = HEADER_SIZE + header->size + TAILER_SIZE;
+
+//     memset(header, 0, total_size);
+//     // Free the entire block (header + user data + tailer)
+//     kheap_free(header, total_size);
+// }
+
 void free(void *ptr) {
     if (ptr == NULL) return;
-    
-    // Get header from user pointer
+
     malloc_header_t *header = (malloc_header_t*)((uint8_t*)ptr - HEADER_SIZE);
-    
-    // Validate magic number to detect corruption
+
     if (header->magic != MAGIC) {
-        printf("Memory Header magic number corrupted:%x/%x\n", header->magic, MAGIC);
-        return;
+        printf("Memory Header corrupted [%x/%x]\n", header->magic, MAGIC);
+        while(1);
     }
-    
-    // Free the entire block (header + user data)
-    kheap_free(header, HEADER_SIZE + header->size);
+
+    uint8_t *tail = (uint8_t*)header + HEADER_SIZE + header->size;
+
+    for (size_t i = 0; i < TAILER_SIZE; i++) {
+        if (tail[i] != 0) {
+            printf("Heap overflow detected!\n");
+            printf("Block size: %u\n", header->size);
+            while(1);
+        }
+    }
+
+    size_t total_size = HEADER_SIZE + header->size + TAILER_SIZE;
+    memset(header, 0, total_size);
+    kheap_free(header, total_size);
 }
+
 
 void *calloc(size_t nmemb, size_t size) {
     size_t total = nmemb * size;

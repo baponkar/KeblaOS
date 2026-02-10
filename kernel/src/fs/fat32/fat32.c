@@ -5,7 +5,6 @@
 #include "../../lib/string.h"
 #include "../../lib/stdlib.h"
 
-#include "../../memory/kheap.h"
 
 
 #include "fat32.h"
@@ -29,7 +28,7 @@ static bool fat32_write_sector(int disk_no, uint64_t lba, const void *buf) {
 
 // This function creates and returns a BPB structure for FAT32
 static BPB *create_bpb_fat32(uint32_t tot_sectors, uint8_t sectors_per_cluster, uint32_t start_sector){
-    BPB *bpb = (BPB *)kheap_alloc(sizeof(BPB), ALLOCATE_DATA);
+    BPB *bpb = (BPB *)malloc(sizeof(BPB));
     if (!bpb) {
         return NULL;
     }
@@ -86,7 +85,7 @@ static BPB *create_bpb_fat32(uint32_t tot_sectors, uint8_t sectors_per_cluster, 
 }
 
 static FSInfo *create_fsinfo_sector(int disk_no, uint64_t start_lba) {
-    FSInfo *fsinfo = (FSInfo *)kheap_alloc(sizeof(FSInfo), ALLOCATE_DATA);
+    FSInfo *fsinfo = (FSInfo *)malloc(sizeof(FSInfo));
     if (!fsinfo) {
         return NULL;
     }
@@ -108,7 +107,7 @@ static FSInfo *create_fsinfo_sector(int disk_no, uint64_t start_lba) {
 
 static bool initialize_fat_tables(int disk_no, uint64_t fat_start, uint32_t fat_sector_size) {
     
-    uint8_t *fat_buffer = (uint8_t *) kheap_alloc( SECTOR_SIZE, ALLOCATE_DATA);
+    uint8_t *fat_buffer = (uint8_t *) malloc( SECTOR_SIZE);
     if (!fat_buffer) {
         return false;
     }
@@ -138,9 +137,9 @@ static bool initialize_fat_tables(int disk_no, uint64_t fat_start, uint32_t fat_
         return false;
     }
 
-    kheap_free(fat_buffer, SECTOR_SIZE);
+    free(fat_buffer);
 
-    uint8_t *zeros = (uint8_t *)kheap_alloc(MAX_BATCH_SECTORS * SECTOR_SIZE, ALLOCATE_DATA);
+    uint8_t *zeros = (uint8_t *)malloc(MAX_BATCH_SECTORS * SECTOR_SIZE);
     if(!zeros){
         return false;
     }
@@ -151,15 +150,37 @@ static bool initialize_fat_tables(int disk_no, uint64_t fat_start, uint32_t fat_
     while (sectors_written < fat_sector_size) {
         uint32_t sectors_to_write = (fat_sector_size - sectors_written > MAX_BATCH_SECTORS) ? MAX_BATCH_SECTORS : (fat_sector_size - sectors_written);
         if (!kebla_disk_write(disk_no, fat_start + sectors_written, sectors_to_write, zeros)) {
-            kheap_free(zeros, MAX_BATCH_SECTORS * SECTOR_SIZE);
+            free(zeros);
             return false;
         }
         sectors_written += sectors_to_write;
     }
 
-    kheap_free(zeros, MAX_BATCH_SECTORS * SECTOR_SIZE);
+    free(zeros);
 
     return true;
+}
+
+static bool fat32_zero_cluster(int disk_no, uint32_t cluster)
+{
+    uint32_t first_data_sector = bpb->BPB_RsvdSecCnt + (bpb->BPB_NumFATs * bpb->BPB_FATSz32);
+
+    uint32_t first_sector = first_data_sector + (cluster - 2) * bpb->BPB_SecPerClus;
+
+    uint64_t lba = esp_fat_partition_lba_base + first_sector;
+
+    uint32_t bytes = bpb->BPB_SecPerClus * SECTOR_SIZE;
+
+    uint8_t *zero = malloc(bytes);
+    if (!zero) return false;
+
+    memset(zero, 0, bytes);
+
+    bool ok = kebla_disk_write(disk_no, lba, bpb->BPB_SecPerClus, zero);
+
+    free(zero);
+
+    return ok;
 }
 
 
@@ -213,7 +234,7 @@ bool create_fat32_volume(int disk_no, uint64_t start_lba, uint32_t sectors) {
         return false;
     }
 
-    kheap_free(fsinfo, sizeof(FSInfo));
+    free(fsinfo);
 
     // 5. Initialize FAT tables
     uint32_t fat_sector_size = bpb->BPB_FATSz32;
@@ -227,6 +248,14 @@ bool create_fat32_volume(int disk_no, uint64_t start_lba, uint32_t sectors) {
         }
         printf(" Done\n");
     }
+
+
+    // Initialize root directory cluster
+    if (!fat32_zero_cluster(disk_no, bpb->BPB_RootClus)) {
+        printf("Failed to initialize root directory cluster\n");
+        return false;
+    }
+
     return true;
 }
 

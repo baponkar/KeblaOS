@@ -54,13 +54,14 @@
 #include "../fs/iso9660/iso9660.h"                      
 #include "../fs/kfs/kfs.h"
 #include "../fs/fat32/fat32.h"
-#include "../fs/fat32/fat32_uitility.h"
+#include "../fs/fat32/fat32_utility.h"
 #include "../vfs/vfs.h"                     // Virtual FIle System
 
 // Installer
 #include "../installer/gpt.h"
 #include "../installer/installer.h"
 #include "../installer/installer_1.h"
+#include "../installer/installer_3.h"
 
 // ACPI
 #include "../sys/acpi/acpi.h"                 // init_acpi

@@ -103,9 +103,9 @@ int vfs_init(int disk_no) {
     Disk disk = disks[disk_no];
 
     if (disk.type == DISK_TYPE_SATAPI) {
-        return iso9660_init(disk_no);
+        return iso9660_init(disk_no) == 0 ? 0 : -1;
     } else if (disk.type == DISK_TYPE_AHCI_SATA) {
-        return fatfs_init(disk_no) == 0 ? 0: -1;
+        return fatfs_init(disk_no) == 0 ? 0 : -1;
     }
     printf("VFS: Unsupported disk type %d for init on disk %d\n", disk.type, disk_no);
     return -1;
@@ -313,7 +313,7 @@ void *vfs_open(int pd_no, char *path, int mode){
     Disk disk = disks[pd_no];
 
     if(disk.type == DISK_TYPE_SATAPI){
-        return iso9660_open(pd_no, path, mode);
+        return iso9660_open(pd_no, path);
     }else if(disk.type == DISK_TYPE_AHCI_SATA){
         // char* updated_path = path;
         // if(path[1] == ':'){

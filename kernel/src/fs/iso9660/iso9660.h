@@ -5,29 +5,29 @@
 #include <stdbool.h>
 
 
-#pragma pack(push, 1)
 
 // ISO9660 Directory Record
-typedef struct {
-    uint8_t length;
-    uint8_t ext_attr_length;
-    uint32_t extent_location_le;
-    uint32_t extent_location_be;
-    uint32_t data_length_le;
-    uint32_t data_length_be;
-    uint8_t date_time[7];
-    uint8_t file_flags;
+typedef struct __attribute__((packed)){
+    uint8_t length;                     // Size of the entire directory record in bytes.
+    uint8_t ext_attr_length;            // Length of extended attribute record.
+    uint32_t extent_location_le;        // “Where the file data starts on disk (LBA).”
+    uint32_t extent_location_be;        // “Where the file data starts on disk (LBA).”
+    uint32_t data_length_le;            // Data length (file size)
+    uint32_t data_length_be;            // Data length (file size)
+    uint8_t date_time[7];               // ISO9660 directory timestamp format:
+    uint8_t file_flags;                 // File flags : hidden: 0x1, directory: 0x2, associated file 0x4, record format 0x8, permissions 0x10 multi-extent
     uint8_t file_unit_size;
     uint8_t interleave_gap_size;
     uint16_t volume_sequence_number_le;
     uint16_t volume_sequence_number_be;
-    uint8_t file_id_length;
-    char file_id[1];            // Actually variable length
-} iso9660_dir_record_t;
+    uint8_t file_id_length;             // Length of the filename.
+    char file_id[1];                    // Actually variable length
+} iso9660_dir_record_t; // 34 Bytes : Actual length : 33 + file_id_length (+ padding)
+
 
 
 // ISO9660 Primary Volume Descriptor
-typedef struct {
+typedef struct __attribute__((packed)){
     uint8_t type;                   // 0x01 for Primary Volume Descriptor
     char identifier[5];             // "CD001"
     uint8_t version;                // 0x01
@@ -66,8 +66,8 @@ typedef struct {
     uint8_t unused4;
     uint8_t application_data[512];
     uint8_t reserved[653];
-} iso9660_pvd_t;
-#pragma pack(pop)
+} iso9660_pvd_t;    // 2048 bytes
+
 
 
 // File info structure
@@ -77,7 +77,7 @@ typedef struct {
     uint32_t size;
     int disk_no;
     bool is_dir;
-} iso9660_file_t;
+} iso9660_file_t;   // 272 bytes
 
 
 // Directory iterator structure
@@ -85,8 +85,8 @@ typedef struct {
     uint8_t *buffer;
     uint32_t size;
     uint32_t offset;
-    int disk_no;
-} iso9660_dir_t;
+    int disk_no;    // 8 bytes
+} iso9660_dir_t;    // 24 bytes
 
 
 int iso9660_init(int disk_no);
@@ -96,7 +96,8 @@ bool iso9660_check_media(void *ctx);
 int iso9660_mount(int disk_no);
 int iso9660_unmount(int disk_no);
 
-void *iso9660_open(int disk_no, char *path, int mode);
+int iso9660_stat(int disk_no, char *path, void *fno);
+void *iso9660_open(int disk_no, char *path);
 int iso9660_read(void *fp, char *buff, int size);
 int iso9660_get_fsize(void *fp);
 int iso9660_close(void *fp);
@@ -106,7 +107,7 @@ void *iso9660_opendir(int disk_no, char *path);
 int iso9660_readdir(void *dirp, iso9660_file_t *entry);
 int iso9660_closedir(void *dirp);
 
-int iso9660_stat(int disk_no, char *path, void *fno);
 
-void iso9660_test(int disk_no);
+
+void iso9660_test(int disk_no, char *test_path);
 

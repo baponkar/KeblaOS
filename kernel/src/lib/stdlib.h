@@ -22,8 +22,9 @@ typedef struct malloc_header {
 } malloc_header_t;
 
 #define MAGIC 0xAB
-// #define HEADER_SIZE sizeof(malloc_header_t)
-#define HEADER_SIZE 32
+#define HEADER_SIZE sizeof(malloc_header_t)
+#define TAILER_SIZE sizeof(malloc_header_t)
+
 
 void *malloc(size_t size);                  // Allocate memory
 void free(void *ptr);                       // Free allocated memory

@@ -26,8 +26,8 @@ void *kheap_alloc(size_t size, uint8_t type) {
     uint64_t va = h_va_head;
     
     while (h_va_head < va + size) {
-        vm_alloc(h_va_head, type);           // allocating by vm_alloc function
-        h_va_head += PAGE_SIZE;        // Increment by page size (size)
+        vm_alloc(h_va_head, type);          // allocating by vm_alloc function
+        h_va_head += PAGE_SIZE;             // Increment by page size (size)
     }
 
     // Add 4KB padding between allocations to prevent overlapping
