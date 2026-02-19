@@ -1,42 +1,43 @@
-#ifndef _TIME_H
-#define _TIME_H
+#pragma once
 
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 
-/* Clock IDs (POSIX-compatible values) */
+// Clock IDs (POSIX-compatible values)
 #define CLOCK_REALTIME   0
 #define CLOCK_MONOTONIC  1
 
-/* struct timespec: seconds + nanoseconds */
+
+
+// struct timespec: seconds + nanoseconds
 struct timespec {
-    int64_t tv_sec;   /* seconds */
-    int64_t tv_nsec;  /* nanoseconds */
+    int64_t tv_sec;   // seconds
+    int64_t tv_nsec;  // nanoseconds
 };
 
-/* struct timeval: seconds + microseconds */
+// struct timeval: seconds + microseconds
 struct timeval {
-    int64_t tv_sec;   /* seconds */
-    int64_t tv_usec;  /* microseconds */
+    int64_t tv_sec;   // seconds
+    int64_t tv_usec;  // microseconds
 };
 
-/* struct timezone: mostly obsolete, but still in POSIX */
+// struct timezone: mostly obsolete, but still in POSIX
 struct timezone {
-    int tz_minuteswest; /* minutes west of Greenwich */
-    int tz_dsttime;     /* type of DST correction */
+    int tz_minuteswest;    // minutes west of Greenwich 
+    int tz_dsttime;        // type of DST correction
 };
 
-/* struct tms: used by times() syscall */
+// struct tms: used by times() syscall
 struct tms {
-    uint64_t tms_utime;   /* user CPU time */
-    uint64_t tms_stime;   /* system CPU time */
-    uint64_t tms_cutime;  /* user CPU time of children */
-    uint64_t tms_cstime;  /* system CPU time of children */
+    uint64_t tms_utime;   // user CPU time
+    uint64_t tms_stime;   // system CPU time
+    uint64_t tms_cutime;  // user CPU time of children
+    uint64_t tms_cstime;  // system CPU time of children
 };
 
-typedef long time_t;
-typedef long clock_t;
+typedef long time_t;      // uint64_t
+typedef long clock_t;     // uint64_t
 
 struct tm {
     int tm_sec;   // seconds [0,59]
@@ -63,7 +64,6 @@ size_t strftime(char *s, size_t max, const char *format, const struct tm *tm);  
 
 #define CLOCKS_PER_SEC 1000000
 clock_t clock(void);
-#endif
 
 
 void sleep_seconds(uint8_t cpu_id, uint64_t seconds);

@@ -5,6 +5,7 @@ Details: This file will help to format disk with two GPT partition, Create FAT32
 
 */
 
+
 // Forr disks pointer
 #include "../driver/disk/disk.h" 
 
@@ -25,6 +26,9 @@ Details: This file will help to format disk with two GPT partition, Create FAT32
 // MY ISO9660 FS Library
 #include "../fs/iso9660/iso9660.h"
 
+// My VSFS FS Library
+#include "../fs/vsfs/vsfs.h"
+
 #include "installer_3.h"
 
 
@@ -35,7 +39,7 @@ Details: This file will help to format disk with two GPT partition, Create FAT32
 extern const uint8_t binary_limine_hdd_bin_data[];
 
 static const char *iso_files[] = {
-    "/BOOT.CAT",
+    // "/BOOT.CAT",
 
     "/BOOT/LIMINE/LIMINE_B.BIN",
     "/BOOT/LIMINE/LIMINE_B.SYS",
@@ -50,13 +54,39 @@ static const char *iso_files[] = {
     NULL
 };
 
-static const char *boot_dirs[] = {
-    "BOOT",
-    "BOOT/LIMINE",
-    "EFI",
-    "EFI/BOOT",
+static const char *parent_dir [] = {
+    // "/",
+
+    "/BOOT/LIMINE",
+    "/BOOT/LIMINE",
+    "/BOOT/LIMINE",
+
+    "/BOOT",
+    "/BOOT",
+    "/BOOT",
+    "/BOOT",
+
+    "/EFI/BOOT",
     NULL
 };
+
+static const char *file_names[] = {
+    // "BOOT.CAT",
+
+    "LIMINE_B.BIN",
+    "LIMINE_B.SYS",
+    "LIMINE_U.BIN",
+
+    "BOOT_LOA.BMP",
+    "KERNEL.BIN",
+    "LIMINE.CON",
+    "USER_MAI.ELF",
+
+    "BOOTX64.EFI",
+    NULL
+};
+
+
 
 
 bool format_disk_and_install(int iso_disk_no, int boot_disk_no){
@@ -82,10 +112,14 @@ bool format_disk_and_install(int iso_disk_no, int boot_disk_no){
         printf("[INSTALLER] Successfully erase all data in Disk %d.\n", boot_disk_no);
     }
 
-    uint64_t esp_start_lba = ESP_START_LBA;                                 // 2048
+    
     uint64_t total_sectors = disks[boot_disk_no].total_sectors;             // Total Sectors
     uint64_t sector_size = disks[boot_disk_no].bytes_per_sector;            // 512 Byte
+    
+    uint64_t esp_start_lba = ESP_START_LBA;                                 // 2048
     uint32_t esp_sectors = ESP_SIZE_IN_MB * 1024 * 1024 / sector_size;      // 100MB ESP
+    
+    uint64_t data_start_lba =  esp_start_lba + esp_sectors;
     uint64_t data_sectors = total_sectors - esp_sectors - esp_start_lba;    // Rest for Data Partition
 
     if(create_esp_and_data_partitions(boot_disk_no, esp_sectors, data_sectors, total_sectors)){
@@ -109,6 +143,21 @@ bool format_disk_and_install(int iso_disk_no, int boot_disk_no){
         printf("[INSTALLER] Successfully Mount Disk %d.\n", boot_disk_no);
     }
 
+    if(!vsfs_mkfs(boot_disk_no, data_start_lba, data_sectors)){
+        printf("[INSTALLER] Failed to Create VSFS Filesystem on Data Partition\n");
+        return false;
+    }else{
+        printf("[INSTALLER] Successfully created VSFS Filesystem on Data Partition\n");
+    }
+
+    static const char *boot_dirs[] = {
+        "BOOT",
+        "BOOT/LIMINE",
+        "EFI",
+        "EFI/BOOT",
+        NULL
+    };
+
     for(int i=0; boot_dirs[i] != NULL; i++){
         if(fat32_mkdir(boot_disk_no, boot_dirs[i])){
             printf(" Successfully created %s Directory.\n", boot_dirs[i]);
@@ -119,32 +168,38 @@ bool format_disk_and_install(int iso_disk_no, int boot_disk_no){
     }
 
     // ==================================================================================
+    
+    if(fat32_change_current_directory(boot_disk_no, "/")){
+        printf(" Successfully change current working directory /\n\n");
+    }
 
     // Copy files in Boot Disk Boot Partition from iso disk
     for(int i=0; iso_files[i] != NULL; i++){
 
-        char *path = iso_files[i];
-        
-        // printf(" Copying %s from ISO Disk %d...\n", path, iso_disk_no);
+        printf(" Copying %s from ISO Disk %d:%s...\n", file_names[i], iso_disk_no, iso_files[i]);
+
+        char *iso_file_path = iso_files[i];
+        char *parent_dir_path = parent_dir[i];
+        char *file_name = file_names[i];
 
         iso9660_file_t st;
 
-        if(iso9660_stat(iso_disk_no, path, &st) != 0){
-            printf(" Empty File: %s\n", path);
+        if(iso9660_stat(iso_disk_no, iso_file_path, &st) != 0){
+            printf(" Empty File: %s\n", iso_file_path);
             return false;
         }
-        printf(" File %s present\n", path);
+        printf(" File %d:%s present\n", iso_disk_no, iso_file_path);
 
-        void *iso_file = iso9660_open(iso_disk_no, path);
+        void *iso_file = iso9660_open(iso_disk_no, iso_file_path);
         if(!iso_file){
-            printf(" Failed to open file %s in Disk %d\n", path, iso_disk_no);
+            printf(" Failed to open file %s in Disk %d\n", iso_file_path, iso_disk_no);
             iso9660_close(iso_file);
             return false;
         } 
 
         uint32_t iso_file_size = iso9660_get_fsize(iso_file);
         if(iso_file_size <= 0){
-            printf(" Unable to get size of %s\n", path);
+            printf(" Unable to get size of %s\n", iso_file_path);
             iso9660_close(iso_file);
             return false;
         }
@@ -153,24 +208,64 @@ bool format_disk_and_install(int iso_disk_no, int boot_disk_no){
 
         int iso_read_bytes = iso9660_read(iso_file, buf, iso_file_size);
         if(iso_read_bytes <= 0){
-            printf(" Unable to read %s!\n", path);
+            printf(" Unable to read %s!\n", iso_file_path);
             iso9660_close(iso_file);
             free(buf);
             return false;
         }
-        printf(" Successfully read %d bytes from %s file\n", iso_file_size, path);
+        printf(" Successfully read %d bytes from %s file\n", iso_file_size, iso_file_path);
 
-        // Find parent cluster
-        uint32_t out_cluster;
-        if(!fat32_path_to_cluster(iso_disk_no, path, &out_cluster)){
-            printf("Failed to get parent cluster of %s\n");
+        uint32_t dir_cluster = 0;
+
+        // Find parent directory cluster
+        if(!fat32_path_to_cluster(boot_disk_no, parent_dir_path, &dir_cluster)){
             return false;
-        }else{
-            if(fat32_create_file_in_dir(iso_disk_no, out_cluster, path, buf)){
-                printf("Successfully created %s\n", path);
-            }
         }
+        // printf(" Failed to get parent directory cluster of %s\n", parent_dir_path);
+
+        // Creating file inside boot disk
+        if(!fat32_create_file_in_dir(boot_disk_no, dir_cluster, file_name, buf, iso_read_bytes)){
+            return false;
+        }
+        printf(" Successfully created %s\n\n", file_name);
+
+        if(memcmp(file_name, "LIMINE.CON", 10) == 0){
+            if(!fat32_path_to_cluster(boot_disk_no, "/EFI/BOOT", &dir_cluster)){
+                return false;
+            }
+
+            if(!fat32_create_file_in_dir(boot_disk_no, dir_cluster, file_name, buf, iso_read_bytes)){
+                return false;
+            }
+            printf(" Successfully created %s in /EFI/BOOT", file_name);
+        }
+
+        free(buf);
     }
 
+
+
+    return true;
+
+}
+
+
+bool verify_installation(int disk_no, uint32_t start_lba)
+{
+    uint32_t cluster;
+
+    if(!fat32_mount(disk_no, start_lba))
+        return false;
+
+    if (!fat32_path_to_cluster(disk_no, "/BOOT/KERNEL.BIN", &cluster))
+        return false;
+
+    if (!fat32_path_to_cluster(disk_no, "/EFI/BOOT/BOOTX64.EFI", &cluster))
+        return false;
+
+    if (!fat32_path_to_cluster(disk_no, "/BOOT/LIMINE.CON", &cluster))
+        return false;
+
+    return true;
 }
 

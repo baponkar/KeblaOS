@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 // Usermode Virtual address
-#define LOWER_HALF_START_ADDR 0x1000                   // 0 MB
+#define LOWER_HALF_START_ADDR 0x1000                // 0 MB
 #define LOWER_HALF_END_ADDR   0x00007FFFFFFFFFFF    // 128 TB
 
 // Kernelmode Virtuai address

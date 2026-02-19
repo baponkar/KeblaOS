@@ -4,6 +4,21 @@
 
 #include "math.h"
 
+double ceil(double x)
+{
+    long long i = (long long)x;
+
+    // If already an integer
+    if ((double)i == x)
+        return x;
+
+    // Positive numbers need to round up
+    if (x > 0)
+        return (double)(i + 1);
+
+    // Negative numbers already truncated toward zero
+    return (double)i;
+}
 
 
 // Power function (integer exponentiation)
@@ -44,9 +59,6 @@ int gcd(int a, int b) {
 double fmod(double x, double y) {
     return x - ((int)(x / y) * y);
 }
-
-
-
 
 
 // Helper: convert degrees to radians
@@ -107,3 +119,5 @@ double power_func(double base, double exponent) {
     }
     return result;
 }
+
+

@@ -55,6 +55,7 @@
 #include "../fs/kfs/kfs.h"
 #include "../fs/fat32/fat32.h"
 #include "../fs/fat32/fat32_utility.h"
+#include "../fs/vsfs/vsfs.h"
 #include "../vfs/vfs.h"                     // Virtual FIle System
 
 // Installer

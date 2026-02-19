@@ -1,5 +1,6 @@
-// inttypes.h (minimal for LVGL + KeblaOS)
+
 #ifndef _INTTYPES_H
+
 #define _INTTYPES_H
 
 #include <stdint.h>
@@ -33,4 +34,4 @@
 #define PRIx64 "llx"
 #define PRIX64 "llX"
 
-#endif // _INTTYPES_H
+#endif

@@ -130,12 +130,17 @@ long atol(const char *str) {
 
 
 /* ---------- Memory management ---------- */
+#define ALIGN8(x) (((x) + 7) & ~7)
+
 void *malloc(size_t size) {
-    if (size <= 0){
+    
+    if (size == 0){
         printf("[MALLOC] Size %d\n", size);
         return NULL;
     } 
     
+    size = ALIGN8(size);
+
     // Allocate space for header + user data
     size_t total_size = HEADER_SIZE + size + TAILER_SIZE;
     malloc_header_t *header = (malloc_header_t*)kheap_alloc(total_size, ALLOCATE_DATA);
@@ -147,56 +152,59 @@ void *malloc(size_t size) {
     header->magic = MAGIC;
     // next/prev can be used for heap management if needed
 
-    void *tailer_ptr = (void *) header + HEADER_SIZE + size;
+    void *ptr = (void *) ((uint8_t*)header + HEADER_SIZE);
+    memset(ptr, 0, size);
+
+    void *tailer_ptr = (void *) ((uint8_t*)header + HEADER_SIZE + size);
     memset(tailer_ptr, 0,  TAILER_SIZE);
     
     // Return pointer to user data (after header)
     return (void*)((uint8_t*)header + HEADER_SIZE);
 }
 
-// void free(void *ptr) {
-//     if (ptr == NULL) return;
-    
-//     // Get header from user pointer
-//     malloc_header_t *header = (malloc_header_t*)((uint8_t*)ptr - HEADER_SIZE);
-    
-//     // Validate magic number to detect corruption
-//     if (header->magic != MAGIC) {
-//         printf("Memory Header magic number corrupted: [%x/%x]\n", header->magic, MAGIC);
-//         return;
-//     }
-    
-//     size_t total_size = HEADER_SIZE + header->size + TAILER_SIZE;
-
-//     memset(header, 0, total_size);
-//     // Free the entire block (header + user data + tailer)
-//     kheap_free(header, total_size);
-// }
-
 void free(void *ptr) {
     if (ptr == NULL) return;
-
+    
+    // Get header from user pointer
     malloc_header_t *header = (malloc_header_t*)((uint8_t*)ptr - HEADER_SIZE);
-
+    
+    // Validate magic number to detect corruption
     if (header->magic != MAGIC) {
-        printf("Memory Header corrupted [%x/%x]\n", header->magic, MAGIC);
-        while(1);
+        printf("Memory Header magic number corrupted: [%x/%x]\n", header->magic, MAGIC);
+        return;
     }
-
-    uint8_t *tail = (uint8_t*)header + HEADER_SIZE + header->size;
-
-    for (size_t i = 0; i < TAILER_SIZE; i++) {
-        if (tail[i] != 0) {
-            printf("Heap overflow detected!\n");
-            printf("Block size: %u\n", header->size);
-            while(1);
-        }
-    }
-
+    
     size_t total_size = HEADER_SIZE + header->size + TAILER_SIZE;
-    memset(header, 0, total_size);
+    header->magic = 0;
+    
+    // Free the entire block (header + user data + tailer)
     kheap_free(header, total_size);
 }
+
+// void free(void *ptr) {
+//     if (ptr == NULL) return;
+
+//     malloc_header_t *header = (malloc_header_t*)((uint8_t*)ptr - HEADER_SIZE);
+
+//     if (header->magic != MAGIC) {
+//         printf("Memory Header corrupted [%x/%x]\n", header->magic, MAGIC);
+//         while(1);
+//     }
+
+//     uint8_t *tail = (uint8_t*)header + HEADER_SIZE + header->size;
+
+//     for (size_t i = 0; i < TAILER_SIZE; i++) {
+//         if (tail[i] != 0) {
+//             printf("Heap overflow detected!\n");
+//             printf("Block size: %u\n", header->size);
+//             while(1);
+//         }
+//     }
+
+//     size_t total_size = HEADER_SIZE + header->size + TAILER_SIZE;
+//     memset(header, 0, total_size);
+//     kheap_free(header, total_size);
+// }
 
 
 void *calloc(size_t nmemb, size_t size) {
@@ -256,8 +264,7 @@ void srand(unsigned int seed) {
 }
 
 /* ---------- Searching and sorting ---------- */
-void qsort(void *base, size_t nmemb, size_t size,
-           int (*compar)(const void *, const void *)) {
+void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *)) {
     // Simple bubble sort for now
     unsigned char *arr = (unsigned char *)base;
     for (size_t i = 0; i < nmemb; i++) {
@@ -278,9 +285,7 @@ void qsort(void *base, size_t nmemb, size_t size,
 
 
 
-void *bsearch(const void *key, const void *base,
-              size_t nmemb, size_t size,
-              int (*compar)(const void *, const void *)) {
+void *bsearch(const void *key, const void *base,  size_t nmemb, size_t size, int (*compar)(const void *, const void *)) {
     size_t low = 0;
     size_t high = nmemb;
     while (low < high) {

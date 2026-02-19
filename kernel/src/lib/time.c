@@ -28,8 +28,8 @@ static time_t rtc_to_time_t(rtc_time_t *rt) {
 
     // Years since 1970
     for (int y = 1970; y < rt->years + 2000; y++) {
-        t += 365 * 24 * 3600;
-        if (is_leap(y)) t += 24 * 3600;
+        t += 365 * 24 * 3600;           // Total seconds in a year
+        if(is_leap(y)) t += 24 * 3600;  // add more one day
     }
 
     // Months this year
@@ -48,7 +48,7 @@ static time_t rtc_to_time_t(rtc_time_t *rt) {
 }
 
 time_t get_time(){
-    return rtc_to_time_t(get_rtc_time());
+    return rtc_to_time_t(get_rtc_time());   // return total seconds from  1970-01-01 00:00:00 UTC
 }
 
 
@@ -111,9 +111,14 @@ struct tm *gmtime(const time_t *t) {
 
 
 // Converts time_t to struct tm in local time zone
+#define LOCAL_TZ_OFFSET 19800   // UTC+5:30 in seconds
+
 struct tm *localtime(const time_t *t) {
-    return gmtime(t);
+    static time_t adjusted;
+    adjusted = *t + LOCAL_TZ_OFFSET;
+    return gmtime(&adjusted);
 }
+
 
 
 // Converts a time_t value to a human-readable string
@@ -121,12 +126,11 @@ char *ctime(const time_t *t) {
     static char buf[26];
     struct tm *tm = localtime(t);
     static const char *wday_name[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-    static const char *mon_name[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                                      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+    static const char *mon_name[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
     snprintf(buf, sizeof(buf), "%s %s %d %d:%d:%d %d\n",
-             wday_name[tm->tm_wday], mon_name[tm->tm_mon], tm->tm_mday,
-             tm->tm_hour, tm->tm_min, tm->tm_sec, 1900 + tm->tm_year);
+        wday_name[tm->tm_wday], mon_name[tm->tm_mon], tm->tm_mday,
+        tm->tm_hour, tm->tm_min, tm->tm_sec, 1900 + tm->tm_year);
 
     return buf;
 }
@@ -152,8 +156,7 @@ clock_t clock(void) {
 // Formats a struct tm into a string according to a specified format (like printf for time).
 size_t strftime(char *s, size_t max, const char *format, const struct tm *tm) {
     static const char *wday_name[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-    static const char *mon_name[]  = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                                       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+    static const char *mon_name[]  = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
     char *out = s;
     size_t remaining = max;
@@ -221,8 +224,8 @@ size_t strftime(char *s, size_t max, const char *format, const struct tm *tm) {
         }
     }
 
-
     *out = '\0';
+    
     return out - s;
 }
 
@@ -256,7 +259,7 @@ void test_time_functions() {
     char *ctime_str = ctime(&now);
     printf("ctime: %s", ctime_str);  // already includes newline
 
-    // gmtime
+    // greenich mean time
     struct tm *gmt = gmtime(&now);
     printf("gmtime: %d-%d-%d %d:%d:%d (UTC)\n",
            1900 + gmt->tm_year, gmt->tm_mon + 1, gmt->tm_mday,

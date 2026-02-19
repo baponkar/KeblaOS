@@ -2,7 +2,7 @@
 
 Standard Input Output library
 
-Last Updated : 26/07/2025
+Last Updated : 15/02/2026
 Author       : Baponkar
 
 */
@@ -35,7 +35,9 @@ static void release(spinlock_t* lock) {
     lock->locked = false;
 }
 
+// printing signless decimal number
 static void print_udec(uint64_t value) {
+
     char buf[32];
     int i = 0;
 
@@ -45,16 +47,17 @@ static void print_udec(uint64_t value) {
     }
 
     while (value > 0) {
-        buf[i++] = '0' + (value % 10);
+        buf[i++] = '0' + (value % 10);  // Storing into buffer
         value /= 10;
     }
+
     while (i > 0) {
-        putchar(buf[--i]);
+        putchar(buf[--i]);  // printing buffer content
     }
 }
 
 
-// Outputs a decimal number to the screen.
+// print signed decimal number to the screen.
 static void print_dec(int64_t value) {
     if (value < 0) {
         putchar('-');
@@ -68,7 +71,8 @@ static void print_dec(int64_t value) {
 
 
 // Helper function to print floating-point numbers
-void print_float(double num, int precision) {
+static void print_float(double num, int precision) {
+
     if (num < 0) {
         putchar('-');
         num = -num;
@@ -111,6 +115,7 @@ static void print_bin(uint64_t value) {
     buffer[pos] = '\0';
     print(buffer);
 }
+
 
 static void print_hex(uint64_t n) {
     char hex_chars[] = "0123456789ABCDEF";
@@ -158,12 +163,13 @@ void putc(char c) {
 // Print a string 
 void puts(const char* str) {
     print(str);
-    putchar('\n');
 }
 
 
 void vprintf(const char* format, va_list args) {
+
     for (const char* ptr = format; *ptr != '\0'; ptr++) {
+
         if (*ptr == '%') {
             ptr++;
 

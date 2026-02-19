@@ -13,7 +13,7 @@ void libc_test(){
     // printf("%s\n", str1);         // Hello, World!
 
     // strncat(str1, str2, 3);
-    // printf("%s\n", str1);     // Hello, Wor
+    // printf("%s\n", str1);         // Hello, Wor
 
     char *path = "/my_dir/test.txt";
 
@@ -26,18 +26,18 @@ void libc_test(){
     char str[] = "hello,world,this,is,C";
     char *token = strtok(str, ",");
 
-    printf("strlen(token):%d\n", strlen(token)); // Output: strlen(token):5
+    printf("strlen(token):%d\n", strlen(token));    // Output: strlen(token):5
 
     while (token != NULL) {
         printf("%s\n", token);
-        token = strtok(NULL, ",");      // hello world this is C
+        token = strtok(NULL, ",");                  // hello world this is C
     }
 
 
     char *last_slash = strrchr(path, '/');
 
     if (last_slash) {
-        printf("Parent: %s\n", last_slash - 1); // Output: test.txt
+        printf("Parent: %s\n", last_slash - 1);     // Output: test.txt
         printf("Filename: %s\n", last_slash + 1);   // Output: /test.txt
     } else {
         printf("No slash found.\n");

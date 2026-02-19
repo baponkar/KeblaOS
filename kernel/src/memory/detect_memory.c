@@ -89,15 +89,24 @@ struct limine_memmap_entry **mem_entries;
 
 static const char* get_mem_type(uint64_t type) {
     switch (type) {
-        case LIMINE_MEMMAP_USABLE: return "USABLE"; // 0
-        case LIMINE_MEMMAP_RESERVED: return "RESERVED"; // 1
-        case LIMINE_MEMMAP_ACPI_RECLAIMABLE: return "ACPI_RECLAIMABLE"; //2
-        case LIMINE_MEMMAP_ACPI_NVS: return "ACPI_NVS"; // 3
-        case LIMINE_MEMMAP_BAD_MEMORY: return "BAD_MEMORY"; // 4
-        case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE: return "BOOTLOADER_RECLAIMABLE"; // 5
-        // case LIMINE_MEMMAP_EXECUTABLE_AND_MODULES: return "EXECUTABLE_AND_MODULES"; // 6
-        case LIMINE_MEMMAP_KERNEL_AND_MODULES: return "KERNEL_AND_MODULES"; // 6 (deprecated, use EXECUTABLE_AND_MODULES)
-        case LIMINE_MEMMAP_FRAMEBUFFER: return "FRAMEBUFFER"; // 7
+        case LIMINE_MEMMAP_USABLE: 
+            return "USABLE";    // 0
+        case LIMINE_MEMMAP_RESERVED: 
+            return "RESERVED";  // 1
+        case LIMINE_MEMMAP_ACPI_RECLAIMABLE: 
+            return "ACPI_RECLAIMABLE"; //2
+        case LIMINE_MEMMAP_ACPI_NVS: 
+            return "ACPI_NVS";  // 3
+        case LIMINE_MEMMAP_BAD_MEMORY: 
+            return "BAD_MEMORY"; // 4
+        case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE: 
+            return "BOOTLOADER_RECLAIMABLE"; // 5
+        // case LIMINE_MEMMAP_EXECUTABLE_AND_MODULES: 
+            // return "EXECUTABLE_AND_MODULES"; // 6
+        case LIMINE_MEMMAP_KERNEL_AND_MODULES: 
+            return "KERNEL_AND_MODULES"; // 6 (deprecated, use EXECUTABLE_AND_MODULES)
+        case LIMINE_MEMMAP_FRAMEBUFFER: 
+            return "FRAMEBUFFER"; // 7
 
         default: return "UNKNOWN";
     }

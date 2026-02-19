@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <stdint.h>
@@ -6,9 +7,9 @@
 
 
 // BIOS Parameter Block
-
 typedef struct __attribute__((packed)) {
-    uint8_t BS_jmpBoot[3];     // Offset 0
+
+    uint8_t BS_jmpBoot[3];      // Offset 0
     char BS_OEMName[8];         // Offset 3
     uint16_t BPB_BytsPerSec;    // Offset 11
     uint8_t BPB_SecPerClus;     // Offset 13
@@ -53,8 +54,24 @@ typedef struct __attribute__((packed)) {
     uint32_t FSI_TrailSig;       // Offset 508
 } FSInfo;                        // 512 bytes
 
-extern uint64_t esp_fat_partition_lba_base;
+extern uint64_t fat32_base_lba;
 extern BPB *bpb;
+
 bool create_fat32_volume(int disk_no, uint64_t start_lba, uint32_t sectors);
+
+
+// Helper functions
+uint32_t get_total_clusters();
+uint32_t get_root_dir_first_cluster();
+uint8_t get_sectors_per_cluster();
+uint16_t get_bytes_per_sector();
+uint32_t get_fat_size_in_sectors();
+uint32_t get_total_sectors();
+uint32_t get_first_data_sector();
+uint32_t get_first_sector_of_cluster(uint32_t cluster_number);
+uint32_t get_first_dir_sect_num();
+bool is_end_of_cluster_chain(uint32_t cluster_value);
+bool is_valid_cluster(uint32_t cluster_value);
+uint32_t get_cluster_size_bytes();
 
 

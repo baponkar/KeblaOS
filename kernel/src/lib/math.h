@@ -25,18 +25,18 @@
 #define M_SQRT1_2  0.70710678118654752440   // 1/sqrt(2)
 
 // Macros for common math operations
-#define ABS(x)     ((x) < 0 ? -(x) : (x))
-#define MIN(a, b)  ((a) < (b) ? (a) : (b))
-#define MAX(a, b)  ((a) > (b) ? (a) : (b))
+#define ABS(x)((x) < 0 ? -(x) : (x))
+#define MIN(a, b)((a) < (b) ? (a) : (b))
+#define MAX(a, b)((a) > (b) ? (a) : (b))
 #define CLAMP(x, min, max) (MAX((min), MIN((x), (max))))
-#define SIGN(x)    ((x) > 0 ? 1 : ((x) < 0 ? -1 : 0))
-#define SQUARE(x)  ((x) * (x))
+#define SIGN(x)((x) > 0 ? 1 : ((x) < 0 ? -1 : 0))
+#define SQUARE(x)((x) * (x))
 
 // Degree-radian conversions
 #define DEG2RAD(d) ((d) * (M_PI / 180.0))
 #define RAD2DEG(r) ((r) * (180.0 / M_PI))
 
-
+double ceil(double x);
 double pow(double base, int exp);
 double sqrt(double x);
 int gcd(int a, int b);

@@ -10,13 +10,15 @@
 #include "../../lib/stdlib.h"
 
 #include  "../../memory/vmm.h"
-#include "../../memory/kheap.h"
+
 
 
 #include "../pci/pci.h"
 
 #include "ahci/sata_disk.h"
 #include  "ahci/satapi.h"
+
+#include "../vga/vga_term.h"    // For Progress Bar
 
 #include "disk.h"
 
@@ -423,18 +425,24 @@ bool kebla_disk_write(int disk_no, uint64_t lba, uint32_t count, void* buf) {
     return false;   // Unsupported disk type
 }
 
-uint16_t MAX_BATCH_SIZE = 2048;
+
+
+
+
+#define MAX_BATCH_SIZE 512
 
 int clear_disk(int disk_no, int *progress){
 
-    printf("Formatting Disk %d: \n", disk_no);
+    printf("[CLEAR DISK] Formatting Disk %d: \n", disk_no);
 
     if(!disks || disk_no >= disk_count || disk_no < 0){
-        printf("[DISK] Invalid Disk No %d\n", disk_no);
+        printf("[CLEAR DISK] Invalid Disk No %d\n", disk_no);
+        return -1;
     }
 
     if(!progress){
-        printf("[DISK] progress is %p\n", progress);
+        printf("[CLEAR DISK] progress is %p\n", progress);
+        return -1;
     }
     *progress = 0;
 
@@ -443,40 +451,42 @@ int clear_disk(int disk_no, int *progress){
     Disk *disk = &disks[disk_no];
 
     uint64_t total_sectors = disk->total_sectors;
-    uint16_t sector_size = disk->bytes_per_sector;
+    uint32_t sector_size = disk->bytes_per_sector;
 
     if(total_sectors <= 0){
-        printf("Total Sectors: %d\n", total_sectors);
+        printf("[CLEAR DISK] Total Sectors: %llu\n", total_sectors);
         return -1;
     }
 
     if(sector_size <= 0){
-        printf("Sector Size: %d\n", sector_size);
-        sector_size = 512;
+        printf("[CLEAR DISK] Sector Size: %d\n", sector_size);
+        return -1;
     }
 
-    uint16_t buffer_size =512 * MAX_BATCH_SIZE;
+    uint64_t buffer_size = 512 * MAX_BATCH_SIZE;
 
-    uint8_t *buffer = malloc(buffer_size); // allocating 2048 * 512 = 10 MB size
+
+    uint8_t *buffer = malloc(buffer_size); // allocating 20480 * 512 = 10 MB size
     if (!buffer) {
-        printf("Failed to allocate memory for formatting disk %d.\n", disk_no);
+        printf("[CLEAR DISK] Failed to allocate memory for formatting disk %d.\n", disk_no);
         return -1;
     }
     memset(buffer, 0, buffer_size);
 
     for (uint64_t lba = 0; lba < total_sectors; lba += MAX_BATCH_SIZE) {
+
         *progress = (int)((lba * 100) / total_sectors);
-        printf("\rProgress: %d %%", *progress);
+
+        // printf("%d %% ", *progress);
+        draw_progress_bar(*progress, 100, 200);
 
         uint32_t sectors_to_write = (lba + MAX_BATCH_SIZE <= total_sectors) ? MAX_BATCH_SIZE : (total_sectors - lba);
         if (!kebla_disk_write(disk_no, lba, sectors_to_write, buffer)) {
-            printf("Failed to format disk %d at LBA %d\n", disk_no, lba);
+            printf("[CLEAR DISK] Failed to format disk %d at LBA %llu\n", disk_no, lba);
             free(buffer);
             return -1;
         }
     }
-
-    memset(buffer, 0, sector_size * MAX_BATCH_SIZE);
 
     free(buffer);
 

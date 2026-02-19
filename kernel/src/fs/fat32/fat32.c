@@ -13,7 +13,9 @@
 
 #define SECTOR_SIZE 512
 
-uint64_t esp_fat_partition_lba_base = 0;
+#define SECTORS_PER_CLUSTER 16              // 8 KB
+
+uint64_t fat32_base_lba = 0;
 
 BPB *bpb = NULL;
 
@@ -161,13 +163,16 @@ static bool initialize_fat_tables(int disk_no, uint64_t fat_start, uint32_t fat_
     return true;
 }
 
+
+
+
 static bool fat32_zero_cluster(int disk_no, uint32_t cluster)
 {
     uint32_t first_data_sector = bpb->BPB_RsvdSecCnt + (bpb->BPB_NumFATs * bpb->BPB_FATSz32);
 
     uint32_t first_sector = first_data_sector + (cluster - 2) * bpb->BPB_SecPerClus;
 
-    uint64_t lba = esp_fat_partition_lba_base + first_sector;
+    uint64_t lba = fat32_base_lba + first_sector;
 
     uint32_t bytes = bpb->BPB_SecPerClus * SECTOR_SIZE;
 
@@ -191,10 +196,10 @@ static bool fat32_zero_cluster(int disk_no, uint32_t cluster)
 bool create_fat32_volume(int disk_no, uint64_t start_lba, uint32_t sectors) {
     printf("Creating FAT32 Volume on Disk %d at LBA %d with %d sectors\n", disk_no, start_lba, sectors);
 
-    esp_fat_partition_lba_base = start_lba;
+    fat32_base_lba = start_lba;
 
     // 1. Determine sectors per cluster based on volume size
-    uint8_t sectors_per_cluster = 8; // Default to 4KB clusters
+    uint8_t sectors_per_cluster =  SECTORS_PER_CLUSTER; // Default to 32 KB clusters
     if (sectors < 65536) {          // Less than 32MB
         sectors_per_cluster = 1;    // 512B clusters
     } else if (sectors < 262144) {  // Less than 128MB
@@ -262,7 +267,81 @@ bool create_fat32_volume(int disk_no, uint64_t start_lba, uint32_t sectors) {
 
 
 
+// Helper functions
 
+uint32_t get_total_clusters() {
+    if (!bpb) return 0;
+
+    uint32_t total_sectors = bpb->BPB_TotSec32;
+    uint32_t first_data_sector =  bpb->BPB_RsvdSecCnt + (bpb->BPB_NumFATs * bpb->BPB_FATSz32);
+
+    uint32_t data_sectors = total_sectors - first_data_sector;
+
+    return data_sectors / bpb->BPB_SecPerClus;
+}
+
+
+uint32_t get_root_dir_first_cluster(){
+    if(!bpb) return 0;
+    return bpb->BPB_RootClus;
+}
+
+uint8_t get_sectors_per_cluster(){
+    if(!bpb) return 0;
+    return bpb->BPB_SecPerClus;
+}
+
+uint16_t get_bytes_per_sector(){
+    if(!bpb) return 0;
+    return bpb->BPB_BytsPerSec;
+}
+
+uint32_t get_fat_size_in_sectors(){
+    if(!bpb) return 0;
+    return bpb->BPB_FATSz32;
+}
+
+uint32_t get_total_sectors(){
+    if(!bpb) return 0;
+    return bpb->BPB_TotSec32;
+}
+
+uint32_t get_first_data_sector(){
+    if(!bpb) return 0;
+    uint32_t first_data_sector = bpb->BPB_RsvdSecCnt + (bpb->BPB_NumFATs * bpb->BPB_FATSz32);   // Reserved Sectors + Total Sectors taken by two FATs
+    return first_data_sector;
+}
+
+uint32_t get_first_sector_of_cluster(uint32_t cluster_number){
+    if(!bpb) return 0;
+    uint32_t first_data_sector = bpb->BPB_RsvdSecCnt + (bpb->BPB_NumFATs * bpb->BPB_FATSz32);
+    uint32_t sectors_per_cluster = bpb->BPB_SecPerClus;
+    uint32_t first_sector_of_cluster = first_data_sector + ((cluster_number - 2) * sectors_per_cluster);    // cluster number starts from 2
+    return first_sector_of_cluster;
+}
+
+uint32_t get_first_dir_sect_num(){
+    if(!bpb) return 0;
+    uint32_t first_data_sector =  get_first_data_sector();
+    uint32_t first_dir_sect_num = get_first_sector_of_cluster(first_data_sector);
+    return first_dir_sect_num;
+}
+
+bool is_end_of_cluster_chain(uint32_t cluster_value){
+    if(!bpb) return false;
+    return (cluster_value >= 0x0FFFFFF8);
+}
+
+bool is_valid_cluster(uint32_t cluster_value){
+    if(!bpb) return false;
+    return (cluster_value >= 0x00000002 && cluster_value <= 0x0FFFFFEF);
+}
+
+
+uint32_t get_cluster_size_bytes(){
+    if(!bpb) return 0;
+    return bpb->BPB_BytsPerSec * bpb->BPB_SecPerClus;
+}
 
 
 

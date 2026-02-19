@@ -6,6 +6,7 @@
 
 // Copy dat of src into dest
 void *memcpy(void *dest, const void *src, size_t n) {
+
     uint64_t *pdest64 = (uint64_t *) dest;
     const uint64_t *psrc64 = (const uint64_t *) src;
 
@@ -32,7 +33,7 @@ void *memset(void *s, int c, size_t n) {
     uint8_t *p = (uint8_t *) s; // making uint8_t pointer from void pointer
 
     for (size_t i = 0; i < n; i++) {
-        p[i] = (uint8_t) c; // fill with c
+        p[i] = (uint8_t) c;     // fill with c
     }
 
     return s;
@@ -78,6 +79,7 @@ int memcmp(const void *s1, const void *s2, size_t n) {
 }
 
 
+// set memory first n character with value c 
 void *memchr(const void *s, int c, size_t n) {
     const unsigned char *p = (const unsigned char *)s;
     for (size_t i = 0; i < n; i++) {
@@ -89,9 +91,13 @@ void *memchr(const void *s, int c, size_t n) {
 }
 
 
+// 
 void int_to_ascii(int n, char str[]) {
     int i, sign;
-    if ((sign = n) < 0) n = -n;
+
+    if((sign = n) < 0){
+        n = -n;
+    }
     i = 0;
     do {
         str[i++] = n % 10 + '0';
@@ -120,9 +126,9 @@ int strlen(char s[]) {
     return i;
 }
 
-void append(char s[], char n) {
+void append(char s[], char c) {
     int len = strlen(s);
-    s[len] = n;
+    s[len] = c;
     s[len+1] = '\0';
 }
 
@@ -158,6 +164,7 @@ char *strncpy(char *dest, const char *src, size_t n) {
     return dest;
 }
 
+// String compare
 int strncmp(const char* s1, const char* s2, unsigned int n) {
     unsigned int i = 0;
     while (i < n) {
@@ -172,10 +179,11 @@ int strncmp(const char* s1, const char* s2, unsigned int n) {
     return 0;
 }
 
+// add string src into dest string 
 char* strcat(char* dest, const char* src) {
     char* original_dest = dest;
 
-    // Move to the end of dest
+    // Move to the end of dest 
     while (*dest != '\0') {
         dest++;
     }
@@ -193,6 +201,7 @@ char* strcat(char* dest, const char* src) {
     return original_dest;
 }
 
+// add string src into dest string
 char* strncat(char* dest, const char* src, size_t n) {
     char* original_dest = dest;
 
@@ -336,6 +345,7 @@ void int_to_base_str(unsigned int num, char* buffer, int base) {
 }
 
 
+// String search function
 char* strchr(const char* str, int c) {
     while (*str) {
         if (*str == (char)c) {
@@ -349,7 +359,7 @@ char* strchr(const char* str, int c) {
         return (char*)str;
     }
 
-    return 0;
+    return NULL;
 }
 
 

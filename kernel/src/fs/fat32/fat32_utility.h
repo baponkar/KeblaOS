@@ -15,32 +15,32 @@
 #define ATTR_VOLUME_ID  0x08
 #define ATTR_DIRECTORY  0x10
 #define ATTR_ARCHIVE    0x20
+
 #define ATTR_LONG_NAME  0x0F
+#define LFN_LAST_LONG_ENTRY 0x40
 
 typedef struct __attribute__((packed)) {
-    char DIR_Name[11];          // Offset 0
-    uint8_t DIR_Attr;           // Offset 11
-    uint8_t DIR_NTRes;          // Offset 12
+    char DIR_Name[11];          // Offset 0 : Directory name in 8.3 format
+    uint8_t DIR_Attr;           // Offset 11 : Directory attributes    
+    uint8_t DIR_NTRes;          // Offset 12 : 
     uint8_t DIR_CrtTimeTenth;   // Offset 13
     uint16_t DIR_CrtTime;       // Offset 14
     uint16_t DIR_CrtDate;       // Offset 16
-    uint16_t DIR_LstAccDate;    // Offset 18
-    uint16_t DIR_FstClusHI;     // Offset 20
-    uint16_t DIR_WrtTime;       // Offset 22
-    uint16_t DIR_WrtDate;       // Offset 24
-    uint16_t DIR_FstClusLO;     // Offset 26
-    uint32_t DIR_FileSize;      // Offset 28
-} FAT32_DirectoryEntry;         // 32 bit or 4 bytes
+    uint16_t DIR_LstAccDate;    // Offset 18 : Last access darte
+    uint16_t DIR_FstClusHI;     // Offset 20 : 
+    uint16_t DIR_WrtTime;       // Offset 22 : Write
+    uint16_t DIR_WrtDate;       // Offset 24 : 
+    uint16_t DIR_FstClusLO;     // Offset 26 : 
+    uint32_t DIR_FileSize;      // Offset 28 : 
+} DirEntry;                     // 32 bit or 4 bytes
 
 typedef struct {
-    uint32_t first_cluster;
-    uint32_t size;
-    uint32_t pos;
-    uint32_t parent_cluster;
-    char name[11];
+    uint32_t first_cluster;     // First Cluster number
+    uint32_t size;              // file size
+    uint32_t pos;               // pointer position
+    uint32_t parent_cluster;    // Parent Directory cluster
+    char name[11];              // 8.3 Name
 } FAT32_FILE;
-
-
 
 
 bool fat32_read_cluster(int disk_no, uint32_t cluster_number, void *buffer);
@@ -69,7 +69,7 @@ bool fat32_init_directory(int disk_no, uint32_t dir_cluster, uint32_t parent_clu
 bool fat32_mkdir_internal(int disk_no, uint32_t parent_cluster, const char *name);
 bool fat32_dir_exists(int disk_no, uint32_t dir_cluster, const char *name);
 
-bool fat32_create_file_in_dir(int disk_no, uint32_t parent_cluster, const char *filename, const char *content);
+bool fat32_create_file_in_dir(int disk_no, uint32_t parent_cluster, const char *filename, const char *content, uint32_t size);
 
 bool fat32_change_current_directory(int disk_no, const char *path);
 bool fat32_path_to_cluster(int disk_no, const char *path, uint32_t *out_cluster);
@@ -81,8 +81,12 @@ bool fat32_find_dir(int disk_no, uint32_t dir_cluster, const char *name, uint32_
 bool fat32_mkdir(int disk_no, const char* dirpath);
 bool fat32_mkdir_root(int disk_no, const char *name);
 
-bool fat32_find_file( int disk_no, uint32_t dir_cluster, const char *name, FAT32_DirectoryEntry *out_entry, uint32_t *entry_cluster, uint32_t *entry_offset);
+bool fat32_find_file( int disk_no, uint32_t dir_cluster, const char *name, DirEntry *out_entry, uint32_t *entry_cluster, uint32_t *entry_offset);
 bool fat32_open(int disk_no, const char *path, FAT32_FILE *file);
 uint32_t fat32_read(int disk_no, FAT32_FILE *file, void *buffer, uint32_t size);
 uint32_t fat32_write(int disk_no, FAT32_FILE *file, const void *buffer, uint32_t size);
-bool fat32_create_test_file(int disk_no);
+
+
+bool fat32_test(int disk_no, uint64_t fat_base_lba);
+
+

@@ -5,10 +5,10 @@
     Last Update : 15-01-2025
     Description : KeblaOS is a x86 architecture based 64 bit Operating System. Currently it is using Limine Bootloader.
     Reference   : https://wiki.osdev.org/Limine
-                https://github.com/limine-bootloader/limine-c-template
-                https://wiki.osdev.org/Limine_Bare_Bones
-                https://wiki.osdev.org/SSE
-                https://allthingsembedded.com/2018/12/29/adding-gpt-support-to-fatfs/
+                  https://github.com/limine-bootloader/limine-c-template
+                  https://wiki.osdev.org/Limine_Bare_Bones
+                  https://wiki.osdev.org/SSE
+                  https://allthingsembedded.com/2018/12/29/adding-gpt-support-to-fatfs/
 */
 
 
@@ -33,9 +33,7 @@ extern int disk_count;
 int iso_disk_no = 0;    // The ISO SATAPI Disk which is mentioned in Makefile
 int boot_disk_no = 1;   // The SATA Disk Which will be used to install KeblaOS
 
-int boot_ld = 0;
-int user_ld = 1;
-
+bool install = false;
 
 void kmain(){
 
@@ -60,79 +58,60 @@ void kmain(){
         return;
     }
 
-    init_controllers();     // This have PCI Scan
+    init_controllers();     // This function has PCI Scan
 
     // Detect and Initialize all Disks
     if(kebla_get_disks() <= 0){
         printf("No Disk Found!\n");
         return;
     }
-    printf("Total %d Disks Found.\n", disk_count);
+    printf("[KMAIN] Total %d Disks Found.\n", disk_count);
 
+    for(int i=0; i < disk_count; i++){
+        Disk disk = disks[i];
 
-    if(format_disk_and_install(iso_disk_no, boot_disk_no)){
-        printf("Successfully Install KeblaOS in Disk %d!\n", boot_disk_no);
-    }else{
-        printf("Failed to Install KeblaOS in Disk %d!\n", boot_disk_no);
+        if(disk.type == DISK_TYPE_SATAPI){
+            // Mounting ISO Disk and BOOT Disk
+            if(iso9660_mount(iso_disk_no) != 0){
+                printf("[KMAIN] Failed to mount ISO9660 FS in Disk %d!\n", iso_disk_no);
+            }
+            printf("[KMAIN] Successfully mount ISO9660 FS in Disk %d.\n", iso_disk_no);
+        }else if(disk.type == DISK_TYPE_AHCI_SATA ){
+            // Mounting AHCI SATA Disk
+            if(!fat32_mount(boot_disk_no, ESP_START_LBA)){
+                printf("[KMAIN] Failed to Mount FAT32 FS at LBA: %d!\n", ESP_START_LBA);
+                return;
+            }
+            printf("[KMAIN] Successfully Mount Disk %d.\n", boot_disk_no);
+        }else{
+            printf("[KMAIN] The Disk Type %d is not working currently!\n", disk.type);
+        }
     }
 
+    // iso9660_test(iso_disk_no, "/BOOT/LIMINE.CON");
 
-    // fat32_install(iso_disk_no, boot_disk_no);
-
-    // Install KeblaOS in ESP Partition
-    // if(esp_install(iso_disk_no, boot_disk_no) != 0){
-    //     printf("Failed to ESP Install KeblaOS in Disk %d failed!\n", boot_disk_no);
-    // }else{
-    //     printf("Successfully KeblaOS is Installed(ESP) in Disk %d:%d\n", boot_disk_no, boot_ld);
+    // if(fat32_test(boot_disk_no, ESP_START_LBA)){
+    //     printf("[KMAIN] FAT32 Test Success.\n");
     // }
+    // printf("[KMAIN] Failed to test FAT32!\n");
+
     
+    if(vsfs)
 
-    // if(disks[iso_disk_no].type != DISK_TYPE_SATAPI ||  disks[iso_disk_no].type == DISK_TYPE_AHCI_SATA || disks[iso_disk_no].type == DISK_TYPE_NVME){
-
-    //     boot_disk_no = iso_disk_no;
-
-    //     init_user_space(boot_disk_no, boot_ld, user_ld);
-        
-    // }else{
-    //     if(is_os_installed(boot_disk_no, boot_ld) == false){
-    //         if(uefi_install(iso_disk_no, boot_disk_no) != 0){
-    //             printf("Failed to UEFI Install KeblaOS in Disk %d failed!\n", boot_disk_no);
-    //         }else{
-    //             printf("Successfully KeblaOS is Installed(UEFI) in Disk %d:%d\n", boot_disk_no, boot_ld);
-    //         }
-
-    //         if(create_user_dirs(boot_disk_no) != 0){
-    //             printf("Failed to Create User Directories and Files in %d:%d\n", boot_disk_no, user_ld);
-    //         }else{
-    //             printf("Successfully Created directories and files in Disk %d:%d.\n", boot_disk_no, user_ld);
-    //         }
-    //     }
-    // }
-    
-    
-    // fatfs_test_1(boot_disk_no);
     // vfs_test(boot_disk_no);
-
-    // if(fatfs_mkfs(boot_disk_no, FM_FAT32 | FM_SFD) == 0){
-    //     printf(" Successfully FAT32 FS created.\n");
-    // }
     
-    // fatfs_test(boot_disk_no);
-    // fatfs_test_1(boot_disk_no);
-    // fatfs_test_multi_partition(boot_disk_no);
-    // print_disk_sector(boot_disk_no, 2048, 1);
-    
-    // kfs_test();
-
-    // int_syscall_init();
-    // int_syscall_test();
-
-    // init_syscall(0);   // Initialize syscall for BSP (CPU 0)
-    // test_syscall();
+    if(install){
+        printf("[KMAIN] Going to Install KeblaOS in Disk %d...\n", boot_disk_no);
+        if(format_disk_and_install(iso_disk_no, boot_disk_no)){
+            printf("[KMAIN] Successfully Install KeblaOS in Disk %d.\n", boot_disk_no);
+        }
+        printf("[KMAIN] Failed to Install KeblaOS in Disk %d!\n", boot_disk_no);
+    }
+   
+    test_time_functions();
     
     // mouse_init();
 
-    // lvgl_test();
     // ugui_test_1();
     // desktop_init();
 

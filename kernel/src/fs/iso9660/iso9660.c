@@ -335,34 +335,74 @@ void *iso9660_open(int disk_no, char *path) {
     return NULL;
 }
 
-#define ISO9660_READ_CHUNK 32768
+// #define ISO9660_READ_CHUNK 4096    // 4 KB
+
+// int iso9660_read(void *fp, char *buff, int size) {
+
+//     if(!fp || !buff || size <= 0 || !disks) return -1;
+
+//     iso9660_file_t *file = (iso9660_file_t *)fp;
+
+//     Disk disk = disks[file->disk_no];
+
+//     if (size > file->size)
+//         size = file->size;
+
+//     uint32_t total_read = 0;
+//     uint32_t remaining = size;
+//     uint32_t cur_sector = file->sector;
+
+//     while (remaining > 0) {
+//         uint32_t chunk = (remaining > ISO9660_READ_CHUNK) ? ISO9660_READ_CHUNK : remaining;
+//         uint32_t sectors = (chunk + disk.bytes_per_sector - 1) / disk.bytes_per_sector;
+
+//         if(disk.bytes_per_sector <= 0) break;
+
+//         if (!kebla_disk_read(file->disk_no, cur_sector, sectors, buff + total_read)){
+//             break;
+//         }
+            
+//         total_read += chunk;
+//         remaining -= chunk;
+//         cur_sector += sectors;
+//     }
+
+//     return total_read;
+// }
 
 int iso9660_read(void *fp, char *buff, int size) {
-    if(!fp || !buff || size <= 0 || !disks) return -1;
+
+    if (!fp || !buff || size <= 0 || !disks) return -1;
+
     iso9660_file_t *file = (iso9660_file_t *)fp;
+    
     Disk disk = disks[file->disk_no];
 
-    if (size > file->size)
-        size = file->size;
+    if (size > file->size) size = file->size;
 
     uint32_t total_read = 0;
     uint32_t remaining = size;
     uint32_t cur_sector = file->sector;
 
+    // Temporary sector buffer
+    uint8_t *sector_buf = (uint8_t *)malloc(disk.bytes_per_sector);
+    if (!sector_buf) return -1;
+
     while (remaining > 0) {
-        uint32_t chunk = (remaining > ISO9660_READ_CHUNK) ? ISO9660_READ_CHUNK : remaining;
-        uint32_t sectors = (chunk + disk.bytes_per_sector - 1) / disk.bytes_per_sector;
+        if (!kebla_disk_read(file->disk_no, cur_sector, 1, sector_buf)) {
+            free(sector_buf);
+            return total_read;
+        }
 
-        if(disk.bytes_per_sector <= 0) break;
+        uint32_t copy = (remaining < disk.bytes_per_sector) ? remaining : disk.bytes_per_sector;
+        memcpy(buff + total_read, sector_buf, copy);
 
-        if (!kebla_disk_read(file->disk_no, cur_sector, sectors, buff + total_read))
-            break;
-
-        total_read += chunk;
-        remaining -= chunk;
-        cur_sector += sectors;
+        total_read += copy;
+        remaining -= copy;
+        cur_sector++;
     }
 
+    free(sector_buf);
     return total_read;
 }
 
@@ -469,6 +509,41 @@ bool iso9660_check_media(void *ctx) {
     return true;
 }
 
+void print_hex(const uint8_t *data, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        printf("%02X ", data[i]);
+
+        if ((i + 1) % 16 == 0)
+            printf("\n");
+    }
+    printf("\n");
+}
+
+void hexdump(const void *data, size_t size) {
+    const uint8_t *p = data;
+
+    for (size_t i = 0; i < size; i += 16) {
+        printf("%08X  ", (unsigned)i);
+
+        for (size_t j = 0; j < 16; j++) {
+            if (i + j < size)
+                printf("%02X ", p[i + j]);
+            else
+                printf("   ");
+        }
+
+        printf(" ");
+
+        for (size_t j = 0; j < 16 && i + j < size; j++) {
+            char c = p[i + j];
+            printf("%c", (c >= 32 && c <= 126) ? c : '.');
+        }
+
+        printf("\n");
+    }
+}
+
+
 void iso9660_test(int disk_no, char *test_path) {
 
     // Initial Critical Testing
@@ -536,10 +611,11 @@ void iso9660_test(int disk_no, char *test_path) {
     }
     printf("ISO9660 Test: Sucessfully read %d bytes from %s!\n", rb, test_path);
 
+    printf("ISO9660 Test: %s Content: %s.\n", test_path, buff);
+
+    hexdump(buff, file_size);
+
     free(buff);
-
-    printf("ISO9660 Test: %s Content: %s\n", test_path, buff);
-
 }
 
 

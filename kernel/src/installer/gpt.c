@@ -155,8 +155,8 @@ static GPTHeader *create_primary_gpt_header(int disk_no, uint64_t total_sectors)
     uint64_t entry_sectors = (int) (GPT_ENTRIES_COUNT * sizeof(GPTPartitionEntry) + SECTOR_SIZE - 1) / SECTOR_SIZE; // Should be 32 sectors for 128 entries of 128 bytes each
     
     // Set partition entries info
-    primary_header->first_usable_lba = entry_sectors + 2;                // mbr(0) + primary gpt(1) + partition entries(2-33)
-    primary_header->last_usable_lba = total_sectors - entry_sectors - 2;      // before backup entries and backup gpt
+    primary_header->first_usable_lba = entry_sectors + 2;                   // mbr(0) + primary gpt(1) + partition entries(2-33)
+    primary_header->last_usable_lba = total_sectors - entry_sectors - 2;    // before backup entries and backup gpt
 
     memcpy(primary_header->disk_guid, DISK_GUID_EXAMPLE, 16); // Example GUID
     primary_header->entries_lba = 2;  // Partition entries start at LBA 2
