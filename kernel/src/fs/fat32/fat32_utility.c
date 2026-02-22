@@ -1074,4 +1074,15 @@ bool fat32_test(int disk_no, uint64_t fat_base_lba){
 
 
 
+// LFN
+
+uint8_t fat32_lfn_checksum(const uint8_t short_name[11])
+{
+    uint8_t sum = 0;
+    for (int i = 0; i < 11; i++)
+        sum = ((sum & 1) ? 0x80 : 0) + (sum >> 1) + short_name[i];
+    return sum;
+}
+
+
 

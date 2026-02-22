@@ -40,7 +40,7 @@ typedef struct {
     uint32_t pos;               // pointer position
     uint32_t parent_cluster;    // Parent Directory cluster
     char name[11];              // 8.3 Name
-} FAT32_FILE;
+} FAT32_FILE;   // 104 bytes
 
 
 bool fat32_read_cluster(int disk_no, uint32_t cluster_number, void *buffer);
@@ -89,4 +89,14 @@ uint32_t fat32_write(int disk_no, FAT32_FILE *file, const void *buffer, uint32_t
 
 bool fat32_test(int disk_no, uint64_t fat_base_lba);
 
+typedef struct __attribute__((packed)) {
+    uint8_t  LDIR_Ord;         // Sequence number
+    uint16_t LDIR_Name1[5];    // 5 UTF-16 chars
+    uint8_t  LDIR_Attr;        // Always 0x0F
+    uint8_t  LDIR_Type;        // 0
+    uint8_t  LDIR_Chksum;      // Checksum of 8.3 name
+    uint16_t LDIR_Name2[6];    // 6 UTF-16 chars
+    uint16_t LDIR_FstClusLO;   // Always 0
+    uint16_t LDIR_Name3[2];    // 2 UTF-16 chars
+} LFNEntry;
 

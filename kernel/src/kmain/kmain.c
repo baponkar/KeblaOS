@@ -33,7 +33,18 @@ extern int disk_count;
 int iso_disk_no = 0;    // The ISO SATAPI Disk which is mentioned in Makefile
 int boot_disk_no = 1;   // The SATA Disk Which will be used to install KeblaOS
 
-bool install = false;
+bool install = true;  // This variable is set to true when the installer is running, otherwise it is false. It is used to control the flow of the installation process in kmain.
+
+static void kmain_test(){
+    char buffer[40];
+    guid_to_string(ESP_TYPE_GUID, buffer);
+    printf("[KMAIN TEST] ESP Type GUID: %s\n", buffer);
+
+    guid_t random_guid;
+    generate_guid(random_guid, 0);
+    guid_to_string(random_guid, buffer);
+    printf("[KMAIN TEST] Generated Random GUID: %s\n", buffer);
+}
 
 void kmain(){
 
@@ -67,26 +78,26 @@ void kmain(){
     }
     printf("[KMAIN] Total %d Disks Found.\n", disk_count);
 
-    for(int i=0; i < disk_count; i++){
-        Disk disk = disks[i];
+    // for(int i=0; i < disk_count; i++){
+    //     Disk disk = disks[i];
 
-        if(disk.type == DISK_TYPE_SATAPI){
-            // Mounting ISO Disk and BOOT Disk
-            if(iso9660_mount(iso_disk_no) != 0){
-                printf("[KMAIN] Failed to mount ISO9660 FS in Disk %d!\n", iso_disk_no);
-            }
-            printf("[KMAIN] Successfully mount ISO9660 FS in Disk %d.\n", iso_disk_no);
-        }else if(disk.type == DISK_TYPE_AHCI_SATA ){
-            // Mounting AHCI SATA Disk
-            if(!fat32_mount(boot_disk_no, ESP_START_LBA)){
-                printf("[KMAIN] Failed to Mount FAT32 FS at LBA: %d!\n", ESP_START_LBA);
-                return;
-            }
-            printf("[KMAIN] Successfully Mount Disk %d.\n", boot_disk_no);
-        }else{
-            printf("[KMAIN] The Disk Type %d is not working currently!\n", disk.type);
-        }
-    }
+    //     if(disk.type == DISK_TYPE_SATAPI){
+    //         // Mounting ISO Disk and BOOT Disk
+    //         if(iso9660_mount(iso_disk_no) != 0){
+    //             printf("[KMAIN] Failed to mount ISO9660 FS in Disk %d!\n", iso_disk_no);
+    //         }
+    //         printf("[KMAIN] Successfully mount ISO9660 FS in Disk %d.\n", iso_disk_no);
+    //     }else if(disk.type == DISK_TYPE_AHCI_SATA ){
+    //         // Mounting AHCI SATA Disk
+    //         if(!fat32_mount(boot_disk_no, ESP_START_LBA)){
+    //             printf("[KMAIN] Failed to Mount FAT32 FS at LBA: %d!\n", ESP_START_LBA);
+    //             return;
+    //         }
+    //         printf("[KMAIN] Successfully Mount Disk %d.\n", boot_disk_no);
+    //     }else{
+    //         printf("[KMAIN] The Disk Type %d is not working currently!\n", disk.type);
+    //     }
+    // }
 
     // iso9660_test(iso_disk_no, "/BOOT/LIMINE.CON");
 
@@ -95,8 +106,6 @@ void kmain(){
     // }
     // printf("[KMAIN] Failed to test FAT32!\n");
 
-    
-    if(vsfs)
 
     // vfs_test(boot_disk_no);
     
@@ -109,6 +118,8 @@ void kmain(){
     }
    
     test_time_functions();
+
+    kmain_test();
     
     // mouse_init();
 

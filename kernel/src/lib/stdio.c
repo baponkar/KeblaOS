@@ -23,7 +23,7 @@ spinlock_t serial_lock;
 
 
 static void acquire(spinlock_t* lock) {
-    while (true) {
+    while (true) {  // Because a spinlock must wait until the lock becomes free.
         if (lock->locked == false) {
             lock->locked = true;
             return;
@@ -162,10 +162,18 @@ void putc(char c) {
 
 // Print a string 
 void puts(const char* str) {
-    print(str);
+    
+    if(!str) {
+        print("(null)");
+        return;
+    }
+
+    for(const char* ptr = str; *ptr != '\0'; ptr++) {
+        putchar(*ptr);
+    }
 }
 
-
+// Print Formatted String
 void vprintf(const char* format, va_list args) {
 
     for (const char* ptr = format; *ptr != '\0'; ptr++) {
@@ -196,7 +204,7 @@ void vprintf(const char* format, va_list args) {
             // Handle long/long long modifiers
             if (*ptr == 'l') {
                 ptr++;
-                if (*ptr == 'd') {
+                if (*ptr == 'd') {  // long decimal(signed)
                     print_dec((long)va_arg(args, long));
                 } 
                 else if (*ptr == 'u') {
@@ -204,10 +212,10 @@ void vprintf(const char* format, va_list args) {
                 } 
                 else if (*ptr == 'l') { // long long
                     ptr++;
-                    if (*ptr == 'd') {
+                    if (*ptr == 'd') {  // long long decimal (signed)
                         print_dec((long long)va_arg(args, long long));
                     } 
-                    else if (*ptr == 'u') {
+                    else if (*ptr == 'u') { // long long unsigned decimal
                         print_udec((unsigned long long)va_arg(args, unsigned long long));
                     } 
                     else {
@@ -300,18 +308,20 @@ void printf(const char* format, ...) {
     release(&serial_lock);
 }
 
-
+// sprintf and vsprintf implementations
 static char* sprint_char(char* buffer, char c) {
-    *buffer++ = c;
+    *buffer++ = c;  // Store character and move buffer pointer
     return buffer;
 }
 
+// Helper function to print string into buffer for sprintf
 static char* sprint_str(char* buffer, const char* s) {
     while (*s) {
         *buffer++ = *s++;
     }
     return buffer;
 }
+
 
 void vsprintf(char* buf, const char* format, va_list args) {
     char* out = buf;
@@ -408,6 +418,89 @@ void vsprintf(char* buf, const char* format, va_list args) {
                     case 's':
                         out = sprint_str(out, va_arg(args, const char*));
                         break;
+                    case 'f': {
+                        double num = va_arg(args, double);
+                        if (num < 0) {
+                            *out++ = '-';
+                            num = -num;
+                        }
+
+                        uint64_t int_part = (uint64_t)num;
+                        double frac_part = num - (double)int_part;
+
+                        // Print integer part
+                        char int_buf[32];
+                        int i = 0;
+                        if (int_part == 0) {
+                            int_buf[i++] = '0';
+                        } else {
+                            while (int_part > 0) {
+                                int_buf[i++] = '0' + (int_part % 10);
+                                int_part /= 10;
+                            }
+                        }
+                        while (i > 0) *out++ = int_buf[--i];
+
+                        *out++ = '.'; // Decimal point
+
+                        // Print fractional part with default precision of 6
+                        for (int j = 0; j < 6; j++) {
+                            frac_part *= 10;
+                            int digit = (int)frac_part;
+                            *out++ = '0' + digit;
+                            frac_part -= digit;
+                        }
+                        break;
+                    }
+                    case 'p': {
+                        void* ptr_val = va_arg(args, void*);
+                        uintptr_t addr = (uintptr_t)ptr_val;
+                        char hex_buf[32];
+                        int i = 0;
+                        do {
+                            hex_buf[i++] = "0123456789abcdef"[addr & 0xF];
+                            addr >>= 4;
+                        } while (addr > 0 && i < (int)sizeof(hex_buf));
+                        while (i > 0) *out++ = hex_buf[--i];
+                        break;
+                    }
+                    case 'x': {
+                        uint64_t val = va_arg(args, unsigned int);
+                        char hex_buf[32];
+                        int i = 0;
+                        do {
+                            hex_buf[i++] = "0123456789abcdef"[val & 0xF];
+                            val >>= 4;
+                        } while (val > 0 && i < (int)sizeof(hex_buf));
+                        while (i > 0) *out++ = hex_buf[--i];
+                        break;
+                    }
+                    case 'X': {
+                        uint64_t val = va_arg(args, unsigned int);
+                        char hex_buf[32];
+                        int i = 0;
+                        do {
+                            hex_buf[i++] = "0123456789ABCDEF"[val & 0xF];
+                            val >>= 4;
+                        } while (val > 0 && i < (int)sizeof(hex_buf));
+                        while (i > 0) *out++ = hex_buf[--i];
+                        break;
+                    }
+                    case 'b': {
+                        uint64_t val = va_arg(args, unsigned int);
+                        char bin_buf[65];
+                        int i = 0;
+                        if (val == 0) {
+                            bin_buf[i++] = '0';
+                        } else {
+                            while (val > 0 && i < (int)sizeof(bin_buf)) {
+                                bin_buf[i++] = (val & 1) ? '1' : '0';
+                                val >>= 1;
+                            }
+                        }
+                        while (i > 0) *out++ = bin_buf[--i];
+                        break;
+                    }
                     default:
                         *out++ = '%';
                         *out++ = *ptr;

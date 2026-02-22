@@ -26,10 +26,10 @@ typedef enum {
 
 
 typedef struct {
-    bool initialized;           // Indicates if the disk has been initialized
-    DiskType type;              // Type of disk (AHCI, IDE, NVMe, etc.)
-    uint16_t bytes_per_sector;  // Typically 512 or 4096
-    uint64_t total_sectors;     // Total number of sectors
+    bool initialized;               // Indicates if the disk has been initialized
+    DiskType type;                  // Type of disk (AHCI, IDE, NVMe, etc.)
+    uint16_t bytes_per_sector;      // Typically 512 or 4096
+    uint64_t total_sectors;         // Total number of sectors
 
     uint32_t root_directory_sector; // Fixed for SATAPI
     uint32_t root_directory_size;   // Fixed for SATAPI
@@ -45,6 +45,7 @@ extern int disk_count;
 
 int  kebla_get_disks();
 void kebla_disk_check();
+
 bool kebla_disk_init(int disk_no);
 bool kebla_disk_status(int disk_no);
 
@@ -55,13 +56,9 @@ int clear_disk(int disk_no, int *progress);
 
 // Helper functions
 int find_disk_type(int disk_no);
-int detect_partition_table(int disk_no);
-void kebla_disk_test(int disk_no);
-
 int get_total_disks();
-
 void print_disk_sector(int disk_no, uint64_t lba, uint64_t count);
 
 
-
+void kebla_disk_test(int disk_no);
 

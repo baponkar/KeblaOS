@@ -59,10 +59,12 @@
 #include "../vfs/vfs.h"                     // Virtual FIle System
 
 // Installer
-#include "../installer/gpt.h"
+#include "../partitions/guid.h"
+#include "../partitions/gpt.h"
+#include "../partitions/mbr.h"
+#include "../partitions/partition_manager.h"
 #include "../installer/installer.h"
-#include "../installer/installer_1.h"
-#include "../installer/installer_3.h"
+
 
 // ACPI
 #include "../sys/acpi/acpi.h"                 // init_acpi
