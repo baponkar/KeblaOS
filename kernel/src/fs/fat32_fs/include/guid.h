@@ -25,7 +25,7 @@ extern const guid_t DATA_PARTITION_GUID;
 
 
 void guid_to_string(uint8_t guid[16], char *out);
-void generate_guid(uint8_t guid[16], uint8_t cpu_id);
+void generate_guid(uint8_t guid[16]);
 
 
 

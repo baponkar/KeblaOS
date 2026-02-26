@@ -52,7 +52,7 @@ typedef struct __attribute__((packed)) {
 
 uint32_t crc32(const void *data, size_t length);
 
-GPTPartitionEntry *create_partition_entry(
+GPTPartitionEntry *create_gpt_partition_entry(
     uint8_t type_guid[16], 
     uint8_t unique_guid[16], 
     uint64_t start_lba, 
@@ -62,30 +62,15 @@ GPTPartitionEntry *create_partition_entry(
 );
 
 bool create_gpt_header(
-    int disk_no, 
     uint64_t tot_sectors, 
     GPTHeader *primary_header, 
     GPTHeader *backup_header,
-    guid_t disk_guid, 
+    const guid_t disk_guid, 
     GPTPartitionEntry *partitions
 );
 
-bool create_gpt_disk(
-    int disk_no,
-    uint64_t boot_partition_start_lba,
-    uint64_t boot_partition_sectors,
-    uint64_t data_partition_start_lba,
-    uint64_t data_partition_sectors,
-    uint64_t total_sectors,
-    guid_t disk_guid,
-    guid_t boot_partition_guid,
-    guid_t data_partition_guid,
-    guid_t boot_partition_type_guid,
-    guid_t data_partition_type_guid
-);
 
-bool update_partition_entry(int disk_no, int entry_index, GPTPartitionEntry *new_entry);
-bool update_gpt_headers(int disk_no, GPTHeader *primary_header, GPTHeader *backup_header, GPTPartitionEntry *partitions);
+
 
 
 

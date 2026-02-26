@@ -12,7 +12,7 @@ Details: The installer will do following:
     and it will be controlled by a boolean variable named "install". When "install" is set to true, 
     the installer will run, otherwise it will not run. After the installation is done, 
     the "install" variable will be set to false, and the system will continue to boot normally.
-
+Last Update: 14/09/2025
 */
 
 
@@ -27,12 +27,12 @@ Details: The installer will do following:
 
 
 // MY GPT Library
-#include "../partitions/gpt.h"
-#include "../partitions/mbr.h"
+#include "../fs/fat32_fs/include/gpt.h"
+#include "../fs/fat32_fs/include/mbr.h"
 
 // MY FAT32 FS Library
-#include "../fs/fat32/fat32.h"
-#include "../fs/fat32/fat32_utility.h"
+#include "../fs/fat32_fs/include/fat32.h"
+#include "../fs/fat32_fs/include/fat32_utility.h"
 
 // MY ISO9660 FS Library
 #include "../fs/iso9660/iso9660.h"
@@ -40,7 +40,9 @@ Details: The installer will do following:
 // My VSFS FS Library
 #include "../fs/vsfs/vsfs.h"
 
-#include "../partitions/partition_manager.h"
+#include "../fs/ext2/ext2.h"
+
+#include "../fs/fat32_fs/include/partition_manager.h"
 
 #include "installer.h"
 
@@ -70,30 +72,30 @@ static const char *iso_files[] = {
 static const char *parent_dir [] = {
     // "/",
 
-    "/BOOT/LIMINE",
-    "/BOOT/LIMINE",
-    "/BOOT/LIMINE",
+    "/boot/limine",
+    "/boot/limine",
+    "/boot/limine",
 
-    "/BOOT",
-    "/BOOT",
-    "/BOOT",
-    "/BOOT",
+    "/boot",
+    "/boot",
+    "/boot",
+    "/boot",
 
-    "/EFI/BOOT",
+    "/efi/boot",
     NULL
 };
 
 static const char *file_names[] = {
     // "BOOT.CAT",
 
-    "LIMINE_B.BIN",
-    "LIMINE_B.SYS",
-    "LIMINE_U.BIN",
+    "limine-bios-cd.bin",
+    "limine-bios.sys",
+    "limine-uefi-cd.bin",
 
-    "BOOT_LOA.BMP",
-    "KERNEL.BIN",
-    "LIMINE.CON",
-    "USER_MAI.ELF",
+    "boot_loader_wallpaper.bmp",
+    "kernel.bin",
+    "limine.conf",
+    "user_main.elf",
 
     "BOOTX64.EFI",
     NULL
@@ -135,56 +137,40 @@ bool format_disk_and_install(int iso_disk_no, int boot_disk_no){
     uint64_t data_start_lba =  esp_start_lba + esp_sectors;
     uint64_t data_sectors = total_sectors - esp_sectors - esp_start_lba;    // Rest for Data Partition
 
-    // create_esp_and_data_partitions(int disk_no, uint64_t esp_start_lba, uint64_t esp_sectors, uint64_t data_part_start_lba, uint64_t data_part_sectors);
-    if(create_gpt_disk(
-        boot_disk_no, 
-        esp_start_lba, 
-        esp_sectors, 
-        data_start_lba, 
-        data_sectors, 
-        total_sectors,
-        DISK_GUID_EXAMPLE,
-        ESP_GUID,
-        DATA_PARTITION_GUID,
-        ESP_TYPE_GUID,
-        LINUX_FS_GUID)){
-        printf("[INSTALLER] Created ESP and Data Partitions on Disk %d successfully.\n", boot_disk_no);
-    }else{
-        printf("[INSTALLER] Failed to create ESP and Data Partitions on Disk %d!\n", boot_disk_no);
+    if(create_partition(boot_disk_no, ESP_START_LBA, esp_sectors, ESP_GUID, ESP_TYPE_GUID, "ESP")){
+        printf("Successfully created Partition at Sector %d\n", ESP_START_LBA);
+    }
+
+
+    if (!create_fat32_volume( ESP_START_LBA, esp_sectors)) {
+        printf("Failed to create FAT32 volume\n");
+        return 1;
+    }
+
+    if(!fat32_mount(ESP_START_LBA)){
+        printf("[FAT32 TEST] Failed to Mount FAT32 FS at LBA: %d!\n", ESP_START_LBA);
         return false;
     }
 
-    if(create_fat32_volume(boot_disk_no, esp_start_lba, esp_sectors)){
-        printf("[INSTALLER] Created FAT32 Volume on ESP Partition successfully.\n");
-    }else{
-        printf("[INSTALLER] Failed to create FAT32 Volume on ESP Partition!\n");
-        return false;
-    }
+    
 
-    if(!fat32_mount(boot_disk_no, ESP_START_LBA)){
-        printf("[INSTALLER] Failed to Mount FAT32 FS at LBA: %d!\n", ESP_START_LBA);
+    if(!create_ext2_fs(boot_disk_no, data_start_lba, data_sectors)){
+        printf("[INSTALLER] Failed to Create EXT2 Filesystem on Data Partition\n");
         return false;
     }else{
-        printf("[INSTALLER] Successfully Mount Disk %d.\n", boot_disk_no);
+        printf("[INSTALLER] Successfully created EXT2 Filesystem on Data Partition\n");
     }
-
-    // if(!vsfs_mkfs(boot_disk_no, data_start_lba, data_sectors)){
-    //     printf("[INSTALLER] Failed to Create VSFS Filesystem on Data Partition\n");
-    //     return false;
-    // }else{
-    //     printf("[INSTALLER] Successfully created VSFS Filesystem on Data Partition\n");
-    // }
 
     static const char *boot_dirs[] = {
-        "BOOT",
-        "BOOT/LIMINE",
-        "EFI",
-        "EFI/BOOT",
+        "boot",
+        "boot/limine",
+        "efi",
+        "efi/boot",
         NULL
     };
 
     for(int i=0; boot_dirs[i] != NULL; i++){
-        if(fat32_mkdir(boot_disk_no, boot_dirs[i])){
+        if(fat32_mkdir(boot_dirs[i])){
             printf(" Successfully created %s Directory.\n", boot_dirs[i]);
         }else{
             printf(" Failed to create %s Directory!\n", boot_dirs[i]);
@@ -194,7 +180,7 @@ bool format_disk_and_install(int iso_disk_no, int boot_disk_no){
 
     // ==================================================================================
     
-    if(fat32_change_current_directory(boot_disk_no, "/")){
+    if(fat32_change_current_directory( "/")){
         printf(" Successfully change current working directory /\n\n");
     }
 
@@ -243,23 +229,23 @@ bool format_disk_and_install(int iso_disk_no, int boot_disk_no){
         uint32_t dir_cluster = 0;
 
         // Find parent directory cluster
-        if(!fat32_path_to_cluster(boot_disk_no, parent_dir_path, &dir_cluster)){
+        if(!fat32_path_to_cluster(parent_dir_path, &dir_cluster)){
             return false;
         }
         // printf(" Failed to get parent directory cluster of %s\n", parent_dir_path);
 
         // Creating file inside boot disk
-        if(!fat32_create_file_in_dir(boot_disk_no, dir_cluster, file_name, buf, iso_read_bytes)){
+        if(!fat32_create_file_in_dir( dir_cluster, file_name, buf, iso_read_bytes)){
             return false;
         }
         printf(" Successfully created %s\n\n", file_name);
 
         if(memcmp(file_name, "LIMINE.CON", 10) == 0){
-            if(!fat32_path_to_cluster(boot_disk_no, "/EFI/BOOT", &dir_cluster)){
+            if(!fat32_path_to_cluster( "/EFI/BOOT", &dir_cluster)){
                 return false;
             }
 
-            if(!fat32_create_file_in_dir(boot_disk_no, dir_cluster, file_name, buf, iso_read_bytes)){
+            if(!fat32_create_file_in_dir( dir_cluster, file_name, buf, iso_read_bytes)){
                 return false;
             }
             printf(" Successfully created %s in /EFI/BOOT", file_name);
@@ -279,16 +265,16 @@ bool verify_installation(int disk_no, uint32_t start_lba)
 {
     uint32_t cluster;
 
-    if(!fat32_mount(disk_no, start_lba))
+    if(!fat32_mount( start_lba))
         return false;
 
-    if (!fat32_path_to_cluster(disk_no, "/BOOT/KERNEL.BIN", &cluster))
+    if (!fat32_path_to_cluster( "/BOOT/KERNEL.BIN", &cluster))
         return false;
 
-    if (!fat32_path_to_cluster(disk_no, "/EFI/BOOT/BOOTX64.EFI", &cluster))
+    if (!fat32_path_to_cluster( "/EFI/BOOT/BOOTX64.EFI", &cluster))
         return false;
 
-    if (!fat32_path_to_cluster(disk_no, "/BOOT/LIMINE.CON", &cluster))
+    if (!fat32_path_to_cluster( "/BOOT/LIMINE.CON", &cluster))
         return false;
 
     return true;

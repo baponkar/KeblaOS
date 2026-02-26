@@ -35,10 +35,11 @@ This is a x86 architecture based 64 bit Operating System.
 | ✅ ⏱️**Timers**              | TSC, RTC, PIT, APIC, ⚠️ HPET (Not Using)                                            |
 | ✅ **Multitasking**        | Process, Thread, Scheduler, CPU State Handling, Multi-core Multitasking                |
 | ✅ **Kernel Shell (kshell)** | Calculator, Steam Locomotive Animation                                               |
-| ✅ 📂**Filesystem**          | FAT32 (via FatFs, ⚠️ Issues in implementation), VFS Layer                           |
+| ✅ 📂**Filesystem**          | FAT32, EXT2, VFS Layer                           |
 | ✅ **System Calls**        | Interrupt-based (Using), MSR-based (Not Using)                                         |
 | ✅ **User Mode Switching** | ELF Loader, Binary Loader, minimal libc,stemcall                                       |
 | ✅ 🔌**Drivers**             | 🎴PCI, AHCI SATA Disk, VGA Framebuffer, I/O Ports, Serial, Keyboard, Speaker, Mouse |
+| ✅ Installer                  | GPT Disk Creator and UEFI Disk Installer |
 
 -------------------------------------------------------------------------------------------------------------------------
 

@@ -35,16 +35,7 @@ int boot_disk_no = 1;   // The SATA Disk Which will be used to install KeblaOS
 
 bool install = true;  // This variable is set to true when the installer is running, otherwise it is false. It is used to control the flow of the installation process in kmain.
 
-static void kmain_test(){
-    char buffer[40];
-    guid_to_string(ESP_TYPE_GUID, buffer);
-    printf("[KMAIN TEST] ESP Type GUID: %s\n", buffer);
 
-    guid_t random_guid;
-    generate_guid(random_guid, 0);
-    guid_to_string(random_guid, buffer);
-    printf("[KMAIN TEST] Generated Random GUID: %s\n", buffer);
-}
 
 void kmain(){
 
@@ -119,7 +110,6 @@ void kmain(){
    
     test_time_functions();
 
-    kmain_test();
     
     // mouse_init();
 

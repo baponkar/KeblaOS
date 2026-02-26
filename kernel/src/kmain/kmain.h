@@ -53,16 +53,19 @@
 #include "../fs/fatfs_wrapper.h"
 #include "../fs/iso9660/iso9660.h"                      
 #include "../fs/kfs/kfs.h"
-#include "../fs/fat32/fat32.h"
-#include "../fs/fat32/fat32_utility.h"
+#include "../fs/fat32_fs/include/fat32.h"
+#include "../fs/fat32_fs/include//fat32_utility.h"
 #include "../fs/vsfs/vsfs.h"
+#include "../fs/ext2/ext2.h"
 #include "../vfs/vfs.h"                     // Virtual FIle System
 
+
 // Installer
-#include "../partitions/guid.h"
-#include "../partitions/gpt.h"
-#include "../partitions/mbr.h"
-#include "../partitions/partition_manager.h"
+#include "../fs/fat32_fs/include/guid.h"
+#include "../fs/fat32_fs/include/gpt.h"
+#include "../fs/fat32_fs/include/mbr.h"
+#include "../fs/fat32_fs/include/partition_manager.h"
+
 #include "../installer/installer.h"
 
 
@@ -165,8 +168,8 @@
 
 
 extern uint8_t core_id;
-uint32_t get_lapic_id();
-void route_keyboard_irq_to_bsp() ;
+
+
 void kmain();
 
 

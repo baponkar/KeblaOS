@@ -6,13 +6,15 @@ Sector 0: Protective MBR
 - 2 bytes: MBR Signature (0x55AA)
 */
 
-#include "../driver/disk/disk.h"
+#include "../include/diskio.h"
 
-#include "../lib/stdio.h"
-#include "../lib/string.h"
-#include "../lib/stdlib.h"
+#include "../../../lib/string.h"
+#include "../../../lib/stdlib.h"
+#include "../../../lib/stdio.h"
+#include "../../../lib/ctype.h"
 
-#include "mbr.h"
+
+#include "../include/mbr.h"
 
 
 // Create Protective MBR

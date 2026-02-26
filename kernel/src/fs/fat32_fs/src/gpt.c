@@ -61,19 +61,17 @@ TWO PARTITIONS ARE CREATED IN THIS EXAMPLE:
 └─────────────────────────────────────────────────────────────┘
 */
 
+#include "../../../lib/string.h"
+#include "../../../lib/stdlib.h"
+#include "../../../lib/stdio.h"
+#include "../../../lib/ctype.h"
+
+#include "../include/diskio.h"
+
+#include "../include/mbr.h"
 
 
-
-#include "../driver/disk/disk.h"
-
-#include "../lib/stdio.h"
-#include "../lib/string.h"
-#include "../lib/stdlib.h"
-
-#include "mbr.h"
-
-
-#include "gpt.h"
+#include "../include/gpt.h"
 
 
 
@@ -95,7 +93,7 @@ uint32_t crc32(const void *data, size_t length) {
 
 
 
-GPTPartitionEntry *create_partition_entry(
+GPTPartitionEntry *create_gpt_partition_entry(
     uint8_t type_guid[16], 
     uint8_t unique_guid[16], 
     uint64_t start_lba, 
@@ -135,30 +133,25 @@ It will also calculate CRC32 for both headers and entries and update the headers
  It returns true on success and false on failure.
 */
 bool create_gpt_header(
-    int disk_no, 
     uint64_t tot_sectors, 
     GPTHeader *primary_header, 
     GPTHeader *backup_header,
-    guid_t disk_guid, 
+    const guid_t disk_guid, 
     GPTPartitionEntry *partitions) {
-
-    if(disk_no < 0 || disk_no >= disk_count){
-        printf("[PARTITION] Invalid disk number %d for creating GPT header!\n", disk_no);
-        return false;
-    }
     
     if(partitions == NULL){
-        printf("[PARTITION] GPT Partition entries pointer is NULL for disk %d!\n", disk_no);
+        printf("[PARTITION] GPT Partition entries pointer is NULL for disk!\n");
         return false;
     }
 
     if(tot_sectors < 128){
-        printf("[PARTITION] Disk %d has less than 128 sectors!\n", disk_no);
+        printf("[PARTITION] Disk has less than 128 sectors!\n");
+
         return false;
     }
     
     if(!primary_header || !backup_header){
-        printf("[PARTITION] Primary or Backup GPT header pointer is NULL for disk %d!\n", disk_no);
+        printf("[PARTITION] Primary or Backup GPT header pointer is NULL for disk!\n");
         return false;
     }
 
@@ -195,173 +188,37 @@ bool create_gpt_header(
     backup_header->entries_count = GPT_ENTRIES_COUNT;
     backup_header->entry_size = GPT_ENTRY_SIZE;
 
+    // Calculate CRC32 of the headers (excluding CRC32 field itself)
+    primary_header->header_crc32 = 0;
+    backup_header->header_crc32 = 0;
+
     // Calculate CRC32 of partition entries
     uint32_t entries_crc = crc32(partitions, GPT_ENTRIES_COUNT * GPT_ENTRY_SIZE);
     primary_header->entries_crc32 = entries_crc;
     backup_header->entries_crc32 = entries_crc;
 
-    // Calculate CRC32 of the headers (excluding CRC32 field itself)
-    primary_header->header_crc32 = crc32(primary_header, primary_header->header_size);
-    backup_header->header_crc32 = crc32(backup_header, backup_header->header_size);
-
-    // Writing primary GPT header to disk
-    if(!kebla_disk_write(disk_no, 1, 1, primary_header)) {
-        printf("[PARTITION] Failed to write primary GPT header for disk %d!\n", disk_no);
-        return false;
-    }
-
-    // Write backup GPT header to disk
-    if (!kebla_disk_write(disk_no, tot_sectors - 1, 1, backup_header)) {
-        printf("[PARTITION] Failed to write backup GPT header for disk %d!\n", disk_no);
-        return false;
-    }
-
-    return true;
-}
-
-/* This function will create a GPT disk with two partitions (ESP and Data) 
-and write the GPT headers and partition entries to disk. It returns true on success and false on failure.
-*/
-
-bool create_gpt_disk(
-    int disk_no,
-    uint64_t boot_partition_start_lba,
-    uint64_t boot_partition_sectors,
-    uint64_t data_partition_start_lba,
-    uint64_t data_partition_sectors,
-    uint64_t total_sectors,
-    guid_t disk_guid,
-    guid_t boot_partition_guid,
-    guid_t data_partition_guid,
-    guid_t boot_partition_type_guid,
-    guid_t data_partition_type_guid
-){
-
-    // Creating Protective MBR
-    ProtectiveMBR * protective_mbr = malloc(SECTOR_SIZE);
-    if(protective_mbr == NULL){
-        printf("[PARTITION] Failed to allocate memory for Protective MBR for disk %d!\n", disk_no);
-        return false;
-    }
-    create_protective_mbr(protective_mbr, total_sectors);
-
-    // Write Protective MBR to disk
-    if(!kebla_disk_write(disk_no, 0, 1, protective_mbr)){
-        printf("[PARTITION] Failed to write Protective MBR for disk %d!\n", disk_no);
-        free(protective_mbr);
-        return false;
-    }
-
-    free(protective_mbr);
-
-    // Creating GPT Headers and Partition Entries
-
-    GPTHeader primary_header;
-    GPTHeader backup_header;
-
-    GPTPartitionEntry partitions[GPT_ENTRIES_COUNT];
-    memset(partitions, 0, sizeof(partitions));
-
-    // Create partition entries for boot and data partitions
-    GPTPartitionEntry *boot_partition_entry = create_partition_entry(boot_partition_type_guid, boot_partition_guid, boot_partition_start_lba, boot_partition_start_lba + boot_partition_sectors - 1, 0, "Boot Partition");
-    GPTPartitionEntry *data_partition_entry = create_partition_entry(data_partition_type_guid, data_partition_guid, data_partition_start_lba, data_partition_start_lba + data_partition_sectors - 1, 0, "Data Partition");
-
-    if(!boot_partition_entry || !data_partition_entry){
-        printf("[PARTITION] Failed to create partition entries for disk %d!\n", disk_no);
-        return false;
-    }
-
-    // Add partition entries to the array
-    partitions[0] = *boot_partition_entry;
-    partitions[1] = *data_partition_entry;
-
-    // write partition entries to disk (primary and backup)
-    int total_entries_sectors = (int) (GPT_ENTRIES_COUNT * GPT_ENTRY_SIZE + SECTOR_SIZE - 1) / SECTOR_SIZE; // This should be 32 sectors for 128 entries of 128 bytes each
-    if(!kebla_disk_write(disk_no, GPT_ENTRIES_START_LBA, total_entries_sectors, partitions)) {
-        printf("[PARTITION] Failed to write primary GPT partition entries for disk %d!\n", disk_no);
-        return false;
-    }
     
-    uint64_t backup_entries_lba = total_sectors - total_entries_sectors - 1;
-    if (!kebla_disk_write(disk_no, backup_entries_lba, total_entries_sectors, partitions)) {
-        printf("[PARTITION] Failed to write backup GPT partition entries for disk %d!\n", disk_no);
-        return false;
-    }
-
-    // Create and write GPT headers
-    bool result = create_gpt_header(disk_no, total_sectors, &primary_header, &backup_header, disk_guid, partitions);
-
-    free(boot_partition_entry);
-    free(data_partition_entry);
-
-    return result;
-}
-
-bool update_partition_entry(int disk_no, int entry_index, GPTPartitionEntry *new_entry) {
-    if(entry_index < 0 || entry_index >= GPT_ENTRIES_COUNT){
-        printf("[PARTITION] Invalid partition entry index %d for disk %d!\n", entry_index, disk_no);
-        return false;
-    }
-
-    if(new_entry == NULL){
-        printf("[PARTITION] New partition entry pointer is NULL for disk %d!\n", disk_no);
-        return false;
-    }
-
-    // Read existing partition entries from disk
-    GPTPartitionEntry partitions[GPT_ENTRIES_COUNT];
-    memset(partitions, 0, sizeof(partitions));
-
-    int total_entries_sectors = (int) (GPT_ENTRIES_COUNT * GPT_ENTRY_SIZE + SECTOR_SIZE - 1) / SECTOR_SIZE; // This should be 32 sectors for 128 entries of 128 bytes each
-    if(!kebla_disk_read(disk_no, GPT_ENTRIES_START_LBA, total_entries_sectors, partitions)) {
-        printf("[PARTITION] Failed to read GPT partition entries for disk %d!\n", disk_no);
-        return false;
-    }
-
-    // Update the specific partition entry
-    partitions[entry_index] = *new_entry;
-
-    // Write updated partition entries back to disk
-    if(!kebla_disk_write(disk_no, GPT_ENTRIES_START_LBA, total_entries_sectors, partitions)) {
-        printf("[PARTITION] Failed to write updated GPT partition entries for disk %d!\n", disk_no);
-        return false;
-    }
-
-    return true;
-}
-
-bool update_gpt_headers(int disk_no, GPTHeader *primary_header, GPTHeader *backup_header, GPTPartitionEntry *partitions) {
-    if(!primary_header || !backup_header){
-        printf("[PARTITION] Primary or Backup GPT header pointer is NULL for disk %d!\n", disk_no);
-        return false;
-    }
-
-    if(partitions == NULL){
-        printf("[PARTITION] GPT Partition entries pointer is NULL for disk %d!\n", disk_no);
-        return false;
-    }
-
-    // Calculate CRC32 of partition entries
-    uint32_t entries_crc = crc32(partitions, GPT_ENTRIES_COUNT * GPT_ENTRY_SIZE);
-    primary_header->entries_crc32 = entries_crc;
-    backup_header->entries_crc32 = entries_crc;
-
-    // Calculate CRC32 of the headers (excluding CRC32 field itself)
+    
     primary_header->header_crc32 = crc32(primary_header, primary_header->header_size);
     backup_header->header_crc32 = crc32(backup_header, backup_header->header_size);
 
-    // Write primary GPT header to disk
-    if(!kebla_disk_write(disk_no, 1, 1, primary_header)) {
-        printf("[PARTITION] Failed to write primary GPT header for disk %d!\n", disk_no);
+    uint8_t temp_buffer[512];
+    memset(temp_buffer, 0, sizeof(temp_buffer));
+
+    memcpy(temp_buffer, primary_header, sizeof(GPTHeader));
+    // Writing primary GPT header to disk
+    if(!fat32_disk_write( 1, 1, temp_buffer)) {
+        printf("[PARTITION] Failed to write primary GPT header for disk!\n");
         return false;
     }
 
     // Write backup GPT header to disk
-    if (!kebla_disk_write(disk_no, primary_header->backup_lba, 1, backup_header)) {
-        printf("[PARTITION] Failed to write backup GPT header for disk %d!\n", disk_no);
+    if (!fat32_disk_write( tot_sectors - 1, 1, backup_header)) {
+        printf("[PARTITION] Failed to write backup GPT header for disk!\n");
         return false;
     }
 
     return true;
 }
+
 

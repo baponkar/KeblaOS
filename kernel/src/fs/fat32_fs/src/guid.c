@@ -1,11 +1,12 @@
-#include "../lib/time.h"
-#include "../lib/stdio.h"
-#include "../lib/string.h"
-#include "../lib/stdlib.h"
+#include "../../../lib/string.h"
+#include "../../../lib/stdlib.h"
+#include "../../../lib/stdio.h"
+#include "../../../lib/ctype.h"
+#include "../../../lib/time.h"
 
-#include "../driver/disk/disk.h"
+#include "../include/diskio.h"
 
-#include "guid.h"
+#include "../include/guid.h"
 
 
 
@@ -108,10 +109,10 @@ void guid_to_string(uint8_t guid[16], char *out)
 
 static uint64_t guid_entropy_state = 0;
 
-static uint64_t mix_entropy(uint8_t cpu_id)
+static uint64_t mix_entropy()
 {
-    uint64_t t1 = (uint64_t)get_time();
-    uint64_t t2 = get_uptime_seconds(cpu_id);
+    uint64_t t1 = (uint64_t)100;
+    uint64_t t2 = 10;
     uint64_t t3 = (uint64_t)clock();
 
     uint64_t mix = t1 ^ (t2 << 21) ^ (t3 << 7);
@@ -127,10 +128,10 @@ static uint64_t mix_entropy(uint8_t cpu_id)
     return guid_entropy_state;
 }
 
-void generate_guid(uint8_t guid[16], uint8_t cpu_id)
+void generate_guid(uint8_t guid[16])
 {
     for (int i = 0; i < 16; i += 8) {
-        uint64_t r = mix_entropy(cpu_id);
+        uint64_t r = mix_entropy();
 
         guid[i + 0] = (r >> 0) & 0xFF;
         guid[i + 1] = (r >> 8) & 0xFF;
