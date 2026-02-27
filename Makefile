@@ -474,8 +474,8 @@ uefi_disk_run:
 	-d guest_errors,int,cpu_reset \
 	-D $(DEBUG_DIR)/qemu.log \
 	-trace enable=all,file=./debug/trace.log \
-	-drive if=pflash,format=raw,readonly=on,file=/usr/share/ovmf/OVMF.fd \
-	-drive if=pflash,format=raw,file=/usr/share/ovmf/OVMF.fd
+	-drive if=pflash,format=raw,readonly=on,file=/usr/share/ovmf/OVMF.fd
+
 
 test:
 	sudo qemu-system-x86_64 \

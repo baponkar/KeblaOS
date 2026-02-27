@@ -29,13 +29,16 @@ extern Disk *disks;
 extern int disk_count; 
 
 #define ESP_START_LBA 2048
+#define ESP_SECTORS (100 * 1024 * 1024 / 512)   // 100 MB
+#define DATA_PART_START_LBA (ESP_START_LBA + ESP_SECTORS)
+#define DATA_PART_SECTORS ((1 * 1024 * 1024 * 1024 / 512) - ESP_SECTORS - ESP_START_LBA)
 
 int iso_disk_no = 0;    // The ISO SATAPI Disk which is mentioned in Makefile
 int boot_disk_no = 1;   // The SATA Disk Which will be used to install KeblaOS
 
-bool install = true;  // This variable is set to true when the installer is running, otherwise it is false. It is used to control the flow of the installation process in kmain.
+bool install = false;  // This variable is set to true when the installer is running, otherwise it is false. It is used to control the flow of the installation process in kmain.
 
-
+extern int disk_no;
 
 void kmain(){
 
@@ -99,14 +102,18 @@ void kmain(){
 
 
     // vfs_test(boot_disk_no);
-    
-    if(install){
-        printf("[KMAIN] Going to Install KeblaOS in Disk %d...\n", boot_disk_no);
+
+    if(!verify_installation(iso_disk_no, ESP_START_LBA)){
         if(format_disk_and_install(iso_disk_no, boot_disk_no)){
             printf("[KMAIN] Successfully Install KeblaOS in Disk %d.\n", boot_disk_no);
         }
-        printf("[KMAIN] Failed to Install KeblaOS in Disk %d!\n", boot_disk_no);
+    }else{
+        disk_no = iso_disk_no;
+        if(fat32_mount(DATA_PART_START_LBA)){
+            printf("Successfully Mount Disk %d\n", iso_disk_no);
+        }
     }
+    
    
     test_time_functions();
 

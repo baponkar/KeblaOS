@@ -135,30 +135,32 @@ bool format_disk_and_install(int iso_disk_no, int boot_disk_no){
     uint32_t esp_sectors = ESP_SIZE_IN_MB * 1024 * 1024 / sector_size;      // 100MB ESP
     
     uint64_t data_start_lba =  esp_start_lba + esp_sectors;
-    uint64_t data_sectors = total_sectors - esp_sectors - esp_start_lba;    // Rest for Data Partition
+    uint64_t data_sectors = total_sectors - esp_sectors - esp_start_lba - 2048;    // Rest for Data Partition, 2048 for safety
 
+    // Creating ESP with FAT32 Filesystem
     if(create_partition(boot_disk_no, ESP_START_LBA, esp_sectors, ESP_GUID, ESP_TYPE_GUID, "ESP")){
         printf("Successfully created Partition at Sector %d\n", ESP_START_LBA);
     }
-
 
     if (!create_fat32_volume( ESP_START_LBA, esp_sectors)) {
         printf("Failed to create FAT32 volume\n");
         return 1;
     }
 
+    // Creating Data Partition with FAT32 Filesystem
+    if(create_partition(boot_disk_no, data_start_lba, data_sectors, DATA_PARTITION_GUID, LINUX_FS_GUID, "DATA PARTITION")){
+        printf("Successfully created Partition at Sector %d\n", ESP_START_LBA);
+    }
+
+    if (!create_fat32_volume( data_start_lba, data_sectors)) {
+        printf("Failed to create FAT32 volume\n");
+        return 1;
+    }
+
+    // Mount Boot Partition with copy files from bootable disk
     if(!fat32_mount(ESP_START_LBA)){
         printf("[FAT32 TEST] Failed to Mount FAT32 FS at LBA: %d!\n", ESP_START_LBA);
         return false;
-    }
-
-    
-
-    if(!create_ext2_fs(boot_disk_no, data_start_lba, data_sectors)){
-        printf("[INSTALLER] Failed to Create EXT2 Filesystem on Data Partition\n");
-        return false;
-    }else{
-        printf("[INSTALLER] Successfully created EXT2 Filesystem on Data Partition\n");
     }
 
     static const char *boot_dirs[] = {
@@ -230,25 +232,25 @@ bool format_disk_and_install(int iso_disk_no, int boot_disk_no){
 
         // Find parent directory cluster
         if(!fat32_path_to_cluster(parent_dir_path, &dir_cluster)){
+            printf(" Failed to get parent directory cluster of %s\n", parent_dir_path);
             return false;
         }
-        // printf(" Failed to get parent directory cluster of %s\n", parent_dir_path);
-
+        
         // Creating file inside boot disk
         if(!fat32_create_file_in_dir( dir_cluster, file_name, buf, iso_read_bytes)){
             return false;
         }
         printf(" Successfully created %s\n\n", file_name);
 
-        if(memcmp(file_name, "LIMINE.CON", 10) == 0){
-            if(!fat32_path_to_cluster( "/EFI/BOOT", &dir_cluster)){
+        if(memcmp(file_name, "limine.conf", 11) == 0){
+            if(!fat32_path_to_cluster( "/efi/boot", &dir_cluster)){
                 return false;
             }
 
             if(!fat32_create_file_in_dir( dir_cluster, file_name, buf, iso_read_bytes)){
                 return false;
             }
-            printf(" Successfully created %s in /EFI/BOOT", file_name);
+            printf(" Successfully created %s in /efi/boot/", file_name);
         }
 
         free(buf);
@@ -268,13 +270,13 @@ bool verify_installation(int disk_no, uint32_t start_lba)
     if(!fat32_mount( start_lba))
         return false;
 
-    if (!fat32_path_to_cluster( "/BOOT/KERNEL.BIN", &cluster))
+    if (!fat32_path_to_cluster( "/boot/kernel.bin", &cluster))
         return false;
 
-    if (!fat32_path_to_cluster( "/EFI/BOOT/BOOTX64.EFI", &cluster))
+    if (!fat32_path_to_cluster( "/efi/boot/bootx64.efi", &cluster))
         return false;
 
-    if (!fat32_path_to_cluster( "/BOOT/LIMINE.CON", &cluster))
+    if (!fat32_path_to_cluster( "/efi/boot/limine.conf", &cluster))
         return false;
 
     return true;
