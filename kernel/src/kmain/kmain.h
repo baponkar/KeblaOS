@@ -50,7 +50,6 @@
 
 
 // File System
-#include "../fs/fatfs_wrapper.h"
 #include "../fs/iso9660/iso9660.h"                      
 #include "../fs/kfs/kfs.h"
 #include "../fs/fat32_fs/include/fat32.h"
@@ -144,9 +143,6 @@
 // Limine Bootloader
 #include "../../../ext_lib/limine-9.2.3/limine.h"   // bootloader info
 
-// FatFs Library
-#include "../fs/FatFs-R.0.16/source/ff.h"
-#include "../fs/FatFs-R.0.16/source/diskio.h"
 
 // tiny-regex-c
 #include "../../../ext_lib/tiny-regex-c/re.h"

@@ -104,10 +104,12 @@ void kmain(){
     // vfs_test(boot_disk_no);
 
     if(!verify_installation(iso_disk_no, ESP_START_LBA)){
+        printf("[KMAIN] Going to Install KeblaOS.\n");
         if(format_disk_and_install(iso_disk_no, boot_disk_no)){
             printf("[KMAIN] Successfully Install KeblaOS in Disk %d.\n", boot_disk_no);
         }
     }else{
+        printf("[KMAIN] KeblaOS is already installed in the Disk.\n");
         disk_no = iso_disk_no;
         if(fat32_mount(DATA_PART_START_LBA)){
             printf("Successfully Mount Disk %d\n", iso_disk_no);

@@ -56,11 +56,11 @@ extern const uint8_t binary_limine_hdd_bin_data[];
 static const char *iso_files[] = {
     // "/BOOT.CAT",
 
-    "/BOOT/LIMINE/LIMINE_B.BIN",
-    "/BOOT/LIMINE/LIMINE_B.SYS",
-    "/BOOT/LIMINE/LIMINE_U.BIN",
+    // "/BOOT/LIMINE/LIMINE_B.BIN",
+    // "/BOOT/LIMINE/LIMINE_B.SYS",
+    // "/BOOT/LIMINE/LIMINE_U.BIN",
 
-    "/BOOT/BOOT_LOA.BMP",
+    // "/BOOT/BOOT_LOA.BMP",
     "/BOOT/KERNEL.BIN",
     "/BOOT/LIMINE.CON",
     "/BOOT/USER_MAI.ELF",
@@ -72,11 +72,11 @@ static const char *iso_files[] = {
 static const char *parent_dir [] = {
     // "/",
 
-    "/boot/limine",
-    "/boot/limine",
-    "/boot/limine",
+    // "/boot/limine",
+    // "/boot/limine",
+    // "/boot/limine",
 
-    "/boot",
+    // "/boot",
     "/boot",
     "/boot",
     "/boot",
@@ -88,11 +88,11 @@ static const char *parent_dir [] = {
 static const char *file_names[] = {
     // "BOOT.CAT",
 
-    "limine-bios-cd.bin",
-    "limine-bios.sys",
-    "limine-uefi-cd.bin",
+    // "limine-bios-cd.bin",
+    // "limine-bios.sys",
+    // "limine-uefi-cd.bin",
 
-    "boot_loader_wallpaper.bmp",
+//    "boot_loader_wallpaper.bmp",
     "kernel.bin",
     "limine.conf",
     "user_main.elf",

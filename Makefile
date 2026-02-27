@@ -228,7 +228,7 @@ $(BUILD_INFO_FILE):
 $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso: $(BUILD_DIR)/kernel.bin #$(DEBUG_DIR)/objdump.txt
 	mkdir -p build $(ISO_DIR)/boot $(ISO_DIR)/boot/limine $(ISO_DIR)/EFI/BOOT
 
-	cp image/boot_loader_wallpaper.bmp  $(ISO_DIR)/boot/boot_loader_wallpaper.bmp
+#	cp image/boot_loader_wallpaper.bmp  $(ISO_DIR)/boot/boot_loader_wallpaper.bmp
 	cp -v $(BUILD_DIR)/kernel.bin $(ISO_DIR)/boot/
 	cp -v $(LIMINE_SRC_DIR)/limine.conf $(ISO_DIR)/boot/
 	cp -v $(USER_MODULE_DIR)/build/$(USER_PROGRAM_FILE).elf $(ISO_DIR)/boot/$(USER_PROGRAM_FILE).elf
@@ -378,8 +378,8 @@ bios_run:
 	-rtc base=utc,clock=host \
 	-netdev user,id=n1 -device e1000,netdev=n1 \
 	-d guest_errors,int,cpu_reset \
-	-D $(DEBUG_DIR)/qemu.log \
-	-trace enable=all,file=./debug/trace.log \
+	-D $(DEBUG_DIR)/qemu_bios.log \
+	-trace enable=all,file=./debug/bios_run_trace.log \
 	-no-reboot
 # To see available trace events about start_dma: qemu-system-x86_64 -trace help | grep -i start_dma
 # We can add -noo--rebboot to prevent rebooting after kernel panic
@@ -399,7 +399,7 @@ bios_run_nvme:
 	-rtc base=utc,clock=host \
 	-netdev user,id=n1 -device e1000,netdev=n1 \
 	-d guest_errors,int,cpu_reset \
-	-D $(DEBUG_DIR)/qemu.log
+	-D $(DEBUG_DIR)/qemu_nvme.log
 	#-no-reboot
 
 
@@ -417,7 +417,7 @@ uefi_run:
 		-cdrom $(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso \
 		-serial stdio \
 		-d guest_errors,int,cpu_reset \
-		-D $(DEBUG_DIR)/qemu.log \
+		-D $(DEBUG_DIR)/qemu_uefi.log \
 		-vga std \
 		-bios /usr/share/ovmf/OVMF.fd \
 		-rtc base=utc,clock=host \
@@ -455,8 +455,8 @@ bios_disk_run:
 	-rtc base=utc,clock=host \
 	-netdev user,id=n1 -device e1000,netdev=n1 \
 	-d guest_errors,int,cpu_reset \
-	-D $(DEBUG_DIR)/qemu.log \
-	-trace enable=all,file=./debug/trace.log
+	-D $(DEBUG_DIR)/qemu_bios_disk.log \
+	-trace enable=all,file=./debug/bios_disk_run_trace.log
 
 uefi_disk_run:
 	qemu-system-x86_64 \
@@ -472,8 +472,8 @@ uefi_disk_run:
 	-rtc base=utc,clock=host \
 	-netdev user,id=n1 -device e1000,netdev=n1 \
 	-d guest_errors,int,cpu_reset \
-	-D $(DEBUG_DIR)/qemu.log \
-	-trace enable=all,file=./debug/trace.log \
+	-D $(DEBUG_DIR)/qemu_uefi_disk.log \
+	-trace enable=all,file=./debug/uefi_disk_run_trace.log \
 	-drive if=pflash,format=raw,readonly=on,file=/usr/share/ovmf/OVMF.fd
 
 
@@ -505,7 +505,7 @@ gdb_debug:
 		-drive id=cdrom,media=cdrom,file=$(BUILD_DIR)/$(OS_NAME)-$(OS_VERSION)-xorriso-image.iso,if=none \
 		-serial stdio \
 		-d guest_errors,int,cpu_reset \
-		-D $(DEBUG_DIR)/qemu.log \
+		-D $(DEBUG_DIR)/qemu_gdb_debug.log \
 		-vga std \
 		-rtc base=utc,clock=host \
 		-s -S

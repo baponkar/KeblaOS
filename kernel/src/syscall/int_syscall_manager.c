@@ -28,8 +28,6 @@ References:
 #include "../memory/uheap.h"
 #include "../memory/paging.h"
 
-#include "../fs/FatFs-R.0.16/source/ff.h"
-#include "../fs/FatFs-R.0.16/source/diskio.h"
 
 #include "../vfs/vfs.h"
 
@@ -44,7 +42,7 @@ extern bool debug_on;
 
 extern ring_buffer_t* keyboard_buffer;
 
-extern FATFS  *fatfs;
+
 
 extern uint8_t get_core_id();
 
@@ -752,7 +750,7 @@ void int_syscall_test(){
 
     // Open File
     char *path = "/TESTFILE.TXT";
-    uint64_t flags = FA_READ | FA_WRITE | FA_OPEN_ALWAYS;
+    uint64_t flags = 0;
 
     uint64_t opened_file = system_call(INT_SYSCALL_OPEN, (uint64_t) path, (uint64_t) flags, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0, (uint64_t) 0);
     if(opened_file == 0){
