@@ -65,7 +65,72 @@ bool sata_write(HBA_PORT_T* port, size_t _lba, size_t _count, uintptr_t _phys_bu
     return runCommand(ATA_CMD_WRITE_DMA_EX, 1, port, start_l, start_h, count, phys_buf_addr);
 }
 
+void SataPortRebase(HBA_PORT_T *port)
+{
+    stopCMD(port);
 
+    const size_t ALLOC_SIZE = 64 * 1024;
+
+    void *base_virt = (void *)kheap_alloc(ALLOC_SIZE, ALLOCATE_DATA);
+    if (!base_virt) {
+        printf("[AHCI] SataPortRebase: kheap_alloc failed\n");
+        return;
+    }
+
+    uintptr_t base_phys = vir_to_phys((uintptr_t)base_virt);
+    if (base_phys == 0) {
+        printf("[AHCI] SataPortRebase: vir_to_phys failed\n");
+        kheap_free(base_virt, ALLOCATE_DATA);
+        return;
+    }
+
+    /* ---------------- Command List ---------------- */
+
+    uintptr_t clb_phys = base_phys + 0x0;
+    void *clb_virt = (void *)((uintptr_t)base_virt + 0x0);
+    memset(clb_virt, 0, 0x400);
+
+    /* ---------------- FIS Receive ---------------- */
+
+    uintptr_t fb_phys = base_phys + 0x1000;
+    void *fb_virt = (void *)((uintptr_t)base_virt + 0x1000);
+    memset(fb_virt, 0, 0x100);
+
+    /* ---------------- Command Tables ---------------- */
+
+    uintptr_t ctba_base_phys = base_phys + 0x2000;
+    void *ctba_base_virt = (void *)((uintptr_t)base_virt + 0x2000);
+    memset(ctba_base_virt, 0, 0x2000);
+
+    /* ---------------- Program Registers ---------------- */
+
+    port->clb  = (uint32_t)(clb_phys & 0xFFFFFFFF);
+    port->clbu = (uint32_t)(clb_phys >> 32);
+
+    port->fb   = (uint32_t)(fb_phys & 0xFFFFFFFF);
+    port->fbu  = (uint32_t)(fb_phys >> 32);
+
+    /* ---------------- Initialize Command Headers ---------------- */
+
+    HBA_CMD_HEADER_T *cmd_header = (HBA_CMD_HEADER_T *)clb_virt;
+
+    for (int i = 0; i < 32; i++) {
+
+        uintptr_t phys_ctba = ctba_base_phys + (i * 0x100);
+
+        cmd_header[i].ctba  = (uint32_t)(phys_ctba & 0xFFFFFFFF);
+        cmd_header[i].ctbau = (uint32_t)(phys_ctba >> 32);
+
+        cmd_header[i].prdtl = 8;
+        cmd_header[i].a = 0;        // SATA device (NOT ATAPI)
+        cmd_header[i].cfl = 5;      // FIS size in DWORDS
+
+        void *virt_ctba = (void *)((uintptr_t)ctba_base_virt + (i * 0x100));
+        memset(virt_ctba, 0, 0x100);
+    }
+
+    startCMD(port);
+}
 
 
 uint64_t sata_get_total_sectors(HBA_PORT_T* port) {

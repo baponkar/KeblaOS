@@ -1,8 +1,8 @@
 
-#include "../../../lib/string.h"
-#include "../../../lib/stdlib.h"
-#include "../../../lib/stdio.h"
-#include "../../../lib/ctype.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
 
 #include "../include/fat32_bpb.h"
 #include "../include/fat32.h"

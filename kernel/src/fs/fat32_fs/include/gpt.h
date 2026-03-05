@@ -53,8 +53,8 @@ typedef struct __attribute__((packed)) {
 uint32_t crc32(const void *data, size_t length);
 
 GPTPartitionEntry *create_gpt_partition_entry(
-    uint8_t type_guid[16], 
-    uint8_t unique_guid[16], 
+    const uint8_t type_guid[16], 
+    const uint8_t unique_guid[16], 
     uint64_t start_lba, 
     uint64_t end_lba, 
     uint64_t attributes, 

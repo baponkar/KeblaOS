@@ -3,7 +3,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
-
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <ctype.h>
 
 #include "fat32_types.h"
 
@@ -24,7 +27,6 @@ uint32_t fat32_count_cluster_chain( uint32_t start_cluster);
 bool fat32_append_cluster( uint32_t start_cluster, uint32_t *new_cluster);
 bool fat32_find_free_dir_entry( uint32_t dir_cluster, uint32_t *out_cluster, uint32_t *out_offset);
 void fat32_format_83_name(const char *name, char out[11]);
-bool fat32_set_volume_label( const char *label);
 bool fat32_create_dir_entry( uint32_t parent_cluster, const char *name, uint8_t attr, uint32_t first_cluster , uint32_t file_size);
 bool fat32_init_directory( uint32_t dir_cluster, uint32_t parent_cluster);
 bool fat32_mkdir_internal( uint32_t parent_cluster, const char *name);

@@ -1,12 +1,11 @@
-#include "../../../lib/string.h"
-#include "../../../lib/stdlib.h"
-#include "../../../lib/stdio.h"
-#include "../../../lib/ctype.h"
-#include "../../../lib/time.h"
+#include <time.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-#include "../include/diskio.h"
+#include "../../include/diskio.h"
 
-#include "../include/guid.h"
+#include "../../include/guid.h"
 
 
 

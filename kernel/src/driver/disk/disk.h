@@ -6,22 +6,21 @@
 #include <stddef.h>
 
 
-
 // Disk type constants
 typedef enum {
-    DISK_TYPE_UNKNOWN = -1,
-    DISK_TYPE_IDE_PATA = 0,
-    DISK_TYPE_AHCI_SATA = 1,
-    DISK_TYPE_NVME = 2,
-    DISK_TYPE_SCSI = 3,
-    DISK_TYPE_SATAPI = 4,
-    DISK_TYPE_FLOPPY = 5,
-    DISK_TYPE_RAID = 6,
-    DISK_TYPE_SATA_COMPAT = 7,
-    DISK_TYPE_SATA_VENDOR = 8,
-    DISK_TYPE_SATA_GENERIC = 9,
-    DISK_TYPE_SAS = 10,
-    DISK_TYPE_IPI = 11
+    DISK_TYPE_UNKNOWN = 0,
+    DISK_TYPE_IDE_PATA = 1,
+    DISK_TYPE_AHCI_SATA = 2,
+    DISK_TYPE_NVME = 3,
+    DISK_TYPE_SCSI = 4,
+    DISK_TYPE_SATAPI = 5,
+    DISK_TYPE_FLOPPY = 6,
+    DISK_TYPE_RAID = 7,
+    DISK_TYPE_SATA_COMPAT = 8,
+    DISK_TYPE_SATA_VENDOR = 9,
+    DISK_TYPE_SATA_GENERIC = 10,
+    DISK_TYPE_SAS = 11,
+    DISK_TYPE_IPI = 12
 } DiskType;
 
 

@@ -3,7 +3,7 @@
 
 #include "../../lib/stdio.h"
 #include "../../lib/string.h"
-#include "../../driver/pci/pci.h"
+
 
 #include "mass_storage.h"
 

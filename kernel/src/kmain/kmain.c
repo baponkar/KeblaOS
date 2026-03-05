@@ -2,7 +2,7 @@
 /*
     Kernel.c
     Build Date  : 16-12-2024
-    Last Update : 15-01-2025
+    Last Update : 04-03-2026
     Description : KeblaOS is a x86 architecture based 64 bit Operating System. Currently it is using Limine Bootloader.
     Reference   : https://wiki.osdev.org/Limine
                   https://github.com/limine-bootloader/limine-c-template
@@ -36,23 +36,23 @@ extern int disk_count;
 int iso_disk_no = 0;    // The ISO SATAPI Disk which is mentioned in Makefile
 int boot_disk_no = 1;   // The SATA Disk Which will be used to install KeblaOS
 
-bool install = false;  // This variable is set to true when the installer is running, otherwise it is false. It is used to control the flow of the installation process in kmain.
+bool install = false;   // This variable is set to true when the installer is running, otherwise it is false. It is used to control the flow of the installation process in kmain.
 
 extern int disk_no;
 
 void kmain(){
-
+    
     serial_init("Successfully Serial Printing initialized!\n");
 
     get_bootloader_info();
     init_vga();
     
-    // print_bootloader_info();
+    print_bootloader_info();
 
     get_set_memory();
-        
+    
     init_bs_cpu_core();
-
+    
     // Initialize APIC and IOAPIC
     if(!has_apic()) printf("[Error] This System does not have APIC.\n");
         
@@ -60,7 +60,6 @@ void kmain(){
 
     if(!pci_exists()){
         printf("[Error] This system do not have PCI!\n");
-        return;
     }
 
     init_controllers();     // This function has PCI Scan
@@ -68,7 +67,6 @@ void kmain(){
     // Detect and Initialize all Disks
     if(kebla_get_disks() <= 0){
         printf("No Disk Found!\n");
-        return;
     }
     printf("[KMAIN] Total %d Disks Found.\n", disk_count);
 
@@ -103,6 +101,7 @@ void kmain(){
 
     // vfs_test(boot_disk_no);
 
+
     if(!verify_installation(iso_disk_no, ESP_START_LBA)){
         printf("[KMAIN] Going to Install KeblaOS.\n");
         if(format_disk_and_install(iso_disk_no, boot_disk_no)){
@@ -135,9 +134,9 @@ void kmain(){
     // init_user_mode();
 
     // Load and parse kernel modules by using limine bootloader
-    // get_kernel_modules_info();
-    // print_kernel_modules_info();
-    // load_user_elf_and_jump();
+    get_kernel_modules_info();
+    print_kernel_modules_info();
+    load_user_elf_and_jump();
 
     // acpi_poweroff();
     // acpi_reboot();

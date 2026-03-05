@@ -1,14 +1,15 @@
 
-#include "../../../lib/string.h"
-#include "../../../lib/stdlib.h"
-#include "../../../lib/stdio.h"
-#include "../../../lib/ctype.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
 
 #include "../include/fat32_bpb.h"
 
-#define FAT32_OEM_NAME "KeblaOS"
+#define FAT32_OEM_NAME "KEBLAOS"
 #define FAT32_VOLUME_ID 0x12345678
-#define FAT32_VOLUME_LABEL "KeblaOS FAT32"
+#define FAT32_VOLUME_LABEL "KEBLAOS FAT"
 #define FAT32_FILESYSTEM_TYPE "FAT32   "
 
 #define SECTOR_SIZE 512
@@ -16,6 +17,7 @@ BPB *bpb = NULL;
 
 // This function creates and returns a BPB structure for FAT32
 BPB *create_bpb_fat32(uint32_t tot_sectors, uint8_t sectors_per_cluster, uint32_t start_sector){
+    
     bpb = (BPB *)malloc(sizeof(BPB));
     if (!bpb) {
         return NULL;
@@ -27,10 +29,10 @@ BPB *create_bpb_fat32(uint32_t tot_sectors, uint8_t sectors_per_cluster, uint32_
     bpb->BS_jmpBoot[0] = 0xEB;
     bpb->BS_jmpBoot[1] = 0x58;
     bpb->BS_jmpBoot[2] = 0x90;
-    memcpy(bpb->BS_OEMName, FAT32_OEM_NAME, 7);
+    memcpy(bpb->BS_OEMName, FAT32_OEM_NAME, 8);
     bpb->BPB_BytsPerSec = SECTOR_SIZE;
     bpb->BPB_SecPerClus = sectors_per_cluster;
-    bpb->BPB_RsvdSecCnt = 32;  // Reserved Sector Count
+    bpb->BPB_RsvdSecCnt = 32;  // Reserved Sector Count 
     bpb->BPB_NumFATs = 2;      // Number of FAT 
     bpb->BPB_RootEntCnt = 0;   // 0 for FAT32
     bpb->BPB_TotSec16 = 0;     // Use 32-bit field
@@ -86,7 +88,7 @@ uint32_t get_total_clusters() {
     return data_sectors / bpb->BPB_SecPerClus;
 }
 
-uint32_t get_root_dir_first_cluster(){
+uint32_t get_root_dir_cluster(){
     if(!bpb) return 0;
     return bpb->BPB_RootClus;
 }
@@ -113,23 +115,37 @@ uint32_t get_total_sectors(){
 
 uint32_t get_first_data_sector(){
     if(!bpb) return 0;
-    uint32_t first_data_sector = bpb->BPB_RsvdSecCnt + (bpb->BPB_NumFATs * bpb->BPB_FATSz32);   // Reserved Sectors + Total Sectors taken by two FATs
-    return first_data_sector;
+    return bpb->BPB_HiddSec + bpb->BPB_RsvdSecCnt + (bpb->BPB_NumFATs * bpb->BPB_FATSz32);   // Reserved Sectors + Total Sectors taken by two FATs
 }
+
+uint32_t get_cluster_size_bytes(){
+    if(!bpb) return 0;
+    return bpb->BPB_BytsPerSec * bpb->BPB_SecPerClus;
+}
+
+uint32_t get_root_dir_sect_num(){
+    if(!bpb) return 0;
+    return get_first_sector_of_cluster(bpb->BPB_RootClus);
+}
+
+uint16_t get_reserved_sector_count()
+{
+    if(!bpb) return 0;
+    return bpb->BPB_RsvdSecCnt;
+}
+
+uint32_t get_first_fat_sector(){
+    return bpb->BPB_HiddSec + bpb->BPB_RsvdSecCnt;
+}
+
+uint8_t get_total_no_fat(){
+    return bpb->BPB_NumFATs;
+}
+
 
 uint32_t get_first_sector_of_cluster(uint32_t cluster_number){
     if(!bpb) return 0;
-    uint32_t first_data_sector = bpb->BPB_RsvdSecCnt + (bpb->BPB_NumFATs * bpb->BPB_FATSz32);
-    uint32_t sectors_per_cluster = bpb->BPB_SecPerClus;
-    uint32_t first_sector_of_cluster = first_data_sector + ((cluster_number - 2) * sectors_per_cluster);    // cluster number starts from 2
-    return first_sector_of_cluster;
-}
-
-uint32_t get_first_dir_sect_num(){
-    if(!bpb) return 0;
-    uint32_t first_data_sector =  get_first_data_sector();
-    uint32_t first_dir_sect_num = get_first_sector_of_cluster(first_data_sector);
-    return first_dir_sect_num;
+    return  get_first_data_sector() + ((cluster_number - 2) * bpb->BPB_SecPerClus);            // cluster number starts from 2
 }
 
 bool is_end_of_cluster_chain(uint32_t cluster_value){
@@ -143,8 +159,5 @@ bool is_valid_cluster(uint32_t cluster_value){
 }
 
 
-uint32_t get_cluster_size_bytes(){
-    if(!bpb) return 0;
-    return bpb->BPB_BytsPerSec * bpb->BPB_SecPerClus;
-}
+
 

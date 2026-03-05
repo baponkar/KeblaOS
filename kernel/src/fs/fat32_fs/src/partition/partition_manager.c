@@ -1,16 +1,16 @@
 
-#include "../../../lib/string.h"
-#include "../../../lib/stdlib.h"
-#include "../../../lib/stdio.h"
-#include "../../../lib/ctype.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
 
-#include "../include/diskio.h"
+#include "../../include/diskio.h"
 
-#include "../include/guid.h"
-#include "../include/mbr.h"
-#include "../include/gpt.h"
+#include "../../include/guid.h"
+#include "../../include/mbr.h"
+#include "../../include/gpt.h"
 
-#include "../include/partition_manager.h"
+#include "../../include/partition_manager.h"
 
 
 
@@ -21,7 +21,7 @@ PartitionEntry partitions[MAX_PARTITIONS];  // Array of PartitionEntry
 
 size_t partition_count = 0;
 
-bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, guid_t partition_guid, guid_t partition_type_guid, char* name) {
+bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, const guid_t partition_guid, const guid_t partition_type_guid, char* name) {
     
     size_t partition_index = partition_count; // Get the next available partition index
 
@@ -29,7 +29,7 @@ bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, gui
     ProtectiveMBR *protective_mbr = malloc(SECTOR_SIZE);
     create_protective_mbr(protective_mbr, TOTAL_SECTORS);
 
-    if(!fat32_disk_write( 0, 1, protective_mbr)){
+    if(!disk_write( 0, 1, protective_mbr)){
         printf("[PARTITION] Failed to write Protective MBR for disk!\n");
         free(protective_mbr);
         return false;
@@ -57,7 +57,7 @@ bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, gui
 
     // Read Previous partition entries from disk
     int total_entries_sectors = (int) (GPT_ENTRIES_COUNT * GPT_ENTRY_SIZE + SECTOR_SIZE - 1) / SECTOR_SIZE; // This should be 32 sectors for 128 entries of 128 bytes each
-    if(!fat32_disk_read(GPT_ENTRIES_START_LBA, total_entries_sectors, gpt_partitions)) {
+    if(!disk_read(GPT_ENTRIES_START_LBA, total_entries_sectors, gpt_partitions)) {
         printf("[PARTITION] Failed to read primary GPT partition entries for disk!\n");
         return false;
     }
@@ -78,13 +78,14 @@ bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, gui
 
 
     // write partition entries to disk (primary and backup)
-    if(!fat32_disk_write( GPT_ENTRIES_START_LBA, total_entries_sectors, gpt_partitions)) {
+    if(!disk_write( GPT_ENTRIES_START_LBA, total_entries_sectors, gpt_partitions)) {
         printf("[PARTITION] Failed to write primary GPT partition entries for disk!\n");
         return false;
     }
     
     uint64_t backup_entries_lba = TOTAL_SECTORS - total_entries_sectors - 1;
-    if (!fat32_disk_write( backup_entries_lba, total_entries_sectors, gpt_partitions)) {
+    // if (!kebla_disk_write( backup_entries_lba, total_entries_sectors, partitions)) {
+    if (!disk_write( backup_entries_lba, total_entries_sectors, gpt_partitions)) {
         printf("[PARTITION] Failed to write backup GPT partition entries for disk!\n");
         return false;
     }
@@ -129,7 +130,7 @@ bool update_partition(
         (sizeof(GPTPartitionEntry) * GPT_ENTRIES_COUNT + SECTOR_SIZE - 1)
         / SECTOR_SIZE;
 
-    if (!fat32_disk_read(GPT_ENTRIES_START_LBA,
+    if (!disk_read(GPT_ENTRIES_START_LBA,
                    total_entries_sectors,
                    gpt_partitions)) {
         printf("[PARTITION] Failed to read GPT entries!\n");
@@ -166,7 +167,7 @@ bool update_partition(
     }
 
     // 3️⃣ Rewrite PRIMARY partition entry array
-    if (!fat32_disk_write(GPT_ENTRIES_START_LBA,
+    if (!disk_write(GPT_ENTRIES_START_LBA,
                     total_entries_sectors,
                     gpt_partitions)) {
         printf("[PARTITION] Failed to write primary GPT entries!\n");
@@ -177,7 +178,7 @@ bool update_partition(
     uint64_t backup_entries_lba =
         TOTAL_SECTORS - total_entries_sectors - 1;
 
-    if (!fat32_disk_write(backup_entries_lba,
+    if (!disk_write(backup_entries_lba,
                     total_entries_sectors,
                     gpt_partitions)) {
         printf("[PARTITION] Failed to write backup GPT entries!\n");

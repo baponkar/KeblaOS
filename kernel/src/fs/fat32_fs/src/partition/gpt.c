@@ -61,17 +61,16 @@ TWO PARTITIONS ARE CREATED IN THIS EXAMPLE:
 └─────────────────────────────────────────────────────────────┘
 */
 
-#include "../../../lib/string.h"
-#include "../../../lib/stdlib.h"
-#include "../../../lib/stdio.h"
-#include "../../../lib/ctype.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-#include "../include/diskio.h"
+#include "../../include/diskio.h"
 
-#include "../include/mbr.h"
+#include "../../include/mbr.h"
 
 
-#include "../include/gpt.h"
+#include "../../include/gpt.h"
 
 
 
@@ -92,10 +91,10 @@ uint32_t crc32(const void *data, size_t length) {
 }
 
 
-
+// Creating a GPT Partition Entry and return it's pointer
 GPTPartitionEntry *create_gpt_partition_entry(
-    uint8_t type_guid[16], 
-    uint8_t unique_guid[16], 
+    const uint8_t type_guid[16], 
+    const uint8_t unique_guid[16], 
     uint64_t start_lba, 
     uint64_t end_lba, 
     uint64_t attributes, 
@@ -130,7 +129,7 @@ GPTPartitionEntry *create_gpt_partition_entry(
 This function will create both primary and backup GPT headers, write them to disk. 
 It will not write partition entries to disk, it will only create headers and write them to disk.
 It will also calculate CRC32 for both headers and entries and update the headers accordingly.
- It returns true on success and false on failure.
+It returns true on success and false on failure.
 */
 bool create_gpt_header(
     uint64_t tot_sectors, 
@@ -139,6 +138,11 @@ bool create_gpt_header(
     const guid_t disk_guid, 
     GPTPartitionEntry *partitions) {
     
+    if(!primary_header || !backup_header){
+        printf("[PARTITION] Primary or Backup GPT header pointer is NULL for disk!\n");
+        return false;
+    }
+
     if(partitions == NULL){
         printf("[PARTITION] GPT Partition entries pointer is NULL for disk!\n");
         return false;
@@ -146,12 +150,6 @@ bool create_gpt_header(
 
     if(tot_sectors < 128){
         printf("[PARTITION] Disk has less than 128 sectors!\n");
-
-        return false;
-    }
-    
-    if(!primary_header || !backup_header){
-        printf("[PARTITION] Primary or Backup GPT header pointer is NULL for disk!\n");
         return false;
     }
 
@@ -168,8 +166,8 @@ bool create_gpt_header(
     primary_header->first_usable_lba = entry_sectors + 2;                   // mbr(0) + primary gpt(1) + partition entries(2-33)
     primary_header->last_usable_lba = tot_sectors - entry_sectors - 2;      // before backup entries and backup gpt
     memcpy(primary_header->disk_guid, disk_guid, 16);
-    primary_header->entries_lba = GPT_ENTRIES_START_LBA;        // Partition entries start at LBA 2
-    primary_header->entries_count = GPT_ENTRIES_COUNT;
+    primary_header->entries_lba = GPT_ENTRIES_START_LBA;                    // Partition entries start at LBA 2
+    primary_header->entries_count = GPT_ENTRIES_COUNT;                      // Total 128 Entry
     primary_header->entry_size = GPT_ENTRY_SIZE;
 
     // Creating Backup Header
@@ -197,23 +195,22 @@ bool create_gpt_header(
     primary_header->entries_crc32 = entries_crc;
     backup_header->entries_crc32 = entries_crc;
 
-    
-    
+    // Calculate CRC32 of GPT Header
     primary_header->header_crc32 = crc32(primary_header, primary_header->header_size);
     backup_header->header_crc32 = crc32(backup_header, backup_header->header_size);
 
     uint8_t temp_buffer[512];
-    memset(temp_buffer, 0, sizeof(temp_buffer));
+    memset(temp_buffer, 0, sizeof(temp_buffer));    // Clearing Buffer
 
-    memcpy(temp_buffer, primary_header, sizeof(GPTHeader));
+    memcpy(temp_buffer, primary_header, sizeof(GPTHeader)); // Copy Header into buffer
     // Writing primary GPT header to disk
-    if(!fat32_disk_write( 1, 1, temp_buffer)) {
+    if(!disk_write( 1, 1, temp_buffer)) {
         printf("[PARTITION] Failed to write primary GPT header for disk!\n");
         return false;
     }
 
     // Write backup GPT header to disk
-    if (!fat32_disk_write( tot_sectors - 1, 1, backup_header)) {
+    if (!disk_write( tot_sectors - 1, 1, backup_header)) {
         printf("[PARTITION] Failed to write backup GPT header for disk!\n");
         return false;
     }

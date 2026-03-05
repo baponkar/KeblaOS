@@ -12,22 +12,23 @@
 #include  "../../memory/vmm.h"
 
 
-
+#include "../../sys/controllers/mass_storage.h"
 #include "../pci/pci.h"
 
 #include "ahci/sata_disk.h"
 #include  "ahci/satapi.h"
+#include "ahci/ahci.h"
 
-#include "../vga/vga_term.h"    // For Progress Bar
+
 
 #include "disk.h"
 
 extern bool debug_on;
 
-extern pci_device_t* mass_storage_controllers;     // Array to store detected mass storage devices
-extern int mass_storage_controllers_count;
+// extern pci_device_t* mass_storage_controllers;     // Array to store detected mass storage devices
+// extern int mass_storage_controllers_count;
 
-#define MAX_TOTAL_DISKS 32
+#define MAX_TOTAL_DISKS 2
 
 Disk *disks = NULL;
 int disk_count = 0;
@@ -40,6 +41,7 @@ bool kebla_disk_status(int disk_no){
         printf("[DISK] disks is NULL\n");
         return false;
     }
+
     if(disk_no > disk_count){
         printf("[DISK] disk_no: %d, disk_count: %d\n", disk_no, disk_count);
         return false;
@@ -70,84 +72,121 @@ bool kebla_disk_status(int disk_no){
     return true;
 }
 
+
 // Initialize and detect disks connected to the system
 int kebla_get_disks(){
 
+    disk_count = 0;
+
     if(!disks){
         disks = (Disk *)malloc(sizeof(Disk) * MAX_TOTAL_DISKS);
-        if(!disks) return -1;
+        if(!disks){
+            printf("[DISK] Memory allocation for disks is failed!\n");
+            return -1;
+        } 
     } 
     memset(disks, 0, sizeof(Disk) * MAX_TOTAL_DISKS);
-
-    for(int i=0; i < MAX_TOTAL_DISKS; i++){
-        disks[i].type = DISK_TYPE_UNKNOWN;
-        disks[i].bytes_per_sector = 0;
-        disks[i].total_sectors = 0;
-        disks[i].context = NULL;
-        disks[i].initialized = false;
-    }
     
+    printf("Scanning Mass Storage Controllers...\n");
+
+    printf("MSC count = %d\n", mass_storage_controllers_count);
 
     for(int c_idx=0; c_idx < mass_storage_controllers_count; c_idx++){
+        printf("c_idx: %d\n", c_idx);
         pci_device_t dev = mass_storage_controllers[c_idx];
 
-        if(dev.class_code == 0x01){         // Mass Storage Class
-            if(dev.subclass_code == 0x06){  // SATA Controller
+        if(dev.class_code == MASS_STORAGE_CLASS){                       // Mass Storage Class
+            if(dev.subclass_code == MASS_STORAGE_SUBCLASS_SERIAL_ATA){  // SATA Controller
                 // AHCI or IDE
                 if(dev.prog_if == 0x01){   // AHCI 1.0 Controller
 
-                    uint64_t bar5 = (uint64_t) (dev.base_address_registers[5] & ~0xF);
+                    uint64_t bar5_val = dev.base_address_registers[5];
+                    int is_64bit = ((bar5_val & 0x6) == 0x4);           // bits 2:1 = 10
+                    uint64_t bar5 = (uint64_t) bar5_val & ~0xF;
+                    if (is_64bit) {
+                        // BAR6 contains the high 32 bits
+                        uint64_t high = dev.base_address_registers[6];
+                        bar5 |= (high << 32);
+                        printf("64 bit bar5: %x\n", bar5);
+                    }
+                    printf("32 bit bar5: %x\n", bar5);
+
                     if(bar5 == 0) return -1;                            // Skip if BAR5 is not set
 
                     HBA_MEM_T *abar = (HBA_MEM_T *) phys_to_vir(bar5);  // Map to virtual address
                     if(!abar) return -1;                                // Skip if mapping fails
 
+                    printf("abar: %x, version: %x\n", (uint64_t) abar, abar->vs);
+
+                    uint32_t pi = abar->pi;
+
+                    if(disk_count >= MAX_TOTAL_DISKS){
+                        return disk_count;
+                    }
+
                     for (size_t i = 0; i < 32; i++) 
                     {
+
+                        if(!(pi & (1 << i))) continue;
+
                         HBA_PORT_T *port = &abar->ports[i];
+
+
+
+                        uint32_t ssts = port->ssts;
+                        uint8_t det = ssts & 0x0F;
+                        uint8_t ipm = (ssts >> 8) & 0x0F;
+
+                        if(det != 3 || ipm != 1) continue;
+
                         int type = checkType(port);
+                        printf("Type: %d\n", type);
                         if(type == AHCI_DEV_SATA){
-                            // printf("controller no: %d, SATA Drive Found at port %d\n",c_idx, i);
+                            
+                            printf("controller no: %d, SATA Drive Found at port %d\n",c_idx, i);
                             disks[disk_count].type = DISK_TYPE_AHCI_SATA;
                             disks[disk_count].context = (void *)&abar->ports[i];    // Rebase the port
+                            SataPortRebase(port);
                             disks[disk_count].bytes_per_sector = sata_get_bytes_per_sector(&abar->ports[i]);
                             disks[disk_count].total_sectors = sata_get_total_sectors(&abar->ports[i]);
+
+                            printf("Byte/Sector: %d, Total Sectors: %llu\n", disks[disk_count].bytes_per_sector, disks[disk_count].total_sectors);
                             
                             if(disks[disk_count].bytes_per_sector <= 0 || disks[disk_count].total_sectors <= 0){
                                 continue;
                             }else{
                                 disks[disk_count].initialized = true;
-                                if(debug_on) printf("[DISK] Disk No: %d, type:%d, Sector Space: %d Byte, Total Sectors: %d\n", 
-                                disk_count, disks[disk_count].type, disks[disk_count].bytes_per_sector, disks[disk_count].total_sectors);
                             }
+
+                            if(disk_count >= MAX_TOTAL_DISKS) return disk_count;
 
                             disk_count++;
                         }else if(type == AHCI_DEV_SATAPI){
-                            // printf("controller no: %d, SATAPI Drive Found at port %d\n", c_idx, i);
+                            printf("controller no: %d, SATAPI Drive Found at port %d\n", c_idx, i);
                             disks[disk_count].type = DISK_TYPE_SATAPI;
                             disks[disk_count].context = (void *)&abar->ports[i];	// Rebase the port
+                            AtpiPortRebase(disks[disk_count].context);
                             disks[disk_count].bytes_per_sector = satapi_get_bytes_per_sector(&abar->ports[i]);
                             disks[disk_count].total_sectors = satapi_get_total_sectors(&abar->ports[i]);
+                            
+                            printf("Byte/Sector: %d, Total Sectors: %llu\n", disks[disk_count].bytes_per_sector, disks[disk_count].total_sectors);
                             
                             if(disks[disk_count].bytes_per_sector <= 0 || disks[disk_count].total_sectors <= 0){
                                 continue;
                             }else{
                                 disks[disk_count].initialized = true;
-                                if(debug_on) printf("[DISK] Disk No: %d, type:%d, Sector Space: %d Byte, Total Sectors: %d\n", 
-                                disk_count, disks[disk_count].type, disks[disk_count].bytes_per_sector, disks[disk_count].total_sectors);
                             }
                             
-                            if(debug_on) printf("[DISK] Disk No: %d, type:%d, Sector Space: %d Byte, Total Sectors: %d\n", 
-                                disk_count, disks[disk_count].type, disks[disk_count].bytes_per_sector, disks[disk_count].total_sectors);
+                            if(disk_count >= MAX_TOTAL_DISKS) return disk_count;
                             disk_count++;
                         }else if(type == AHCI_DEV_SEMB){
-                            // printf("Port: %d, AHCI Device Type: %d\n", i,  AHCI_DEV_SEMB);
+                            printf("Port: %d, AHCI Device Type: %d\n", i,  AHCI_DEV_SEMB);
                         }else if(type == AHCI_DEV_PM){
-                                // printf("Port: %d, AHCI Device Type: %d\n", i, AHCI_DEV_PM);
+                            printf("Port: %d, AHCI Device Type: %d\n", i, AHCI_DEV_PM);
                         }else if(type == AHCI_DEV_NULL){
 
                         }else{
-                                       
+
                         }
                     }
                 }else if(dev.prog_if == 0x00){ // IDE Controller
@@ -155,26 +194,27 @@ int kebla_get_disks(){
                 }else{ // Unknown SATA
                     
                 }
-            }else if(dev.subclass_code == 0x05){ // NVMe Controller
+            }else if(dev.subclass_code == MASS_STORAGE_SUBCLASS_NON_VOLATILE_MEM){ // NVMe Controller
                 
-            }else if(dev.subclass_code == 0x04){ // SCSI Controller
+            }else if(dev.subclass_code == MASS_STORAGE_SUBCLASS_SCSI){ // SCSI Controller
+            
+            }else if(dev.subclass_code == MASS_STORAGE_SUBCLASS_IDE){ // IDE Controller
                 
-            }else if(dev.subclass_code == 0x0E){ // SATAPI Controller
+            }else if(dev.subclass_code == MASS_STORAGE_SUBCLASS_FLOPY_DISK){ // Floppy Controller
                 
-            }else if(dev.subclass_code == 0x03){ // IDE Controller
-                
-            }else if(dev.subclass_code == 0x02){ // Floppy Controller
-                
-            }else if(dev.subclass_code == 0x01){ // RAID Controller
+            }else if(dev.subclass_code == MASS_STORAGE_SUBCLASS_RAID){ // RAID Controller
                 
             }else{ // Unknown Mass Storage Controller
                 
             }
+        }else{
+            continue;
         }
     }
 
     return disk_count;
 }
+
 
 void kebla_disk_check(){
 
@@ -478,7 +518,6 @@ int clear_disk(int disk_no, int *progress){
         *progress = (int)((lba * 100) / total_sectors);
 
         // printf("%d %% ", *progress);
-        draw_progress_bar(*progress, 100, 200);
 
         uint32_t sectors_to_write = (lba + MAX_BATCH_SIZE <= total_sectors) ? MAX_BATCH_SIZE : (total_sectors - lba);
         if (!kebla_disk_write(disk_no, lba, sectors_to_write, buffer)) {

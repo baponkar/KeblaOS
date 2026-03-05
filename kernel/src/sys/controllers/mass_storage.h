@@ -4,6 +4,10 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "../../driver/pci/pci.h"
+
+#define MASS_STORAGE_CLASS 0x01
+
 typedef enum {
     MASS_STORAGE_SUBCLASS_IDE = 0x1,
     MASS_STORAGE_SUBCLASS_FLOPY_DISK = 0x2,

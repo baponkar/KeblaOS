@@ -4,6 +4,11 @@
 *.crt
 *.priv
 *.signed
+*.o
+*.bin
+*.iso
+*.img
+*/build/*
 
 
 # ignoring following directories

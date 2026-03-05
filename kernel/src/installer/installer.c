@@ -242,8 +242,9 @@ bool format_disk_and_install(int iso_disk_no, int boot_disk_no){
         }
         printf(" Successfully created %s\n\n", file_name);
 
+        // Storing limine.conf in root directory
         if(memcmp(file_name, "limine.conf", 11) == 0){
-            if(!fat32_path_to_cluster( "/efi/boot", &dir_cluster)){
+            if(!fat32_path_to_cluster( "/", &dir_cluster)){
                 return false;
             }
 

@@ -13,6 +13,8 @@
 bool sata_read(HBA_PORT_T* port, size_t _lba, size_t _count, uintptr_t _buf_phys_addr);
 bool sata_write(HBA_PORT_T* port, size_t _lba, size_t _count, uintptr_t _phys_buf_addr);
 
+void SataPortRebase(HBA_PORT_T *port);
+
 uint64_t sata_get_total_sectors(HBA_PORT_T* port);
 uint16_t sata_get_bytes_per_sector(HBA_PORT_T* port);
 
