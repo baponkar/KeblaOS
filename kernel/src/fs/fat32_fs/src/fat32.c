@@ -4,250 +4,200 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "../include/fat32_bpb.h"
 #include "../include/fat32.h"
 
-extern uint32_t fat32_cwd_cluster;          // Defined in cluster_manager
-extern BPB *bpb;                            // Defined in fat32
 
+void fat32_fs_test(){
 
-// This function changes the current working directory to the specified path, which can be either absolute or relative.
-bool fat32_change_current_directory( const char *path)
-{
-    if (!path || !path[0])
-        return false;
+    printf("\n===== FAT32 TEST START =====\n");
 
-    uint32_t current;
+    // Directory Test
 
-    /* absolute path */
-    if (path[0] == '/')
-        current = bpb->BPB_RootClus;
+    FAT32_DIR dir;
+    FAT32_DIRENT entry;
+
+    // change directory to root
+    if (f_cwd("/")){
+        printf("[OK] cwd -> /\n");
+    }else{
+        printf("[FAIL] cwd root\n");
+    }
+
+    // create directories
+    if (f_mkdir("/mylongtestdir")){
+        printf("[OK] mkdir /mylongtestdir\n");
+    }else{
+        printf("[FAIL] mkdir /mylongtestdir (maybe exists)\n");
+    }
+
+    if (f_mkdir("/mylongtestdir/subdir")){
+        printf("[OK] mkdir /mylongtestdir/subdir\n");
+    }else{
+        printf("[FAIL] mkdir /mylongtestdir/subdir\n");
+    }
+
+    // open directory 
+    if (f_opendir(&dir, "/mylongtestdir")){
+        printf("[OK] opendir /mylongtestdir\n");
+    }else{
+        printf("[FAIL] opendir /mylongtestdir\n");
+    }
+
+    // list directory
+    printf("\nListing /mylongtestdir directory:\n");
+
+    while (f_readdir(&dir, &entry))
+    {
+        printf("  name:%s  size:%u  cluster:%u  attr:%02X\n",
+               entry.name,
+               entry.size,
+               entry.first_cluster,
+               entry.attr);
+    }
+
+    f_closedir(&dir);
+
+    // rename directory
+    if (f_rename("/mylongtestdir/subdir", "/mylongtestdir/subdir2")){
+        printf("[OK] rename subdir -> subdir2\n");
+    }else{
+        printf("[FAIL] rename directory\n");
+    }
+
+    // open directory again
+    if (f_opendir(&dir, "/mylongtestdir"))
+    {
+        printf("\nListing /mylongtestdir after rename:\n");
+
+        while (f_readdir(&dir, &entry))
+        {
+            printf("  %s\n", entry.name);
+        }
+
+        f_closedir(&dir);
+    }
+
+    // pattern search
+    printf("\nTesting findfirst/findnext (*.TXT):\n");
+
+    if (f_findfirst(&dir, &entry, "/", "*.TXT"))
+    {
+        do {
+            printf("  found: %s\n", entry.name);
+        }
+        while (f_findnext(&dir, &entry, "*.TXT"));
+
+        f_closedir(&dir);
+    }
     else
-        current = fat32_cwd_cluster;
-
-    /* root */
-    if (strcmp(path, "/") == 0) {
-        fat32_cwd_cluster = bpb->BPB_RootClus;
-        return true;
+    {
+        printf("  no TXT files found\n");
     }
 
-    char tmp[256];
-    strcpy(tmp, path);
 
-    char *token = strtok(tmp, "/");
 
-    while (token) {
+    
+    // File Test
 
-        if (strcmp(token, ".") == 0) {
-            /* do nothing */
-        }
-        else if (strcmp(token, "..") == 0) {
-            /* read parent from ".." entry */
-            uint32_t parent;
-            if (fat32_find_dir( current, "..", &parent))
-                current = parent;
-        }
-        else {
-            uint32_t next;
-            if (!fat32_find_dir( current, token, &next)) {
-                printf("Directory not found: %s\n", token);
-                return false;
-            }
-            current = next;
-        }
+    FAT32_FILE file;
+    FAT32_STAT st;
 
-        token = strtok(NULL, "/");
+    uint32_t bw, br;
+
+    char buffer[128];
+    char line[128];
+
+    // create file
+    if (!f_open(&file, "mylongtestfile.txt", FA_CREATE_ALWAYS | FA_WRITE))
+    {
+        printf("f_open create failed\n");
+        return;
+    }
+    printf("File created\n");
+
+    // write text
+    f_puts("Hello KeblaOS\n", &file);
+    f_printf(&file, "Number: %d\n", 12345);
+
+    const char *msg = "Direct write test\n";
+    f_write(&file, msg, strlen(msg), &bw);
+
+    printf("Written bytes: %u\n", bw);
+
+    // file position 
+    printf("File pos: %u\n", f_tell(&file));
+
+    // sync file
+    f_sync(&file);
+
+    // close file
+    f_close(&file);
+
+    printf("File closed\n");
+
+    // reopen for read
+    if (!f_open(&file, "mylongtestfile.txt", FA_READ))
+    {
+        printf("f_open read failed\n");
+        return;
     }
 
-    fat32_cwd_cluster = current;
+    printf("\nReading file:\n");
 
-    return true;
+    while (f_gets(line, sizeof(line), &file))
+    {
+        printf("%s", line);
+    }
+
+    printf("\nEOF reached: %d\n", f_eof(&file));
+
+    printf("File size: %u\n", f_size(&file));
+
+    // seek test
+    f_lseek(&file, 0);
+
+    f_read(&file, buffer, 20, &br);
+    buffer[br] = '\0';
+
+    printf("\nFirst 20 bytes:\n%s\n", buffer);
+
+    f_close(&file);
+
+    // stat test 
+    if (f_stat("mylongtestfile.txt", &st))
+    {
+        printf("\nSTAT INFO\n");
+        printf("Name: %s\n", st.name);
+        printf("Size: %u\n", st.size);
+        printf("Cluster: %u\n", st.first_cluster);
+        printf("Attr: %02X\n", st.attr);
+    }
+    else
+    {
+        printf("stat failed\n");
+    }
+
+    // truncate test
+    if (f_open(&file, "mylongtestfile.txt", FA_WRITE))
+    {
+        f_lseek(&file, 5);
+        f_truncate(&file);
+        f_close(&file);
+
+        printf("File truncated to 5 bytes\n");
+    }
+
+    // unlink test
+    if (f_unlink("mylongtestfile.txt")){
+        printf("File deleted\n");
+    }else{
+        printf("File delete failed\n");
+    }
+
+    printf("\n===== FAT32 TEST END =====\n");
 }
 
 
-
-bool fat32_mkdir( const char* dirpath) {
-    if (!dirpath || !bpb) return false;
-
-    char path_copy[256];
-    strncpy(path_copy, dirpath, sizeof(path_copy));
-
-    path_copy[sizeof(path_copy) - 1] = '\0';
-
-    // Remove trailing '/'
-    size_t len = strlen(path_copy);
-    if (len > 1 && path_copy[len - 1] == '/'){
-        path_copy[len - 1] = '\0';
-    }
-
-    char *last_slash = strrchr(path_copy, '/');
-
-    uint32_t parent_cluster;
-    char *dirname;
-
-    if (!last_slash) {
-        parent_cluster = fat32_cwd_cluster;
-        dirname = path_copy;
-    }
-    else if (last_slash == path_copy) {
-        // parent is root
-        parent_cluster = bpb->BPB_RootClus;
-        dirname = last_slash + 1;
-    }
-    else {
-        *last_slash = '\0';
-        dirname = last_slash + 1;
-
-        if (!fat32_path_to_cluster( path_copy, &parent_cluster)){
-                printf("Parent directory not found: %s\n", path_copy);
-                return false;
-        }
-    }
-
-    if (strlen(dirname) == 0){
-        printf("Invalid directory name\n");
-        return false;
-    }
-        
-
-    // already exists?
-    if (fat32_dir_exists( parent_cluster, dirname)){
-        printf("Directory already exists: %s\n", dirname);
-        return false;
-    }
-        
-
-    bool ok = fat32_mkdir_internal( parent_cluster, dirname);
-    if (!ok) {
-        printf("Failed to create directory: %s\n", dirname);
-        return false;
-    }
-    return true;
-        
-}
-
-
-bool fat32_open( const char *path, FAT32_FILE *file)
-{
-    if (!file || !path)
-        return false;
-
-    char tmp[256];
-    strcpy(tmp, path);
-
-    char *last = strrchr(tmp, '/');
-
-    uint32_t parent_cluster;
-    char *filename;
-
-    if (!last) {
-        parent_cluster = fat32_cwd_cluster;
-        filename = tmp;
-    } else if (last == tmp) {
-        parent_cluster = bpb->BPB_RootClus;
-        filename = last + 1;
-    } else {
-        *last = '\0';
-        filename = last + 1;
-
-        if (!fat32_path_to_cluster( tmp, &parent_cluster)){
-            return false;
-        }  
-    }
-
-    DirEntry entry;
-    uint32_t ec, eo;
-
-    if (!fat32_find_file( parent_cluster, filename, &entry, &ec, &eo))
-        return false;
-
-    file->first_cluster = (entry.DIR_FstClusHI << 16) | entry.DIR_FstClusLO;
-
-    file->size = entry.DIR_FileSize;
-    file->pos = 0;
-    file->parent_cluster = parent_cluster;
-    memcpy(file->name, entry.DIR_Name, 11);
-
-    return true;
-}
-
-uint32_t fat32_read(FAT32_FILE *file, void *buffer, uint32_t size)
-{
-    if (!file || !buffer)
-        return 0;
-
-    if (file->pos >= file->size)
-        return 0;
-
-    uint32_t remaining = file->size - file->pos;
-    if (size > remaining)
-        size = remaining;
-
-    uint32_t cluster_size = get_cluster_size_bytes();
-    uint8_t *cluster_buf = malloc(cluster_size);
-    if (!cluster_buf)
-        return 0;
-
-    uint32_t current = file->first_cluster;
-    uint32_t bytes_read = 0;
-    uint32_t file_offset = file->pos;
-
-    // Skip clusters until reaching correct offset
-    while (file_offset >= cluster_size && is_valid_cluster(current)) {
-        file_offset -= cluster_size;
-        current = fat32_get_next_cluster(current);
-    }
-
-    while (bytes_read < size && is_valid_cluster(current)) {
-
-        if (!fat32_read_cluster(current, cluster_buf)) {
-            free(cluster_buf);
-            return 0;
-        }
-
-        uint32_t copy_start = file_offset;
-        uint32_t copy_bytes = cluster_size - copy_start;
-
-        if (copy_bytes > (size - bytes_read))
-            copy_bytes = size - bytes_read;
-
-        memcpy(
-            (uint8_t*)buffer + bytes_read,
-            cluster_buf + copy_start,
-            copy_bytes
-        );
-
-        bytes_read += copy_bytes;
-        file_offset = 0;
-        current = fat32_get_next_cluster(current);
-    }
-
-    file->pos += bytes_read;
-    free(cluster_buf);
-
-    return bytes_read;
-}
-
-
-
-uint32_t fat32_write( FAT32_FILE *file, const void *buffer, uint32_t size)
-{
-    if (!file || !buffer)
-        return 0;
-
-    fat32_free_cluster_chain( file->first_cluster);
-
-    uint32_t new_cluster;
-
-    if (!fat32_write_cluster_chain(  buffer, size,  &new_cluster))
-        return 0;
-
-    file->first_cluster = new_cluster;
-    file->size = size;
-    file->pos = size;
-
-    return size;
-}
 
 
 

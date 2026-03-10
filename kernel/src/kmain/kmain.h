@@ -65,7 +65,7 @@
 #include "../fs/fat32_fs/include/mbr.h"
 #include "../fs/fat32_fs/include/partition_manager.h"
 
-#include "../installer/installer.h"
+#include "../installer/installer_1.h"
 
 
 // ACPI

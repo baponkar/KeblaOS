@@ -37,7 +37,7 @@ bool fat32_path_to_cluster( const char *path, uint32_t *out_cluster);
 bool fat32_find_file(  uint32_t dir_cluster, const char *name, DirEntry *out_entry, uint32_t *entry_cluster, uint32_t *entry_offset);
 
 
-
+bool fat32_split_path(const char *path, uint32_t *parent_cluster, char *name);
 
 
 

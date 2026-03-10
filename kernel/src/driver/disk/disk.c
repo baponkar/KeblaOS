@@ -19,7 +19,8 @@
 #include  "ahci/satapi.h"
 #include "ahci/ahci.h"
 
-
+#include "../vga/vga_term.h"
+#include "../vga/color.h"
 
 #include "disk.h"
 
@@ -87,12 +88,12 @@ int kebla_get_disks(){
     } 
     memset(disks, 0, sizeof(Disk) * MAX_TOTAL_DISKS);
     
-    printf("Scanning Mass Storage Controllers...\n");
+    // printf("Scanning Mass Storage Controllers...\n");
 
-    printf("MSC count = %d\n", mass_storage_controllers_count);
+    // printf("MSC count = %d\n", mass_storage_controllers_count);
 
     for(int c_idx=0; c_idx < mass_storage_controllers_count; c_idx++){
-        printf("c_idx: %d\n", c_idx);
+        // printf("c_idx: %d\n", c_idx);
         pci_device_t dev = mass_storage_controllers[c_idx];
 
         if(dev.class_code == MASS_STORAGE_CLASS){                       // Mass Storage Class
@@ -107,16 +108,16 @@ int kebla_get_disks(){
                         // BAR6 contains the high 32 bits
                         uint64_t high = dev.base_address_registers[6];
                         bar5 |= (high << 32);
-                        printf("64 bit bar5: %x\n", bar5);
+                        // printf("64 bit bar5: %x\n", bar5);
                     }
-                    printf("32 bit bar5: %x\n", bar5);
+                    // printf("32 bit bar5: %x\n", bar5);
 
                     if(bar5 == 0) return -1;                            // Skip if BAR5 is not set
 
                     HBA_MEM_T *abar = (HBA_MEM_T *) phys_to_vir(bar5);  // Map to virtual address
                     if(!abar) return -1;                                // Skip if mapping fails
 
-                    printf("abar: %x, version: %x\n", (uint64_t) abar, abar->vs);
+                    // printf("abar: %x, version: %x\n", (uint64_t) abar, abar->vs);
 
                     uint32_t pi = abar->pi;
 
@@ -140,17 +141,17 @@ int kebla_get_disks(){
                         if(det != 3 || ipm != 1) continue;
 
                         int type = checkType(port);
-                        printf("Type: %d\n", type);
+                        // printf("Type: %d\n", type);
                         if(type == AHCI_DEV_SATA){
                             
-                            printf("controller no: %d, SATA Drive Found at port %d\n",c_idx, i);
+                            // printf("controller no: %d, SATA Drive Found at port %d\n",c_idx, i);
                             disks[disk_count].type = DISK_TYPE_AHCI_SATA;
                             disks[disk_count].context = (void *)&abar->ports[i];    // Rebase the port
                             SataPortRebase(port);
                             disks[disk_count].bytes_per_sector = sata_get_bytes_per_sector(&abar->ports[i]);
                             disks[disk_count].total_sectors = sata_get_total_sectors(&abar->ports[i]);
 
-                            printf("Byte/Sector: %d, Total Sectors: %llu\n", disks[disk_count].bytes_per_sector, disks[disk_count].total_sectors);
+                            // printf("Byte/Sector: %d, Total Sectors: %llu\n", disks[disk_count].bytes_per_sector, disks[disk_count].total_sectors);
                             
                             if(disks[disk_count].bytes_per_sector <= 0 || disks[disk_count].total_sectors <= 0){
                                 continue;
@@ -162,14 +163,14 @@ int kebla_get_disks(){
 
                             disk_count++;
                         }else if(type == AHCI_DEV_SATAPI){
-                            printf("controller no: %d, SATAPI Drive Found at port %d\n", c_idx, i);
+                            // printf("controller no: %d, SATAPI Drive Found at port %d\n", c_idx, i);
                             disks[disk_count].type = DISK_TYPE_SATAPI;
                             disks[disk_count].context = (void *)&abar->ports[i];	// Rebase the port
                             AtpiPortRebase(disks[disk_count].context);
                             disks[disk_count].bytes_per_sector = satapi_get_bytes_per_sector(&abar->ports[i]);
                             disks[disk_count].total_sectors = satapi_get_total_sectors(&abar->ports[i]);
                             
-                            printf("Byte/Sector: %d, Total Sectors: %llu\n", disks[disk_count].bytes_per_sector, disks[disk_count].total_sectors);
+                            // printf("Byte/Sector: %d, Total Sectors: %llu\n", disks[disk_count].bytes_per_sector, disks[disk_count].total_sectors);
                             
                             if(disks[disk_count].bytes_per_sector <= 0 || disks[disk_count].total_sectors <= 0){
                                 continue;
@@ -471,42 +472,30 @@ bool kebla_disk_write(int disk_no, uint64_t lba, uint32_t count, void* buf) {
 
 #define MAX_BATCH_SIZE 512
 
-int clear_disk(int disk_no, int *progress){
+int clear_disk(int disk_no, size_t *progress){
 
     printf("[DISK] Formatting Disk %d: \n", disk_no);
 
-    if(!disks || disk_no >= disk_count || disk_no < 0){
-        printf("[DISK] Invalid Disk No %d\n", disk_no);
+    if(!disks || disk_no >= disk_count || disk_no < 0 || !progress){
         return -1;
     }
 
-    if(!progress){
-        printf("[DISK] progress is %p\n", progress);
-        return -1;
-    }
     *progress = 0;
 
-    if(!disks) return -1;
 
     Disk *disk = &disks[disk_no];
 
     uint64_t total_sectors = disk->total_sectors;
     uint32_t sector_size = disk->bytes_per_sector;
 
-    if(total_sectors <= 0){
-        printf("[DISK] Total Sectors: %llu\n", total_sectors);
+    if(total_sectors <= 0 || sector_size <= 0){
         return -1;
     }
 
-    if(sector_size <= 0){
-        printf("[DISK] Sector Size: %d\n", sector_size);
-        return -1;
-    }
 
-    uint64_t buffer_size = 512 * MAX_BATCH_SIZE;
+    uint64_t buffer_size = 512 * MAX_BATCH_SIZE;    // 512 x 2048 = 10,48,576 Bytes = 1024 KB = 1 MB
 
-
-    uint8_t *buffer = malloc(buffer_size); // allocating 20480 * 512 = 10 MB size
+    uint8_t *buffer = malloc(buffer_size);
     if (!buffer) {
         printf("[DISK] Failed to allocate memory for formatting disk %d.\n", disk_no);
         return -1;
@@ -515,9 +504,10 @@ int clear_disk(int disk_no, int *progress){
 
     for (uint64_t lba = 0; lba < total_sectors; lba += MAX_BATCH_SIZE) {
 
-        *progress = (int)((lba * 100) / total_sectors);
+        *progress = (size_t)((lba * 100) / total_sectors);
 
-        // printf("%d %% ", *progress);
+        draw_progress_bar(lba, total_sectors, 1024);
+        // printf("%llu ", *progress);
 
         uint32_t sectors_to_write = (lba + MAX_BATCH_SIZE <= total_sectors) ? MAX_BATCH_SIZE : (total_sectors - lba);
         if (!kebla_disk_write(disk_no, lba, sectors_to_write, buffer)) {

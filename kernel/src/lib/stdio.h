@@ -18,7 +18,7 @@ void puts(const char* str);
 void printf(const char* format, ...);
 
 void vsprintf(char* buf, const char* format, va_list args);
-void vsnprintf(char* buf, size_t size, const char* format, va_list args);
+int vsnprintf(char* buf, size_t size, const char* format, va_list args);
 
 void sprintf(char* buf, const char* format, ...);
 void snprintf(char* buf, size_t size, const char* format, ...);

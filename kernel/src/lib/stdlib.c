@@ -143,9 +143,10 @@ void *malloc(size_t size) {
 
     // Allocate space for header + user data
     size_t total_size = HEADER_SIZE + size + TAILER_SIZE;
+
     malloc_header_t *header = (malloc_header_t*)kheap_alloc(total_size, ALLOCATE_DATA);
-    
     if (!header) return NULL;
+    memset(header, 0,  HEADER_SIZE);
     
     // Initialize header
     header->size = size;
@@ -155,11 +156,14 @@ void *malloc(size_t size) {
     void *ptr = (void *) ((uint8_t*)header + HEADER_SIZE);
     memset(ptr, 0, size);
 
-    void *tailer_ptr = (void *) ((uint8_t*)header + HEADER_SIZE + size);
+    malloc_header_t *tailer_ptr = ( malloc_header_t *) ((uint8_t*)header + HEADER_SIZE + size);
     memset(tailer_ptr, 0,  TAILER_SIZE);
+
+     // Initialize tailer
+    tailer_ptr->size = size;
+    tailer_ptr->magic = MAGIC;
     
-    // Return pointer to user data (after header)
-    return (void*)((uint8_t*)header + HEADER_SIZE);
+    return ptr;
 }
 
 void free(void *ptr) {
@@ -167,44 +171,22 @@ void free(void *ptr) {
     
     // Get header from user pointer
     malloc_header_t *header = (malloc_header_t*)((uint8_t*)ptr - HEADER_SIZE);
+     malloc_header_t *tailer = (malloc_header_t*)((uint8_t*)ptr + header->size);
     
     // Validate magic number to detect corruption
-    if (header->magic != MAGIC) {
-        printf("Memory Header magic number corrupted: [%x/%x]\n", header->magic, MAGIC);
+    if (header->magic != MAGIC || tailer->magic != MAGIC) {
+        printf("Memory Header magic number corrupted: [%x/%x], [%x/%x]\n", header->magic, MAGIC, tailer->magic, MAGIC);
         return;
     }
     
     size_t total_size = HEADER_SIZE + header->size + TAILER_SIZE;
     header->magic = 0;
+    header->size = 0;
+    tailer->magic = 0;
     
     // Free the entire block (header + user data + tailer)
     kheap_free(header, total_size);
 }
-
-// void free(void *ptr) {
-//     if (ptr == NULL) return;
-
-//     malloc_header_t *header = (malloc_header_t*)((uint8_t*)ptr - HEADER_SIZE);
-
-//     if (header->magic != MAGIC) {
-//         printf("Memory Header corrupted [%x/%x]\n", header->magic, MAGIC);
-//         while(1);
-//     }
-
-//     uint8_t *tail = (uint8_t*)header + HEADER_SIZE + header->size;
-
-//     for (size_t i = 0; i < TAILER_SIZE; i++) {
-//         if (tail[i] != 0) {
-//             printf("Heap overflow detected!\n");
-//             printf("Block size: %u\n", header->size);
-//             while(1);
-//         }
-//     }
-
-//     size_t total_size = HEADER_SIZE + header->size + TAILER_SIZE;
-//     memset(header, 0, total_size);
-//     kheap_free(header, total_size);
-// }
 
 
 void *calloc(size_t nmemb, size_t size) {

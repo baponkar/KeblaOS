@@ -11,7 +11,7 @@ bool disk_write(uint64_t lba, uint32_t count, const void* buffer);
 
 
 
-
+bool diskio_test(uint32_t lba);
 
 
 

@@ -540,119 +540,183 @@ static char* sprint_str_limit(char* buffer, const char* s, size_t* remaining) {
     return buffer;
 }
 
-void vsnprintf(char* buf, size_t size, const char* format, va_list args) {
+//
+int vsnprintf(char* buf, size_t size, const char* format, va_list args) {
     char* out = buf;
     size_t remaining = size;
+    int total = 0;
 
     for (const char* ptr = format; *ptr != '\0'; ptr++) {
+
         if (*ptr == '%') {
             ptr++;
 
             if (*ptr == 'l') {
                 ptr++;
+
                 if (*ptr == 'd') {
                     long val = va_arg(args, long);
                     char tmp[32];
                     int i = 0;
+
                     if (val < 0) {
+                        total++;
                         out = sprint_char_limit(out, '-', &remaining);
                         val = -val;
                     }
+
                     do {
                         tmp[i++] = '0' + (val % 10);
                         val /= 10;
                     } while (val > 0);
-                    while (i > 0) out = sprint_char_limit(out, tmp[--i], &remaining);
+
+                    total += i;
+
+                    while (i > 0)
+                        out = sprint_char_limit(out, tmp[--i], &remaining);
                 }
+
                 else if (*ptr == 'u') {
                     unsigned long val = va_arg(args, unsigned long);
                     char tmp[32];
                     int i = 0;
+
                     do {
                         tmp[i++] = '0' + (val % 10);
                         val /= 10;
                     } while (val > 0);
-                    while (i > 0) out = sprint_char_limit(out, tmp[--i], &remaining);
+
+                    total += i;
+
+                    while (i > 0)
+                        out = sprint_char_limit(out, tmp[--i], &remaining);
                 }
-                else if (*ptr == 'l') { // long long
+
+                else if (*ptr == 'l') {
                     ptr++;
+
                     if (*ptr == 'd') {
                         long long val = va_arg(args, long long);
                         char tmp[32];
                         int i = 0;
+
                         if (val < 0) {
+                            total++;
                             out = sprint_char_limit(out, '-', &remaining);
                             val = -val;
                         }
+
                         do {
                             tmp[i++] = '0' + (val % 10);
                             val /= 10;
                         } while (val > 0);
-                        while (i > 0) out = sprint_char_limit(out, tmp[--i], &remaining);
+
+                        total += i;
+
+                        while (i > 0)
+                            out = sprint_char_limit(out, tmp[--i], &remaining);
                     }
+
                     else if (*ptr == 'u') {
                         unsigned long long val = va_arg(args, unsigned long long);
                         char tmp[32];
                         int i = 0;
+
                         do {
                             tmp[i++] = '0' + (val % 10);
                             val /= 10;
                         } while (val > 0);
-                        while (i > 0) out = sprint_char_limit(out, tmp[--i], &remaining);
+
+                        total += i;
+
+                        while (i > 0)
+                            out = sprint_char_limit(out, tmp[--i], &remaining);
                     }
                 }
             }
+
             else {
                 switch (*ptr) {
+
                     case 'd': {
                         int val = va_arg(args, int);
                         char tmp[32];
                         int i = 0;
+
                         if (val < 0) {
+                            total++;
                             out = sprint_char_limit(out, '-', &remaining);
                             val = -val;
                         }
+
                         do {
                             tmp[i++] = '0' + (val % 10);
                             val /= 10;
                         } while (val > 0);
-                        while (i > 0) out = sprint_char_limit(out, tmp[--i], &remaining);
+
+                        total += i;
+
+                        while (i > 0)
+                            out = sprint_char_limit(out, tmp[--i], &remaining);
                         break;
                     }
+
                     case 'u': {
                         unsigned int val = va_arg(args, unsigned int);
                         char tmp[32];
                         int i = 0;
+
                         do {
                             tmp[i++] = '0' + (val % 10);
                             val /= 10;
                         } while (val > 0);
-                        while (i > 0) out = sprint_char_limit(out, tmp[--i], &remaining);
+
+                        total += i;
+
+                        while (i > 0)
+                            out = sprint_char_limit(out, tmp[--i], &remaining);
                         break;
                     }
-                    case 'c':
+
+                    case 'c': {
+                        total++;
                         out = sprint_char_limit(out, (char)va_arg(args, int), &remaining);
                         break;
-                    case 's':
-                        out = sprint_str_limit(out, va_arg(args, const char*), &remaining);
+                    }
+
+                    case 's': {
+                        const char* s = va_arg(args, const char*);
+                        if (!s) s = "(null)";
+
+                        const char* t = s;
+                        while (*t++) total++;
+
+                        out = sprint_str_limit(out, s, &remaining);
                         break;
-                    default:
+                    }
+
+                    default: {
+                        total += 2;
                         out = sprint_char_limit(out, '%', &remaining);
                         out = sprint_char_limit(out, *ptr, &remaining);
                         break;
+                    }
                 }
             }
         }
+
         else {
+            total++;
             out = sprint_char_limit(out, *ptr, &remaining);
         }
     }
 
-    if (remaining > 0) {
+    if (remaining > 0)
         *out = '\0';
-    } else if (size > 0) {
+    else if (size > 0)
         buf[size - 1] = '\0';
-    }
+
+    return total;
 }
 
 void snprintf(char* buf, size_t size, const char* format, ...) {

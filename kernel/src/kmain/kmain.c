@@ -23,10 +23,12 @@ extern uint64_t fb0_pitch;
 extern uint16_t fb0_bpp;
 
 
-extern ring_buffer_t* keyboard_buffer;          // To get the keyboard input
+extern ring_buffer_t* keyboard_buffer;       // To get the keyboard input
 
 extern Disk *disks;
 extern int disk_count; 
+
+#define BOOT_DISK_TOTAL_SECTORS 2097152     // 1 * 1024 * 1024 * 1024 / 512
 
 #define ESP_START_LBA 2048
 #define ESP_SECTORS (100 * 1024 * 1024 / 512)   // 100 MB
@@ -102,21 +104,22 @@ void kmain(){
     // vfs_test(boot_disk_no);
 
 
-    if(!verify_installation(iso_disk_no, ESP_START_LBA)){
-        printf("[KMAIN] Going to Install KeblaOS.\n");
-        if(format_disk_and_install(iso_disk_no, boot_disk_no)){
+    // if(!verify_installation(iso_disk_no, ESP_START_LBA)){
+    //     printf("[KMAIN] Going to Install KeblaOS.\n");
+        
+        if(uefi_install(iso_disk_no, boot_disk_no, BOOT_DISK_TOTAL_SECTORS)){
             printf("[KMAIN] Successfully Install KeblaOS in Disk %d.\n", boot_disk_no);
         }
-    }else{
-        printf("[KMAIN] KeblaOS is already installed in the Disk.\n");
-        disk_no = iso_disk_no;
-        if(fat32_mount(DATA_PART_START_LBA)){
-            printf("Successfully Mount Disk %d\n", iso_disk_no);
-        }
-    }
+    // }else{
+    //     printf("[KMAIN] KeblaOS is already installed in the Disk.\n");
+        // disk_no = iso_disk_no;
+        // if(fat32_mount(DATA_PART_START_LBA)){
+        //     printf("Successfully Mount Disk %d\n", iso_disk_no);
+        // }
+    // }
     
    
-    test_time_functions();
+    // test_time_functions();
 
     
     // mouse_init();
@@ -134,9 +137,9 @@ void kmain(){
     // init_user_mode();
 
     // Load and parse kernel modules by using limine bootloader
-    get_kernel_modules_info();
-    print_kernel_modules_info();
-    load_user_elf_and_jump();
+    // get_kernel_modules_info();
+    // print_kernel_modules_info();
+    // load_user_elf_and_jump();
 
     // acpi_poweroff();
     // acpi_reboot();

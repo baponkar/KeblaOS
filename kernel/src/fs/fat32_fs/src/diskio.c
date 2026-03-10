@@ -19,4 +19,3 @@ bool disk_write(uint64_t lba, uint32_t count, const void* buffer) {
     return kebla_disk_write(disk_no, lba, count, buffer);
 }
 
-

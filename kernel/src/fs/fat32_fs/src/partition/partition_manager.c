@@ -13,21 +13,26 @@
 #include "../../include/partition_manager.h"
 
 
-
-#define TOTAL_SECTORS 1 * 1024 * 1024 * 1024 / 512   // 1GB = 1 * 1024 * 1024 * 1024 Byte
+ 
 #define MAX_PARTITIONS 4
 
-PartitionEntry partitions[MAX_PARTITIONS];  // Array of PartitionEntry
+uint64_t total_sectors = 0;     // Example: 1GB = 1 * 1024 * 1024 * 1024 Byte
 
-size_t partition_count = 0;
+PartitionEntry *partitions;     // Array of PartitionEntry
+
+size_t partition_count = 0;     // Total Partition Present
+
+
+
 
 bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, const guid_t partition_guid, const guid_t partition_type_guid, char* name) {
     
     size_t partition_index = partition_count; // Get the next available partition index
+    total_sectors = sectors;
 
     // Creating and Write a Protective MBR at Sector 0
     ProtectiveMBR *protective_mbr = malloc(SECTOR_SIZE);
-    create_protective_mbr(protective_mbr, TOTAL_SECTORS);
+    create_protective_mbr(protective_mbr, total_sectors);
 
     if(!disk_write( 0, 1, protective_mbr)){
         printf("[PARTITION] Failed to write Protective MBR for disk!\n");
@@ -35,10 +40,20 @@ bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, con
         return false;
     }
 
-    // ==========================================================
+    // =============================================================================
+
+    if(!partitions){
+        partitions = (PartitionEntry *)malloc(sizeof(PartitionEntry) * MAX_PARTITIONS);
+        if(!partitions){
+            printf("[PARTITION] Failed to allocate memory for partitions!\n");
+            return false;
+        }
+        memset(partitions, 0, sizeof(PartitionEntry) * MAX_PARTITIONS);
+    }
+    
 
     if (partition_count >= MAX_PARTITIONS) {
-        printf("Maximum number of partitions reached.\n");
+        printf("Maximum number of partitions is reached.\n");
         return false;
     }
 
@@ -50,7 +65,7 @@ bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, con
     memcpy(&entry.partition_guid, partition_guid, sizeof(guid_t));
     memcpy(&entry.partition_type_guid, partition_type_guid, sizeof(guid_t));
 
-    // ======================================================================
+    // ===============================================================================
     // Creating GPTPrtition
     GPTPartitionEntry gpt_partitions[GPT_ENTRIES_COUNT];
     memset(gpt_partitions, 0, sizeof(gpt_partitions));
@@ -83,7 +98,7 @@ bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, con
         return false;
     }
     
-    uint64_t backup_entries_lba = TOTAL_SECTORS - total_entries_sectors - 1;
+    uint64_t backup_entries_lba = total_sectors - total_entries_sectors - 1;
     // if (!kebla_disk_write( backup_entries_lba, total_entries_sectors, partitions)) {
     if (!disk_write( backup_entries_lba, total_entries_sectors, gpt_partitions)) {
         printf("[PARTITION] Failed to write backup GPT partition entries for disk!\n");
@@ -91,7 +106,7 @@ bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, con
     }
 
     // Create and write GPT headers
-    bool result = create_gpt_header(TOTAL_SECTORS, &primary_header, &backup_header, DISK_GUID_EXAMPLE, gpt_partitions);
+    bool result = create_gpt_header(total_sectors, &primary_header, &backup_header, DISK_GUID_EXAMPLE, gpt_partitions);
 
     if(result) {
         printf("Created partition %d on drive %d: Start LBA: %lu, Sectors: %lu\n", 
@@ -175,8 +190,7 @@ bool update_partition(
     }
 
     // 4️⃣ Rewrite BACKUP partition entry array
-    uint64_t backup_entries_lba =
-        TOTAL_SECTORS - total_entries_sectors - 1;
+    uint64_t backup_entries_lba = total_sectors - total_entries_sectors - 1;
 
     if (!disk_write(backup_entries_lba,
                     total_entries_sectors,
@@ -189,7 +203,7 @@ bool update_partition(
     GPTHeader primary_header;
     GPTHeader backup_header;
 
-    if (!create_gpt_header(TOTAL_SECTORS,
+    if (!create_gpt_header(total_sectors,
                            &primary_header,
                            &backup_header,
                            DISK_GUID_EXAMPLE,
@@ -203,3 +217,13 @@ bool update_partition(
 
     return true;
 }
+
+
+
+
+
+
+
+
+
+

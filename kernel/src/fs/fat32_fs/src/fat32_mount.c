@@ -199,7 +199,7 @@ bool fat32_mount( uint64_t start_lba) {
     }
 
     if(!fat32_set_volume_label("KEBLAOS FAT")){
-        printf("FAT32: failed to set Volume Label\n");
+        printf("FAT32: faile to set Volume Label\n");
         return false;
     }
 

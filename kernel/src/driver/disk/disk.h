@@ -51,7 +51,7 @@ bool kebla_disk_status(int disk_no);
 bool kebla_disk_read(int disk_no, uint64_t lba, uint32_t count, void* buf);
 bool kebla_disk_write(int disk_no, uint64_t lba, uint32_t count, void* buf);
 
-int clear_disk(int disk_no, int *progress);
+int clear_disk(int disk_no, size_t *progress);
 
 // Helper functions
 int find_disk_type(int disk_no);
