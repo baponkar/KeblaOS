@@ -4,12 +4,14 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "diskio.h"
 #include "partition_manager.h"
 #include "fat32_mount.h"
 #include "file_manager.h"
 #include "dir_manager.h"
 
 
+void fat32_set_disk(int no);
 
 
 // Available functions in partition_manager.h
@@ -74,9 +76,7 @@ bool f_stat(const char *path, FAT32_STAT *stat);    // f_stat() retrieves inform
 bool f_unlink(const char *path);                    // f_unlink() deletes a file (or empty directory) from the FAT32 filesystem.
 int f_error(FAT32_FILE *fp);
 
-
-
-
+// Defined in fat32.c
 void fat32_fs_test();
 
 

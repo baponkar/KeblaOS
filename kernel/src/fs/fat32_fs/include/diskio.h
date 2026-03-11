@@ -9,9 +9,9 @@
 bool disk_read(uint64_t lba, uint32_t count, void* buffer);
 bool disk_write(uint64_t lba, uint32_t count, const void* buffer);
 
+void fat32_set_disk(int no);
 
 
-bool diskio_test(uint32_t lba);
 
 
 

@@ -124,34 +124,6 @@ void kmain(){
     }
 
 
-    // for(int i=0; i < disk_count; i++){
-    //     Disk disk = disks[i];
-
-    //     if(disk.type == DISK_TYPE_SATAPI){
-    //         // Mounting ISO Disk and BOOT Disk
-    //         if(iso9660_mount(iso_disk_no) != 0){
-    //             printf("[KMAIN] Failed to mount ISO9660 FS in Disk %d!\n", iso_disk_no);
-    //         }
-    //         printf("[KMAIN] Successfully mount ISO9660 FS in Disk %d.\n", iso_disk_no);
-    //     }else if(disk.type == DISK_TYPE_AHCI_SATA ){
-    //         // Mounting AHCI SATA Disk
-    //         if(!fat32_mount(boot_disk_no, ESP_START_LBA)){
-    //             printf("[KMAIN] Failed to Mount FAT32 FS at LBA: %d!\n", ESP_START_LBA);
-    //             return;
-    //         }
-    //         printf("[KMAIN] Successfully Mount Disk %d.\n", boot_disk_no);
-    //     }else{
-    //         printf("[KMAIN] The Disk Type %d is not working currently!\n", disk.type);
-    //     }
-    // }
-
-    // iso9660_test(iso_disk_no, "/BOOT/LIMINE.CON");
-
-    // if(fat32_test(boot_disk_no, ESP_START_LBA)){
-    //     printf("[KMAIN] FAT32 Test Success.\n");
-    // }
-    // printf("[KMAIN] Failed to test FAT32!\n");
-
 
     // vfs_test(boot_disk_no);
 

@@ -128,11 +128,11 @@ int vfs_disk_status(int disk_no){
 
 
 int vfs_mount(int disk_no, uint32_t lba, VFS_TYPE type){
+
     if(disk_no >= disk_count) {
         printf("VFS: Invalid disk number %d\n", disk_no);
         return -1;
     }
-
 
     if(!disks) {
         printf("VFS: Disks not initialized!\n");

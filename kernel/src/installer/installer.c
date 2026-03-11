@@ -102,6 +102,8 @@ bool uefi_install(int iso_disk_no, int boot_disk_no, uint64_t boot_disk_sectors)
     }
     printf("[INSTALLER] Successfully format BOOT Disk\n");
 
+    fat32_set_disk(boot_disk_no);
+
     int total_partitions = 2;
 
     partition_t partition[total_partitions];
