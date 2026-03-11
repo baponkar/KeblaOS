@@ -57,13 +57,13 @@ bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, con
         return false;
     }
 
-    PartitionEntry entry = partitions[partition_index];
-    entry.pdrv_no = pdrv_no;
-    entry.partition_no = partition_index;
-    entry.start_lba = start_lba;
-    entry.sectors = sectors;
-    memcpy(&entry.partition_guid, partition_guid, sizeof(guid_t));
-    memcpy(&entry.partition_type_guid, partition_type_guid, sizeof(guid_t));
+    PartitionEntry *entry = &partitions[partition_index];
+    entry->pdrv_no = pdrv_no;
+    entry->partition_no = partition_index;
+    entry->start_lba = start_lba;
+    entry->sectors = sectors;
+    memcpy(entry->partition_guid, partition_guid, sizeof(guid_t));
+    memcpy(entry->partition_type_guid, partition_type_guid, sizeof(guid_t));
 
     // ===============================================================================
     // Creating GPTPrtition
@@ -80,7 +80,7 @@ bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, con
     // Creating new GPT partition entry for this partition
     GPTPartitionEntry *gpt_entry = create_gpt_partition_entry(partition_type_guid, partition_guid, start_lba, start_lba + sectors - 1, 0, name);
     if(gpt_entry != NULL) {
-        memcpy(&entry.gpt_entry, gpt_entry, sizeof(GPTPartitionEntry));
+        memcpy(&entry->gpt_entry, gpt_entry, sizeof(GPTPartitionEntry));
     } else {
         return false;
     }
@@ -110,10 +110,10 @@ bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, con
 
     if(result) {
         printf("Created partition %d on drive %d: Start LBA: %lu, Sectors: %lu\n", 
-               entry.partition_no, entry.pdrv_no, entry.start_lba, entry.sectors);
+               entry->partition_no, entry->pdrv_no, entry->start_lba, entry->sectors);
     } else {
         printf("Failed to create GPT headers for partition %d on drive %d.\n", 
-               entry.partition_no, entry.pdrv_no);
+               entry->partition_no, entry->pdrv_no);
         return false;
     }
 

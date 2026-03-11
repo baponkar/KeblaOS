@@ -301,7 +301,6 @@ bool f_write(FAT32_FILE* fp, const void* buff, uint32_t btw, uint32_t* bw)
         current_cluster = next;
     }
 
-
     fp->pos += *bw;
 
     if (fp->pos > fp->size) fp->size = fp->pos;
@@ -342,6 +341,7 @@ bool f_lseek(FAT32_FILE* fp, uint32_t ofs)
 
     return true;
 }
+
 
 bool f_truncate(FAT32_FILE* fp)
 {

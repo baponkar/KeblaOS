@@ -23,24 +23,27 @@ extern uint64_t fb0_pitch;
 extern uint16_t fb0_bpp;
 
 
-extern ring_buffer_t* keyboard_buffer;       // To get the keyboard input
+extern ring_buffer_t* keyboard_buffer;          // To get the keyboard input
 
 extern Disk *disks;
 extern int disk_count; 
 
-#define BOOT_DISK_TOTAL_SECTORS 2097152     // 1 * 1024 * 1024 * 1024 / 512
+#define MAIN_DISK_TOTAL_SECTORS 2097152         // 1GB = 1 * 1024 * 1024 * 1024 / 512
 
 #define ESP_START_LBA 2048
-#define ESP_SECTORS (100 * 1024 * 1024 / 512)   // 100 MB
+#define ESP_SECTORS (100 * 1024 * 1024 / 512)   // 100 MB = 100 * 1024 * 1024 / 512
+
 #define DATA_PART_START_LBA (ESP_START_LBA + ESP_SECTORS)
 #define DATA_PART_SECTORS ((1 * 1024 * 1024 * 1024 / 512) - ESP_SECTORS - ESP_START_LBA)
 
-int iso_disk_no = 0;    // The ISO SATAPI Disk which is mentioned in Makefile
-int boot_disk_no = 1;   // The SATA Disk Which will be used to install KeblaOS
+int boot_disk_no = 0;    // The Disk no which boot KeblaOS
+int main_disk_no = 1;    // The Main Disk Present in the System
 
-bool install = false;   // This variable is set to true when the installer is running, otherwise it is false. It is used to control the flow of the installation process in kmain.
+extern int disk_no;      // The Disk Which have FAT32 Filesystem
 
-extern int disk_no;
+bool install = true;    // This variable is set to true when the installer is running, otherwise it is false.
+
+
 
 void kmain(){
     
@@ -71,6 +74,55 @@ void kmain(){
         printf("No Disk Found!\n");
     }
     printf("[KMAIN] Total %d Disks Found.\n", disk_count);
+
+    // Print detected disk type
+    for(int disk=0; disk < disk_count; disk++){
+        printf("[KMAIN] %d: Disk Type: %d\n", disk, find_disk_type(disk));
+    }
+
+    // print keblaos boot from where
+    switch(find_disk_type(0)){
+        case DISK_TYPE_SATAPI:
+            printf("[KMAIN] KeblaOS is Booting from ISO Disk type.\n\n");
+            break;
+        case DISK_TYPE_AHCI_SATA:
+            printf("[KMAIN] KeblaOS is Booting from AHCI SATA Disk type.\n\n");
+            break;
+        case DISK_TYPE_IDE_PATA:
+            printf("[KMAIN] KeblaOS is Booting from IDE PATA Disk type.\n\n");
+            break;
+        default:
+            printf("[KMAIN] KeblaOS is Booting from an Unknown Disk type.\n\n");
+    }
+
+    if(disk_count == 1 && disks[0].type != DISK_TYPE_SATAPI){
+        boot_disk_no = 0;
+        main_disk_no = 0;
+        disk_no = 0;
+    }else if(disk_count > 1){
+        boot_disk_no = 0;
+        main_disk_no = 1;
+        disk_no = 1;
+    }
+
+    // Checking Installation in main_disk
+    if(!verify_installation(main_disk_no, ESP_START_LBA)){
+        
+        printf("[KMAIN] KeblaOS is not installed in Disk %d\n", main_disk_no);
+        if(install){
+            if(uefi_install(boot_disk_no, main_disk_no, MAIN_DISK_TOTAL_SECTORS)){
+                printf("[KMAIN] Successfully Install KeblaOS in Disk %d.\n", boot_disk_no);
+            }
+        }
+    }else{
+        printf("[KMAIN] KeblaOS is already installed in the Disk %d.\n", main_disk_no);
+    }
+
+
+    if(fat32_mount(DATA_PART_START_LBA)){
+        printf("[KMAIN] Successfully Mount Disk %d of DATA Partition\n", main_disk_no);
+    }
+
 
     // for(int i=0; i < disk_count; i++){
     //     Disk disk = disks[i];
@@ -103,20 +155,6 @@ void kmain(){
 
     // vfs_test(boot_disk_no);
 
-
-    // if(!verify_installation(iso_disk_no, ESP_START_LBA)){
-    //     printf("[KMAIN] Going to Install KeblaOS.\n");
-        
-        if(uefi_install(iso_disk_no, boot_disk_no, BOOT_DISK_TOTAL_SECTORS)){
-            printf("[KMAIN] Successfully Install KeblaOS in Disk %d.\n", boot_disk_no);
-        }
-    // }else{
-    //     printf("[KMAIN] KeblaOS is already installed in the Disk.\n");
-        // disk_no = iso_disk_no;
-        // if(fat32_mount(DATA_PART_START_LBA)){
-        //     printf("Successfully Mount Disk %d\n", iso_disk_no);
-        // }
-    // }
     
    
     // test_time_functions();
@@ -139,7 +177,7 @@ void kmain(){
     // Load and parse kernel modules by using limine bootloader
     // get_kernel_modules_info();
     // print_kernel_modules_info();
-    // load_user_elf_and_jump();
+    load_user_elf_and_jump();
 
     // acpi_poweroff();
     // acpi_reboot();

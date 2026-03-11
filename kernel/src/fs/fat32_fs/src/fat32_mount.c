@@ -81,7 +81,7 @@ static bool fat32_set_volume_label( const char *label) {
 bool create_fat32_volume( uint64_t start_lba, uint32_t sectors) {
     printf("Creating FAT32 Volume at LBA %ld with %d sectors\n", start_lba, sectors);
 
-    fat32_base_lba = start_lba; // Set the base LBA for future operations
+    // fat32_base_lba = start_lba; // Set the base LBA for future operations
 
     // 1. Determine sectors per cluster based on volume size
     uint8_t sectors_per_cluster =  16; // Default to 32 KB clusters

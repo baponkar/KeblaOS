@@ -10,9 +10,10 @@ References:
 #include "../driver/disk/disk.h"                
 
 #include "../fs/iso9660/iso9660.h"
+#include "../fs/fat32_fs/include/fat32.h"
 
 #include "../lib/stdio.h"
-// #include "../lib/stdlib.h"
+#include "../lib/stdlib.h"
 #include "../lib/string.h"
 #include "../lib/limit.h"
 #include "../lib/errno.h"
@@ -21,8 +22,17 @@ References:
 
 
 
+
 #define SECTOR_SIZE 512
 
+
+bool is_gpt_disk(int disk_no){
+    uint8_t sector[SECTOR_SIZE];
+
+    if(!kebla_disk_read(disk_no, 0, 1, sector)){
+        return false;
+    }
+}
 
 
 VFS_TYPE detect_filesystem(int disk_no) {
@@ -117,7 +127,7 @@ int vfs_disk_status(int disk_no){
 }
 
 
-int vfs_mount(int disk_no, int logical_drive, int mount_opt){
+int vfs_mount(int disk_no, uint32_t lba, VFS_TYPE type){
     if(disk_no >= disk_count) {
         printf("VFS: Invalid disk number %d\n", disk_no);
         return -1;

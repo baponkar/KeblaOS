@@ -4,23 +4,36 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+
+#define VFS_READ     0x01
+#define VFS_WRITE    0x02
+#define VFS_CREATE   0x04
+#define VFS_CREATE_ALWAYS 0x08
+
+
 typedef enum {
     VFS_UNKNOWN,
+
     VFS_FAT12,
     VFS_FAT16,
     VFS_FAT32,
     VFS_EXFAT,
+
     VFS_EXT2,
     VFS_EXT3,
     VFS_EXT4,
+
     VFS_NTFS,
+
     VFS_UDF,
     VFS_NFS,
     VFS_SMB,
     VFS_SSHFS,
     VFS_WEBDEV,
     VFS_APFS,
+
     VFS_ISO9660,
+
     VFS_TEMPFS,
     VFS_RAW
 }VFS_TYPE;
@@ -45,7 +58,7 @@ VFS_TYPE detect_filesystem(int disk_no);
 int vfs_init(int disk_no);
 
 int vfs_disk_status(int disk_no);
-int vfs_mount(int disk_no, int logical_drive, int mount_opt);
+int vfs_mount(int disk_no, uint32_t lba, VFS_TYPE type);
 int vfs_unmount(int disk_no, int logical_drive);
 int vfs_mkfs(int pd, int logical_drive, VFS_TYPE fs_type);
 

@@ -470,7 +470,7 @@ bool kebla_disk_write(int disk_no, uint64_t lba, uint32_t count, void* buf) {
 
 
 
-#define MAX_BATCH_SIZE 512
+#define MAX_BATCH_SIZE 256
 
 int clear_disk(int disk_no, size_t *progress){
 
