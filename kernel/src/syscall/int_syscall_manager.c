@@ -439,9 +439,11 @@ registers_t *int_systemcall_handler(registers_t *regs) {
             
             case INT_VFS_MKFS: {
                 int pd = (int) regs->rdi;
-                int disk_no = (int) regs->rsi;
-                VFS_TYPE type = (VFS_TYPE) regs->rdx;
-                regs->rax = (uint64_t)vfs_mkfs(pd, disk_no, type);
+                int start_lba = (int) regs->rsi;
+                uint32_t sectors = regs->rdx;
+                VFS_TYPE type = (VFS_TYPE) regs->r10;
+
+                regs->rax = (uint64_t)vfs_mkfs(pd, start_lba, sectors, type);
                 break;
             }
 

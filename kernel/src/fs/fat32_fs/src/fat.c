@@ -45,7 +45,6 @@ bool initialize_fat_tables(uint64_t fat_start, uint32_t fat_sector_size) {
         return false;
     }
 
-    printf("Freeing fat_buffer\n");
     free(fat_buffer);
 
     uint8_t *zeros = (uint8_t *)malloc(MAX_BATCH_SECTORS * SECTOR_SIZE);
@@ -65,7 +64,6 @@ bool initialize_fat_tables(uint64_t fat_start, uint32_t fat_sector_size) {
         sectors_written += sectors_to_write;
     }
 
-    printf("freeing zeros\n");
     free(zeros);
 
     return true;

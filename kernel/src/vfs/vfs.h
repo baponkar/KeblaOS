@@ -60,13 +60,9 @@ int vfs_init(int disk_no);
 int vfs_disk_status(int disk_no);
 int vfs_mount(int disk_no, uint32_t lba, VFS_TYPE type);
 int vfs_unmount(int disk_no, int logical_drive);
-int vfs_mkfs(int pd, int logical_drive, VFS_TYPE fs_type);
+int vfs_mkfs(int pd, uint32_t start_lba, uint32_t sectors, VFS_TYPE fs_type);
 
-#if FF_MULTI_PARTITION
 int vfs_fdisk(int disk_no, void *ptbl, void* work);
-#endif
-
-
 
 int vfs_setcp(int disk_no, int cp);
 int vfs_putc(int disk_no, void *fp, char c);

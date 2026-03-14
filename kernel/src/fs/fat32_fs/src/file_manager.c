@@ -45,14 +45,7 @@ bool f_open( FAT32_FILE* fp, const char* path, int mode){
     uint32_t entry_cluster;
     uint32_t entry_offset;
 
-    bool exists =
-        fat32_find_file(
-            parent_cluster,
-            filename,
-            &entry,
-            &entry_cluster,
-            &entry_offset
-        );
+    bool exists =  fat32_find_file( parent_cluster,  filename, &entry,  &entry_cluster, &entry_offset );
 
     /* create file if not exists */
     if (!exists)
@@ -60,28 +53,16 @@ bool f_open( FAT32_FILE* fp, const char* path, int mode){
         if (!(mode & (FA_CREATE | FA_CREATE_ALWAYS)))
             return false;
 
-        if (!fat32_create_dir_entry(
-                parent_cluster,
-                filename,
-                0x20,      /* archive attribute */
-                0,
-                0))
+        if (!fat32_create_dir_entry( parent_cluster,  filename,  0x20,  0, 0))  // archive attribute 
             return false;
 
         /* find the newly created entry */
-        if (!fat32_find_file(
-                parent_cluster,
-                filename,
-                &entry,
-                &entry_cluster,
-                &entry_offset))
+        if (!fat32_find_file( parent_cluster, filename,  &entry,  &entry_cluster,  &entry_offset))
             return false;
     }
 
     /* fill file structure */
-    fp->first_cluster =
-        ((uint32_t)entry.DIR_FstClusHI << 16) |
-         entry.DIR_FstClusLO;
+    fp->first_cluster =  ((uint32_t)entry.DIR_FstClusHI << 16) |  entry.DIR_FstClusLO;
 
     fp->current_cluster = fp->first_cluster;
 
@@ -232,10 +213,12 @@ bool f_write(FAT32_FILE* fp, const void* buff, uint32_t btw, uint32_t* bw)
     uint32_t current_cluster = fp->first_cluster;
     uint32_t offset = fp->pos;
 
-    /* allocate first cluster if file empty */
+
+    // allocate first cluster if file empty
     if (current_cluster == 0)
     {
         if (!fat32_allocate_cluster(&current_cluster)) {
+            printf(" f_write: fat32_allocate_cluster is failed!");
             free(cluster_buf);
             return false;
         }
@@ -244,14 +227,16 @@ bool f_write(FAT32_FILE* fp, const void* buff, uint32_t btw, uint32_t* bw)
         fp->current_cluster = current_cluster;
     }
 
-    /* walk to correct cluster */
-    while (offset >= cluster_size)
+
+    // walk to correct cluster
+    while (offset >= cluster_size && current_cluster)
     {
         uint32_t next = fat32_get_next_cluster(current_cluster);
 
         if (next >= 0x0FFFFFF8)
         {
             if (!fat32_append_cluster(current_cluster, &next)) {
+                printf(" f_write: fat32_append_cluster is failed!");
                 free(cluster_buf);
                 return false;
             }
@@ -265,6 +250,7 @@ bool f_write(FAT32_FILE* fp, const void* buff, uint32_t btw, uint32_t* bw)
     while (*bw < btw)
     {
         if (!fat32_read_cluster(current_cluster, cluster_buf)) {
+            printf(" f_write: fat32_read_cluster is failed!");
             free(cluster_buf);
             return false;
         }
@@ -279,6 +265,7 @@ bool f_write(FAT32_FILE* fp, const void* buff, uint32_t btw, uint32_t* bw)
         memcpy( cluster_buf + write_offset, (uint8_t*)buff + *bw, write_bytes );
 
         if (!fat32_write_cluster(current_cluster, cluster_buf)) {
+            printf(" f_write: fat32_write_cluster is failed!");
             free(cluster_buf);
             return false;
         }
@@ -293,6 +280,7 @@ bool f_write(FAT32_FILE* fp, const void* buff, uint32_t btw, uint32_t* bw)
         if (next >= 0x0FFFFFF8)
         {
             if (!fat32_append_cluster(current_cluster, &next)) {
+                printf("[2] f_write: fat32_append_cluster is failed!");
                 free(cluster_buf);
                 return false;
             }

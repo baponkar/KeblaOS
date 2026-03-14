@@ -17,7 +17,7 @@ typedef struct partition{
 } partition_t;
 
 
-bool uefi_install(int iso_disk_no, int boot_disk_no, uint64_t boot_disk_sectors);
+bool uefi_install(int boot_disk_no, int main_disk_no, uint64_t esp_start_lba, uint64_t esp_sectors, uint64_t total_sectors);
 bool verify_installation(int disk_no, uint32_t start_lba);
 
 

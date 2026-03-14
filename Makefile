@@ -81,35 +81,13 @@ $(BUILD_DIR):
 
 # ================================= Externel Library Build Start ========================================================================
 
-# 1. FatFs Library
-# FATFS_BUILD_DIR = build/ext_lib/FatFs
-# FATFS_SRC_DIR   = ext_lib/FatFs-R0.15b
-# FATFS_SRC_FILES := $(shell find ext_lib/FatFs-R0.15b -name '*.c')
-# FATFS_OBJ_FILES := $(patsubst $(FATFS_SRC_DIR)/%.c, $(FATFS_BUILD_DIR)/%.o, $(FATFS_SRC_FILES))
-# FATFS_LIB_FILE  := build/libfatfs.a
-
-# build/ext_lib/FatFs:
-# 	mkdir -p $@
-
-# build/ext_lib/FatFs/%.o: ext_lib/FatFs-R0.15b/%.c
-# 	@mkdir -p $(dir $@)
-# 	$(GCC) $(GCC_FLAG) $(GCC_STDLIB_FLAG) -c $< -o $@
-
-
-# build/libfatfs.a: $(FATFS_OBJ_FILES)
-# 	ar rcs $@ $^
-
-# fatfs: build/libfatfs.a
-# 	@echo "FatFs Build completed."
-
-
-# 3. limine (I am using previus building files )
+# 1. limine (I am using previus building files )
 # Nothing to build
 LIMINE_BUILD_DIR := build/ext_lib/limine-9.2.3
 LIMINE_SRC_DIR := ext_lib/limine-9.2.3
 
 
-# 4. tiny-regex-c
+# 2. tiny-regex-c
 TINY_REGEX_BUILD_DIR = build/ext_lib/tiny-regex-c
 TINY_REGEX_SRC_DIR   = ext_lib/tiny-regex-c
 TINY_REGEX_SRC_FILES := $(shell find ext_lib/tiny-regex-c -name '*.c')
@@ -131,10 +109,7 @@ tiny-regex: build/lib-tiny-regex.a
 	@echo "Tiny-Regex-C Build completed."
 
 
-
-
-
-# 5. ugui
+# 3. ugui
 UGUI_BUILD_DIR = build/ext_lib/UGUI
 UGUI_SRC_DIR   = ext_lib/UGUI
 
@@ -156,14 +131,10 @@ $(UGUI_LIB_FILE): $(UGUI_OBJ_FILES)
 ugui: $(UGUI_LIB_FILE)
 	@echo "UGUI Build completed."
 
-
-
-# external_libs: $(FATFS_LIB_FILE) $(LVGL_LIB_FILE) $(UGUI_LIB_FILE) $(NUKLEAR_LIB_FILE) $(TINY_REGEX_LIB_FILE)
 external_libs: $(UGUI_LIB_FILE) $(TINY_REGEX_LIB_FILE)
 
 
 # ============================================== Kernel Build  Start ====================================================================
-
 
 # 5. Kernel build
 
@@ -199,7 +170,6 @@ kernel: build/libkernel.a
 	@echo "Kernel C Build completed."
 
 # =======================================================================================================================================
-
 
 # Rule to link all object files into a single kernel binary
 $(BUILD_DIR)/kernel.bin: $(KERNEL_LIB_FILE) $(TINY_REGEX_LIB_FILE) $(UGUI_LIB_FILE)
@@ -339,12 +309,10 @@ bootable_disk:
 	@bash -c '\
 		LOOPDEV=$$(sudo losetup --show -fP $(DISK_1)); \
 		echo "Using loop device: $$LOOPDEV"; \
-		sleep 1; \
 		sudo mkfs.vfat -F 32 -n LMBT $$LOOPDEV"p1"; \
 		sudo mkfs.vfat -F 32 -n DATA $$LOOPDEV"p2"; \
 		mkdir -p $(DISK_DIR)/mnt1; \
 		sudo mount $$LOOPDEV"p1" $(DISK_DIR)/mnt1; \
-		\
 		echo "Copying bootloader and kernel files..."; \
 		sudo mkdir -p $(DISK_DIR)/mnt1/boot/limine $(DISK_DIR)/mnt1/EFI/BOOT; \
 		sudo cp $(BUILD_DIR)/kernel.bin $(DISK_DIR)/mnt1/boot/; \
@@ -477,19 +445,6 @@ uefi_disk_run:
 	-drive if=pflash,format=raw,readonly=on,file=/usr/share/ovmf/OVMF.fd
 
 
-test:
-	sudo qemu-system-x86_64 \
-	-machine q35 \
-	-m 4096 \
-	-smp 4 \
-	-drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd \
-	-drive if=pflash,format=raw,file=/usr/share/OVMF/OVMF_VARS_4M.fd \
-	-drive file=disk_img/disk_1.img,if=virtio,format=raw \
-	-boot order=d \
-	-vga std \
-	-serial stdio
-
-
 
 gdb_debug:
 	# GDB Debuging
@@ -526,6 +481,9 @@ hard_clean:
 #deleting all directories inside build directory , d stand for directory
 	find $(BUILD_DIR) -type d -empty ! -path "$(BUILD_DIR)" -delete
 
+# Deleting disk images
+	find $(DISK_DIR) -type f \( -name '*.img' \) -delete
+
 
 # =======================================================================================================================================
 user_programe:
@@ -547,7 +505,7 @@ build: clean kernel linking user_programe image clean bios_run
 
 default: build
 
-.PHONY: all build fatfs tiny-regex ugui external_libs kernel linking user_program build_image create_disks blank_disks ext2_format fat32_format bios_disk_run uefi_disk_run help
+.PHONY: all build tiny-regex ugui external_libs kernel linking user_program build_image create_disks blank_disks ext2_format fat32_format bios_disk_run uefi_disk_run help
 
 help:
 	@echo "Available targets:"
@@ -574,7 +532,7 @@ help:
 
 	@echo "  make blank_disks     - Create Two Blank Disks image"
 	@echo "  make fat32_format    - Format two disks with FAT32 Filesystem"
-	@echo "  make xt2_format      - Format two disks with EXT2 Filesystem"
+	@echo "  make ext2_format     - Format two disks with EXT2 Filesystem"
 
 	@echo "  make user_programe   - Build user_program.elf from module/user_main.c"
 

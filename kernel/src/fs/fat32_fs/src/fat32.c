@@ -7,9 +7,14 @@
 #include "../include/fat32.h"
 
 
-void fat32_fs_test(){
+void fat32_fs_test(int disk_no, uint64_t start_lba){
 
     printf("\n===== FAT32 TEST START =====\n");
+
+    if(!fat32_mount(start_lba)){
+        printf("[KMAIN] Failed to Mount Disk %d of DATA Partition\n", disk_no);
+    }
+    printf("[KMAIN] Successfully Mount Disk %d of DATA Partition\n", disk_no);
 
     // Directory Test
 
@@ -93,9 +98,6 @@ void fat32_fs_test(){
     {
         printf("  no TXT files found\n");
     }
-
-
-
     
     // File Test
 

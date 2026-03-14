@@ -91,7 +91,7 @@ bool fat32_read_cluster(uint32_t cluster_number, void *buffer){
     uint32_t fat_sector_number = get_first_fat_sector() + (fat_offset / get_bytes_per_sector());
     uint32_t ent_offset = fat_offset % get_bytes_per_sector(); 
 
-    uint8_t sector_buffer[512];
+    uint8_t sector_buffer[get_bytes_per_sector()];
     if (!fat32_read_sector( fat_sector_number, sector_buffer)) {
         return 0;               // Error reading sector
     }
@@ -192,7 +192,7 @@ bool fat32_read_cluster(uint32_t cluster_number, void *buffer){
         uint32_t fat_sector_number = get_first_fat_sector() + (fat_offset / get_bytes_per_sector());
         uint32_t ent_offset =  fat_offset % get_bytes_per_sector();
 
-        uint8_t sector_buffer[512];
+        uint8_t sector_buffer[get_bytes_per_sector()];
 
         if (!fat32_read_sector( fat_sector_number, sector_buffer))
             return false;

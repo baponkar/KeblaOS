@@ -77,7 +77,7 @@ bool f_unlink(const char *path);                    // f_unlink() deletes a file
 int f_error(FAT32_FILE *fp);
 
 // Defined in fat32.c
-void fat32_fs_test();
+void fat32_fs_test(int disk_no, uint64_t start_lba);
 
 
 

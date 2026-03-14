@@ -17,6 +17,8 @@
 
 bool debug_on = false;
 
+bool install = false;    // This variable is set to true when the installer is running, otherwise it is false.
+
 extern uint64_t fb0_width;
 extern uint64_t fb0_height;
 extern uint64_t fb0_pitch;
@@ -34,14 +36,12 @@ extern int disk_count;
 #define ESP_SECTORS (100 * 1024 * 1024 / 512)   // 100 MB = 100 * 1024 * 1024 / 512
 
 #define DATA_PART_START_LBA (ESP_START_LBA + ESP_SECTORS)
-#define DATA_PART_SECTORS ((1 * 1024 * 1024 * 1024 / 512) - ESP_SECTORS - ESP_START_LBA)
+#define DATA_PART_SECTORS (MAIN_DISK_TOTAL_SECTORS - ESP_SECTORS - (2 * ESP_START_LBA)) // For safety deduct ESP_START_LBA
 
 int boot_disk_no = 0;    // The Disk no which boot KeblaOS
 int main_disk_no = 1;    // The Main Disk Present in the System
 
 extern int disk_no;      // The Disk Which have FAT32 Filesystem
-
-bool install = true;    // This variable is set to true when the installer is running, otherwise it is false.
 
 
 
@@ -95,6 +95,7 @@ void kmain(){
             printf("[KMAIN] KeblaOS is Booting from an Unknown Disk type.\n\n");
     }
 
+    // Update boot_disk_no/main_disk_no on based boot disk
     if(disk_count == 1 && disks[0].type != DISK_TYPE_SATAPI){
         boot_disk_no = 0;
         main_disk_no = 0;
@@ -107,31 +108,26 @@ void kmain(){
 
     // Checking Installation in main_disk
     if(!verify_installation(main_disk_no, ESP_START_LBA)){
-        
         printf("[KMAIN] KeblaOS is not installed in Disk %d\n", main_disk_no);
-        if(install){
-            if(uefi_install(boot_disk_no, main_disk_no, MAIN_DISK_TOTAL_SECTORS)){
-                printf("[KMAIN] Successfully Install KeblaOS in Disk %d.\n", boot_disk_no);
-            }
-        }
     }else{
         printf("[KMAIN] KeblaOS is already installed in the Disk %d.\n", main_disk_no);
     }
-
-
-    if(fat32_mount(DATA_PART_START_LBA)){
-        printf("[KMAIN] Successfully Mount Disk %d of DATA Partition\n", main_disk_no);
-    }
-
-
-
-    // vfs_test(boot_disk_no);
-
     
+    
+    if(install){
+        if(!uefi_install(boot_disk_no, main_disk_no, ESP_START_LBA, ESP_SECTORS, MAIN_DISK_TOTAL_SECTORS)){
+            printf("[KMAIN] Failed to Install KeblaOS in Disk %d.\n", boot_disk_no);
+        }
+        printf("[KMAIN] Successfully Install KeblaOS in Disk %d.\n", boot_disk_no);
+    }
+    
+
+    // fat32_fs_test();
+
+    // vfs_test(main_disk_no);
    
     // test_time_functions();
 
-    
     // mouse_init();
 
     // ugui_test_1();
@@ -149,7 +145,7 @@ void kmain(){
     // Load and parse kernel modules by using limine bootloader
     // get_kernel_modules_info();
     // print_kernel_modules_info();
-    load_user_elf_and_jump();
+    // load_user_elf_and_jump();
 
     // acpi_poweroff();
     // acpi_reboot();

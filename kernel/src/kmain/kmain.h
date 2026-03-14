@@ -51,11 +51,13 @@
 
 // File System
 #include "../fs/iso9660/iso9660.h"                      
-#include "../fs/kfs/kfs.h"
 #include "../fs/fat32_fs/include/fat32.h"
-#include "../fs/fat32_fs/include//fat32_utility.h"
+#include "../fs/fat32_fs/include/fat32_utility.h"
 #include "../fs/ext2/ext2.h"
+#include "../fs/vsfs/vsfs.h"
+
 #include "../vfs/vfs.h"                     // Virtual FIle System
+
 
 
 // Installer
