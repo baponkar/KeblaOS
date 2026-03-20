@@ -73,6 +73,7 @@ TWO PARTITIONS ARE CREATED IN THIS EXAMPLE:
 #include "../../include/gpt.h"
 
 
+#define GPT_HEADER_LBA 1
 
 // Cyclic Redundancy Check
 // CRC32 Calculation for GPT
@@ -204,13 +205,13 @@ bool create_gpt_header(
 
     memcpy(temp_buffer, primary_header, sizeof(GPTHeader)); // Copy Header into buffer
     // Writing primary GPT header to disk
-    if(!disk_write( 1, 1, temp_buffer)) {
+    if(!disk_write(GPT_HEADER_LBA, 1, temp_buffer)) {
         printf("[PARTITION] Failed to write primary GPT header for disk!\n");
         return false;
     }
 
     // Write backup GPT header to disk
-    if (!disk_write( tot_sectors - 1, 1, backup_header)) {
+    if (!disk_write(tot_sectors - 1, 1, backup_header)) {
         printf("[PARTITION] Failed to write backup GPT header for disk!\n");
         return false;
     }

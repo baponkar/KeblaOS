@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stddef.h>
 
-
+#define MAX_FILE_NAME 256
 
 #define FA_READ     0x01
 #define FA_WRITE    0x02
@@ -27,16 +27,17 @@ typedef struct {
 
     uint32_t parent_cluster;    // Parent Directory cluster
 
-    uint32_t dir_entry_sector;  // sector containing the entry
+    uint32_t dir_entry_cluster; // cluster containing the entry
     uint32_t dir_entry_offset;  // offset inside sector
 
     char name[256];             // Long Name
     uint8_t mode;               // read/write flags
 
     int error;                  // last error code
-} FAT32_FILE;                   // 
+} FAT32_FILE;                   // 292 bytes
 
-typedef struct {
+
+typedef struct __attribute__((packed)){
     char name[256];
     uint8_t attr;
     uint32_t size;

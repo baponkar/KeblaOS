@@ -13,8 +13,8 @@
 #include "../../include/partition_manager.h"
 
 
- 
-#define MAX_PARTITIONS 4
+#define MBR_LBA 0 
+
 
 uint64_t total_sectors = 0;     // Example: 1GB = 1 * 1024 * 1024 * 1024 Byte
 
@@ -23,6 +23,45 @@ PartitionEntry *partitions;     // Array of PartitionEntry
 size_t partition_count = 0;     // Total Partition Present
 
 
+
+PartitionEntry *get_partitions(uint8_t pdrv_no){
+    
+    GPTPartitionEntry *gpt_partitions = malloc(GPT_ENTRIES_COUNT);
+    if(!gpt_partitions){
+        free(gpt_partitions);
+        return NULL;
+    }
+    memset(gpt_partitions, 0, sizeof(gpt_partitions));
+
+    // Read Previous partition entries from disk
+    int total_entries_sectors = (int) (GPT_ENTRIES_COUNT * GPT_ENTRY_SIZE + SECTOR_SIZE - 1) / SECTOR_SIZE; // This should be 32 sectors for 128 entries of 128 bytes each
+    if(!disk_read( GPT_ENTRIES_START_LBA, total_entries_sectors, gpt_partitions)) {
+        printf("[PARTITION] Failed to read primary GPT partition entries for disk!\n");
+        return NULL;
+    }
+
+    PartitionEntry *partitions = (PartitionEntry *)malloc(sizeof(PartitionEntry) * MAX_PARTITIONS);
+    if(!partitions){
+        free(partitions);
+        return NULL;
+    }
+
+    for(int i=0; i< MAX_PARTITIONS; i++){
+        partitions[i].pdrv_no = pdrv_no;
+        partitions[i].partition_no = i;
+        partitions[i].start_lba = gpt_partitions[i].start_lba;
+        if((gpt_partitions[i].end_lba - gpt_partitions[i].start_lba) <= 1){
+            partitions[i].sectors = 0;
+        }else{
+            partitions[i].sectors = gpt_partitions[i].end_lba - gpt_partitions[i].start_lba + 1;
+        }
+        memcpy(&partitions[i].partition_guid, &gpt_partitions[i].unique_guid, sizeof(guid_t));
+        memcpy(&partitions[i].partition_type_guid, &gpt_partitions[i].type_guid, sizeof(guid_t));
+        partitions[i].gpt_entry = gpt_partitions[i];
+    }
+
+    return partitions;
+}
 
 
 bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, const guid_t partition_guid, const guid_t partition_type_guid, char* name) {
@@ -34,7 +73,7 @@ bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, con
     ProtectiveMBR *protective_mbr = malloc(SECTOR_SIZE);
     create_protective_mbr(protective_mbr, total_sectors);
 
-    if(!disk_write( 0, 1, protective_mbr)){
+    if(!disk_write(MBR_LBA, 1, protective_mbr)){
         printf("[PARTITION] Failed to write Protective MBR for disk!\n");
         free(protective_mbr);
         return false;
@@ -72,7 +111,7 @@ bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, con
 
     // Read Previous partition entries from disk
     int total_entries_sectors = (int) (GPT_ENTRIES_COUNT * GPT_ENTRY_SIZE + SECTOR_SIZE - 1) / SECTOR_SIZE; // This should be 32 sectors for 128 entries of 128 bytes each
-    if(!disk_read(GPT_ENTRIES_START_LBA, total_entries_sectors, gpt_partitions)) {
+    if(!disk_read( GPT_ENTRIES_START_LBA, total_entries_sectors, gpt_partitions)) {
         printf("[PARTITION] Failed to read primary GPT partition entries for disk!\n");
         return false;
     }
@@ -106,7 +145,7 @@ bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, con
     }
 
     // Create and write GPT headers
-    bool result = create_gpt_header(total_sectors, &primary_header, &backup_header, DISK_GUID_EXAMPLE, gpt_partitions);
+    bool result = create_gpt_header( total_sectors, &primary_header, &backup_header, DISK_GUID_EXAMPLE, gpt_partitions);
 
     if(result) {
         printf("Created partition %d on drive %d: Start LBA: %lu, Sectors: %lu\n", 
@@ -126,6 +165,7 @@ bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, con
 
 
 bool update_partition(
+    int disk_no,
     size_t partition_index,
     uint64_t new_start_lba,
     uint64_t new_sectors,
@@ -141,13 +181,10 @@ bool update_partition(
     GPTPartitionEntry gpt_partitions[GPT_ENTRIES_COUNT];
     memset(gpt_partitions, 0, sizeof(gpt_partitions));
 
-    uint32_t total_entries_sectors =
-        (sizeof(GPTPartitionEntry) * GPT_ENTRIES_COUNT + SECTOR_SIZE - 1)
-        / SECTOR_SIZE;
+    uint32_t total_entries_sectors = (sizeof(GPTPartitionEntry) * GPT_ENTRIES_COUNT + SECTOR_SIZE - 1) / SECTOR_SIZE;
 
-    if (!disk_read(GPT_ENTRIES_START_LBA,
-                   total_entries_sectors,
-                   gpt_partitions)) {
+    // Read Previous GPT Partition Details
+    if (!disk_read(GPT_ENTRIES_START_LBA, total_entries_sectors, gpt_partitions)) {
         printf("[PARTITION] Failed to read GPT entries!\n");
         return false;
     }
@@ -182,9 +219,7 @@ bool update_partition(
     }
 
     // 3️⃣ Rewrite PRIMARY partition entry array
-    if (!disk_write(GPT_ENTRIES_START_LBA,
-                    total_entries_sectors,
-                    gpt_partitions)) {
+    if (!disk_write(GPT_ENTRIES_START_LBA, total_entries_sectors,  gpt_partitions)) {
         printf("[PARTITION] Failed to write primary GPT entries!\n");
         return false;
     }
@@ -192,9 +227,7 @@ bool update_partition(
     // 4️⃣ Rewrite BACKUP partition entry array
     uint64_t backup_entries_lba = total_sectors - total_entries_sectors - 1;
 
-    if (!disk_write(backup_entries_lba,
-                    total_entries_sectors,
-                    gpt_partitions)) {
+    if (!disk_write( backup_entries_lba, total_entries_sectors, gpt_partitions)) {
         printf("[PARTITION] Failed to write backup GPT entries!\n");
         return false;
     }
@@ -203,17 +236,12 @@ bool update_partition(
     GPTHeader primary_header;
     GPTHeader backup_header;
 
-    if (!create_gpt_header(total_sectors,
-                           &primary_header,
-                           &backup_header,
-                           DISK_GUID_EXAMPLE,
-                           gpt_partitions)) {
+    if (!create_gpt_header( total_sectors,  &primary_header, &backup_header, DISK_GUID_EXAMPLE,  gpt_partitions)) {
         printf("[PARTITION] Failed to update GPT headers!\n");
         return false;
     }
 
-    printf("[PARTITION] Partition %lu updated successfully.\n",
-           partition_index);
+    printf("[PARTITION] Partition %lu updated successfully.\n",  partition_index);
 
     return true;
 }

@@ -9,6 +9,7 @@
 #include "guid.h"
 #include "gpt.h"
 
+#define MAX_PARTITIONS 4
 
 typedef enum {
     ESP_TYPE,
@@ -30,9 +31,11 @@ typedef struct __attribute__((packed)){
 } PartitionEntry;
 
 
+PartitionEntry *get_partitions(uint8_t pdrv_no);
+
 bool create_partition(uint8_t pdrv_no, uint64_t start_lba, uint64_t sectors, const guid_t partition_guid, const guid_t partition_type_guid, char* name);
 
-bool update_partition(size_t partition_index, uint64_t new_start_lba, uint64_t new_sectors, const char* new_name,  uint64_t new_attributes);
+bool update_partition(int disk_no, size_t partition_index, uint64_t new_start_lba, uint64_t new_sectors, const char* new_name,  uint64_t new_attributes);
 
 
 

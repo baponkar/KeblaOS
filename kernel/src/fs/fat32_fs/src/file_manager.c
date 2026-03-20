@@ -1,4 +1,5 @@
 
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -10,21 +11,24 @@
 
 #include "../include/file_manager.h"
 
+
+
 extern uint32_t fat32_cwd_cluster;
 
 bool f_open( FAT32_FILE* fp, const char* path, int mode){
-    if (!fp || !path)
-        return false;
 
-    char tmp[256];
-    strcpy(tmp, path);
+    if (!fp || !path)  return false;
+
+    size_t len = strlen(path) + 1;
+    char *tmp = malloc(len);
+    memcpy(tmp, path, len);
 
     char *last = strrchr(tmp, '/');
 
     uint32_t parent_cluster;
     char *filename;
 
-    /* resolve parent directory */
+    // resolve parent directory
     if (!last) {
         parent_cluster = fat32_cwd_cluster;
         filename = tmp;
@@ -37,8 +41,10 @@ bool f_open( FAT32_FILE* fp, const char* path, int mode){
         *last = '\0';
         filename = last + 1;
 
-        if (!fat32_path_to_cluster(tmp, &parent_cluster))
+        if (!fat32_path_to_cluster(tmp, &parent_cluster)){
+            free(tmp);
             return false;
+        }
     }
 
     DirEntry entry;
@@ -47,7 +53,7 @@ bool f_open( FAT32_FILE* fp, const char* path, int mode){
 
     bool exists =  fat32_find_file( parent_cluster,  filename, &entry,  &entry_cluster, &entry_offset );
 
-    /* create file if not exists */
+    // create file if not exists
     if (!exists)
     {
         if (!(mode & (FA_CREATE | FA_CREATE_ALWAYS)))
@@ -56,12 +62,12 @@ bool f_open( FAT32_FILE* fp, const char* path, int mode){
         if (!fat32_create_dir_entry( parent_cluster,  filename,  0x20,  0, 0))  // archive attribute 
             return false;
 
-        /* find the newly created entry */
+        // find the newly created entry
         if (!fat32_find_file( parent_cluster, filename,  &entry,  &entry_cluster,  &entry_offset))
             return false;
     }
 
-    /* fill file structure */
+    // fill file structure
     fp->first_cluster =  ((uint32_t)entry.DIR_FstClusHI << 16) |  entry.DIR_FstClusLO;
 
     fp->current_cluster = fp->first_cluster;
@@ -71,7 +77,7 @@ bool f_open( FAT32_FILE* fp, const char* path, int mode){
 
     fp->parent_cluster = parent_cluster;
 
-    fp->dir_entry_sector = entry_cluster;
+    fp->dir_entry_cluster = entry_cluster;
     fp->dir_entry_offset = entry_offset;
 
     strncpy(fp->name, filename, sizeof(fp->name)-1);
@@ -86,23 +92,26 @@ bool f_open( FAT32_FILE* fp, const char* path, int mode){
 
 bool f_close(FAT32_FILE* fp)
 {
-    if (!fp)
-        return false;
+    if (!fp)  return false;
 
     uint32_t cluster_size = get_cluster_size_bytes();
 
     uint8_t *cluster_buf = malloc(cluster_size);
-    if (!cluster_buf)
-        return false;
+    if (!cluster_buf)  return false;
+    memset(cluster_buf, 0, cluster_size);
+
+    printf("cluster_size = %u\n", cluster_size);
+    printf("dir_entry_cluster = %u\n", fp->dir_entry_cluster);
+    printf("dir_entry_offset = %u\n", fp->dir_entry_offset);
 
     /* read directory cluster containing the entry */
-    if (!fat32_read_cluster(fp->dir_entry_sector, cluster_buf)) {
+    if (!fat32_read_cluster(fp->dir_entry_cluster, cluster_buf)) {
+        printf("Failed to read cluster\n");
         free(cluster_buf);
         return false;
     }
 
-    DirEntry *entry =
-        (DirEntry *)(cluster_buf + fp->dir_entry_offset);
+    DirEntry *entry =  (DirEntry *)(cluster_buf + fp->dir_entry_offset);
 
     /* update file size */
     entry->DIR_FileSize = fp->size;
@@ -112,7 +121,8 @@ bool f_close(FAT32_FILE* fp)
     entry->DIR_FstClusLO = (fp->first_cluster & 0xFFFF);
 
     /* write updated entry back */
-    if (!fat32_write_cluster(fp->dir_entry_sector, cluster_buf)) {
+    if (!fat32_write_cluster(fp->dir_entry_cluster, cluster_buf)) {
+        printf("Failed to write cluster\n");
         free(cluster_buf);
         return false;
     }
@@ -125,7 +135,7 @@ bool f_close(FAT32_FILE* fp)
     fp->size = 0;
     fp->pos = 0;
     fp->parent_cluster = 0;
-    fp->dir_entry_sector = 0;
+    fp->dir_entry_cluster = 0;
     fp->dir_entry_offset = 0;
     fp->name[0] = '\0';
     fp->mode = 0;
@@ -391,7 +401,7 @@ bool f_sync(FAT32_FILE *fp)
         return false;
 
     /* read cluster containing directory entry */
-    if (!fat32_read_cluster(fp->dir_entry_sector, cluster_buf)) {
+    if (!fat32_read_cluster(fp->dir_entry_cluster, cluster_buf)) {
         free(cluster_buf);
         return false;
     }
@@ -407,7 +417,7 @@ bool f_sync(FAT32_FILE *fp)
     entry->DIR_FstClusLO = fp->first_cluster & 0xFFFF;
 
     /* write updated directory entry back */
-    if (!fat32_write_cluster(fp->dir_entry_sector, cluster_buf)) {
+    if (!fat32_write_cluster(fp->dir_entry_cluster, cluster_buf)) {
         free(cluster_buf);
         return false;
     }
@@ -676,8 +686,11 @@ bool f_stat(const char *path, FAT32_STAT *stat)
         *last = '\0';
         filename = last + 1;
 
-        if (!fat32_path_to_cluster(tmp, &parent_cluster))
+        if (!fat32_path_to_cluster(tmp, &parent_cluster)){
+            free(tmp);
             return false;
+        }
+            
     }
 
     DirEntry entry;
@@ -732,8 +745,10 @@ bool f_unlink(const char *path)
         *last = '\0';
         filename = last + 1;
 
-        if (!fat32_path_to_cluster(tmp, &parent_cluster))
+        if (!fat32_path_to_cluster(tmp, &parent_cluster)){
+            free(tmp);
             return false;
+        }
     }
 
     DirEntry entry;

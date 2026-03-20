@@ -70,7 +70,7 @@ int vfs_puts(int disk_no, char *str, void *cp);
 int vfs_printf(int disk_no, void *fp, char *str);
 char *vfs_gets(int disk_no, char *buff, int len, void *fp);
 
-void *vfs_open(int pd_no, char *path, int mode);
+void *vfs_open(int pd_no, const char *path, int mode);
 int vfs_close(int disk_no, void *fp);
 int vfs_read(int disk_no, void *fp, char *buff, int size);
 int vfs_write(int disk_no, void *fp, char *buff, int filesize);
@@ -81,10 +81,6 @@ void *vfs_opendir(int disk_no, char *path);
 int vfs_closedir(int disk_no, void *dp);
 int vfs_readdir(int disk_no, void *dp, void *fno);
 
-#if FF_USE_FIND
-int vfs_findfirst(int disk_no, void *dp, void *fno, char *path, char *pattern);
-int vfs_findnext(int disk_no, void *dp, void *fno);
-#endif 
 
 int vfs_mkdir(int disk_no, char *path);
 int vfs_unlink(int disk_no, char *path);
@@ -108,11 +104,7 @@ uint64_t vfs_listdir(int disk_no, char *path);
 const char* vfs_error_string(int result);
 
 
-#if FF_MULTI_PARTITION
-void vfs_test_multi_partition(int physical_disk);
-#endif
-
-void vfs_test(int disk_no);
+bool vfs_test(int disk_no, uint32_t lba, VFS_TYPE type);
 
 
 

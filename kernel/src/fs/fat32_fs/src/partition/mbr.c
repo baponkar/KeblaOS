@@ -16,6 +16,9 @@ Sector 0: Protective MBR
 #include "../../include/mbr.h"
 
 
+
+
+
 // Create Protective MBR
 void create_protective_mbr(ProtectiveMBR *mbr, uint64_t total_sectors) {
     memset(mbr, 0, sizeof(ProtectiveMBR));

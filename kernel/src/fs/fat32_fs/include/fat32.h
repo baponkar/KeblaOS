@@ -11,6 +11,8 @@
 #include "dir_manager.h"
 
 
+
+
 void fat32_set_disk(int no);
 
 
@@ -21,7 +23,8 @@ bool create_partition(uint8_t pdrv_no,                          // Creating a GP
     const guid_t partition_guid, 
     const guid_t partition_type_guid, 
     char* name);
-bool update_partition(size_t partition_index,                   // Update an existing GPT Partition 
+bool update_partition(int disk_no,
+    size_t partition_index,                   // Update an existing GPT Partition 
     uint64_t new_start_lba, 
     uint64_t new_sectors, 
     const char* new_name,  
@@ -30,7 +33,7 @@ bool update_partition(size_t partition_index,                   // Update an exi
 
     
 // Available functions in fat32_mount.h
-bool create_fat32_volume( uint64_t start_lba, uint32_t sectors); // defined in fat32_mount.c
+bool create_fat32_volume( uint32_t start_lba, uint32_t sectors); // defined in fat32_mount.c
 bool fat32_mount( uint64_t partition_lba_start);                 // defined in fat32_mount.c
 
 
@@ -77,7 +80,7 @@ bool f_unlink(const char *path);                    // f_unlink() deletes a file
 int f_error(FAT32_FILE *fp);
 
 // Defined in fat32.c
-void fat32_fs_test(int disk_no, uint64_t start_lba);
+void fat32_fs_test(int disk_no, uint32_t start_lba, uint32_t sectors);
 
 
 

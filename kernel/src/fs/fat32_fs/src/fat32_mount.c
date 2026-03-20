@@ -78,7 +78,7 @@ static bool fat32_set_volume_label( const char *label) {
 
 // Main function to create FAT32 volume
 // This function create and write BPB, FSInfo, and initialize FAT tables
-bool create_fat32_volume( uint64_t start_lba, uint32_t sectors) {
+bool create_fat32_volume( uint32_t start_lba, uint32_t sectors) {
     printf("Creating FAT32 Volume at LBA %ld with %d sectors\n", start_lba, sectors);
 
     // fat32_base_lba = start_lba; // Set the base LBA for future operations
@@ -158,6 +158,7 @@ bool create_fat32_volume( uint64_t start_lba, uint32_t sectors) {
 bool fat32_mount( uint64_t start_lba) {
 
     fat32_base_lba = start_lba;
+    fat32_cwd_cluster = get_root_dir_cluster();
 
     uint8_t sector[512];
     memset(sector, 0, sizeof(sector));
@@ -212,7 +213,7 @@ bool fat32_mount( uint64_t start_lba) {
     printf(" Reserved sectors: %u\n", bpb->BPB_RsvdSecCnt);
     printf(" FAT size: %u\n", bpb->BPB_FATSz32);
     printf(" Root cluster: %u\n", bpb->BPB_RootClus);
-    printf(" Total clusters: %u\n", get_total_clusters());
+    printf(" Total clusters: %u\n\n", get_total_clusters());
 
     return true;
 }

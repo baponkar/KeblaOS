@@ -73,6 +73,46 @@ static bool create_partitions(int total_part, partition_t partition[]){
     return true;
 }
 
+bool verify_installation(int disk_no, uint32_t start_lba)
+{
+    set_disk_no(disk_no);
+    
+    if(!fat32_mount( start_lba)){
+        printf(" Failed to mount Disk %d at Sector %llu!\n", disk_no, start_lba);
+        return false;
+    }
+
+    FAT32_STAT stat;
+
+    // Check present of files
+    if(!f_stat("/boot/kernel.bin", &stat)){
+        printf(" /boot/kernel.bin not present!\n");
+        return false;
+    } 
+
+    if (!f_stat("/boot/limine.conf", &stat)){
+        printf(" /boot/limine.conf not present\n");
+        return false;
+    } 
+
+    if (!f_stat("/boot/user_main.elf", &stat)){
+        printf(" /boot/user_main.elf not present\n");
+        return false;
+    }
+
+    if (!f_stat("/boot/user_main.elf", &stat)){
+        printf(" /boot/user_main.elf not present\n");
+        return false;
+    }
+
+    if (!f_stat("/efi/boot/bootx64.efi", &stat)){
+        printf(" /efi/boot/bootx64.efi file not present\n");
+        return false;
+    }
+
+    return true;
+}
+
 
 bool uefi_install(int boot_disk_no, int main_disk_no, uint64_t esp_start_lba, uint64_t esp_sectors, uint64_t total_sectors){
 
@@ -93,7 +133,7 @@ bool uefi_install(int boot_disk_no, int main_disk_no, uint64_t esp_start_lba, ui
 
     // ---------------- Creating ESP & DATA Partition ------------------------------
 
-    fat32_set_disk(main_disk_no);
+    set_disk_no(main_disk_no);
 
     int total_partitions = 2;
 
@@ -226,42 +266,3 @@ bool uefi_install(int boot_disk_no, int main_disk_no, uint64_t esp_start_lba, ui
 }
 
 
-bool verify_installation(int disk_no, uint32_t start_lba)
-{
-    fat32_set_disk(disk_no);
-    
-    if(!fat32_mount( start_lba)){
-        printf(" Failed to mount Disk %d at Sector %llu!\n", disk_no, start_lba);
-        return false;
-    }
-
-    FAT32_STAT stat;
-
-    // Check present of files
-    if(!f_stat("/boot/kernel.bin", &stat)){
-        printf(" /boot/kernel.bin not present\n");
-        return false;
-    } 
-
-    if (!f_stat("/boot/limine.conf", &stat)){
-        printf(" /boot/limine.conf not present\n");
-        return false;
-    } 
-
-    if (!f_stat("/boot/user_main.elf", &stat)){
-        printf(" /boot/user_main.elf not present\n");
-        return false;
-    }
-
-    if (!f_stat("/boot/user_main.elf", &stat)){
-        printf(" /boot/user_main.elf not present\n");
-        return false;
-    }
-
-    if (!f_stat("/efi/boot/bootx64.efi", &stat)){
-        printf(" /efi/boot/bootx64.efi file not present\n");
-        return false;
-    }
-
-    return true;
-}

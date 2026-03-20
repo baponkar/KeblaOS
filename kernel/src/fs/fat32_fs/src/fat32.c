@@ -7,14 +7,21 @@
 #include "../include/fat32.h"
 
 
-void fat32_fs_test(int disk_no, uint64_t start_lba){
+
+
+void fat32_fs_test(int disk_no, uint32_t start_lba, uint32_t sectors){
 
     printf("\n===== FAT32 TEST START =====\n");
 
-    if(!fat32_mount(start_lba)){
-        printf("[KMAIN] Failed to Mount Disk %d of DATA Partition\n", disk_no);
+    if(!create_fat32_volume(start_lba, sectors)){
+        printf(" Failed to create FAT32 Filesystem at LBA %d", start_lba);
     }
-    printf("[KMAIN] Successfully Mount Disk %d of DATA Partition\n", disk_no);
+    printf(" Successfully FAT32 Filesystem created at Sector %d\n", start_lba);
+
+    if(!fat32_mount(start_lba)){
+        printf(" Failed to Mount Disk %d of DATA Partition\n", disk_no);
+    }
+    printf(" Successfully Mount Disk %d of DATA Partition\n", disk_no);
 
     // Directory Test
 
@@ -38,7 +45,7 @@ void fat32_fs_test(int disk_no, uint64_t start_lba){
     if (f_mkdir("/mylongtestdir/subdir")){
         printf("[OK] mkdir /mylongtestdir/subdir\n");
     }else{
-        printf("[FAIL] mkdir /mylongtestdir/subdir\n");
+        printf("[FAIL] mkdir /mylongtestdir/subdir (maybe exists)\n");
     }
 
     // open directory 
@@ -100,7 +107,6 @@ void fat32_fs_test(int disk_no, uint64_t start_lba){
     }
     
     // File Test
-
     FAT32_FILE file;
     FAT32_STAT st;
 
@@ -110,7 +116,7 @@ void fat32_fs_test(int disk_no, uint64_t start_lba){
     char line[128];
 
     // create file
-    if (!f_open(&file, "mylongtestfile.txt", FA_CREATE_ALWAYS | FA_WRITE))
+    if (!f_open(&file, "/mylongtestfile.txt", FA_CREATE_ALWAYS | FA_WRITE))
     {
         printf("f_open create failed\n");
         return;
@@ -138,7 +144,7 @@ void fat32_fs_test(int disk_no, uint64_t start_lba){
     printf("File closed\n");
 
     // reopen for read
-    if (!f_open(&file, "mylongtestfile.txt", FA_READ))
+    if (!f_open(&file, "/mylongtestfile.txt", FA_READ))
     {
         printf("f_open read failed\n");
         return;
@@ -166,7 +172,7 @@ void fat32_fs_test(int disk_no, uint64_t start_lba){
     f_close(&file);
 
     // stat test 
-    if (f_stat("mylongtestfile.txt", &st))
+    if (f_stat("/mylongtestfile.txt", &st))
     {
         printf("\nSTAT INFO\n");
         printf("Name: %s\n", st.name);
@@ -180,7 +186,7 @@ void fat32_fs_test(int disk_no, uint64_t start_lba){
     }
 
     // truncate test
-    if (f_open(&file, "mylongtestfile.txt", FA_WRITE))
+    if (f_open(&file, "/mylongtestfile.txt", FA_WRITE))
     {
         f_lseek(&file, 5);
         f_truncate(&file);
@@ -190,7 +196,7 @@ void fat32_fs_test(int disk_no, uint64_t start_lba){
     }
 
     // unlink test
-    if (f_unlink("mylongtestfile.txt")){
+    if (f_unlink("/mylongtestfile.txt")){
         printf("File deleted\n");
     }else{
         printf("File delete failed\n");

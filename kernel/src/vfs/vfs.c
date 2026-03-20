@@ -4,13 +4,14 @@ Virtual File System
 
 References:
     https://wiki.osdev.org/VFS
-
 */
 
 #include "../driver/disk/disk.h"                
 
 #include "../fs/iso9660/iso9660.h"
 #include "../fs/fat32_fs/include/fat32.h"
+
+#include "../memory/kheap.h"
 
 #include "../lib/stdio.h"
 #include "../lib/stdlib.h"
@@ -21,9 +22,8 @@ References:
 #include "vfs.h"
 
 
-
-
 #define SECTOR_SIZE 512
+#define MAX_PATH 256
 
 
 bool is_gpt_disk(int disk_no){
@@ -118,6 +118,7 @@ int vfs_init(int disk_no) {
 }
 
 
+
 int vfs_disk_status(int disk_no){
     if(!kebla_disk_status(disk_no)){
         printf(" VFS: Disk %d status check failed!\n", disk_no);
@@ -127,15 +128,10 @@ int vfs_disk_status(int disk_no){
 }
 
 
+
 int vfs_mount(int disk_no, uint32_t lba, VFS_TYPE type){
 
-    if(disk_no >= disk_count) {
-        printf("VFS: Invalid disk number %d\n", disk_no);
-        return -1;
-    }
-
-    if(!disks) {
-        printf("VFS: Disks not initialized!\n");
+    if(disk_no >= disk_count || !disks) {
         return -1;
     }
 
@@ -144,7 +140,7 @@ int vfs_mount(int disk_no, uint32_t lba, VFS_TYPE type){
     if(disk.type == DISK_TYPE_SATAPI){
         return iso9660_mount(disk_no);
     }else if(disk.type == DISK_TYPE_AHCI_SATA || type == VFS_FAT32){
-        fat32_set_disk(disk_no);
+        set_disk_no(disk_no);
         return fat32_mount(lba) ? 0 : -1;
     }else{
         printf("VFS: Unsupported disk type %d for mount on disk %d\n", disk.type, disk_no);
@@ -153,6 +149,8 @@ int vfs_mount(int disk_no, uint32_t lba, VFS_TYPE type){
 
     return 0;
 }
+
+
 
 int vfs_unmount(int disk_no, int logical_drive){
     if(disk_no >= disk_count || !disks) return -1;
@@ -188,7 +186,7 @@ int vfs_mkfs(int pd, uint32_t start_lba, uint32_t sectors, VFS_TYPE fs_type){
             case VFS_FAT16:
                 return 0;
             case VFS_FAT32:
-                fat32_set_disk(pd);
+                set_disk_no(pd);
                 return create_fat32_volume(start_lba, sectors) ? 0 : -1;
             case VFS_EXFAT:
                 return 0;
@@ -222,30 +220,44 @@ int vfs_setcp(int disk_no, int cp){
 
 
 
-#define MAX_PATH 256
 
-void *vfs_open(int pd_no, char *path, int mode){
-    if(pd_no >= disk_count || !disks){
+
+void *vfs_open(int pd_no, const char *path, int mode){
+
+    if (pd_no >= disk_count || !disks || !path || mode < VFS_READ){
         return NULL;
-    } 
-
+    }
+        
     Disk disk = disks[pd_no];
 
-    if(disk.type == DISK_TYPE_SATAPI){
+    if (disk.type == DISK_TYPE_SATAPI) {
         return iso9660_open(pd_no, path);
-    }else if(disk.type == DISK_TYPE_AHCI_SATA){
-        FAT32_FILE fp;
-        return f_open(&fp, path, mode) ? &fp : NULL;
-    }else{
+    }
+    else if (disk.type == DISK_TYPE_AHCI_SATA) {
+
+        FAT32_FILE *fp = malloc(sizeof(FAT32_FILE));
+        if(!fp){
+            printf("Memory allocation failed for fp!\n");
+            return NULL;
+        }
+        memset(fp, 0, sizeof(FAT32_FILE));
+
+        if (!f_open(fp, path, mode)) {
+            free(fp);
+            return NULL;
+        }
+
+        return (void *) fp;
+
+    } else {
         printf("VFS: Unsupported disk type %d for open on disk %d\n", disk.type, pd_no);
         return NULL;
     }
-
-    return NULL;
 }
 
 
 int vfs_close(int disk_no, void *fp){
+
     if(!fp) return -1;
 
     Disk disk = disks[disk_no];
@@ -255,7 +267,10 @@ int vfs_close(int disk_no, void *fp){
             return iso9660_close(fp);
             break;
         case DISK_TYPE_AHCI_SATA:
-            return f_close(fp) ? 0 : -1;
+            FAT32_FILE *file = (FAT32_FILE *)fp;
+            bool res = f_close(file);
+            free(fp);
+            return  res ? 0 : -1;
             break;
         default:
             printf("VFS: Unsupported disk type %d for close on disk %d\n", disk.type, disk_no);
@@ -298,6 +313,8 @@ int vfs_write(int disk_no, void *fp, char *buff, int filesize){
             return -1;
     }
 }
+
+
 
 int vfs_lseek(int disk_no, void *fp, int offset){
     Disk disk = disks[disk_no];
@@ -352,7 +369,6 @@ int vfs_sync(int disk_no, void * fp){
     }
 }
 
-
 void *vfs_opendir(int disk_no, char *path){
     if(disk_no >= disk_count) return NULL;
 
@@ -367,8 +383,6 @@ void *vfs_opendir(int disk_no, char *path){
 
     return NULL;
 }
-
-
 
 int vfs_closedir(int disk_no, void *dp){
     if(!dp) return -1;
@@ -397,11 +411,6 @@ int vfs_readdir(int disk_no, void *dp, void *fno){
 
     return -1;
 }
-
-
-
-
-
 
 int vfs_mkdir(int disk_no, char *path){
     if(!path || !disks) return -1;
@@ -655,49 +664,48 @@ uint64_t vfs_listdir(int disk_no, char *path){
 }
 
 
-void vfs_test(int disk_no){
+bool vfs_test(int disk_no, uint32_t lba, VFS_TYPE type){
 
-    if(disk_no >= disk_count) return;
+    printf("================ VFS TEST Start ======================\n");
 
-    if(!disks) return;
+    if(disk_no >= disk_count || !disks) return false;
 
     Disk disk = disks[disk_no];
-    
 
-   // Creating a testfile test.txt
-   int flag = VFS_CREATE_ALWAYS | VFS_WRITE | VFS_READ;
-   void *test_file = vfs_open(disk_no, "/test.txt", flag);
+    if(vfs_mount(disk_no, lba, type) != 0){
+        printf("Failed to mount\n");
+    }else{
+        printf("Successfully Mount Disk at LBA %d\n", lba);
+    }
 
-   if(!test_file){
-        printf(" Failed to create /test.txt file\n");
-        return;
-   }
-   printf(" Successfully created /test.txt\n");
+    FAT32_FILE* fp = malloc(sizeof(FAT32_FILE));
+    if(!fp){
+        free(fp);
+        return false;
+    }
+    memset((void *)fp, 0, sizeof(FAT32_FILE));
+    printf("first_cluster: %d\n \
+            current cluster: %d\n \
+            size: %d\n \
+            pos: %d\n \
+            parent_cluster: %d\n \
+            dir_entry_cluster: %d\n \
+            dir_entry_offset: %d\n \
+            name: %s\n \
+            mode: %d\n", \
+            fp->first_cluster, \
+            fp->current_cluster, \
+            fp->size, \ 
+            fp->pos, \
+            fp->parent_cluster, \
+            fp->dir_entry_cluster, \
+            fp->dir_entry_offset, \
+            fp->name, fp->mode );
 
-   
 
-   const char *text = "Hello from VFS.\n";
+    // void *testfile = vfs_open(disk_no, "/testfile.txt", VFS_CREATE_ALWAYS | VFS_WRITE);
 
-   if(vfs_write(disk_no, test_file, text, 18) != 0){
-        printf(" failed to write into test.txt\n");
-        return;
-   }
-   printf(" successfully written in test.txt\n");
-
-   if(vfs_close(disk_no, test_file) != 0){
-        printf(" failed to close the file test.txt\n");
-        return;
-   }
-   printf(" Successfully closed the file test.txt\n");
-
-   char buff[256];
-
-   if(vfs_read(disk_no, test_file, buff, 255) != 0){
-        printf(" Failed to read the test file\n");
-        return;
-   }
-   buff[255] = '\0';
-   printf(" Successsfully read the test file: %s\n", buff);
+   printf("================ VFS TEST END ======================\n");
 }
 
 

@@ -294,3 +294,16 @@ bool create_ext2_fs(int disk_no, uint64_t start_lba, uint64_t total_sectors)
 
     return true;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
