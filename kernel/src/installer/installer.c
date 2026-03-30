@@ -1,4 +1,14 @@
 
+/*
+This file will UEFI install KeblaOS in selected Disk.
+1. Create GPT Disk with BOOT and DATA partition
+2. FAT32 FS at BOOT Partition
+2. Create Directory Structure and Copy required files in Boot Partition
+3. Create FAT32 FS in DATA Partition
+
+*/
+
+
 #include "../driver/disk/disk.h" 
 
 #include "../lib/stdio.h"
@@ -73,11 +83,12 @@ static bool create_partitions(int total_part, partition_t partition[]){
     return true;
 }
 
+
 bool verify_installation(int disk_no, uint32_t start_lba)
 {
     set_disk_no(disk_no);
     
-    if(!fat32_mount( start_lba)){
+    if(!fat32_mount(disk_no, start_lba, "ESP VOLUME")){
         printf(" Failed to mount Disk %d at Sector %llu!\n", disk_no, start_lba);
         return false;
     }
@@ -88,26 +99,36 @@ bool verify_installation(int disk_no, uint32_t start_lba)
     if(!f_stat("/boot/kernel.bin", &stat)){
         printf(" /boot/kernel.bin not present!\n");
         return false;
-    } 
+    }else{
+        printf(" /boot/kernel.bin file is present\n"); 
+    }
 
     if (!f_stat("/boot/limine.conf", &stat)){
         printf(" /boot/limine.conf not present\n");
         return false;
-    } 
-
-    if (!f_stat("/boot/user_main.elf", &stat)){
-        printf(" /boot/user_main.elf not present\n");
-        return false;
+    }else{
+        printf(" /boot/limine.conf file is present\n");
     }
 
     if (!f_stat("/boot/user_main.elf", &stat)){
         printf(" /boot/user_main.elf not present\n");
         return false;
+    } else{
+        printf(" /boot/user_main.elf file is present\n");
     }
+
+    if (!f_stat("/boot/user_main.elf", &stat)){
+        printf(" /boot/user_main.elf not present\n");
+        return false;
+    }else {
+        printf(" /boot/user_main.elf file is present\n");
+    }   
 
     if (!f_stat("/efi/boot/bootx64.efi", &stat)){
         printf(" /efi/boot/bootx64.efi file not present\n");
         return false;
+    }else {
+        printf(" /efi/boot/bootx64.efi file is present\n");
     }
 
     return true;
@@ -171,7 +192,7 @@ bool uefi_install(int boot_disk_no, int main_disk_no, uint64_t esp_start_lba, ui
     }
     printf("[INSTALLER] Successfully Created FAT32 FS\n");
 
-    if(!fat32_mount(esp_start_lba)){
+    if(!fat32_mount(main_disk_no, esp_start_lba, "DATA VOLUME")){
         printf("[INSTALLER] Failed to Mount FAT32 FS at LBA: %d!\n", esp_start_lba);
         return false;
     }
@@ -191,7 +212,7 @@ bool uefi_install(int boot_disk_no, int main_disk_no, uint64_t esp_start_lba, ui
             printf(" Empty File: %s\n", iso_files[i]);
             return false;
         }
-        printf(" File %d:%s present\n", boot_disk_no, iso_files[i]);
+        printf(" File %s present in Bootable Disk\n", iso_files[i]);
 
         void *iso_file = iso9660_open(boot_disk_no,  iso_files[i]);
         if(!iso_file){
@@ -218,7 +239,7 @@ bool uefi_install(int boot_disk_no, int main_disk_no, uint64_t esp_start_lba, ui
             free(buf);
             return false;
         }
-        printf(" Successfully read %d bytes from %s file\n", fsize,  iso_files[i]);
+        printf(" Successfully read %d bytes from %s file.\n", fsize,  iso_files[i]);
 
   
         FAT32_FILE fp;
@@ -228,24 +249,26 @@ bool uefi_install(int boot_disk_no, int main_disk_no, uint64_t esp_start_lba, ui
         if(!f_open(&fp, files[i], mode)){
             return false;
         }
-        printf(" Successfully Created %s\n", files[i]);
+        printf(" Successfully Created %s in Boot Partition\n", files[i]);
 
         // Writing File
         uint32_t bw;
         if(!f_write(&fp, buf, fsize, &bw)){
             return false;
         }
-        printf(" Successfully Write %s\n", files[i]);
+        printf(" Successfully Write %s in Boot Partition.\n", files[i]);
 
         // Finally Close the file
         if(!f_close(&fp)){
             return false;
         }
-        printf(" Successfully Close %s\n", files[i]);
+        printf(" Successfully Close %s in Boot Partition\n", files[i]);
         // ========================================================================================
 
         free(buf);
     }
+
+    printf("\n");
 
     // ------------------------- DATA Partition---------------------------------------------------
 
@@ -255,11 +278,48 @@ bool uefi_install(int boot_disk_no, int main_disk_no, uint64_t esp_start_lba, ui
     // }
     // printf("[INSTALLER] Successfully Created FAT32 FS\n");
 
-    // if(!fat32_mount(partition[1].start_lba)){
+    // if(!fat32_mount(main_disk_no, partition[1].start_lba, "DATA VOLUME")){
     //     printf("[INSTALLER] Failed to Mount FAT32 FS at LBA: %d!\n", partition[1].start_lba);
     //     return false;
     // }
     // printf("[INSTALLER] Successfully Mount FAT32 FS at LBA %d\n", partition[1].start_lba);
+
+    // if(!f_mkdir("/user")){
+    //     printf("[INSTALLER] Failed to create /user directory\n");
+    //     return false;
+    // }
+    // printf("[INSTALLER] Successfully to createed /user directory\n");
+
+    // FAT32_FILE fp;
+    // char *file_path = "/user/testuser.txt";
+    // if(!f_open(&fp, file_path, FA_CREATE_ALWAYS | FA_WRITE | FA_READ )){
+    //     printf("[INSTALLER] Failed to create %s file\n", file_path);
+    //     return false;
+    // }
+    // printf("[INSTALLER] Successfully Created %s file\n", file_path);
+
+    // char *text_data = "This is a simple text data.\n";
+
+    // uint32_t bw;
+    // if(!f_write(&fp, text_data, strlen(text_data), &bw)){
+    //     printf("[INSTALLER] Failed to write text data in %s file\n", file_path);
+    //     return false;
+    // }
+    // printf("[INSTALLER] Successfully written %d bytes data in %s\n", bw, file_path);
+
+    // uint32_t br;
+    // char buffer[32];
+    // if(!f_read(&fp, buffer, bw, &br)){
+    //     printf("[INSTALLER] Failed to read %s\n", file_path);
+    //     return false;
+    // }
+    // printf("[INSTALLER]Successfully read content of %s: %s\n", file_path, buffer);
+
+    // if(!f_close(&fp)){
+    //     printf("[INSTALLER] Failed to close %s\n", file_path);
+    //     return false;
+    // }
+    // printf("[INSTALLER] Successfully closed %s\n", file_path);
 
     return true;
     

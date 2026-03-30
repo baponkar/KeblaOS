@@ -4,7 +4,6 @@ AHCI  : Advance Host Controller Interface - is developed by Intel to facilitate 
 
 ATA   : Advanced Technology Attachment
 ATAPI : Advanced Technology Attachment Packet Interface (Serial) - Used for most modern optical drives.
-ATAPI : Advanced Technology Attachment Packet Interface (Parallel) - Commonly used for optical drives.
 
 PCI  : Peripheral Component Interconnect
 PATA : Parallel Advanced Technology Attachment
@@ -223,6 +222,7 @@ int findCMDSlot(HBA_PORT_T* port, size_t cmd_slots)
 	{
 		if (!(slots & 1))
 			return i;
+
 		slots >>= 1;
 		// printf(" [AHCI] find a free command list entry at %d\n", i);
 	}
@@ -230,19 +230,28 @@ int findCMDSlot(HBA_PORT_T* port, size_t cmd_slots)
 	return -1;
 }
 
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+#define MAX_PRDT_ENTRIES 256 // or your actual limit
 
 // Execute read or write command
 // runCommand needs physical address of the buffer
 bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t start_l, uint32_t start_h, uint32_t count, uintptr_t phys_buf){
+    
+    if(!port)
+        return false;
+
     // Clear pending interrupt bits
-    port->is = (uint32_t)-1;
+    port->is = (uint32_t)-1;    // 0xFFFFFFFF
 
     int spin = 0;
+
     int slot = findCMDSlot(port, 32);
-    if (slot == -1) return false;
+    if (slot == -1) 
+        return false;
 
     // Convert CLB physical address (in port registers) to a virtual pointer for CPU use
-    uintptr_t clb_phys = ((uint64_t)port->clb) | ((uint64_t)port->clbu << 32);
+    uintptr_t clb_phys = ((uint64_t)port->clbu << 32) | ((uint64_t)port->clb);
     HBA_CMD_HEADER_T* cmd_header_base = (HBA_CMD_HEADER_T*) (uintptr_t) phys_to_vir(clb_phys);
     if (!cmd_header_base) {
         printf(" [AHCI] runCommand: clb phys_to_vir failed\n");
@@ -252,8 +261,7 @@ bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t start_l
     HBA_CMD_HEADER_T* cmd_header = (HBA_CMD_HEADER_T*) &cmd_header_base[slot];
 
     cmd_header->cfl = sizeof(FIS_REG_H2D_T) / sizeof(uint32_t);
-    cmd_header->w   = write;
-    cmd_header->prdtl = (uint16_t)(((count - 1) >> 4) + 1);
+    cmd_header->w   = write;                                // Read or Write
 
     // Compute CTBA physical (combine ctba + ctbau) and convert to virtual
     uint64_t ctba_phys = ((uint64_t)cmd_header->ctbau << 32) | (uint64_t)cmd_header->ctba;
@@ -264,27 +272,39 @@ bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t start_l
     }
 
     // Clear command table area
-    size_t cmdtbl_size = sizeof(HBA_CMD_TBL_T) + (cmd_header->prdtl - 1) * sizeof(HBA_PRDT_ENTRY_T);
+    size_t cmdtbl_size = 4096; // 4KB Page size
     memset(cmd_tbl, 0, cmdtbl_size);
 
-    // Fill PRDT entries: each 8 KiB (16 sectors)
-    uint16_t i;
-    uintptr_t cur_phys = phys_buf;
-    uint32_t remaining = count;
-    for (i = 0; i < cmd_header->prdtl - 1; i++) {
-        cmd_tbl->prdt_entry[i].dba  = (uint32_t)(cur_phys & 0xFFFFFFFF);
-        cmd_tbl->prdt_entry[i].dbau = (uint32_t)(cur_phys >> 32);
-        cmd_tbl->prdt_entry[i].dbc  = 8 * 1024 - 1; // 8KB - 1
+    // Calculate total bytes: count * 512
+    uint32_t total_bytes = count << 9;
+
+    uintptr_t virt = phys_to_vir(phys_buf);
+    uint32_t offset = 0;
+    int i = 0;
+
+    while (total_bytes > 0) {
+        if (i >= MAX_PRDT_ENTRIES) {
+            printf("[AHCI] PRDT overflow!\n");
+            return false;
+        }
+
+        uintptr_t phys = vir_to_phys(virt + offset);
+
+        uint32_t page_offset = phys & 0xFFF;
+        uint32_t chunk = min(total_bytes, 4096 - page_offset);
+
+        cmd_tbl->prdt_entry[i].dba  = (uint32_t) phys;
+        cmd_tbl->prdt_entry[i].dbau = (uint32_t) (phys >> 32);
+        cmd_tbl->prdt_entry[i].dbc  = chunk - 1;
         cmd_tbl->prdt_entry[i].i    = 1;
-        cur_phys += 8 * 1024;
-        remaining -= 16;
+
+        offset += chunk;
+        total_bytes -= chunk;
+        i++;
     }
 
-    // Last entry
-    cmd_tbl->prdt_entry[i].dba  = (uint32_t)(cur_phys & 0xFFFFFFFF);
-    cmd_tbl->prdt_entry[i].dbau = (uint32_t)(cur_phys >> 32);
-    cmd_tbl->prdt_entry[i].dbc  = (remaining << 9) - 1; // remaining * 512 - 1
-    cmd_tbl->prdt_entry[i].i    = 1;
+    cmd_header->prdtl = i;
+
 
     // Fill FIS
     FIS_REG_H2D_T* cmd_fis = (FIS_REG_H2D_T*)(&cmd_tbl->cfis);
@@ -306,26 +326,40 @@ bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t start_l
     cmd_fis->counth = (uint8_t)((count >> 8) & 0xFF);
 
     // Wait for port not busy
-    while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)) && spin < 1000000) spin++;
+    while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)) && spin < 1000000) {
+        printf(" [AHCI] port is busy...\n");
+        spin++;
+    }
+   
     if (spin == 1000000) {
         printf(" [AHCI] Port is hung\n");
         return false;
     }
 
     // Issue command
-    port->ci = 1 << slot;
+    __sync_synchronize();   // or asm volatile("" ::: "memory");
+    port->ci |= 1 << slot;
+
+    int timeout = 1000000;
 
     // Wait for completion
-    while (true) {
-        if (!(port->ci & (1 << slot))) break;
+    while( (port->ci & (1 << slot)) && timeout--){
+
+        // printf("[runCommand] Waiting...\n");
+
         if (port->is & HBA_PxIS_TFES) {
             printf(" [AHCI] Task File error!\n");
             return false;
         }
     }
 
+    if (timeout == 0) {
+        printf("[AHCI] Command timeout!\n");
+        return false;
+    }
+
     if (port->is & HBA_PxIS_TFES) {
-        printf(" [AHCI] Task File error after completion!\n");
+        printf("[AHCI] Task File error after completion!\n");
         return false;
     }
 

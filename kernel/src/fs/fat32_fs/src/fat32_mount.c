@@ -1,9 +1,14 @@
 
+#include "../../../memory/kheap.h"
+#include "../../../memory/vmm.h"
+#include "../../../memory/kmalloc.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
+#include "../include/diskio.h"
 #include "../include/fat32_types.h"
 #include "../include/fat32_bpb.h"
 #include "../include/fat32_fsinfo.h"
@@ -17,6 +22,11 @@
 uint32_t fat32_base_lba = 0;                // Base LBA of the FAT32 partition, set during mount or creation
 extern uint32_t fat32_cwd_cluster;          // Defined in cluster_manager.c
 extern BPB *bpb;                            // Defined in fat32_bpb.c
+extern uint32_t fat32_free_cluster_no;
+extern uint8_t *fat_buffer;
+extern uint32_t fat_size_bytes;
+
+
 
 /*
  This function sets the volume label in the root directory. 
@@ -72,13 +82,16 @@ static bool fat32_set_volume_label( const char *label) {
 
     // 4. Write back to disk
     bool ok = fat32_write_cluster( root_cluster, buf);
+    
     free(buf);
+
     return ok;
 }
 
 // Main function to create FAT32 volume
 // This function create and write BPB, FSInfo, and initialize FAT tables
 bool create_fat32_volume( uint32_t start_lba, uint32_t sectors) {
+
     printf("Creating FAT32 Volume at LBA %ld with %d sectors\n", start_lba, sectors);
 
     // fat32_base_lba = start_lba; // Set the base LBA for future operations
@@ -152,16 +165,55 @@ bool create_fat32_volume( uint32_t start_lba, uint32_t sectors) {
     return true;
 }
 
+void fat32_reset() {
+    fat32_base_lba = 0;
+    fat32_cwd_cluster = 0;
 
+    if(bpb) {
+        free(bpb);
+        bpb = NULL;
+    }
+}
 
+extern bool kebla_disk_read(int disk_no, uint64_t lba, uint32_t count, void* buf);
+extern int disk_no;
 
-bool fat32_mount( uint64_t start_lba) {
+bool fat32_load_fat_cache() {
+
+    uint32_t fat_start_lba = get_first_fat_sector();
+    uint32_t fat_sectors = get_fat_size_in_sectors();
+    uint32_t bytes_per_sector = get_bytes_per_sector();
+
+    fat_size_bytes = fat_sectors * bytes_per_sector;
+
+    printf("Loading FAT cache. Start LBA %d, Total Sectors: %d, Size %d Bytes\n", fat_start_lba, fat_sectors, fat_size_bytes);
+
+    fat_buffer = (uint8_t *) phys_to_vir(kmalloc_a(fat_size_bytes, 1));
+    if (!fat_buffer) return false;
+    memset(fat_buffer, 0, fat_size_bytes);
+
+  //  if (!fat32_read_sectors(fat_start_lba,  fat_sectors, fat_buffer)) {
+  if (!kebla_disk_read(disk_no, fat_start_lba,  fat_sectors, fat_buffer)) {
+        // free(fat_buffer);
+        fat_buffer = NULL;
+        return false;
+    }
+
+    // free(fat_buffer);
+
+    return true;
+}
+
+bool fat32_mount( int disk_no, uint64_t start_lba, char *vol_label) {
+
+    set_disk_no(disk_no);
 
     fat32_base_lba = start_lba;
-    fat32_cwd_cluster = get_root_dir_cluster();
 
-    uint8_t sector[512];
+    uint8_t *sector = (uint8_t *)malloc(512);
+    if(!sector) return false;
     memset(sector, 0, sizeof(sector));
+
 
     if(!fat32_read_sector( start_lba, sector)){
         printf("FAT32: boot sector read failed\n");
@@ -178,41 +230,53 @@ bool fat32_mount( uint64_t start_lba) {
 
     memcpy(bpb, sector, sizeof(BPB));   // Copy the boot sector data into the BPB structure
 
+    fat32_cwd_cluster = get_root_dir_cluster();
+
     /* Validate FAT32 */
-    if (bpb->BPB_BytsPerSec != 512) {
-        printf("FAT32: invalid sector size %d\n", bpb->BPB_BytsPerSec);
+    if (get_bytes_per_sector() != 512) {
+        printf("FAT32: invalid sector size %d\n", get_bytes_per_sector());
         return false;
     }
 
-    if (bpb->BPB_FATSz32 == 0) {
+    if (get_fat_size_in_sectors() == 0) {
         printf("FAT32: not FAT32\n");
         return false;
     }
 
-    if (bpb->BPB_NumFATs == 0) {
+    if (get_total_no_fat() == 0) {
         printf("FAT32: invalid FAT count\n");
         return false;
     }
 
-    if (bpb->BPB_SecPerClus == 0) {
+    if (get_sectors_per_cluster() == 0) {
         printf("FAT32: invalid cluster size\n");
         return false;
     }
 
-    if(!fat32_set_volume_label("KEBLAOS FAT")){
+    if (get_total_sectors() <= 0){
+        printf("FAT32: invalid total sectors\n");
+        return false;
+    }
+
+    if(!fat32_set_volume_label(vol_label)){
         printf("FAT32: faile to set Volume Label\n");
         return false;
     }
 
-    fat32_cwd_cluster = bpb->BPB_RootClus;
+    fat32_cwd_cluster = get_root_dir_cluster();
+
+    if(!fat32_load_fat_cache()){
+        printf("Failed to load FAT cache\n");
+        return false;
+    }
     
     printf("FAT32 mounted\n");
     printf(" Volume starts at LBA: %u\n", fat32_base_lba);
-    printf(" Bytes/sector: %u\n", bpb->BPB_BytsPerSec);
-    printf(" Sectors/cluster: %u\n", bpb->BPB_SecPerClus);
-    printf(" Reserved sectors: %u\n", bpb->BPB_RsvdSecCnt);
-    printf(" FAT size: %u\n", bpb->BPB_FATSz32);
-    printf(" Root cluster: %u\n", bpb->BPB_RootClus);
+    printf(" Bytes/sector: %u\n", get_bytes_per_sector());
+    printf(" Sectors/cluster: %u\n", get_sectors_per_cluster());
+    printf(" Reserved sectors: %u\n", get_reserved_sector_count());
+    printf(" FAT size: %u\n", get_fat_size_in_sectors());
+    printf(" Root cluster: %u\n", get_root_dir_cluster());
     printf(" Total clusters: %u\n\n", get_total_clusters());
 
     return true;

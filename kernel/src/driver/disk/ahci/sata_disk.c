@@ -12,39 +12,58 @@ extern bool debug_on;
 
 
 
-// LBA=start_l+((uint64_t)start_h<<32)
-// start_l=LBA&0xFFFFFFFF
-// start_h=(LBA>>32)&0xFFFFFFFF
+// LBA = start_l + ((uint64_t)start_h<<32)
+// start_l = LBA & 0xFFFFFFFF
+// start_h = (LBA>>32) & 0xFFFFFFFF
 // The below function is taking physical address of buffer 
-bool sata_read(HBA_PORT_T* port, size_t _lba, size_t _count, uintptr_t _buf_phys_addr){
-    uint64_t lba = (uint64_t) _lba;
-    uint32_t count = (uint32_t) _count;
+#define MAX_SECTORS_PER_CMD 32   // safe value (you can try 16–64)
+
+bool sata_read(HBA_PORT_T* port, size_t _lba, size_t _count, uintptr_t _buf_phys_addr) {
+    uint64_t lba = (uint64_t)_lba;
+    uint32_t count = (uint32_t)_count;
     uintptr_t buf_phys_addr = _buf_phys_addr;
 
     uint64_t total_sectors = sata_get_total_sectors(port);
 
-    if(total_sectors <= 0){
-        printf("[SATA] Total Sectors: %d in port %x\n", total_sectors, (uint64_t) port);
+    if (total_sectors <= 0) {
+        printf("[SATA] Total Sectors: %d in port %x\n", total_sectors, (uint64_t)port);
         return false;
     }
 
-    if(total_sectors > 0 && lba + count > total_sectors){
-        printf("[SATA] Total Sectors: %d, LBA: %d, Count: %d, LBA + Count: %d\n", 
-            total_sectors, lba, count, (lba + count));
-        printf("[SATA] No Space in AHCI SATA Disk\n");
+    if (lba + count > total_sectors) {
+        printf("[SATA] Out of bounds read!\n");
         return false;
     }
-    
-	uint32_t start_l = (uint32_t)(lba & 0xFFFFFFFF);
-	uint32_t start_h = (uint32_t)((lba >> 32) & 0xFFFFFFFF);
-    return runCommand(ATA_CMD_READ_DMA_EX, 0, port, start_l, start_h, count, _buf_phys_addr);
+
+    while (count > 0) {
+
+        uint32_t chunk = (count > MAX_SECTORS_PER_CMD) ? MAX_SECTORS_PER_CMD : count;
+
+        uint32_t start_l = (uint32_t)(lba & 0xFFFFFFFF);
+        uint32_t start_h = (uint32_t)((lba >> 32) & 0xFFFFFFFF);
+
+        // Debug (optional)
+        // printf("Read chunk: LBA=%d Count=%d\n", lba, chunk);
+
+        if (!runCommand(ATA_CMD_READ_DMA_EX, 0, port, start_l, start_h, chunk, buf_phys_addr)) {
+            printf("[SATA] runCommand failed at LBA %d\n", lba);
+            return false;
+        }
+
+        // Move forward
+        lba += chunk;
+        count -= chunk;
+        buf_phys_addr += (uintptr_t)chunk * 512;
+    }
+
+    return true;
 }
 
 
 
-// LBA=start_l+((uint64_t)start_h<<32)
-// start_l=LBA&0xFFFFFFFF
-// start_h=(LBA>>32)&0xFFFFFFFF
+// LBA = start_l + ((uint64_t)start_h<<32)
+// start_l = LBA & 0xFFFFFFFF
+// start_h = (LBA>>32) & 0xFFFFFFFF
 // The below function is taking physical address of buffer 
 bool sata_write(HBA_PORT_T* port, size_t _lba, size_t _count, uintptr_t _phys_buf_addr) {
 
@@ -67,69 +86,7 @@ bool sata_write(HBA_PORT_T* port, size_t _lba, size_t _count, uintptr_t _phys_bu
 
 void SataPortRebase(HBA_PORT_T *port)
 {
-    stopCMD(port);
-
-    const size_t ALLOC_SIZE = 64 * 1024;
-
-    void *base_virt = (void *)kheap_alloc(ALLOC_SIZE, ALLOCATE_DATA);
-    if (!base_virt) {
-        printf("[AHCI] SataPortRebase: kheap_alloc failed\n");
-        return;
-    }
-
-    uintptr_t base_phys = vir_to_phys((uintptr_t)base_virt);
-    if (base_phys == 0) {
-        printf("[AHCI] SataPortRebase: vir_to_phys failed\n");
-        kheap_free(base_virt, ALLOCATE_DATA);
-        return;
-    }
-
-    /* ---------------- Command List ---------------- */
-
-    uintptr_t clb_phys = base_phys + 0x0;
-    void *clb_virt = (void *)((uintptr_t)base_virt + 0x0);
-    memset(clb_virt, 0, 0x400);
-
-    /* ---------------- FIS Receive ---------------- */
-
-    uintptr_t fb_phys = base_phys + 0x1000;
-    void *fb_virt = (void *)((uintptr_t)base_virt + 0x1000);
-    memset(fb_virt, 0, 0x100);
-
-    /* ---------------- Command Tables ---------------- */
-
-    uintptr_t ctba_base_phys = base_phys + 0x2000;
-    void *ctba_base_virt = (void *)((uintptr_t)base_virt + 0x2000);
-    memset(ctba_base_virt, 0, 0x2000);
-
-    /* ---------------- Program Registers ---------------- */
-
-    port->clb  = (uint32_t)(clb_phys & 0xFFFFFFFF);
-    port->clbu = (uint32_t)(clb_phys >> 32);
-
-    port->fb   = (uint32_t)(fb_phys & 0xFFFFFFFF);
-    port->fbu  = (uint32_t)(fb_phys >> 32);
-
-    /* ---------------- Initialize Command Headers ---------------- */
-
-    HBA_CMD_HEADER_T *cmd_header = (HBA_CMD_HEADER_T *)clb_virt;
-
-    for (int i = 0; i < 32; i++) {
-
-        uintptr_t phys_ctba = ctba_base_phys + (i * 0x100);
-
-        cmd_header[i].ctba  = (uint32_t)(phys_ctba & 0xFFFFFFFF);
-        cmd_header[i].ctbau = (uint32_t)(phys_ctba >> 32);
-
-        cmd_header[i].prdtl = 8;
-        cmd_header[i].a = 0;        // SATA device (NOT ATAPI)
-        cmd_header[i].cfl = 5;      // FIS size in DWORDS
-
-        void *virt_ctba = (void *)((uintptr_t)ctba_base_virt + (i * 0x100));
-        memset(virt_ctba, 0, 0x100);
-    }
-
-    startCMD(port);
+    portRebase(port);
 }
 
 

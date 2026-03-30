@@ -200,6 +200,10 @@ void putchar(unsigned char c){
     }else if(c == '\0'){
         // Do nothing for end of string otherwise it unnecessary increase column number
     }else{ 
+        if (c >= 128) {
+            c = '?';   // replace unsupported
+        }
+
         draw_char(cur_x, cur_y, c, text_color);
         cur_x += 1;
         update_cur_pos();

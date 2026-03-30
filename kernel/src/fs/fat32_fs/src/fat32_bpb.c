@@ -118,6 +118,7 @@ uint32_t get_first_data_sector(){
     return bpb->BPB_HiddSec + bpb->BPB_RsvdSecCnt + (bpb->BPB_NumFATs * bpb->BPB_FATSz32);   // Reserved Sectors + Total Sectors taken by two FATs
 }
 
+
 uint32_t get_cluster_size_bytes(){
     if(!bpb) return 0;
     return bpb->BPB_BytsPerSec * bpb->BPB_SecPerClus;

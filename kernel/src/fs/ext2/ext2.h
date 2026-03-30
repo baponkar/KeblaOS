@@ -94,3 +94,5 @@ bool ext2_read_file(ext2_inode_t* inode, uint8_t* buffer);
 bool ext2_read_inode(uint32_t inode_no, ext2_inode_t* inode);
 
 bool create_ext2_fs(int disk_no, uint64_t start_lba, uint64_t total_sectors);
+
+bool ext2_create_dir(uint32_t parent_inode_no, const char *name);

@@ -141,7 +141,8 @@ int vfs_mount(int disk_no, uint32_t lba, VFS_TYPE type){
         return iso9660_mount(disk_no);
     }else if(disk.type == DISK_TYPE_AHCI_SATA || type == VFS_FAT32){
         set_disk_no(disk_no);
-        return fat32_mount(lba) ? 0 : -1;
+        fat32_reset();
+        return fat32_mount(disk_no, lba, "DATA VOLUME") ? 0 : -1;
     }else{
         printf("VFS: Unsupported disk type %d for mount on disk %d\n", disk.type, disk_no);
         return -1;
@@ -235,24 +236,26 @@ void *vfs_open(int pd_no, const char *path, int mode){
     }
     else if (disk.type == DISK_TYPE_AHCI_SATA) {
 
-        FAT32_FILE *fp = malloc(sizeof(FAT32_FILE));
-        if(!fp){
+        FAT32_FILE *file = (FAT32_FILE *) malloc(sizeof(FAT32_FILE));
+        if(!file){
             printf("Memory allocation failed for fp!\n");
             return NULL;
         }
-        memset(fp, 0, sizeof(FAT32_FILE));
+        memset(file, 0, sizeof(FAT32_FILE));
 
-        if (!f_open(fp, path, mode)) {
-            free(fp);
+        if (!f_open(file, path, mode)) {
+            free(file);
             return NULL;
         }
 
-        return (void *) fp;
+        return (void *) file;
 
     } else {
         printf("VFS: Unsupported disk type %d for open on disk %d\n", disk.type, pd_no);
         return NULL;
     }
+
+    return NULL;
 }
 
 
@@ -306,7 +309,13 @@ int vfs_write(int disk_no, void *fp, char *buff, int filesize){
             break;
         case DISK_TYPE_AHCI_SATA:
             uint32_t bw;
-            return f_write(fp, buff, filesize, &bw) ? 0 : -1;
+            bool res = f_write(fp, buff, filesize, &bw);
+            printf("Success writing: %d\n", (uint64_t)res);
+            if(res){
+                return 0;
+            }else{
+                return -1;
+            }
             break;
         default:
             printf("VFS: Unsupported disk type %d for write on disk %d\n", disk.type, disk_no);
@@ -646,11 +655,7 @@ uint64_t vfs_listdir(int disk_no, char *path){
 
         while (f_readdir(&dir, &entry))
         {
-            printf("  name:%s  size:%u  cluster:%u  attr:%02X\n",
-                entry.name,
-                entry.size,
-                entry.first_cluster,
-                entry.attr);
+            printf("  name:%s  size:%u  cluster:%u  attr:%02X\n", entry.name,  entry.size, entry.first_cluster, entry.attr);
         }
 
         f_closedir(&dir);
@@ -678,32 +683,32 @@ bool vfs_test(int disk_no, uint32_t lba, VFS_TYPE type){
         printf("Successfully Mount Disk at LBA %d\n", lba);
     }
 
-    FAT32_FILE* fp = malloc(sizeof(FAT32_FILE));
-    if(!fp){
-        free(fp);
+
+    char *file_path = "/testfile.txt";
+
+    void *testfile = vfs_open(disk_no, file_path, VFS_CREATE_ALWAYS | VFS_WRITE | VFS_READ);
+
+    if(!testfile){
+        printf("Failed to create %s\n", file_path);
         return false;
     }
-    memset((void *)fp, 0, sizeof(FAT32_FILE));
-    printf("first_cluster: %d\n \
-            current cluster: %d\n \
-            size: %d\n \
-            pos: %d\n \
-            parent_cluster: %d\n \
-            dir_entry_cluster: %d\n \
-            dir_entry_offset: %d\n \
-            name: %s\n \
-            mode: %d\n", \
-            fp->first_cluster, \
-            fp->current_cluster, \
-            fp->size, \ 
-            fp->pos, \
-            fp->parent_cluster, \
-            fp->dir_entry_cluster, \
-            fp->dir_entry_offset, \
-            fp->name, fp->mode );
+    printf("Successfully created %s\n", file_path);
 
+    char *text_data = "This is a test text data written from vfs test.\n";
 
-    // void *testfile = vfs_open(disk_no, "/testfile.txt", VFS_CREATE_ALWAYS | VFS_WRITE);
+    int filesize = strlen(text_data);
+
+    if(vfs_write( disk_no, testfile, text_data, filesize) != 0){
+        printf("Failed to write into %s\n", file_path);
+        return false;
+    }
+    printf("Successfully written data into %s\n", file_path);
+
+    if(vfs_close(disk_no, testfile) != 0){
+        printf("Failed to close %s\n", file_path);
+        return false;
+    }
+    printf("Successfully closed %s\n", file_path);
 
    printf("================ VFS TEST END ======================\n");
 }

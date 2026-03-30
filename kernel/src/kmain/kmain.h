@@ -45,7 +45,6 @@
 #include "../driver/disk/ahci/sata_disk.h"  // SATA Driver
 #include "../driver/disk/ahci/satapi.h"     // SATAPI Driver
 #include "../driver/disk/disk.h"            // Disk structure and functions
-#include "../driver/disk/inspect_disk.h"
 #include "../driver/disk/nvme/nvme.h"       // NVMe Driver
 
 

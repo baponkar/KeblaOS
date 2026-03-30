@@ -6,20 +6,11 @@
 
 // Copy dat of src into dest
 void *memcpy(void *dest, const void *src, size_t n) {
+    uint8_t *d = (uint8_t *)dest;
+    const uint8_t *s = (const uint8_t *)src;
 
-    uint64_t *pdest64 = (uint64_t *) dest;
-    const uint64_t *psrc64 = (const uint64_t *) src;
-
-    size_t i;
-    for (i = 0; i < (n / sizeof(uint64_t)); i++) {
-        pdest64[i] = psrc64[i];  // Copy 64-bit chunks
-    }
-
-    // Copy any remaining bytes
-    uint8_t *pdest8 = (uint8_t *) (pdest64 + i);
-    const uint8_t *psrc8 = (const uint8_t *) (psrc64 + i);
-    for (i = 0; i < (n % sizeof(uint64_t)); i++) {
-        pdest8[i] = psrc8[i];  // Copy remaining bytes
+    for (size_t i = 0; i < n; i++) {
+        d[i] = s[i];
     }
 
     return dest;
@@ -254,7 +245,8 @@ char *strrchr(const char *str, int c) {
 
 // Duplicating the string
 char *strdup(const char *str) {
-    if (str == NULL) return NULL;
+    if (str == NULL) 
+        return NULL;
     
     size_t len = strlen(str) + 1;  // +1 for null terminator
     char *copy = malloc(len);

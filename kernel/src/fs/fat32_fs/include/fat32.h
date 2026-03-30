@@ -34,7 +34,7 @@ bool update_partition(int disk_no,
     
 // Available functions in fat32_mount.h
 bool create_fat32_volume( uint32_t start_lba, uint32_t sectors); // defined in fat32_mount.c
-bool fat32_mount( uint64_t partition_lba_start);                 // defined in fat32_mount.c
+bool fat32_mount(int disk_no, uint64_t partition_lba_start, char *vol_label);                 // defined in fat32_mount.c
 
 
 // Available in dir_manager.h

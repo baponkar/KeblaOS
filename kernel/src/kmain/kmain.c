@@ -15,8 +15,7 @@
 
 #include "kmain.h"
 
-bool debug_on = false;
-
+bool debug_on = false;  // Show debug message
 bool install = false;    // This variable is set to true when the installer is running, otherwise it is false.
 
 extern uint64_t fb0_width;
@@ -33,7 +32,7 @@ extern int disk_count;
 #define MAIN_DISK_TOTAL_SECTORS 2097152         // 1GB = 1 * 1024 * 1024 * 1024 / 512
 
 #define ESP_START_LBA 2048
-#define ESP_SECTORS 204800   // 100 MB = 100 * 1024 * 1024 / 512
+#define ESP_SECTORS 204800            // 100 MB = 100 * 1024 * 1024 / 512
 
 #define DATA_PART_START_LBA 206848    // (ESP_START_LBA + ESP_SECTORS)
 #define DATA_PART_SECTORS 1888256     // (MAIN_DISK_TOTAL_SECTORS - ESP_SECTORS - (2 * ESP_START_LBA)) // For safety deduct ESP_START_LBA
@@ -95,6 +94,7 @@ void kmain(){
             printf("[KMAIN] KeblaOS is Booting from an Unknown Disk type.\n\n");
     }
 
+
     // Update boot_disk_no/main_disk_no on based boot disk
     if(disk_count == 1 && disks[0].type != DISK_TYPE_SATAPI){
         boot_disk_no = 0;
@@ -106,23 +106,36 @@ void kmain(){
         disk_no = 1;
     }
 
+
     // Checking Installation in main_disk
     if(!verify_installation(main_disk_no, ESP_START_LBA)){
         printf("[KMAIN] KeblaOS is not installed in Disk %d\n", main_disk_no);
     }else{
-        printf("[KMAIN] KeblaOS is already installed in the Disk %d.\n", main_disk_no);
+        printf("[KMAIN] KeblaOS is already installed in the Disk %d. ESP LBA %d, Sectors %d.\n", main_disk_no, ESP_START_LBA, ESP_SECTORS);
     }
     
     if(install){
         if(!uefi_install(boot_disk_no, main_disk_no, ESP_START_LBA, ESP_SECTORS, MAIN_DISK_TOTAL_SECTORS)){
             printf("[KMAIN] Failed to Install KeblaOS in Disk %d.\n", boot_disk_no);
+        }else{
+            printf("[KMAIN] Successfully Install KeblaOS in Disk %d.\n", boot_disk_no);
         }
-        printf("[KMAIN] Successfully Install KeblaOS in Disk %d.\n", boot_disk_no);
     }
+    
     
     // fat32_fs_test(main_disk_no,  DATA_PART_START_LBA, DATA_PART_SECTORS);
 
+    if(create_ext2_fs(main_disk_no, DATA_PART_START_LBA, DATA_PART_SECTORS)){
+        printf("[KMAIN] Successfully created ext2 filesystem on Disk %d.\n", main_disk_no);
+    }else{
+        printf("[KMAIN] Failed to create ext2 filesystem on Disk %d.\n", main_disk_no);
+    }
+
+    // ext2_create_dir(2, "testdir"); // create inside root directory
+
+
     // vfs_test(main_disk_no, DATA_PART_START_LBA, VFS_FAT32);
+
 
     // if(!create_fat32_volume( DATA_PART_START_LBA, DATA_PART_SECTORS)){
     //     printf("Failed to crate FAT32 Volume at Sector %d\n", DATA_PART_START_LBA);
@@ -130,72 +143,79 @@ void kmain(){
     //     printf("Successfully crated FAT32 Volume at Sector %d\n", DATA_PART_START_LBA);
     // }
 
-    PartitionEntry *partitions = get_partitions(main_disk_no);
-    if(!partitions){
-        printf("Failed to get partitions array\n");
-    }
 
-    for(int i=0; i < MAX_PARTITIONS; i++){
-        PartitionEntry part = partitions[i];
+    // Partition Test
+    // PartitionEntry *partitions = get_partitions(main_disk_no);
+    // if(!partitions){
+    //     printf("Failed to get partitions array\n");
+    // }
 
-        char *guid_string = (char *)malloc(17);
-        guid_to_string(part.partition_guid, guid_string);
-        guid_string[16] = '\0';
+    // char *guid_string = (char *)malloc(17);
+    // char *guid_type_string = (char *)malloc(17);
+    
 
-        char *guid_type_string = (char *)malloc(17);
-        guid_to_string(part.partition_type_guid, guid_type_string);
-        guid_type_string[16] = '\0';
+    // for(int i=0; i < MAX_PARTITIONS; i++){
+    //     PartitionEntry part = partitions[i];
 
-        printf("Entry No: %d \
-            \n\tpartition_no: %d \
-            \n\tstart_lba: %d   \
-            \n\tsectors: %d      \
-            \n\tpartition_guid: %s \
-            \n\tPartition Type: %s\n",
-            i, part.partition_no, part.start_lba, part.sectors, guid_string, guid_type_string);
-    }
+    //     memset(guid_string, 0, 17);
+    //     memset(guid_type_string, 0, 17);
 
-    if(vfs_mount(main_disk_no, DATA_PART_START_LBA, VFS_FAT32) != 0){
-        printf("Failed to Mount 2nd Partition\n");
-    }else{
-        printf("Successfully Mount 2nd Partition\n");
-    }
+    //     guid_to_string(part.partition_guid, guid_string);
+    //     guid_to_string(part.partition_type_guid, guid_type_string);
+        
+    //     printf("Entry No: %d       \
+    //         \n\rpartition_no: %d   \
+    //         \n\rstart_lba: %d      \
+    //         \n\rsectors: %d        \
+    //         \n\rpartition_guid: %s \
+    //         \n\rPartition Type: %s\n",
+    //         i, part.partition_no, part.start_lba, part.sectors, guid_string, guid_type_string);
+    // }
 
-    FAT32_FILE *fp = malloc(sizeof(FAT32_FILE));
-    if(!fp){
-        printf("Memory allocation failed for fp!\n");
-    }
-    memset(fp, 0, sizeof(FAT32_FILE));
+    // fat32_fs_test(main_disk_no, DATA_PART_START_LBA, DATA_PART_SECTORS);
+    // vfs_test(main_disk_no, DATA_PART_START_LBA, VFS_FAT32);
 
-    void *opened_file = vfs_open(main_disk_no, "/testfile.txt", VFS_CREATE_ALWAYS | VFS_WRITE | VFS_READ);
+    // if(vfs_mount(main_disk_no, DATA_PART_START_LBA, VFS_FAT32) != 0){
+    //     printf("Failed to Mount 2nd Partition\n");
+    // }else{
+    //     printf("Successfully Mount 2nd Partition\n");
+    // }
 
-    if(!opened_file){
-        printf("Failed to create testfile.txt\n");
-    }else{
-        printf("Successfully opened testfile.txt\n");
-    }
+    // FAT32_FILE *fp = malloc(sizeof(FAT32_FILE));
+    // if(!fp){
+    //     printf("Memory allocation failed for fp!\n");
+    // }
+    // memset(fp, 0, sizeof(FAT32_FILE));
 
-    char *text_data = "This is a text data.";
+    // void *opened_file = vfs_open(main_disk_no, "/testfile.txt", VFS_CREATE_ALWAYS | VFS_WRITE | VFS_READ);
 
-    if(vfs_write(main_disk_no, opened_file, text_data, strlen(text_data)) != 0){
-        printf("Failed to write data in /testfile.txt\n");
-    }else{
-        printf("Successfully written data in /testfrile.txt\n");
-    }
+    // if(!opened_file){
+    //     printf("Failed to create testfile.txt\n");
+    // }else{
+    //     printf("Successfully created/opened testfile.txt\n");
+    // }
 
-    char *buffer = malloc(strlen(text_data));
+    // char *text_data = "This is a text data.";
 
-    if(vfs_read(main_disk_no, opened_file, buffer, strlen(text_data)) != 0){
-        printf("Failed to  read /testfile.txt in buffer\n");
-    }else{
-        printf("Successfully read /testfile.txt in buffer\n");
-    }
+    // if(vfs_write(main_disk_no, opened_file, text_data, strlen(text_data)) != 0){
+    //     printf("Failed to write data in /testfile.txt\n");
+    // }else{
+    //     printf("Successfully written data in /testfrile.txt\n");
+    // }
 
-    if(vfs_close(main_disk_no, opened_file) != 0){
-        printf("Failed to close /testfile.txt\n");
-    }else{
-        printf("Successfully Closed the /estfile.txt\n");
-    }
+    // char *buffer = malloc(strlen(text_data));
+
+    // if(vfs_read(main_disk_no, opened_file, buffer, strlen(text_data)) != 0){
+    //     printf("Failed to  read /testfile.txt in buffer\n");
+    // }else{
+    //     printf("Successfully read /testfile.txt in buffer: %s\n", buffer);
+    // }
+
+    // if(vfs_close(main_disk_no, opened_file) != 0){
+    //     printf("Failed to close /testfile.txt\n");
+    // }else{
+    //     printf("Successfully Closed the /testfile.txt\n");
+    // }
    
     // test_time_functions();
 
@@ -231,6 +251,12 @@ void kmain(){
 
     halt_kernel();
 }
+
+
+
+
+
+
 
 
 

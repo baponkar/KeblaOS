@@ -134,6 +134,19 @@ uint64_t kmalloc_aligned(uint64_t sz, uint64_t alignment) {
     return ptr;
 }
 
+void kfree(void *ptr, uint64_t size) {
+    if (!ptr) return;
+
+    uint64_t addr = (uint64_t)ptr;
+
+    // Only allow free if it's the last allocated block
+    if (addr + size == phys_mem_head) {
+        phys_mem_head = addr;
+    } else {
+        // Cannot free non-last allocation
+        printf("kfree: Cannot free (not last allocation)\n");
+    }
+}
 
 void test_kmalloc(){
     printf("Test of kmalloc\n");

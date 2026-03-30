@@ -13,9 +13,12 @@
 #define SECTOR_SIZE 512
 #define MAX_BATCH_SECTORS 64  // Write 32KB at a time
 
+uint8_t *fat_buffer = NULL;
+uint32_t fat_size_bytes = 0;
+
 bool initialize_fat_tables(uint64_t fat_start, uint32_t fat_sector_size) {
     
-    uint8_t *fat_buffer = (uint8_t *) malloc( SECTOR_SIZE);
+    fat_buffer = (uint8_t *) malloc( SECTOR_SIZE);
     if (!fat_buffer) {
         return false;
     }

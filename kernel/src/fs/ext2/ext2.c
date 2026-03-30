@@ -306,4 +306,137 @@ bool create_ext2_fs(int disk_no, uint64_t start_lba, uint64_t total_sectors)
 
 
 
+uint32_t ext2_alloc_inode() {
+    uint8_t bitmap[ext2.block_size];
 
+    ext2_read_block(ext2.groups[0].bg_inode_bitmap, bitmap);
+
+    for (uint32_t i = 0; i < ext2.super.s_inodes_count; i++) {
+        if (!(bitmap[i / 8] & (1 << (i % 8)))) {
+            bitmap[i / 8] |= (1 << (i % 8));
+
+            ext2_write_block(ext2.groups[0].bg_inode_bitmap, bitmap);
+
+            return i + 1; // inode numbers start at 1
+        }
+    }
+
+    return 0;
+}
+
+uint32_t ext2_alloc_block() {
+    uint8_t bitmap[ext2.block_size];
+
+    ext2_read_block(ext2.groups[0].bg_block_bitmap, bitmap);
+
+    for (uint32_t i = 0; i < ext2.super.s_blocks_count; i++) {
+        if (!(bitmap[i / 8] & (1 << (i % 8)))) {
+            bitmap[i / 8] |= (1 << (i % 8));
+
+            ext2_write_block(ext2.groups[0].bg_block_bitmap, bitmap);
+
+            return i;
+        }
+    }
+
+    return 0;
+}
+
+bool ext2_create_dir(uint32_t parent_inode_no, const char *name) {
+
+    // 1️⃣ Allocate inode + block
+    uint32_t new_inode_no = ext2_alloc_inode();
+    uint32_t new_block    = ext2_alloc_block();
+
+    if (!new_inode_no || !new_block) {
+        printf("EXT2: Failed to allocate inode/block\n");
+        return false;
+    }
+
+    // 2️⃣ Setup new inode
+    ext2_inode_t inode;
+    memset(&inode, 0, sizeof(inode));
+
+    inode.i_mode = 0x4000 | 0755; // directory
+    inode.i_size = ext2.block_size;
+    inode.i_blocks = 2;
+    inode.i_links_count = 2;
+    inode.i_block[0] = new_block;
+
+    // Write inode
+    uint32_t group = (new_inode_no - 1) / ext2.super.s_inodes_per_group;
+    uint32_t index = (new_inode_no - 1) % ext2.super.s_inodes_per_group;
+
+    uint32_t table = ext2.groups[group].bg_inode_table;
+    uint32_t inode_size = ext2.super.s_inode_size;
+
+    uint32_t block = table + (index * inode_size) / ext2.block_size;
+    uint32_t offset = (index * inode_size) % ext2.block_size;
+
+    uint8_t buf[ext2.block_size];
+    ext2_read_block(block, buf);
+
+    memcpy(buf + offset, &inode, sizeof(inode));
+    ext2_write_block(block, buf);
+
+    // 3️⃣ Create "." and ".."
+    uint8_t block_buf[ext2.block_size];
+    memset(block_buf, 0, ext2.block_size);
+
+    ext2_dir_entry_t *dot = (ext2_dir_entry_t*)block_buf;
+
+    dot->inode = new_inode_no;
+    dot->rec_len = 12;
+    dot->name_len = 1;
+    dot->file_type = 2;
+    dot->name[0] = '.';
+
+    ext2_dir_entry_t *dotdot = (ext2_dir_entry_t*)(block_buf + 12);
+
+    dotdot->inode = parent_inode_no;
+    dotdot->rec_len = ext2.block_size - 12;
+    dotdot->name_len = 2;
+    dotdot->file_type = 2;
+    dotdot->name[0] = '.';
+    dotdot->name[1] = '.';
+
+    ext2_write_block(new_block, block_buf);
+
+    // 4️⃣ Add entry to parent directory
+    ext2_inode_t parent;
+    ext2_read_inode(parent_inode_no, &parent);
+
+    uint8_t parent_buf[ext2.block_size];
+    ext2_read_block(parent.i_block[0], parent_buf);
+
+    uint32_t offset_p = 0;
+
+    while (offset_p < ext2.block_size) {
+
+        ext2_dir_entry_t *entry = (ext2_dir_entry_t*)(parent_buf + offset_p);
+
+        uint32_t actual_len = 8 + ((entry->name_len + 3) & ~3);
+
+        if (entry->rec_len > actual_len) {
+            // Split entry
+            ext2_dir_entry_t *new_entry =
+                (ext2_dir_entry_t*)((uint8_t*)entry + actual_len);
+
+            new_entry->inode = new_inode_no;
+            new_entry->rec_len = entry->rec_len - actual_len;
+            new_entry->name_len = strlen(name);
+            new_entry->file_type = 2;
+            memcpy(new_entry->name, name, new_entry->name_len);
+
+            entry->rec_len = actual_len;
+
+            ext2_write_block(parent.i_block[0], parent_buf);
+            return true;
+        }
+
+        offset_p += entry->rec_len;
+    }
+
+    printf("EXT2: No space in parent directory\n");
+    return false;
+}

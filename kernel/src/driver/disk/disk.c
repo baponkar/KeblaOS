@@ -147,6 +147,7 @@ int kebla_get_disks(){
                             // printf("controller no: %d, SATA Drive Found at port %d\n",c_idx, i);
                             disks[disk_count].type = DISK_TYPE_AHCI_SATA;
                             disks[disk_count].context = (void *)&abar->ports[i];    // Rebase the port
+                            
                             SataPortRebase(port);
                             disks[disk_count].bytes_per_sector = sata_get_bytes_per_sector(&abar->ports[i]);
                             disks[disk_count].total_sectors = sata_get_total_sectors(&abar->ports[i]);
@@ -335,6 +336,7 @@ bool kebla_disk_init(int disk_no){
 }
 
 bool kebla_disk_read(int disk_no, uint64_t lba, uint32_t count, void* buf){
+    // printf("ACTUAL READ LBA: %llu\n", lba);
 
     if(disk_no >= disk_count){
         printf("[DISK] Invalid Disk No %d\n", disk_no);

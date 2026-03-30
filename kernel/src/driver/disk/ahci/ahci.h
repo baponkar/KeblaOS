@@ -17,10 +17,10 @@
 // AHCI Devices
 typedef enum {
 	AHCI_DEV_NULL,
-	AHCI_DEV_SATA ,
-	AHCI_DEV_SEMB,
-	AHCI_DEV_PM ,
-	AHCI_DEV_SATAPI
+	AHCI_DEV_SATA ,	// SATA Device i.e. HDD/SSD
+	AHCI_DEV_SEMB,	// enclosure controller: Drive bay status, LEDs, Fan control, Temperature sensors, Power management of bays, 
+	AHCI_DEV_PM ,	// Port Multiplier
+	AHCI_DEV_SATAPI	// CD/DVD Drive Device
 } AHCI_DEVICE_TYPE;
 
 
@@ -52,6 +52,7 @@ typedef enum
 	FIS_TYPE_DEV_BITS	= 0xA1,	// Set device bits FIS - device to host
 	ATA_CMD_IDENTIFY    = 0xEC	// To Identify
 } FIS_TYPE;
+
 
 struct FIS_REG_H2D
 {
@@ -209,6 +210,7 @@ struct FIS_PIO_SETUP
 };
 typedef struct FIS_PIO_SETUP FIS_PIO_SETUP_T;
 
+//
 struct HBA_PORT
 {
 	uint32_t clb;		// 0x00, command list base address, 1K-byte aligned
@@ -288,6 +290,7 @@ struct HBA_CMD_HEADER
 };
 typedef struct HBA_CMD_HEADER HBA_CMD_HEADER_T;
 
+
 struct HBA_PRDT_ENTRY
 {
 	uint32_t dba;		// Data base address
@@ -339,7 +342,13 @@ typedef struct {
 
 void startCMD(HBA_PORT_T *port);
 void stopCMD(HBA_PORT_T *port);
-bool runCommand(FIS_TYPE type, uint8_t write, HBA_PORT_T *port, uint32_t start_l, uint32_t start_h, uint32_t count, uintptr_t phys_buf);
+bool runCommand(FIS_TYPE type, 
+	uint8_t write, 
+	HBA_PORT_T *port, 
+	uint32_t start_l, 
+	uint32_t start_h, 
+	uint32_t count, 
+	uintptr_t phys_buf);
 
 int  checkType(HBA_PORT_T* port);
 void probePort(HBA_MEM_T *abar);

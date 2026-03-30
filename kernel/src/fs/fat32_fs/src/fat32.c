@@ -13,20 +13,15 @@ void fat32_fs_test(int disk_no, uint32_t start_lba, uint32_t sectors){
 
     printf("\n===== FAT32 TEST START =====\n");
 
-    if(!create_fat32_volume(start_lba, sectors)){
-        printf(" Failed to create FAT32 Filesystem at LBA %d", start_lba);
-    }
-    printf(" Successfully FAT32 Filesystem created at Sector %d\n", start_lba);
-
-    if(!fat32_mount(start_lba)){
+    fat32_reset();
+    
+    if(!fat32_mount(disk_no, start_lba, "DATA VOLUME")){
         printf(" Failed to Mount Disk %d of DATA Partition\n", disk_no);
+        return;
     }
     printf(" Successfully Mount Disk %d of DATA Partition\n", disk_no);
 
     // Directory Test
-
-    FAT32_DIR dir;
-    FAT32_DIRENT entry;
 
     // change directory to root
     if (f_cwd("/")){
@@ -40,19 +35,25 @@ void fat32_fs_test(int disk_no, uint32_t start_lba, uint32_t sectors){
         printf("[OK] mkdir /mylongtestdir\n");
     }else{
         printf("[FAIL] mkdir /mylongtestdir (maybe exists)\n");
+        return;
     }
 
     if (f_mkdir("/mylongtestdir/subdir")){
         printf("[OK] mkdir /mylongtestdir/subdir\n");
     }else{
         printf("[FAIL] mkdir /mylongtestdir/subdir (maybe exists)\n");
+        return;
     }
+
+    FAT32_DIR dir;
+    FAT32_DIRENT entry;
 
     // open directory 
     if (f_opendir(&dir, "/mylongtestdir")){
         printf("[OK] opendir /mylongtestdir\n");
     }else{
         printf("[FAIL] opendir /mylongtestdir\n");
+        return;
     }
 
     // list directory
@@ -74,6 +75,7 @@ void fat32_fs_test(int disk_no, uint32_t start_lba, uint32_t sectors){
         printf("[OK] rename subdir -> subdir2\n");
     }else{
         printf("[FAIL] rename directory\n");
+        return;
     }
 
     // open directory again
@@ -116,7 +118,7 @@ void fat32_fs_test(int disk_no, uint32_t start_lba, uint32_t sectors){
     char line[128];
 
     // create file
-    if (!f_open(&file, "/mylongtestfile.txt", FA_CREATE_ALWAYS | FA_WRITE))
+    if (!f_open(&file, "/mylongtestfile.txt", FA_CREATE_ALWAYS | FA_WRITE | FA_READ))
     {
         printf("f_open create failed\n");
         return;

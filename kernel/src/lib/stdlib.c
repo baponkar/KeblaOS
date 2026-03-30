@@ -144,6 +144,8 @@ void *malloc(size_t size) {
     // Allocate space for header + user data
     size_t total_size = HEADER_SIZE + size + TAILER_SIZE;
 
+    // if(total_size > )
+
     malloc_header_t *header = (malloc_header_t*)kheap_alloc(total_size, ALLOCATE_DATA);
     if (!header) return NULL;
     memset(header, 0,  HEADER_SIZE);
@@ -167,11 +169,12 @@ void *malloc(size_t size) {
 }
 
 void free(void *ptr) {
+
     if (ptr == NULL) return;
     
     // Get header from user pointer
     malloc_header_t *header = (malloc_header_t*)((uint8_t*)ptr - HEADER_SIZE);
-     malloc_header_t *tailer = (malloc_header_t*)((uint8_t*)ptr + header->size);
+    malloc_header_t *tailer = (malloc_header_t*)((uint8_t*)ptr + header->size);
     
     // Validate magic number to detect corruption
     if (header->magic != MAGIC || tailer->magic != MAGIC) {
