@@ -1,7 +1,7 @@
 [![KeblaOS Badge](https://img.shields.io/badge/Kebla-OS-maker?labelColor=red&color=blue)](https://github.com/baponkar/KeblaOS)
 [![KeblaOS Badge](https://img.shields.io/badge/version-1.2-maker?labelColor=red&color=blue)](https://github.com/baponkar/KeblaOS/releases)
 <img src="image/KeblaOS.png" alt="Float Left" alt="My Image" width="20" height="20">
-🇮🇳
+:india:
 
 # KeblaOS
 
