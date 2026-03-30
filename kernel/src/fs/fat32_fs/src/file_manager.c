@@ -100,10 +100,6 @@ bool f_close(FAT32_FILE* fp)
     if (!cluster_buf)  return false;
     memset(cluster_buf, 0, cluster_size);
 
-    printf("cluster_size = %u\n", cluster_size);
-    printf("dir_entry_cluster = %u\n", fp->dir_entry_cluster);
-    printf("dir_entry_offset = %u\n", fp->dir_entry_offset);
-
     /* read directory cluster containing the entry */
     if (!fat32_read_cluster(fp->dir_entry_cluster, cluster_buf)) {
         printf("Failed to read cluster\n");
