@@ -150,7 +150,7 @@ To get Make help by `make help`
 
 Downloaded from [here](https://github.com/baponkar/KeblaOS/releases).
 
-
+[Note](https://github.com/baponkar/KeblaOS-Note)
 ---
 
 © 2025 baponkar. All rights reserved except externel library used.
