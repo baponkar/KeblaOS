@@ -158,9 +158,9 @@
 // =======================================================================================
 
 #define OS_NAME "KeblaOS"
-#define OS_VERSION "1.1"
+#define OS_VERSION "1.2"
 #define BUILD_DATE "17/07/2025"
-#define LAST_UPDATE "14/09/2025"
+#define LAST_UPDATE "30/03/2026"
 
 
 extern uint8_t core_id;

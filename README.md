@@ -1,25 +1,27 @@
-[![KeblaOS Badge](https://img.shields.io/badge/Kebla-OS-maker?labelColor=red&color=blue)](https://gitlab.com/baponkar/kebla-os)
-[![KeblaOS Badge](https://img.shields.io/badge/version-1.0-maker?labelColor=red&color=blue)](https://github.com/baponkar/KeblaOS/releases)
+[![KeblaOS Badge](https://img.shields.io/badge/Kebla-OS-maker?labelColor=red&color=blue)](https://github.com/baponkar/KeblaOS)
+[![KeblaOS Badge](https://img.shields.io/badge/version-1.2-maker?labelColor=red&color=blue)](https://github.com/baponkar/KeblaOS/releases)
 <img src="image/KeblaOS.png" alt="Float Left" alt="My Image" width="20" height="20">
 
 # KeblaOS
 
 |Subject       | Value         |
 |--------------|---------------|
-|🏷️Version     | `1.1`        |
+|🏷️Version     | `1.2`        |
 |🖥️Architecture| `x86`        |
 |🔢Bit         | `64`         |
 |📅Start Date  | `09.06.2024` |
-|🔄Last Update | `14.09.2025` |
+|🔄Last Update | `30.03.2026` |
 
 ---
 
-![screenshot](screenshot/keblaos_gui_screenshot.png)
 
 ## Description:
 This is a x86 architecture based 64 bit Operating System.
+This operating system has interrupt based system call.Here PCI scan discovers AHCI Devices. The OS currently has keyboard, mouse, SATA Disk, SATAPI Disk Driver. The installer can formatt SATA disk , Build GPT Partition along with 100 MB FAT32 ESP Volume. Rest of EXT2 Volume at the Disk. Here AHCI port 0 has SATAPI Disk and port 1 has SATA Disk.Currently working to build ext2 filesystem then complete systemcall and finally GNU C Header. The operating system also support userspace elf file.The operating system currently is using limine bootloader.
 
+![screenshot](screenshot/keblaos_gui_screenshot.png)
 
+![screenshot 1](screenshot/screenshot_1.png)
 
 ### KeblaOS Features
 
@@ -35,24 +37,18 @@ This is a x86 architecture based 64 bit Operating System.
 | ✅ ⏱️**Timers**              | TSC, RTC, PIT, APIC, ⚠️ HPET (Not Using)                                            |
 | ✅ **Multitasking**        | Process, Thread, Scheduler, CPU State Handling, Multi-core Multitasking                |
 | ✅ **Kernel Shell (kshell)** | Calculator, Steam Locomotive Animation                                               |
-| ✅ 📂**Filesystem**          | FAT32, EXT2, VFS Layer                           |
+| ✅ 📂**Filesystem**          | FAT32, EXT2, VSFS, VFS Layer                           |
 | ✅ **System Calls**        | Interrupt-based (Using), MSR-based (Not Using)                                         |
 | ✅ **User Mode Switching** | ELF Loader, Binary Loader, minimal libc,stemcall                                       |
 | ✅ 🔌**Drivers**             | 🎴PCI, AHCI SATA Disk, VGA Framebuffer, I/O Ports, Serial, Keyboard, Speaker, Mouse |
 | ✅ Installer                  | GPT Disk Creator and UEFI Disk Installer |
 
--------------------------------------------------------------------------------------------------------------------------
+---
 
 * ✅ 📦**External Libraries** :
     1. [Limine-9.2.3](https://codeberg.org/Limine/Limine)
-    2. [FatFs-R0.15b](https://elm-chan.org/fsw/ff/)
-    3. [tiny-regex-c](https://github.com/kokke/tiny-regex-c)
-    4. [uGUI](https://github.com/achimdoebler/UGUI)
-    5. [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear)
-    6. [LvGL](https://github.com/lvgl/lvgl)
-    
-    
-
+    2. [tiny-regex-c](https://github.com/kokke/tiny-regex-c)
+    3. [uGUI](https://github.com/achimdoebler/UGUI)
 
 ---
 
@@ -148,7 +144,7 @@ This is a x86 architecture based 64 bit Operating System.
 Before building set GCC , LD, OBJDUMP, 
 `src` directory is containing source code. `build` directory is containing generated object file, binary file and iso file. `iso_root` is required for building `image.iso` file.
 
-To build and run by QEmu iso `make -B`.
+To build and run by QEmu iso `make`.
 To get Make help by `make help`
 
 Downloaded from [here](https://github.com/baponkar/KeblaOS/releases).
